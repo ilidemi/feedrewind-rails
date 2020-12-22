@@ -1,0 +1,30 @@
+<h1>New</h1>
+<%= form_for :new_blog, url: "/blogs" do |form| %>
+  <div>
+    <%= form.label :name, "Blog name" %>
+    <%= form.text_field :name %>
+    <br>
+
+    <%= form.label :url, "Blog URL" %>
+    <%= form.url_field :url %>
+    <br>
+
+    <%= form.label :list_xpath, "Post list container XPath" %>
+    <%= form.text_field :list_xpath %>
+    <br>
+
+    <%= form.label :link_xpath, "Post link XPath" %>
+    <%= form.text_field :link_xpath %>
+    <br>
+
+    <%= form.label :title_xpath, "Post title XPath" %>
+    <%= form.text_field :title_xpath %>
+    <br>
+
+    <%= form.label :date_xpath, "Post date XPath" %>
+    <%= form.text_field :date_xpath %>
+    <br>
+
+    <%= form.submit %>
+  </div>
+<% end %>

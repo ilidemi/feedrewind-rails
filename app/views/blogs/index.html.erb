@@ -1,0 +1,20 @@
+<h1>Blogs</h1>
+
+<% if @blogs.length.zero? %>
+  <p>Nothing here. Want to add some?</p>
+<% end %>
+
+<% @blogs.each do |blog| %>
+  <% total_count = blog.posts.count %>
+  <% sent_count = blog.posts.group(:is_sent).count[true] || 0 %>
+  <div>
+    <span>
+      <%= blog.name %>: <%= sent_count %>/<%= total_count %> sent
+    </span>
+    <%= button_to "Destroy", blog_path(blog),
+                  method: :delete,
+                  data: { confirm: "Delete #{blog.name}?" } %>
+  </div>
+<% end %>
+
+<%= link_to "Add blog", new_blog_path %>
