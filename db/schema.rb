@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_21_203948) do
+ActiveRecord::Schema.define(version: 2020_12_23_005223) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -26,6 +26,16 @@ ActiveRecord::Schema.define(version: 2020_12_21_203948) do
     t.string "name"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.integer "posts_per_day"
+    t.string "url"
+  end
+
+  create_table "current_rsses", force: :cascade do |t|
+    t.bigint "blog_id", null: false
+    t.text "body"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["blog_id"], name: "index_current_rsses_on_blog_id"
   end
 
   create_table "posts", force: :cascade do |t|
@@ -36,8 +46,14 @@ ActiveRecord::Schema.define(version: 2020_12_21_203948) do
     t.boolean "is_sent"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.integer "order"
     t.index ["blog_id"], name: "index_posts_on_blog_id"
   end
 
+# Could not dump table "schedules" because of following StandardError
+#   Unknown type 'day_of_week' for column 'day_of_week'
+
+  add_foreign_key "current_rsses", "blogs"
   add_foreign_key "posts", "blogs"
+  add_foreign_key "schedules", "blogs"
 end

@@ -4,7 +4,30 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6a69c5d1-5f49-4ab1-81c3-eb5d1d0a3bcf" name="Default Changelist" comment="" />
+    <list default="true" id="6a69c5d1-5f49-4ab1-81c3-eb5d1d0a3bcf" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/app/assets/stylesheets/rss.scss" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/controllers/rss_controller.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/helpers/rss_helper.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/services/update_rss_service.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/db/migrate/20201222003840_add_order_to_posts.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/db/migrate/20201223003011_remove_day_of_week_from_schedule.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/db/migrate/20201223003111_add_day_of_week_to_schedule.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/db/migrate/20201223003402_add_posts_per_day_to_blog.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/db/migrate/20201223003806_add_url_to_blog.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/controllers/rss_controller_test.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dbnavigator.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dbnavigator.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/rss-catchup-rails.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/rss-catchup-rails.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gemfile" beforeDir="false" afterPath="$PROJECT_DIR$/Gemfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Gemfile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Gemfile.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/assets/stylesheets/application.css" beforeDir="false" afterPath="$PROJECT_DIR$/app/assets/stylesheets/application.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/controllers/blogs_controller.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/controllers/blogs_controller.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/models/blog.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/blog.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/services/blog_fetch_service.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/blog_fetch_service.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/views/blogs/index.html.erb" beforeDir="false" afterPath="$PROJECT_DIR$/app/views/blogs/index.html.erb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/views/blogs/new.html.erb" beforeDir="false" afterPath="$PROJECT_DIR$/app/views/blogs/new.html.erb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/db/schema.rb" beforeDir="false" afterPath="$PROJECT_DIR$/db/schema.rb" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -38,11 +61,11 @@
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="ASKED_SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="Ruby.ViewRefParam.DefaultExtension" value="html.erb" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="last.edited.regexp" value="Sample Text" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/../rails-js" />
@@ -155,7 +178,9 @@
       <updated>1607718687858</updated>
       <workItem from="1607718689194" duration="834000" />
       <workItem from="1607719548481" duration="10598000" />
-      <workItem from="1608575354837" duration="13987000" />
+      <workItem from="1608575354837" duration="15791000" />
+      <workItem from="1608664217256" duration="15010000" />
+      <workItem from="1608749353133" duration="314000" />
     </task>
     <task id="LOCAL-00001" summary="Blogs controller working for Dan">
       <created>1608596796808</created>
@@ -164,7 +189,14 @@
       <option name="project" value="LOCAL" />
       <updated>1608596796808</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Initial Rails">
+      <created>1608596827105</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1608596827105</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -183,7 +215,23 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <MESSAGE value="Blogs controller working for Dan" />
-    <option name="LAST_COMMIT_MESSAGE" value="Blogs controller working for Dan" />
+    <MESSAGE value="Initial Rails" />
+    <option name="LAST_COMMIT_MESSAGE" value="Initial Rails" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="ruby-line">
+          <url>file://$PROJECT_DIR$/app/controllers/blogs_controller.rb</url>
+          <line>58</line>
+          <properties myBlockOrdinal="-1">
+            <option name="block-ordinal" value="-1" />
+          </properties>
+          <option name="timeStamp" value="6" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

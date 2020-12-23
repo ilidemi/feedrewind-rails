@@ -25,14 +25,14 @@
     <show-object-properties value="true" />
     <loaded-nodes>
       <connection connection-id="39718d48-34c6-4dc2-a78b-3b6723d5954c">
-        <schema name="pg_catalog" object-types="view, table, function" />
-        <schema name="public" object-types="dataset trigger, index, column, view, table, function, constraint, sequence" />
+        <schema name="pg_catalog" object-types="function" />
+        <schema name="public" object-types="table, view, function" />
       </connection>
     </loaded-nodes>
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="39718d48-34c6-4dc2-a78b-3b6723d5954c">
-      <console name="PostgreSQL" type="STANDARD" schema="public" session="Main"><![CDATA[select * from posts]]></console>
+      <console name="PostgreSQL" type="STANDARD" schema="public" session="Main"><![CDATA[select * from current_rsses;]]></console>
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
@@ -42,7 +42,11 @@
     <connection id="39718d48-34c6-4dc2-a78b-3b6723d5954c" />
   </component>
   <component name="DBNavigator.Project.DatasetFilterManager">
-    <filter-actions connection-id="39718d48-34c6-4dc2-a78b-3b6723d5954c" dataset="public.posts" active-filter-id="EMPTY_FILTER" />
+    <filter-actions connection-id="39718d48-34c6-4dc2-a78b-3b6723d5954c" dataset="public.posts" active-filter-id="0bf5d7bc-ccb6-44ea-be0a-a56db2651d1f">
+      <filter id="0bf5d7bc-ccb6-44ea-be0a-a56db2651d1f" name="%apenwarr%" temporary="false" custom-name="false" type="basic" join-type="AND">
+        <condition column="link" operator="like" value="%apenwarr%" active="true" />
+      </filter>
+    </filter-actions>
     <filter-actions connection-id="39718d48-34c6-4dc2-a78b-3b6723d5954c" dataset="public.blogs" active-filter-id="EMPTY_FILTER" />
   </component>
   <component name="DBNavigator.Project.EditorStateManager">

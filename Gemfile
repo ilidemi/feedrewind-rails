@@ -57,3 +57,4 @@ gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 
 gem "nokogiri", "~> 1.8", ">= 1.8.4"
 gem 'nokogumbo', '~> 2.0', '>= 2.0.4'
+gem 'ox', '~> 2.0', '>= 2.14.0'

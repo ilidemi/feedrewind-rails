@@ -1,15 +1,17 @@
-<h1>New</h1>
+<h1>New Blog</h1>
 <%= form_for :new_blog, url: "/blogs" do |form| %>
   <div>
-    <%= form.label :name, "Blog name" %>
+    <%= form.label :name, "Name" %>
     <%= form.text_field :name %>
     <br>
 
-    <%= form.label :url, "Blog URL" %>
+    <%= form.label :url, "Archive URL" %>
     <%= form.url_field :url %>
     <br>
 
-    <%= form.label :list_xpath, "Post list container XPath" %>
+    <h3>Parsing</h3>
+
+    <%= form.label :list_xpath, "List of posts XPath" %>
     <%= form.text_field :list_xpath %>
     <br>
 
@@ -25,6 +27,89 @@
     <%= form.text_field :date_xpath %>
     <br>
 
-    <%= form.submit %>
+    <%= form.check_box :paging_needed %>
+    <%= form.label :paging_needed, "Blog needs paging" %>
+    <br>
+
+    <div id="paging_fields">
+      <%= form.label :next_page_xpath, "Next page XPath" %>
+      <%= form.text_field :next_page_xpath %>
+      <br>
+
+      <%= form.label :page_order, "Order of posts on a page" %>
+      <%= form.select :page_order, [["Newest First", "newest_first"], ["Oldest First", "oldest_first"]] %>
+      <br>
+    </div>
+
+    <%= form.check_box :filtering_needed %>
+    <%= form.label :filtering_needed, "Blog needs filtering" %>
+    <br>
+
+    <div id="filtering_fields">
+      <%= form.label :length_filter_xpath, "Post content XPath" %>
+      <%= form.text_field :length_filter_xpath %>
+      <br>
+
+      <%= form.label :min_length, "Min post length" %>
+      <%= form.number_field :min_length %>
+      <br>
+    </div>
+
+    <h3>Schedule</h3>
+
+    <span>
+      Add
+      <%= form.select :posts_per_day, [1, 2, 3, 4, 5] %>
+      <span id="posts_per_day_label">post</span> every
+    </span>
+    <%= form.check_box :schedule_mon, { :checked => true } %>
+    <%= form.label :schedule_mon, "M" %>
+    <%= form.check_box :schedule_tue, { :checked => true } %>
+    <%= form.label :schedule_tue, "T" %>
+    <%= form.check_box :schedule_wed, { :checked => true } %>
+    <%= form.label :schedule_wed, "W" %>
+    <%= form.check_box :schedule_thu, { :checked => true } %>
+    <%= form.label :schedule_thu, "T" %>
+    <%= form.check_box :schedule_fri, { :checked => true } %>
+    <%= form.label :schedule_fri, "F" %>
+    <%= form.check_box :schedule_sat, { :checked => true } %>
+    <%= form.label :schedule_sat, "S" %>
+    <%= form.check_box :schedule_sun, { :checked => true } %>
+    <%= form.label :schedule_sun, "S" %>
+    <br>
+
+    <%= form.submit "Save new blog" %>
   </div>
 <% end %>
+
+<script>
+    let pagingCheckbox = document.getElementById('new_blog_paging_needed');
+    let pagingFields = document.getElementById('paging_fields');
+
+    function updatePagingVisibility() {
+        pagingFields.style['display'] = pagingCheckbox.checked ? 'block' : 'none';
+    }
+
+    pagingCheckbox.onchange = updatePagingVisibility;
+    updatePagingVisibility();
+
+    let filteringCheckbox = document.getElementById('new_blog_filtering_needed');
+    let filteringFields = document.getElementById('filtering_fields');
+
+    function updateFilteringVisibility() {
+        filteringFields.style['display'] = filteringCheckbox.checked ? 'block' : 'none';
+    }
+
+    filteringCheckbox.onchange = updateFilteringVisibility;
+    updateFilteringVisibility();
+
+    let postsPerDayDropdown = document.getElementById('new_blog_posts_per_day');
+    let postsPerDayLabel = document.getElementById('posts_per_day_label');
+
+    function updatePostsPerDayLabel() {
+        postsPerDayLabel.innerText = postsPerDayDropdown.value === '1' ? 'post' : 'posts';
+    }
+
+    postsPerDayDropdown.onchange = updatePostsPerDayLabel;
+    updatePostsPerDayLabel();
+</script>

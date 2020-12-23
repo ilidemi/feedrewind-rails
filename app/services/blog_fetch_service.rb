@@ -8,6 +8,9 @@ require 'yaml'
 
 module BlogFetchService
   Post = Struct.new(:link, :title, :date)
+  FetchParams = Struct.new(:url, :list_xpath, :link_xpath, :title_xpath, :date_xpath, :paging, :filtering)
+  PagingParams = Struct.new(:next_page_xpath, :page_order)
+  FilteringParams = Struct.new(:length_filter_xpath, :min_length)
 
   def self.get_relative_xpath(child_xpath, parent_xpath)
     raise "#{child_xpath} is not a child of #{parent_xpath}" unless child_xpath.start_with?(parent_xpath)
@@ -21,13 +24,17 @@ module BlogFetchService
     URI(link).scheme.nil? ? parent_uri + link : link
   end
 
-  def BlogFetchService.fetch(url, list_xpath, link_xpath, title_xpath, date_xpath)
-    link_rel_xpath = get_relative_xpath(link_xpath, list_xpath)
-    title_rel_xpath = get_relative_xpath(title_xpath, list_xpath)
-    date_rel_xpath = get_relative_xpath(date_xpath, list_xpath)
+  def BlogFetchService.fetch(params)
+    link_rel_xpath = get_relative_xpath(params.link_xpath, params.list_xpath)
+    title_rel_xpath = get_relative_xpath(params.title_xpath, params.list_xpath)
+    date_rel_xpath = get_relative_xpath(params.date_xpath, params.list_xpath)
+
+    if params.filtering
+      length_filter_rel_xpath = get_relative_xpath(params.filtering.length_filter_xpath, params.list_xpath)
+    end
 
     posts = []
-    list_uri = URI(url)
+    list_uri = URI(params.url)
     headers = { 'User-Agent': 'RSS-Catchup-Crawler/0.1' }
     Net::HTTP.start(list_uri.host, list_uri.port, headers: headers, use_ssl: list_uri.scheme == 'https') do |http|
       page_uri = list_uri
@@ -38,7 +45,7 @@ module BlogFetchService
         list_response = http.request(list_request)
         list_response.value
         list_html = Nokogiri.HTML5(list_response.body)
-        list = list_html.at_xpath(list_xpath)
+        list = list_html.at_xpath(params.list_xpath)
         page_posts = []
         list.children.each do |post|
           next unless post.is_a?(Nokogiri::XML::Element)
@@ -49,11 +56,11 @@ module BlogFetchService
           post_link = post_link_element['href']
           next if post_link.nil?
 
-          # if post_filter_xpath and post_filter_length
-          #   post_filter_text_element = post.at_xpath(post_filter_xpath)
-          #   post_filter_text = post_filter_text_element.content
-          #   next if post_filter_text.length < post_filter_length
-          # end
+          if params.filtering
+            length_filter_text_element = post.at_xpath(length_filter_rel_xpath)
+            length_filter_text = length_filter_text_element.content
+            next if length_filter_text.length < params.filtering.min_length
+          end
 
           post_absolute_link = to_absolute_uri(post_link, page_uri)
           post_title_element = post.at_xpath(title_rel_xpath)
@@ -63,26 +70,27 @@ module BlogFetchService
           page_posts << Post.new(post_absolute_link, post_title, post_date)
         end
 
-        # if blog['is_page_chronological']
-        #   page_posts.reverse!
-        # end
+        if params.paging and params.paging.page_order == 'oldest_first'
+          page_posts.reverse!
+        end
         posts.append(*page_posts)
 
-        break # unless blog.include?('next_page_xpath')
+        break unless params.paging
 
-        # next_page_element = list_html.at_xpath(blog['next_page_xpath'])
-        # next_page_link = next_page_element['href']
-        # break unless next_page_link
-        #
-        # page_uri = to_absolute_uri(next_page_link, page_uri)
-        # break if visited_urls.include?(page_uri)
-        #
-        # sleep(0.5)
+        next_page_element = list_html.at_xpath(params.paging.next_page_xpath)
+        next_page_link = next_page_element['href']
+        break unless next_page_link
+
+        page_uri = to_absolute_uri(next_page_link, page_uri)
+        break if visited_urls.include?(page_uri)
+
+        sleep(0.5)
       end
     end
 
     raise "Couldn't fetch any posts" if posts.empty?
 
+    posts.reverse!
     posts
   end
 

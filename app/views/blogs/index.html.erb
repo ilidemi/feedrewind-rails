@@ -7,13 +7,14 @@
 <% @blogs.each do |blog| %>
   <% total_count = blog.posts.count %>
   <% sent_count = blog.posts.group(:is_sent).count[true] || 0 %>
-  <div>
+  <div style="display:flex; justify-content:space-between">
     <span>
-      <%= blog.name %>: <%= sent_count %>/<%= total_count %> sent
+      <%= blog.name %> (<%= sent_count %>/<%= total_count %> sent)
     </span>
-    <%= button_to "Destroy", blog_path(blog),
-                  method: :delete,
-                  data: { confirm: "Delete #{blog.name}?" } %>
+
+    <%= link_to "Delete", blog_path(blog),
+                method: :delete,
+                data: { confirm: "Delete #{blog.name}?" } %>
   </div>
 <% end %>
 
