@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6a69c5d1-5f49-4ab1-81c3-eb5d1d0a3bcf" name="Default Changelist" comment="" />
+    <list default="true" id="6a69c5d1-5f49-4ab1-81c3-eb5d1d0a3bcf" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/puma.rb" beforeDir="false" afterPath="$PROJECT_DIR$/config/puma.rb" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -162,7 +165,7 @@
       <workItem from="1608755635096" duration="1457000" />
       <workItem from="1608770208710" duration="1858000" />
       <workItem from="1608776959727" duration="1965000" />
-      <workItem from="1608840799872" duration="2598000" />
+      <workItem from="1608840799872" duration="3744000" />
     </task>
     <task id="LOCAL-00001" summary="Blogs controller working for Dan">
       <created>1608596796808</created>
@@ -199,7 +202,14 @@
       <option name="project" value="LOCAL" />
       <updated>1608843299345</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="Add heroku, remove debugger">
+      <created>1608843596175</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1608843596175</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -223,7 +233,8 @@
     <MESSAGE value="Initial Rails" />
     <MESSAGE value="Working first time RSS generation" />
     <MESSAGE value="Delete articles, working RSS gen and job" />
-    <option name="LAST_COMMIT_MESSAGE" value="Delete articles, working RSS gen and job" />
+    <MESSAGE value="Add heroku, remove debugger" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add heroku, remove debugger" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
