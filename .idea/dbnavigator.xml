@@ -23,16 +23,19 @@
     <autoscroll-to-editor value="false" />
     <autoscroll-from-editor value="true" />
     <show-object-properties value="true" />
-    <loaded-nodes>
-      <connection connection-id="39718d48-34c6-4dc2-a78b-3b6723d5954c">
-        <schema name="pg_catalog" object-types="function" />
-        <schema name="public" object-types="table, view, function" />
-      </connection>
-    </loaded-nodes>
+    <loaded-nodes />
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="39718d48-34c6-4dc2-a78b-3b6723d5954c">
-      <console name="PostgreSQL" type="STANDARD" schema="public" session="Main"><![CDATA[select * from current_rsses;]]></console>
+      <console name="PostgreSQL" type="STANDARD" schema="public" session="Main"><![CDATA[select * from delayed_jobs;
+
+
+update delayed_jobs
+set run_at = 'Dec 23, 2020, 8:41:15 PM'
+where id = 2;
+
+
+delete from delayed_jobs]]></console>
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
@@ -91,7 +94,7 @@
           <database value="rss_catchup_rails_development" />
           <type value="USER_PASSWORD" />
           <user value="ilia" />
-          <deprecated-pwd value="REDACTED_LOCAL_DB_PASSWORD" />
+          <deprecated-pwd value="" />
         </database>
         <properties>
           <auto-commit value="false" />

@@ -5,28 +5,34 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6a69c5d1-5f49-4ab1-81c3-eb5d1d0a3bcf" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/app/assets/stylesheets/rss.scss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/controllers/rss_controller.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/helpers/rss_helper.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/services/update_rss_service.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/db/migrate/20201222003840_add_order_to_posts.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/db/migrate/20201223003011_remove_day_of_week_from_schedule.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/db/migrate/20201223003111_add_day_of_week_to_schedule.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/db/migrate/20201223003402_add_posts_per_day_to_blog.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/db/migrate/20201223003806_add_url_to_blog.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/controllers/rss_controller_test.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/jobs/update_rss_job.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/bin/delayed_job" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/db/migrate/20201223190124_add_index_to_blogs.rb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/db/migrate/20201223192043_create_delayed_jobs.rb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/dbnavigator.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dbnavigator.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/rss-catchup-rails.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/rss-catchup-rails.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Gemfile" beforeDir="false" afterPath="$PROJECT_DIR$/Gemfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Gemfile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Gemfile.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/assets/stylesheets/application.css" beforeDir="false" afterPath="$PROJECT_DIR$/app/assets/stylesheets/application.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/assets/stylesheets/articles.scss" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/controllers/articles_controller.rb" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/app/controllers/blogs_controller.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/controllers/blogs_controller.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/blog.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/blog.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/services/blog_fetch_service.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/blog_fetch_service.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/views/blogs/index.html.erb" beforeDir="false" afterPath="$PROJECT_DIR$/app/views/blogs/index.html.erb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/views/blogs/new.html.erb" beforeDir="false" afterPath="$PROJECT_DIR$/app/views/blogs/new.html.erb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/controllers/rss_controller.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/controllers/rss_controller.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/helpers/articles_helper.rb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/models/article.rb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/services/update_rss_service.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/update_rss_service.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/views/articles/_form.html.erb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/views/articles/edit.html.erb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/views/articles/index.html.erb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/views/articles/new.html.erb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/views/articles/show.html.erb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/views/layouts/application.html.erb" beforeDir="false" afterPath="$PROJECT_DIR$/app/views/layouts/application.html.erb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/application.rb" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/routes.rb" beforeDir="false" afterPath="$PROJECT_DIR$/config/routes.rb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/db/schema.rb" beforeDir="false" afterPath="$PROJECT_DIR$/db/schema.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/controllers/articles_controller_test.rb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/fixtures/articles.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/models/article_test.rb" beforeDir="false" afterPath="$PROJECT_DIR$/test/jobs/update_rss_job_test.rb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -67,6 +73,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="credentialsType org.jetbrains.plugins.ruby.remote.RubyCreateRemoteInterpreterDialog$RubyCreateRemoteSdkForm" value="WSL" />
     <property name="last.edited.regexp" value="Sample Text" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/../rails-js" />
     <property name="node.js.detected.package.eslint" value="true" />
@@ -77,7 +84,7 @@
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="nodejs_package_manager_path" value="npm" />
     <property name="restartRequiresConfirmation" value="false" />
-    <property name="settings.editor.selected.configurable" value="preferences.keymap" />
+    <property name="settings.editor.selected.configurable" value="org.jetbrains.plugins.ruby.settings.RubyActiveModuleSdkConfigurable" />
   </component>
   <component name="RunAnythingCache">
     <option name="myCommands">
@@ -180,7 +187,11 @@
       <workItem from="1607719548481" duration="10598000" />
       <workItem from="1608575354837" duration="15791000" />
       <workItem from="1608664217256" duration="15010000" />
-      <workItem from="1608749353133" duration="314000" />
+      <workItem from="1608749353133" duration="5957000" />
+      <workItem from="1608755635096" duration="1457000" />
+      <workItem from="1608770208710" duration="1858000" />
+      <workItem from="1608776959727" duration="1965000" />
+      <workItem from="1608840799872" duration="2247000" />
     </task>
     <task id="LOCAL-00001" summary="Blogs controller working for Dan">
       <created>1608596796808</created>
@@ -196,7 +207,21 @@
       <option name="project" value="LOCAL" />
       <updated>1608596827105</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Working first time RSS generation">
+      <created>1608749761358</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1608749761358</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Working first time RSS generation">
+      <created>1608749787237</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1608749787237</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -218,18 +243,35 @@
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <MESSAGE value="Blogs controller working for Dan" />
     <MESSAGE value="Initial Rails" />
-    <option name="LAST_COMMIT_MESSAGE" value="Initial Rails" />
+    <MESSAGE value="Working first time RSS generation" />
+    <option name="LAST_COMMIT_MESSAGE" value="Working first time RSS generation" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="ruby-line">
-          <url>file://$PROJECT_DIR$/app/controllers/blogs_controller.rb</url>
-          <line>58</line>
+          <url>file://$PROJECT_DIR$/app/jobs/update_rss_job.rb</url>
+          <line>6</line>
           <properties myBlockOrdinal="-1">
             <option name="block-ordinal" value="-1" />
           </properties>
-          <option name="timeStamp" value="6" />
+          <option name="timeStamp" value="7" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="ruby-line">
+          <url>file://$PROJECT_DIR$/app/controllers/blogs_controller.rb</url>
+          <line>9</line>
+          <properties myBlockOrdinal="-1">
+            <option name="block-ordinal" value="-1" />
+          </properties>
+          <option name="timeStamp" value="8" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="ruby-line">
+          <url>file://$PROJECT_DIR$/app/services/blog_fetch_service.rb</url>
+          <line>72</line>
+          <properties myBlockOrdinal="-1">
+            <option name="block-ordinal" value="-1" />
+          </properties>
+          <option name="timeStamp" value="9" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

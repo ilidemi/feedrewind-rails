@@ -78,7 +78,7 @@ module UpdateRssService
     item << link
 
     description = Ox::Element.new('description')
-    description << "#{post_number}/#{total_posts}, originally published on #{post.date}"
+    description << "#{post_number}/#{total_posts} - originally published on #{post.date}"
     item << description
 
     item

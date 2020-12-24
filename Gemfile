@@ -58,3 +58,6 @@ gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 gem "nokogiri", "~> 1.8", ">= 1.8.4"
 gem 'nokogumbo', '~> 2.0', '>= 2.0.4'
 gem 'ox', '~> 2.0', '>= 2.14.0'
+gem 'delayed_job', '~> 4.1', '>= 4.1.9'
+gem 'delayed_job_active_record', '~> 4.1', '>= 4.1.5'
+gem 'daemons', '~> 1.2', '>= 1.2.3'

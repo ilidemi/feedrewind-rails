@@ -57,6 +57,7 @@ class BlogsController < ApplicationController
     end
 
     UpdateRssService.update_rss(@blog.id)
+    UpdateRssJob.schedule_for_tomorrow(@blog.id)
 
     redirect_to root_path
   end
