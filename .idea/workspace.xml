@@ -4,36 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6a69c5d1-5f49-4ab1-81c3-eb5d1d0a3bcf" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/app/jobs/update_rss_job.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/bin/delayed_job" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/db/migrate/20201223190124_add_index_to_blogs.rb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/db/migrate/20201223192043_create_delayed_jobs.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dbnavigator.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dbnavigator.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/rss-catchup-rails.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/rss-catchup-rails.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Gemfile" beforeDir="false" afterPath="$PROJECT_DIR$/Gemfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Gemfile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Gemfile.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/assets/stylesheets/articles.scss" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/controllers/articles_controller.rb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/controllers/blogs_controller.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/controllers/blogs_controller.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/controllers/rss_controller.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/controllers/rss_controller.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/helpers/articles_helper.rb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/models/article.rb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/services/update_rss_service.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/update_rss_service.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/views/articles/_form.html.erb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/views/articles/edit.html.erb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/views/articles/index.html.erb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/views/articles/new.html.erb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/views/articles/show.html.erb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/views/layouts/application.html.erb" beforeDir="false" afterPath="$PROJECT_DIR$/app/views/layouts/application.html.erb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/application.rb" beforeDir="false" afterPath="$PROJECT_DIR$/config/application.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/routes.rb" beforeDir="false" afterPath="$PROJECT_DIR$/config/routes.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/db/schema.rb" beforeDir="false" afterPath="$PROJECT_DIR$/db/schema.rb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/controllers/articles_controller_test.rb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/fixtures/articles.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/models/article_test.rb" beforeDir="false" afterPath="$PROJECT_DIR$/test/jobs/update_rss_job_test.rb" afterDir="false" />
-    </list>
+    <list default="true" id="6a69c5d1-5f49-4ab1-81c3-eb5d1d0a3bcf" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -191,7 +162,7 @@
       <workItem from="1608755635096" duration="1457000" />
       <workItem from="1608770208710" duration="1858000" />
       <workItem from="1608776959727" duration="1965000" />
-      <workItem from="1608840799872" duration="2247000" />
+      <workItem from="1608840799872" duration="2598000" />
     </task>
     <task id="LOCAL-00001" summary="Blogs controller working for Dan">
       <created>1608596796808</created>
@@ -221,7 +192,14 @@
       <option name="project" value="LOCAL" />
       <updated>1608749787237</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Delete articles, working RSS gen and job">
+      <created>1608843299345</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1608843299345</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -244,7 +222,8 @@
     <MESSAGE value="Blogs controller working for Dan" />
     <MESSAGE value="Initial Rails" />
     <MESSAGE value="Working first time RSS generation" />
-    <option name="LAST_COMMIT_MESSAGE" value="Working first time RSS generation" />
+    <MESSAGE value="Delete articles, working RSS gen and job" />
+    <option name="LAST_COMMIT_MESSAGE" value="Delete articles, working RSS gen and job" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
