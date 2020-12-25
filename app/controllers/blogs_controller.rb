@@ -61,12 +61,18 @@ class BlogsController < ApplicationController
     if blog_is_fetched
       UpdateRssService.update_rss(@blog.id)
       UpdateRssJob.schedule_for_tomorrow(@blog.id)
+      redirect_to root_path
     else
       FetchPagedPostsJob.perform_later(@blog.id, fetch_result[:paged_params].to_json)
+      redirect_to action: 'status', name: @blog.name
     end
+  end
 
-
-    redirect_to root_path
+  def status
+    @blog = Blog.find_by(name: params[:name])
+    if @blog.is_fetched
+      redirect_to root_path
+    end
   end
 
   def update

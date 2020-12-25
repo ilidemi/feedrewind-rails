@@ -1,0 +1,9 @@
+<a href="/">← Go back</a>
+<h1><%= @blog.name %></h1>
+<div>⏳ Loading posts: <%= @blog.posts.count %></div>
+
+<script>
+    window.setTimeout(function () {
+        window.location.reload();
+    }, 3000);
+</script>
