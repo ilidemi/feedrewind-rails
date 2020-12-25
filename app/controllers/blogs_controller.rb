@@ -1,4 +1,5 @@
-require_relative '../services/blog_fetch_service'
+require 'json'
+require_relative '../services/fetch_posts_service'
 require_relative '../services/update_rss_service'
 
 class BlogsController < ApplicationController
@@ -12,37 +13,40 @@ class BlogsController < ApplicationController
 
   def create
     create_params = params.permit(
-      :name, :url, :list_xpath, :link_xpath, :title_xpath, :date_xpath, :paging_needed, :next_page_xpath,
-      :page_order, :filtering_needed, :length_filter_xpath, :min_length, :posts_per_day, :schedule_mon, :schedule_tue,
-      :schedule_wed, :schedule_thu, :schedule_fri, :schedule_sat, :schedule_sun)
+      :blog_name, :blog_url, :list_xpath, :link_xpath, :title_xpath, :date_xpath, :paging_needed,
+      :next_page_xpath, :page_order, :filtering_needed, :length_filter_xpath, :min_length, :posts_per_day,
+      :schedule_mon, :schedule_tue, :schedule_wed, :schedule_thu, :schedule_fri, :schedule_sat, :schedule_sun)
 
     if create_params[:paging_needed] == '1'
-      paging_params = BlogFetchService::PagingParams.new(
+      paging_params = FetchPostsService::PagingParams.new(
         create_params[:next_page_xpath], create_params[:page_order])
     else
       paging_params = nil
     end
 
     if create_params[:filtering_needed] == '1'
-      filtering_params = BlogFetchService::FilteringParams.new(
+      filtering_params = FetchPostsService::FilteringParams.new(
         create_params[:length_filter_xpath], create_params[:min_length].to_i)
     else
       filtering_params = nil
     end
 
-    fetch_params = BlogFetchService::FetchParams.new(
-      create_params[:url], create_params[:list_xpath], create_params[:link_xpath], create_params[:title_xpath],
+    fetch_params = FetchPostsService::FetchParams.new(
+      create_params[:blog_url], create_params[:list_xpath], create_params[:link_xpath], create_params[:title_xpath],
       create_params[:date_xpath], paging_params, filtering_params)
-    fetched_posts = BlogFetchService.fetch(fetch_params)
+    fetch_result = FetchPostsService.fetch(fetch_params)
+    fetched_posts = fetch_result[:posts]
+    blog_is_fetched = fetch_result[:paged_params].nil?
 
     days_of_week = BlogsHelper.days_of_week_from_params(create_params)
     raise "Days of week can't be empty" if days_of_week.empty?
 
     Blog.transaction do
       @blog = Blog.new
-      @blog.name = create_params[:name]
-      @blog.url = create_params[:url]
+      @blog.name = create_params[:blog_name]
+      @blog.url = create_params[:blog_url]
       @blog.posts_per_day = create_params[:posts_per_day].to_i
+      @blog.is_fetched = blog_is_fetched
       fetched_posts.each_with_index do |fetched_post, post_index|
         @blog.posts.new(
           link: fetched_post.link, order: post_index, title: fetched_post.title, date: fetched_post.date,
@@ -54,8 +58,13 @@ class BlogsController < ApplicationController
       @blog.save!
     end
 
-    UpdateRssService.update_rss(@blog.id)
-    UpdateRssJob.schedule_for_tomorrow(@blog.id)
+    if blog_is_fetched
+      UpdateRssService.update_rss(@blog.id)
+      UpdateRssJob.schedule_for_tomorrow(@blog.id)
+    else
+      FetchPagedPostsJob.perform_later(@blog.id, fetch_result[:paged_params].to_json)
+    end
+
 
     redirect_to root_path
   end

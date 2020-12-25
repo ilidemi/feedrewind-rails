@@ -30,11 +30,13 @@ pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
 # Workers do not work on JRuby or Windows (both of which do not support
 # processes).
 #
-workers ENV.fetch("WEB_CONCURRENCY") { 1 }
+if ENV.fetch("RAILS_ENV", "development") != "development"
+  workers ENV.fetch("WEB_CONCURRENCY") { 1 }
 
-on_worker_boot do
-  # Valid on Rails 4.1+ using the `config/database.yml` method of setting `pool` size
-  ActiveRecord::Base.establish_connection
+  on_worker_boot do
+    # Valid on Rails 4.1+ using the `config/database.yml` method of setting `pool` size
+    ActiveRecord::Base.establish_connection
+  end
 end
 
 # Use the `preload_app!` method when specifying a `workers` number.

@@ -2,12 +2,12 @@
 <h1>New Blog</h1>
 <%= form_for :new_blog, url: "/blogs" do |form| %>
   <div>
-    <%= label_tag :name, "Name" %>
-    <%= text_field_tag :name %>
+    <%= label_tag :blog_name, "Name" %>
+    <%= text_field_tag :blog_name %>
     <br>
 
-    <%= label_tag :url, "Archive URL" %>
-    <%= url_field_tag :url %>
+    <%= label_tag :blog_url, "Archive URL" %>
+    <%= url_field_tag :blog_url %>
     <br>
 
     <h3>Parsing</h3>
@@ -38,7 +38,7 @@
       <br>
 
       <%= label_tag :page_order, "Order of posts on a page" %>
-      <%= select_tag :page_order, [["Newest First", "newest_first"], ["Oldest First", "oldest_first"]] %>
+      <%= select_tag :page_order, options_for_select([["Newest First", "newest_first"], ["Oldest First", "oldest_first"]], "oldest_first") %>
       <br>
     </div>
 
@@ -52,7 +52,7 @@
       <br>
 
       <%= label_tag :min_length, "Min post length" %>
-      <%= number_field_tag :min_length %>
+      <%= number_field_tag :min_length, '1000' %>
       <br>
     </div>
 
