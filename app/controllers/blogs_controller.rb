@@ -49,7 +49,7 @@ class BlogsController < ApplicationController
       @blog.is_fetched = blog_is_fetched
       fetched_posts.each_with_index do |fetched_post, post_index|
         @blog.posts.new(
-          link: fetched_post.link, order: post_index, title: fetched_post.title, date: fetched_post.date,
+          link: fetched_post.link, order: -post_index, title: fetched_post.title, date: fetched_post.date,
           is_sent: false)
       end
       days_of_week.each do |day_of_week|

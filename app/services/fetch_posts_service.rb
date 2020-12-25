@@ -43,8 +43,6 @@ module FetchPostsService
 
     raise "Couldn't fetch any posts" if posts.empty?
 
-    posts.reverse!
-
     paged_params = params.paging ?
       FetchPagedParams.new(
         params.list_xpath, link_rel_xpath, title_rel_xpath, date_rel_xpath, params.paging, filtering_rel_params) :
@@ -69,11 +67,11 @@ module FetchPostsService
           list_html, page_uri, paged_params.list_xpath, paged_params.link_rel_xpath, paged_params.title_rel_xpath,
           paged_params.date_rel_xpath, paged_params.filtering)
 
-        if paged_params.paging.page_order == 'newest_first'
+        if paged_params.paging.page_order == 'oldest_first'
           page_posts.reverse!
         end
 
-        save_posts.call(page_posts)
+        save_posts.call(page_posts) unless page_uri == list_uri # The first page has already been fetched
 
         next_page_element = list_html.at_xpath(paged_params.paging.next_page_xpath)
         next_page_link = next_page_element['href']
