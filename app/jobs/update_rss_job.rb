@@ -11,7 +11,8 @@ class UpdateRssJob < ApplicationJob
     if Schedule.find_by(blog_id: blog_id, day_of_week: day_of_week)
       UpdateRssService.update_rss(blog_id)
     end
-    if Blog.find_by(id: blog_id)
+    blog = Blog.find_by(id: blog_id)
+    if blog and blog.posts.where(is_sent: false).count > 0
       UpdateRssJob.schedule_for_tomorrow(blog_id)
     end
   end

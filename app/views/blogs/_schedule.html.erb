@@ -1,0 +1,31 @@
+<div>
+  <span>
+    Add
+    <%= select_tag :posts_per_day, options_for_select([1, 2, 3, 4, 5], schedule[:posts_per_day]) %>
+    <span id="posts_per_day_label">post</span> every
+  </span>
+  <%= check_box_tag :schedule_mon, '1', schedule[:mon] %>
+  <%= label_tag :schedule_mon, "M" %>
+  <%= check_box_tag :schedule_tue, '1', schedule[:tue] %>
+  <%= label_tag :schedule_tue, "T" %>
+  <%= check_box_tag :schedule_wed, '1', schedule[:wed] %>
+  <%= label_tag :schedule_wed, "W" %>
+  <%= check_box_tag :schedule_thu, '1', schedule[:thu] %>
+  <%= label_tag :schedule_thu, "T" %>
+  <%= check_box_tag :schedule_fri, '1', schedule[:fri] %>
+  <%= label_tag :schedule_fri, "F" %>
+  <%= check_box_tag :schedule_sat, '1', schedule[:sat] %>
+  <%= label_tag :schedule_sat, "S" %>
+  <%= check_box_tag :schedule_sun, '1', schedule[:sun] %>
+  <%= label_tag :schedule_sun, "S" %>
+</div>
+
+<script>
+    let postsPerDayDropdown = document.getElementById('posts_per_day');
+    let postsPerDayLabel = document.getElementById('posts_per_day_label');
+    function updatePostsPerDayLabel() {
+        postsPerDayLabel.innerText = postsPerDayDropdown.value === '1' ? 'post' : 'posts';
+    }
+    postsPerDayDropdown.onchange = updatePostsPerDayLabel;
+    updatePostsPerDayLabel();
+</script>

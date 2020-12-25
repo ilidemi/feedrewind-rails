@@ -9,12 +9,15 @@
   <% sent_count = blog.posts.group(:is_sent).count[true] || 0 %>
   <div style="display:flex; justify-content:space-between">
     <span>
-      <%= blog.name %> (<%= sent_count %>/<%= total_count %> sent)
+      <%= link_to blog.name, blog %> (<a href="<%= BlogsHelper.feed_url(request, blog) %>">feed</a>)
     </span>
 
-    <%= link_to "Delete", blog_path(blog),
-                method: :delete,
-                data: { confirm: "Delete #{blog.name}?" } %>
+    <span>
+      <span style="margin-right: 1em"><%= sent_count %>/<%= total_count %> sent</span>
+      <%= link_to "Delete", blog_path(blog),
+                  method: :delete,
+                  data: { confirm: "Delete #{blog.name}?" } %>
+    </span>
   </div>
 <% end %>
 

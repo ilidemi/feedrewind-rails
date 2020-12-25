@@ -1,0 +1,22 @@
+<a href="/">← Go back</a>
+<h1><%= @blog.name %></h1>
+<div>URL: <a href="<%= @blog.url %>"><%= @blog.url %></a></div>
+<div>Feed: <a href="<%= BlogsHelper.feed_url(request, @blog) %>"><%= BlogsHelper.feed_url(request, @blog) %></a></div>
+<% total_count = @blog.posts.count %>
+<% sent_count = @blog.posts.group(:is_sent).count[true] || 0 %>
+<div>Sent: <%= sent_count %>/<%= total_count %></div>
+<br>
+<%= form_tag( { :controller => :blogs, :action => :update, :name => @blog.name }, { :method => :put } ) do |form| %>
+  <%= render partial: "schedule", locals: { form: form,
+                                            schedule: {
+                                              :posts_per_day => @blog.posts_per_day,
+                                              :mon => @blog.schedules.where(day_of_week: "mon").count > 0,
+                                              :tue => @blog.schedules.where(day_of_week: "tue").count > 0,
+                                              :wed => @blog.schedules.where(day_of_week: "wed").count > 0,
+                                              :thu => @blog.schedules.where(day_of_week: "thu").count > 0,
+                                              :fri => @blog.schedules.where(day_of_week: "fri").count > 0,
+                                              :sat => @blog.schedules.where(day_of_week: "sat").count > 0,
+                                              :sun => @blog.schedules.where(day_of_week: "sun").count > 0,
+                                            } } %>
+  <%= submit_tag "Save" %>
+<% end %>

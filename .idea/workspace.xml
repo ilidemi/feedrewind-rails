@@ -5,8 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6a69c5d1-5f49-4ab1-81c3-eb5d1d0a3bcf" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/app/views/blogs/_schedule.html.erb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/views/blogs/show.html.erb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/puma.rb" beforeDir="false" afterPath="$PROJECT_DIR$/config/puma.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/controllers/blogs_controller.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/controllers/blogs_controller.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/helpers/blogs_helper.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/helpers/blogs_helper.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/jobs/update_rss_job.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/jobs/update_rss_job.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/models/blog.rb" beforeDir="false" afterPath="$PROJECT_DIR$/app/models/blog.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/views/blogs/index.html.erb" beforeDir="false" afterPath="$PROJECT_DIR$/app/views/blogs/index.html.erb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/views/blogs/new.html.erb" beforeDir="false" afterPath="$PROJECT_DIR$/app/views/blogs/new.html.erb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/environments/development.rb" beforeDir="false" afterPath="$PROJECT_DIR$/config/environments/development.rb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/routes.rb" beforeDir="false" afterPath="$PROJECT_DIR$/config/routes.rb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,7 +67,7 @@
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="nodejs_package_manager_path" value="npm" />
     <property name="restartRequiresConfirmation" value="false" />
-    <property name="settings.editor.selected.configurable" value="org.jetbrains.plugins.ruby.settings.RubyActiveModuleSdkConfigurable" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RunAnythingCache">
     <option name="myCommands">
@@ -165,7 +174,7 @@
       <workItem from="1608755635096" duration="1457000" />
       <workItem from="1608770208710" duration="1858000" />
       <workItem from="1608776959727" duration="1965000" />
-      <workItem from="1608840799872" duration="3744000" />
+      <workItem from="1608840799872" duration="13251000" />
     </task>
     <task id="LOCAL-00001" summary="Blogs controller working for Dan">
       <created>1608596796808</created>
@@ -209,7 +218,14 @@
       <option name="project" value="LOCAL" />
       <updated>1608843596175</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Heroku config">
+      <created>1608844734645</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1608844734645</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -234,7 +250,8 @@
     <MESSAGE value="Working first time RSS generation" />
     <MESSAGE value="Delete articles, working RSS gen and job" />
     <MESSAGE value="Add heroku, remove debugger" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add heroku, remove debugger" />
+    <MESSAGE value="Heroku config" />
+    <option name="LAST_COMMIT_MESSAGE" value="Heroku config" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -246,14 +263,6 @@
             <option name="block-ordinal" value="-1" />
           </properties>
           <option name="timeStamp" value="7" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="ruby-line">
-          <url>file://$PROJECT_DIR$/app/controllers/blogs_controller.rb</url>
-          <line>9</line>
-          <properties myBlockOrdinal="-1">
-            <option name="block-ordinal" value="-1" />
-          </properties>
-          <option name="timeStamp" value="8" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="ruby-line">
           <url>file://$PROJECT_DIR$/app/services/blog_fetch_service.rb</url>
