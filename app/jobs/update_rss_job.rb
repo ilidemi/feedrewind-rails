@@ -18,7 +18,10 @@ class UpdateRssJob < ApplicationJob
   end
 
   def self.schedule_for_tomorrow(blog_id)
-    next_run = Date.tomorrow.in_time_zone(PACIFIC_TIME_ZONE)
+    next_run = Date.now
+                   .in_time_zone(PACIFIC_TIME_ZONE)
+                   .advance(days: 1)
+                   .midnight
     UpdateRssJob
       .set(wait_until: next_run)
       .perform_later(blog_id)
