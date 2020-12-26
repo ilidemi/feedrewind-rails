@@ -5,26 +5,26 @@ module UpdateRssService
 
   def UpdateRssService.update_rss(blog_id)
     blog = Blog.find(blog_id)
-    posts_to_send = blog.posts
-                        .where(is_sent: false)
-                        .order(order: :asc)
-                        .limit(blog.posts_per_day)
-    posts_last_sent = blog.posts
-                          .where(is_sent: true)
-                          .order(order: :desc)
-                          .limit(POSTS_IN_RSS - posts_to_send.length)
-                          .reverse_order
-    total_sent_posts = blog.posts
-                           .where(is_sent: true)
-                           .count
+    posts_to_publish = blog.posts
+                           .where(is_published: false)
+                           .order(order: :asc)
+                           .limit(blog.posts_per_day)
+    posts_last_published = blog.posts
+                               .where(is_published: true)
+                               .order(order: :desc)
+                               .limit(POSTS_IN_RSS - posts_to_publish.length)
+                               .reverse_order
+    total_published_posts = blog.posts
+                                .where(is_published: true)
+                                .count
     total_posts = blog.posts.count
 
-    rss_document = generate_rss(blog, posts_to_send, posts_last_sent, total_sent_posts, total_posts)
+    rss_document = generate_rss(blog, posts_to_publish, posts_last_published, total_published_posts, total_posts)
     rss_text = Ox.dump(rss_document)
 
     CurrentRss.transaction do
-      posts_to_send.each do |post|
-        post.is_sent = true
+      posts_to_publish.each do |post|
+        post.is_published = true
         post.save!
       end
 
@@ -34,7 +34,7 @@ module UpdateRssService
     end
   end
 
-  def self.generate_rss(blog, posts_to_send, posts_last_sent, total_sent_posts, total_posts)
+  def self.generate_rss(blog, posts_to_publish, posts_last_published, total_published_posts, total_posts)
     document = Ox::Document.new
 
     instruct = Ox::Instruct.new(:xml)
@@ -51,13 +51,13 @@ module UpdateRssService
     channel_title << "#{blog.name} - RSS Catchup"
     channel << channel_title
 
-    posts_to_send.to_enum.with_index.reverse_each do |post, post_index|
-      post_number = total_sent_posts + post_index + 1
+    posts_to_publish.to_enum.with_index.reverse_each do |post, post_index|
+      post_number = total_published_posts + post_index + 1
       channel << generate_post_rss(post, post_number, total_posts)
     end
 
-    posts_last_sent.to_enum.with_index.reverse_each do |post, post_index|
-      post_number = total_sent_posts - posts_last_sent.length + post_index + 1
+    posts_last_published.to_enum.with_index.reverse_each do |post, post_index|
+      post_number = total_published_posts - posts_last_published.length + post_index + 1
       channel << generate_post_rss(post, post_number, total_posts)
     end
 

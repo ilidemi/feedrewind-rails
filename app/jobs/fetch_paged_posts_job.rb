@@ -12,7 +12,7 @@ class FetchPagedPostsJob < ApplicationJob
 
       FetchPostsService.fetch_paged(blog.url, paged_params) do |page_posts|
         page_posts.each do |post|
-          blog.posts.new(link: post.link, order: next_order, title: post.title, date: post.date, is_sent: false)
+          blog.posts.new(link: post.link, order: next_order, title: post.title, date: post.date, is_published: false)
           next_order -= 1
         end
         blog.save!

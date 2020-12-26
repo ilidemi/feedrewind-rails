@@ -47,10 +47,11 @@ class BlogsController < ApplicationController
       @blog.url = create_params[:blog_url]
       @blog.posts_per_day = create_params[:posts_per_day].to_i
       @blog.is_fetched = blog_is_fetched
+      @blog.is_paused = false
       fetched_posts.each_with_index do |fetched_post, post_index|
         @blog.posts.new(
           link: fetched_post.link, order: -post_index, title: fetched_post.title, date: fetched_post.date,
-          is_sent: false)
+          is_published: false)
       end
       days_of_week.each do |day_of_week|
         @blog.schedules.new(day_of_week: day_of_week)
@@ -73,6 +74,20 @@ class BlogsController < ApplicationController
     if @blog.is_fetched
       redirect_to root_path
     end
+  end
+
+  def pause
+    @blog = Blog.find_by(name: params[:name])
+    @blog.is_paused = true
+    @blog.save!
+    redirect_to action: 'show', name: @blog.name
+  end
+
+  def unpause
+    @blog = Blog.find_by(name: params[:name])
+    @blog.is_paused = false
+    @blog.save!
+    redirect_to action: 'show', name: @blog.name
   end
 
   def update

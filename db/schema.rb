@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_25_012610) do
+ActiveRecord::Schema.define(version: 2020_12_25_224727) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -29,6 +29,7 @@ ActiveRecord::Schema.define(version: 2020_12_25_012610) do
     t.integer "posts_per_day"
     t.string "url"
     t.boolean "is_fetched"
+    t.boolean "is_paused"
     t.index ["name"], name: "index_blogs_on_name", unique: true
   end
 
@@ -60,7 +61,7 @@ ActiveRecord::Schema.define(version: 2020_12_25_012610) do
     t.string "link"
     t.string "title"
     t.string "date"
-    t.boolean "is_sent"
+    t.boolean "is_published"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.integer "order"

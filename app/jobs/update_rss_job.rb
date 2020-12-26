@@ -12,14 +12,13 @@ class UpdateRssJob < ApplicationJob
       UpdateRssService.update_rss(blog_id)
     end
     blog = Blog.find_by(id: blog_id)
-    if blog and blog.posts.where(is_sent: false).count > 0
+    if blog and blog.posts.where(is_published: false).count > 0
       UpdateRssJob.schedule_for_tomorrow(blog_id)
     end
   end
 
   def self.schedule_for_tomorrow(blog_id)
     next_run = Date.tomorrow.in_time_zone(PACIFIC_TIME_ZONE)
-    next_run = DateTime.now.advance(seconds: 1)
     UpdateRssJob
       .set(wait_until: next_run)
       .perform_later(blog_id)

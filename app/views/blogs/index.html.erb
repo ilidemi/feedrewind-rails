@@ -6,10 +6,9 @@
 
 <% @blogs.each do |blog| %>
   <% total_count = blog.posts.count %>
-  <% sent_count = blog.posts.group(:is_sent).count[true] || 0 %>
+  <% published_count = blog.posts.group(:is_published).count[true] || 0 %>
   <div style="display:flex; justify-content:space-between">
     <span>
-
       <% if blog.is_fetched %>
         <%= link_to blog.name, blog %> (<a href="<%= BlogsHelper.feed_url(request, blog) %>">feed</a>)
       <% else %>
@@ -20,7 +19,8 @@
     <span>
       <span style="margin-right: 1em">
         <% if blog.is_fetched %>
-          <%= sent_count %>/<%= total_count %> published
+          <% verb = blog.is_paused ? 'published, paused' : 'published' %>
+          <%= published_count %>/<%= total_count %> <%= verb %>
         <% else %>
           <%= total_count %> loaded
         <% end %>
