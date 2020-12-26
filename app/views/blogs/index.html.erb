@@ -1,3 +1,8 @@
+<div>
+  Logged in as <%= current_user.email %>.
+  <%= link_to "Log Out", logout_path %>
+</div>
+
 <h1>Blogs</h1>
 
 <% if @blogs.length.zero? %>

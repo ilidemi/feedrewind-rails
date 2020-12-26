@@ -1,6 +1,6 @@
 module BlogsHelper
   def BlogsHelper.feed_url(request, blog)
-    "#{request.protocol}#{request.host_with_port}/#{blog.name}/feed"
+    "#{request.protocol}#{request.host_with_port}/#{blog.user.id}/#{blog.name}/feed"
   end
 
   def BlogsHelper.status_url(request, blog)

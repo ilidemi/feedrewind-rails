@@ -3,12 +3,14 @@ require_relative '../services/fetch_posts_service'
 require_relative '../services/update_rss_service'
 
 class BlogsController < ApplicationController
+  before_action :authorize
+
   def index
-    @blogs = Blog.all
+    @blogs = @current_user.blogs
   end
 
   def show
-    @blog = Blog.find_by(name: params[:name])
+    @blog = @current_user.blogs.find_by(name: params[:name])
   end
 
   def create
@@ -42,7 +44,7 @@ class BlogsController < ApplicationController
     raise "Days of week can't be empty" if days_of_week.empty?
 
     Blog.transaction do
-      @blog = Blog.new
+      @blog = @current_user.blogs.new
       @blog.name = create_params[:blog_name]
       @blog.url = create_params[:blog_url]
       @blog.posts_per_day = create_params[:posts_per_day].to_i
@@ -70,21 +72,21 @@ class BlogsController < ApplicationController
   end
 
   def status
-    @blog = Blog.find_by(name: params[:name])
+    @blog = @current_user.blogs.find_by(name: params[:name])
     if @blog.is_fetched
       redirect_to root_path
     end
   end
 
   def pause
-    @blog = Blog.find_by(name: params[:name])
+    @blog = @current_user.blogs.find_by(name: params[:name])
     @blog.is_paused = true
     @blog.save!
     redirect_to action: 'show', name: @blog.name
   end
 
   def unpause
-    @blog = Blog.find_by(name: params[:name])
+    @blog = @current_user.blogs.find_by(name: params[:name])
     @blog.is_paused = false
     @blog.save!
     redirect_to action: 'show', name: @blog.name
@@ -95,7 +97,7 @@ class BlogsController < ApplicationController
       :name, :posts_per_day, :schedule_mon, :schedule_tue, :schedule_wed, :schedule_thu, :schedule_fri,
       :schedule_sat, :schedule_sun)
 
-    @blog = Blog.find_by!(name: update_params[:name])
+    @blog = @current_user.blogs.find_by!(name: update_params[:name])
     new_days_of_week = BlogsHelper.days_of_week_from_params(update_params)
                                   .to_set
     existing_days_of_week = @blog.schedules
@@ -123,7 +125,7 @@ class BlogsController < ApplicationController
   end
 
   def destroy
-    @blog = Blog.find_by(name: params[:name])
+    @blog = @current_user.blogs.find_by(name: params[:name])
     @blog.destroy!
 
     redirect_to root_path
