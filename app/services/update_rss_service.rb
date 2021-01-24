@@ -13,7 +13,7 @@ module UpdateRssService
                                .where(is_published: true)
                                .order(order: :desc)
                                .limit(POSTS_IN_RSS - posts_to_publish.length)
-                               .reverse_order
+                               .reverse
     total_published_posts = blog.posts
                                 .where(is_published: true)
                                 .count
