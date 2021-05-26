@@ -1,0 +1,59 @@
+Good RSS
+https://www.figma.com/blog/
+https://apenwarr.ca/log/
+https://staffeng.com/stories/
+https://programmingisterrible.com/
+https://www.datadoghq.com/blog/engineering/
+https://increment.com/
+https://overreacted.io/
+https://blog.gardeviance.org/
+https://michaelnielsen.org/blog/ -- feedburner
+https://michaelnielsen.org/ddi/
+https://martinfowler.com/
+https://www.benkuhn.net/ -- atom that looks like html but is recognized by feedly?
+https://www.kalzumeus.com/archive/ -- RSS link is relative to current page but only works from the main page
+https://eng.uber.com/
+https://www.spencergreenberg.com/all-essays/
+https://raphlinus.github.io/
+https://drmaciver.substack.com/people/8450815-david-r-maciver
+https://notebook.drmaciver.com/ -- RSS is reversed
+https://www.drmaciver.com/blog/
+https://acko.net/
+https://blog.khinsen.net/index.html
+https://ericsink.com/index.html -- RSS has weird entries
+http://www.pathsensitive.com/
+http://yosefk.com/blog/
+https://www.destroyallsoftware.com/blog
+https://buttondown.email/nelhage/archive
+https://blog.nelhage.com/post/
+https://www.elidedbranches.com/
+https://mcfunley.com/writing
+https://tratt.net/laurie/blog/
+https://thume.ca/archive.html
+https://brooker.co.za/blog/
+https://dropbox.tech/ -- RSS is not linked but is recognized by Feedly: https://dropbox.tech/feed
+
+Just a list
+https://www.kalzumeus.com/greatest-hits/
+https://www.edge.org/memberbio/eric_r_weinstein
+https://www.discoverdev.io/archive
+https://sites.google.com/site/steveyegge2/blog-rants
+https://codewithoutrules.com/skills/
+https://www.ways-of-seeing.com/
+https://sriramk.com/memos
+https://www.readthesequences.com/Book-I-Map-And-Territory
+https://www.benkuhn.net/progessays/
+https://aws.amazon.com/builders-library/?cards-body.sort-by=item.additionalFields.customSort&cards-body.sort-order=asc&awsf.filter-content-level=level%23300%7Clevel%23400&awsf.filter-content-category=*all&awsf.filter-content-type=*all
+https://www.core-econ.org/the-economy/book/text/0-3-contents.html
+https://blog.google/products/maps/
+https://scattered-thoughts.net/
+https://buttondown.email/hillelwayne/archive/bill-kentstravaganza/
+http://teachtogether.tech/en/index.html
+https://ericsink.com/tocs/Software_Development.html
+http://www.garlikov.com/writings.htm
+https://github.com/lorin/resilience-engineering
+
+Blogrolls
+http://danluu.com/programming-blogs/
+https://jvns.ca/blogroll/
+https://www.benkuhn.net/blogroll/
