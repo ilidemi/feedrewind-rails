@@ -106,6 +106,11 @@ def crawl_loop(db, start_link_id, host, initial_seen_links, start_links, fetched
       content_type = 'redirect'
       redirection_url = response.header["location"]
       redirection_link = canonicalize_url(redirection_url, logger, uri)
+
+      if link[:uri].to_s == redirection_link[:uri].to_s
+        raise "Redirect to the same place, something's wrong"
+      end
+
       if redirects.key?(link[:canonical_url])
         db.exec_params(
           'delete from redirects where from_canonical_url = $1 and start_link_id = $2',
