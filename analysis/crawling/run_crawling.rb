@@ -1,9 +1,6 @@
-require 'pg'
 require_relative 'crawling'
-
-def db_connect
-  PG.connect(host: "172.18.67.31", dbname: 'rss_catchup_analysis', user: "postgres")
-end
+require_relative 'db'
+require_relative 'logger'
 
 db = db_connect
 start_link_ids = db.exec('select id from start_links').map { |row| row["id"] }
@@ -21,7 +18,8 @@ thread_count.times do
       begin
         start_link_id = id_queue.deq(non_block=true)
         File.open("log/log#{start_link_id}.txt", 'a') do |log_file|
-          start_crawl(thread_db, start_link_id, log_file)
+          logger = MyLogger.new(log_file)
+          start_crawl(thread_db, start_link_id, logger)
         end
       rescue ThreadError
         # End of queue
