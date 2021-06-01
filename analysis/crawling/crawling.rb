@@ -3,13 +3,16 @@ require 'net/http'
 require 'nokogumbo'
 require 'rss'
 require 'set'
+require_relative 'canonical_url'
 require_relative 'crawling_storage'
+require_relative 'http_client'
 
-CRAWLING_RESULT_COLUMN_NAMES = ['start url', 'feed requests', 'feed time', 'feed url', 'feed links extracted', 'feed root url', 'feed channel prefixes items', 'crawl succeeded', 'total requests', 'total pages', 'total time']
+CRAWLING_RESULT_COLUMN_NAMES = ['start url', 'http client init time', 'feed requests', 'feed time', 'feed url', 'feed links extracted', 'feed root url', 'feed channel prefixes items', 'crawl succeeded', 'total requests', 'total pages', 'total time']
 
 class CrawlingResult
   def initialize(start_url)
     @start_url = start_url
+    @http_client_init_time = nil
     @feed_requests_made = nil
     @feed_time = nil
     @feed_url = nil
@@ -23,11 +26,12 @@ class CrawlingResult
   end
 
   def column_values
-    [@start_url, @feed_requests_made, @feed_time, @feed_url, @feed_links_extracted, @feed_root_url, @feed_does_channel_prefix_items, @crawl_succeeded, @total_requests, @total_pages, @total_time]
+    [@start_url, @http_client_init_time, @feed_requests_made, @feed_time, @feed_url, @feed_links_extracted, @feed_root_url, @feed_does_channel_prefix_items, @crawl_succeeded, @total_requests, @total_pages, @total_time]
   end
 
   def column_statuses
     [
+      :neutral,
       :neutral,
       :neutral,
       :neutral,
@@ -43,8 +47,9 @@ class CrawlingResult
   end
 
   attr_reader :column_names
-  attr_writer :feed_requests_made, :feed_time, :feed_url, :feed_links_extracted, :feed_root_url,
-              :feed_does_channel_prefix_items, :crawl_succeeded, :total_requests, :total_pages, :total_time
+  attr_writer :http_client_init_time, :feed_requests_made, :feed_time, :feed_url, :feed_links_extracted,
+              :feed_root_url, :feed_does_channel_prefix_items, :crawl_succeeded, :total_requests,
+              :total_pages, :total_time
 end
 
 class CrawlingError < StandardError
@@ -63,11 +68,15 @@ def discover_feed(db, start_link_id, logger)
   start_time = monotonic_now
 
   begin
+    http_client = MockHttpClient.new(db, start_link_id)
+    result.http_client_init_time = (monotonic_now - start_time).to_i
+
+    feed_start_time = monotonic_now
     start_link = canonicalize_url(start_link_url, logger)
     in_memory_storage = CrawlInMemoryStorage.new
     page_links = crawl_loop(
-      start_link_id, start_link[:host], '', [start_link], ctx, :depth_1,
-      in_memory_storage, logger
+      start_link_id, start_link[:host], '', [start_link], ctx, http_client,
+      :depth_1, in_memory_storage, logger
     )
 
     raise "No outgoing links" if page_links.empty?
@@ -75,12 +84,12 @@ def discover_feed(db, start_link_id, logger)
     prioritized_page_links = page_links.sort_by { |link| [calc_link_priority(link), link[:uri].path.length] }
 
     next_links = crawl_loop(
-      start_link_id, start_link[:host], '', prioritized_page_links, ctx,
+      start_link_id, start_link[:host], '', prioritized_page_links, ctx, http_client,
       :depth_1_main_feed_fetched, in_memory_storage, logger
     )
 
     result.feed_requests_made = ctx.requests_made
-    result.feed_time = (monotonic_now - start_time).to_i
+    result.feed_time = (monotonic_now - feed_start_time).to_i
 
     raise "Feed not found" if in_memory_storage.feeds.empty?
 
@@ -111,8 +120,8 @@ def discover_feed(db, start_link_id, logger)
     filtered_next_links = next_links.filter { |link| link[:uri].path.start_with?(path_prefix) }
 
     crawl_loop(
-      start_link_id, start_link[:host], path_prefix, filtered_next_links, ctx, :no_early_stop,
-      db_storage, logger
+      start_link_id, start_link[:host], path_prefix, filtered_next_links, ctx, http_client,
+      :no_early_stop, db_storage, logger
     )
 
     result.crawl_succeeded = true
@@ -290,31 +299,36 @@ def start_crawl(db, start_link_id, logger)
   end
 
   ctx = CrawlContext.new
+  http_client = HttpClient.new
   storage = CrawlDbStorage.new(db)
 
   ctx.seen_urls.merge(initial_seen_urls)
   ctx.fetched_urls.merge(fetched_urls)
   ctx.redirects.merge(redirects)
-  crawl_loop(start_link_id, start_link[:host], '', start_links, ctx, :no_early_stop, storage, logger)
+  crawl_loop(
+    start_link_id, start_link[:host], '', start_links, ctx, http_client,
+    :no_early_stop, storage, logger
+  )
 end
 
 class CrawlContext
   def initialize
     @seen_urls = Set.new
     @fetched_urls = Set.new
-    @prev_timestamp = nil
     @redirects = {}
     @requests_made = 0
     @main_feed_fetched = false
   end
 
   attr_reader :seen_urls, :fetched_urls, :redirects
-  attr_accessor :prev_timestamp, :requests_made, :main_feed_fetched
+  attr_accessor :requests_made, :main_feed_fetched
 end
 
 PERMANENT_ERROR_CODES = %w[400 401 402 403 404 405 406 407 410 411 412 413 414 415 416 417 418 451]
 
-def crawl_loop(start_link_id, host, path_prefix, start_links, ctx, early_stop_cond, storage, logger)
+def crawl_loop(
+  start_link_id, host, path_prefix, start_links, ctx, http_client, early_stop_cond, storage, logger
+)
   initial_seen_urls_count = ctx.seen_urls.length
 
   current_queue = queue1 = []
@@ -342,22 +356,18 @@ def crawl_loop(start_link_id, host, path_prefix, start_links, ctx, early_stop_co
     link = current_queue.shift
     logger.log("Dequeued #{link}")
     uri = link[:uri]
-    request = Net::HTTP::Get.new(uri)
-    ctx.prev_timestamp = throttle(ctx.prev_timestamp)
     request_start = monotonic_now
-    response = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
-      http.request(request)
-    end
+    resp = http_client.request(uri, logger)
     request_ms = ((monotonic_now - request_start) * 1000).to_i
     ctx.requests_made += 1
 
-    if response.code == "200"
-      content_type = response.header["content-type"].split(';')[0]
+    if resp.code == "200"
+      content_type = resp.content_type.split(';')[0]
       is_main_feed = false
       if content_type == "text/html"
-        content = response.body
-      elsif !ctx.main_feed_fetched && RSS::Parser.new(response.body).parse
-        content = response.body
+        content = resp.body
+      elsif !ctx.main_feed_fetched && RSS::Parser.new(resp.body).parse
+        content = resp.body
         is_main_feed = true
       else
         content = nil
@@ -377,9 +387,9 @@ def crawl_loop(start_link_id, host, path_prefix, start_links, ctx, early_stop_co
         ctx.seen_urls << new_link[:canonical_url]
         logger.log("Enqueued #{new_link}")
       end
-    elsif response.code.start_with?('3')
+    elsif resp.code.start_with?('3')
       content_type = 'redirect'
-      redirection_url = response.header["location"]
+      redirection_url = resp.location
       redirection_link = canonicalize_url(redirection_url, logger, uri)
 
       if link[:uri].to_s == redirection_link[:uri].to_s
@@ -403,12 +413,12 @@ def crawl_loop(start_link_id, host, path_prefix, start_links, ctx, early_stop_co
         ctx.seen_urls << redirection_link[:canonical_url]
         logger.log("Enqueued #{redirection_link}")
       end
-    elsif PERMANENT_ERROR_CODES.include?(response.code)
+    elsif PERMANENT_ERROR_CODES.include?(resp.code)
       content_type = 'permanent 4xx'
       ctx.fetched_urls << link[:canonical_url]
-      storage.save_permanent_error(link[:canonical_url], link[:uri], start_link_id, response.code)
+      storage.save_permanent_error(link[:canonical_url], link[:uri], start_link_id, resp.code)
     else
-      response.value # TODO more cases here
+      raise "HTTP #{resp.code}" # TODO more cases here
     end
 
     if current_queue.empty?
@@ -418,26 +428,10 @@ def crawl_loop(start_link_id, host, path_prefix, start_links, ctx, early_stop_co
       current_depth += 1
     end
 
-    logger.log("total:#{ctx.seen_urls.length} fetched:#{ctx.fetched_urls.length} new:#{ctx.seen_urls.length - initial_seen_urls_count} queued:#{queue1.length + queue2.length} #{response.code} #{content_type} #{request_ms}ms #{uri}")
+    logger.log("total:#{ctx.seen_urls.length} fetched:#{ctx.fetched_urls.length} new:#{ctx.seen_urls.length - initial_seen_urls_count} queued:#{queue1.length + queue2.length} #{resp.code} #{content_type} #{request_ms}ms #{uri}")
   end
 
   queue1 + queue2
-end
-
-def throttle(prev_timestamp)
-  new_timestamp = monotonic_now
-  unless prev_timestamp.nil?
-    time_delta = new_timestamp - prev_timestamp
-    if time_delta < 1.0
-      sleep(1.0 - time_delta)
-      new_timestamp = monotonic_now
-    end
-  end
-  new_timestamp
-end
-
-def monotonic_now
-  Process.clock_gettime(Process::CLOCK_MONOTONIC)
 end
 
 def extract_links(page, host, path_prefix, redirects, logger)
@@ -486,12 +480,7 @@ def canonicalize_url(url, logger, fetch_uri = nil)
     return nil
   end
 
-  port_str = (
-    uri.port.nil? || (uri.port == 80 && uri.scheme == 'http') || (uri.port == 443 && uri.scheme == 'https')
-  ) ? '' : ":#{uri.port}"
-  path_str = (uri.path == '/' && uri.query.nil?) ? '' : uri.path
-  query_str = uri.query.nil? ? '' : "?#{uri.query}"
-  canonical_url = "#{uri.host}#{port_str}#{path_str}#{query_str}" # drop scheme and fragment
+  canonical_url = to_canonical_url(uri)
   uri.fragment = nil
 
   if uri.opaque != nil

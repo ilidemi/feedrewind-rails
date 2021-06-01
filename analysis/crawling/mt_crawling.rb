@@ -1,3 +1,4 @@
+require 'fileutils'
 require_relative 'crawling'
 require_relative 'db'
 require_relative 'logger'
@@ -10,11 +11,12 @@ start_link_ids.each do |id|
   id_queue << id
 end
 
-FileUtils.rm_rf("log/", secure: true)
+FileUtils.rm_rf("log", secure: true)
+FileUtils.mkdir("log")
 
 result_queue = Queue.new
 
-thread_count = 16
+thread_count = 32
 threads = []
 thread_count.times do
   thread = Thread.new do
