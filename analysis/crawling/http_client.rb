@@ -1,3 +1,4 @@
+require 'set'
 require_relative 'canonical_url'
 require_relative 'monotonic_now'
 
@@ -51,6 +52,8 @@ class MockHttpClient
       ]
     end
 
+    @page_fetch_urls = Set.new(@page_responses.keys)
+
     @permanent_error_responses = db.exec_params(
       "select fetch_url, code from mock_permanent_errors where start_link_id = $1",
       [start_link_id]
@@ -61,17 +64,22 @@ class MockHttpClient
       ]
     end
 
+    @permanent_error_fetch_urls = Set.new(@permanent_error_responses.keys)
+
     @redirect_responses = db.exec_params(
-      "select from_canonical_url, to_fetch_url from mock_redirects where start_link_id = $1",
+      "select from_fetch_url, to_fetch_url from mock_redirects where start_link_id = $1",
       [start_link_id]
     ).to_h do |redirect_row|
       [
-        redirect_row["canonical_url"],
+        redirect_row["from_fetch_url"],
         HttpResponse.new("301", nil, redirect_row["to_fetch_url"], "Mock redirect content")
       ]
     end
 
+    @redirect_fetch_urls = Set.new(@redirect_responses.keys)
+
     @http_client = HttpClient.new
+    @network_requests_made = 0
   end
 
   def request(uri, logger)
@@ -84,12 +92,14 @@ class MockHttpClient
       return @permanent_error_responses[fetch_url]
     end
 
-    canonical_url = to_canonical_url(uri)
-    if @redirect_responses.key?(canonical_url)
-      return @redirect_responses[canonical_url]
+    if @redirect_responses.key?(fetch_url)
+      return @redirect_responses[fetch_url]
     end
 
     logger.log("URI not in mock tables, falling back on http client: #{uri}")
+    @network_requests_made += 1
     @http_client.request(uri, logger)
   end
+
+  attr_reader :page_fetch_urls, :permanent_error_fetch_urls, :redirect_fetch_urls, :network_requests_made
 end

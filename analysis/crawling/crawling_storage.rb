@@ -1,6 +1,40 @@
-class CrawlDbStorage
-  def initialize(db)
+class CrawlMockDbStorage
+  def initialize(db, page_fetch_urls, permanent_error_fetch_urls, redirect_fetch_urls)
     @db = db
+    @page_fetch_urls = page_fetch_urls
+    @permanent_error_fetch_urls = permanent_error_fetch_urls
+    @redirect_fetch_urls = redirect_fetch_urls
+  end
+
+  def save_page_if_not_exists(canonical_url, fetch_url, content_type, start_link_id, content)
+    return if @page_fetch_urls.include?(fetch_url)
+    @db.exec_params(
+      'insert into mock_pages (canonical_url, fetch_url, fetch_time, content_type, start_link_id, content) values ($1, $2, now(), $3, $4, $5)',
+      [canonical_url, fetch_url, content_type, start_link_id, content]
+    )
+  end
+
+  def save_permanent_error_if_not_exists(canonical_url, fetch_url, start_link_id, code)
+    return if @permanent_error_fetch_urls.include?(fetch_url)
+    @db.exec_params(
+      'insert into mock_permanent_errors (canonical_url, fetch_url, fetch_time, start_link_id, code) values ($1, $2, now(), $3, $4)',
+      [canonical_url, fetch_url, start_link_id, code]
+    )
+  end
+
+  def save_redirect_if_not_exists(from_fetch_url, to_fetch_url, start_link_id)
+    return if @redirect_fetch_urls.include?(from_fetch_url)
+    @db.exec_params(
+      'insert into mock_redirects (from_fetch_url, to_fetch_url, fetch_time, start_link_id) values ($1, $2, now(), $3)',
+      [from_fetch_url, to_fetch_url, start_link_id]
+    )
+  end
+end
+
+class CrawlDbStorage
+  def initialize(db, mock_db_storage)
+    @db = db
+    @mock_db_storage = mock_db_storage
   end
 
   def save_page(canonical_url, fetch_url, content_type, start_link_id, content)
@@ -8,20 +42,15 @@ class CrawlDbStorage
       'insert into pages (canonical_url, fetch_url, content_type, start_link_id, content) values ($1, $2, $3, $4, $5)',
       [canonical_url, fetch_url, content_type, start_link_id, content]
     )
+    @mock_db_storage.save_page_if_not_exists(canonical_url, fetch_url, content_type, start_link_id, content)
   end
 
-  def delete_redirect(from_canonical_url, start_link_id)
+  def save_redirect(from_fetch_url, to_fetch_url, start_link_id)
     @db.exec_params(
-      'delete from redirects where from_canonical_url = $1 and start_link_id = $2',
-      [from_canonical_url, start_link_id]
+      'insert into redirects (from_fetch_url, to_fetch_url, start_link_id) values ($1, $2, $3)',
+      [from_fetch_url, to_fetch_url, start_link_id]
     )
-  end
-
-  def save_redirect(from_canonical_url, to_canonical_url, to_fetch_url, start_link_id)
-    @db.exec_params(
-      'insert into redirects (from_canonical_url, to_canonical_url, to_fetch_url, start_link_id) values ($1, $2, $3, $4)',
-      [from_canonical_url, to_canonical_url, to_fetch_url, start_link_id]
-    )
+    @mock_db_storage.save_redirect_if_not_exists(from_fetch_url, to_fetch_url, start_link_id)
   end
 
   def save_permanent_error(canonical_url, fetch_url, start_link_id, code)
@@ -29,6 +58,7 @@ class CrawlDbStorage
       'insert into permanent_errors (canonical_url, fetch_url, start_link_id, code) values ($1, $2, $3, $4)',
       [canonical_url, fetch_url, start_link_id, code]
     )
+    @mock_db_storage.save_permanent_error_if_not_exists(canonical_url, fetch_url, start_link_id, code)
   end
 
   def save_feed(start_link_id, canonical_url)
@@ -40,7 +70,8 @@ class CrawlDbStorage
 end
 
 class CrawlInMemoryStorage
-  def initialize
+  def initialize(mock_db_storage)
+    @mock_db_storage = mock_db_storage
     @pages = {}
     @redirects = {}
     @permanent_errors = {}
@@ -52,19 +83,15 @@ class CrawlInMemoryStorage
       @pages, canonical_url,
       { canonical_url: canonical_url, fetch_url: fetch_url, content_type: content_type, start_link_id: start_link_id, content: content }
     )
+    @mock_db_storage.save_page_if_not_exists(canonical_url, fetch_url, content_type, start_link_id, content)
   end
 
-  def delete_redirect(from_canonical_url, _)
-    unless @redirects.delete(from_canonical_url)
-      raise "Redirect was not found: #{from_canonical_url}"
-    end
-  end
-
-  def save_redirect(from_canonical_url, to_canonical_url, to_fetch_url, start_link_id)
+  def save_redirect(from_fetch_url, to_fetch_url, start_link_id)
     save_or_raise(
-      @redirects, from_canonical_url,
-      { from_canonical_url: from_canonical_url, to_canonical_url: to_canonical_url, to_fetch_url: to_fetch_url, start_link_id: start_link_id }
+      @redirects, from_fetch_url,
+      { from_fetch_url: from_fetch_url, to_fetch_url: to_fetch_url, start_link_id: start_link_id }
     )
+    @mock_db_storage.save_redirect_if_not_exists(from_fetch_url, to_fetch_url, start_link_id)
   end
 
   def save_permanent_error(canonical_url, fetch_url, start_link_id, code)
@@ -72,6 +99,7 @@ class CrawlInMemoryStorage
       @permanent_errors, canonical_url,
       { canonical_url: canonical_url, fetch_url: fetch_url, start_link_id: start_link_id, code: code }
     )
+    @mock_db_storage.save_permanent_error_if_not_exists(canonical_url, fetch_url, start_link_id, code)
   end
 
   def save_feed(start_link_id, canonical_url)
