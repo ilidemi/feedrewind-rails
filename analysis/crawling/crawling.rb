@@ -252,11 +252,11 @@ def export_graph(db, start_link_id, start_link, feed_uri, feed_urls, logger)
     graph.each_key do |node|
       attributes = { "shape" => "box" }
       if node == start_link_label && node == root_label
-        attributes["color"] = "orange"
+        attributes["fillcolor"] = "orange"
       elsif node == start_link_label
-        attributes["color"] = "yellow"
+        attributes["fillcolor"] = "yellow"
       elsif node == root_label
-        attributes["color"] = "red"
+        attributes["fillcolor"] = "red"
       elsif item_label_to_index.key?(node)
         if item_label_to_index.length > 1
           spectrum_pos = item_label_to_index[node].to_f / (item_label_to_index.length - 1)
@@ -266,7 +266,7 @@ def export_graph(db, start_link_id, start_link, feed_uri, feed_urls, logger)
           green = "ff"
           blue = "00"
         end
-        attributes["color"] = "\"\#80#{green}#{blue}\""
+        attributes["fillcolor"] = "\"\#80#{green}#{blue}\""
       end
       attributes_str = attributes
         .map { |k, v| "#{k}=#{v}" }
@@ -424,9 +424,12 @@ def crawl_loop(
 end
 
 def is_feed(page_content)
+  return false if page_content.nil?
   begin
-    !page_content.nil? && !!RSS::Parser.new(page_content).parse
-  rescue
+    parser = RSS::Parser.new(page_content)
+    feed = parser.parse
+    !!feed
+  rescue => e
     false
   end
 end
@@ -493,13 +496,27 @@ def to_canonical_link(url, logger, fetch_uri = nil)
   { canonical_url: canonical_url, host: uri.host, uri: uri, url: uri.to_s }
 end
 
+WHITELISTED_QUERY_PARAMS = Set.new(%w[blog page year offset skip sort order format])
+
 def to_canonical_url(uri)
   port_str = (
     uri.port.nil? || (uri.port == 80 && uri.scheme == 'http') || (uri.port == 443 && uri.scheme == 'https')
   ) ? '' : ":#{uri.port}"
   path_str = (uri.path == '/' && uri.query.nil?) ? '' : uri.path
-  query_str = uri.query.nil? ? '' : "?#{uri.query}"
-  "#{uri.host}#{port_str}#{path_str}#{query_str}" # drop scheme and fragment
+
+  if uri.query
+    whitelisted_query = uri
+      .query
+      .split("&")
+      .map { |token| token.split("=") }
+      .filter { |param, _| WHITELISTED_QUERY_PARAMS.include?(param) }
+      .join("&")
+    query_str = whitelisted_query.empty? ? '' : "?#{whitelisted_query}"
+  else
+    query_str = ''
+  end
+
+  "#{uri.host}#{port_str}#{path_str}#{query_str}" # drop scheme and fragment too
 end
 
 def follow_redirects(link, redirects)

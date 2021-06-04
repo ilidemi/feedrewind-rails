@@ -5,7 +5,7 @@ require_relative 'logger'
 require_relative 'report'
 
 report_filename = "report/mt_report_#{DateTime.now.strftime('%F_%H-%M-%S')}.html"
-db = db_connect
+db = connect_db
 start_link_ids = db.exec('select id from start_links').map { |row| row["id"].to_i }
 id_queue = Queue.new
 start_link_ids.each do |id|
@@ -25,7 +25,7 @@ thread_count = 16
 threads = []
 thread_count.times do
   thread = Thread.new do
-    thread_db = db_connect
+    thread_db = connect_db
     until id_queue.empty? do
       begin
         start_link_id = id_queue.deq(non_block = true)
