@@ -3,83 +3,55 @@ require 'net/http'
 require 'nokogumbo'
 require 'rss'
 require 'set'
-require_relative 'canonical_url'
 require_relative 'crawling_storage'
 require_relative 'http_client'
 
-CRAWLING_RESULT_COLUMN_NAMES = [
-  'start url',
-  'http client init time',
-  'feed requests',
-  'feed time',
-  'feed url',
-  'feed links extracted',
-  'feed root url',
-  'feed channel prefixes items',
-  'crawl succeeded',
-  'total requests',
-  'total pages',
-  'total network requests',
-  'total time'
+CRAWLING_RESULT_COLUMNS = [
+  [:start_url, :neutral],
+  [:http_client_init_time, :neutral],
+  [:feed_requests_made, :neutral],
+  [:feed_time, :neutral],
+  [:feed_url, :boolean],
+  [:feed_links, :boolean],
+  [:crawl_succeeded, :boolean],
+  [:items_found, :neutral],
+  [:all_items_found, :boolean],
+  [:total_requests, :neutral],
+  [:total_pages, :neutral],
+  [:total_network_requests, :neutral],
+  [:total_time, :neutral]
 ]
 
 class CrawlingResult
-  def initialize(start_url)
-    @start_url = start_url
-    @http_client_init_time = nil
-    @feed_requests_made = nil
-    @feed_time = nil
-    @feed_url = nil
-    @feed_links_extracted = nil
-    @feed_root_url = nil
-    @feed_does_channel_prefix_items = nil
-    @crawl_succeeded = nil
-    @total_requests = nil
-    @total_pages = nil
-    @total_network_requests = nil
-    @total_time = nil
+  @column_names = CRAWLING_RESULT_COLUMNS.map { |column| column[0].to_s.gsub("_", " ") }
+
+  def initialize
+    CRAWLING_RESULT_COLUMNS.each do |column|
+      instance_variable_set("@#{column[0]}", nil)
+    end
   end
 
   def column_values
-    [
-      @start_url,
-      @http_client_init_time,
-      @feed_requests_made,
-      @feed_time,
-      @feed_url,
-      @feed_links_extracted,
-      @feed_root_url,
-      @feed_does_channel_prefix_items,
-      @crawl_succeeded,
-      @total_requests,
-      @total_pages,
-      @total_network_requests,
-      @total_time
-    ]
+    CRAWLING_RESULT_COLUMNS.map { |column| instance_variable_get("@#{column[0]}") }
   end
 
   def column_statuses
-    [
-      :neutral,
-      :neutral,
-      :neutral,
-      :neutral,
-      @feed_url.nil? ? :failure : :success,
-      @feed_links_extracted ? :success : :failure,
-      @feed_root_url.nil? ? :failure : :success,
-      @feed_does_channel_prefix_items ? :success : :failure,
-      @crawl_succeeded ? :success : :failure,
-      :neutral,
-      :neutral,
-      :neutral,
-      :neutral
-    ]
+    CRAWLING_RESULT_COLUMNS.map do |column|
+      if column[1] == :neutral
+        :neutral
+      elsif column[1] == :boolean
+        instance_variable_get("@#{column[0]}") ? :success : :failure
+      else
+        raise "Unknown column status symbol: #{column[1]}"
+      end
+    end
   end
 
-  attr_reader :column_names
-  attr_writer :http_client_init_time, :feed_requests_made, :feed_time, :feed_url, :feed_links_extracted,
-              :feed_root_url, :feed_does_channel_prefix_items, :crawl_succeeded, :total_requests,
-              :total_pages, :total_network_requests, :total_time
+  class << self
+    attr_reader :column_names
+  end
+
+  attr_writer *(CRAWLING_RESULT_COLUMNS.map { |column| column[0] })
 end
 
 class CrawlingError < StandardError
@@ -93,7 +65,8 @@ end
 
 def discover_feed(db, start_link_id, logger)
   start_link_url = db.exec_params('select url from start_links where id = $1', [start_link_id])[0]["url"]
-  result = CrawlingResult.new(start_link_url)
+  result = CrawlingResult.new
+  result.start_url = start_link_url
   ctx = CrawlContext.new
   start_time = monotonic_now
 
@@ -109,8 +82,8 @@ def discover_feed(db, start_link_id, logger)
     )
     in_memory_storage = CrawlInMemoryStorage.new(mock_db_storage)
     page_links = crawl_loop(
-      start_link_id, start_link[:host], '', [start_link], ctx, mock_http_client,
-      :depth_1, in_memory_storage, logger
+      start_link_id, start_link[:host], [start_link], ctx, mock_http_client,
+      :depth_1, nil, in_memory_storage, logger
     )
 
     raise "No outgoing links" if page_links.empty?
@@ -118,8 +91,8 @@ def discover_feed(db, start_link_id, logger)
     prioritized_page_links = page_links.sort_by { |link| [calc_link_priority(link), link[:uri].path.length] }
 
     next_links = crawl_loop(
-      start_link_id, start_link[:host], '', prioritized_page_links, ctx, mock_http_client,
-      :depth_1_main_feed_fetched, in_memory_storage, logger
+      start_link_id, start_link[:host], prioritized_page_links, ctx, mock_http_client,
+      :depth_1_main_feed_fetched, nil, in_memory_storage, logger
     )
 
     result.feed_requests_made = ctx.requests_made
@@ -131,38 +104,41 @@ def discover_feed(db, start_link_id, logger)
     result.feed_url = feed_url
     logger.log("Feed url: #{feed_url}")
 
-    feed_content = in_memory_storage.pages[feed_url][:content]
-    feed_feed = RSS::Parser.new(feed_content).parse
-    feed_urls = extract_feed_urls(feed_feed)
-    result.feed_links_extracted = true
+    feed_page = in_memory_storage.pages[feed_url]
+    feed = RSS::Parser.new(feed_page[:content]).parse
+    feed_urls = extract_feed_urls(feed)
+    result.feed_links = feed_urls.item_urls.length
     logger.log("Root url: #{feed_urls.root_url}")
-    path_prefix = URI(feed_urls.root_url).path
-    result.feed_root_url = path_prefix
+    feed_page_fetch_uri = URI(feed_page[:fetch_url])
 
-    does_channel_prefix_items = feed_urls.item_urls.all? { |url| URI(url).path.start_with?(path_prefix) }
-    result.feed_does_channel_prefix_items = does_channel_prefix_items
-    logger.log("Channel prefixes items: #{does_channel_prefix_items}")
-    raise "Channel doesn't prefix items" unless does_channel_prefix_items
+    item_canonical_urls = feed_urls.item_urls.map do |url|
+      to_canonical_link(url, logger, feed_page_fetch_uri)[:canonical_url]
+    end
 
     db.exec_params('delete from feeds where start_link_id = $1', [start_link_id])
     db.exec_params('delete from pages where start_link_id = $1', [start_link_id])
     db.exec_params('delete from permanent_errors where start_link_id = $1', [start_link_id])
     db.exec_params('delete from redirects where start_link_id = $1', [start_link_id])
     db_storage = CrawlDbStorage.new(db, mock_db_storage)
-    save_to_db(in_memory_storage, db_storage, path_prefix)
-
-    filtered_next_links = next_links.filter { |link| link[:uri].path.start_with?(path_prefix) }
+    save_to_db(in_memory_storage, db_storage)
 
     crawl_loop(
-      start_link_id, start_link[:host], path_prefix, filtered_next_links, ctx, mock_http_client,
-      :no_early_stop, db_storage, logger
+      start_link_id, start_link[:host], next_links, ctx, mock_http_client, :crawl_urls_vicinity,
+      item_canonical_urls, db_storage, logger
     )
-
     result.crawl_succeeded = true
+
+    items_found = item_canonical_urls.count { |url| ctx.seen_urls.include?(url) }
+    result.items_found = items_found
+    result.all_items_found = items_found == item_canonical_urls.length
+    logger.log("Items found: #{items_found}/#{item_canonical_urls.length}")
+
+    export_graph(db, start_link_id, start_link, feed_page_fetch_uri, feed_urls, logger)
+    logger.log("Graph exported")
 
     result
   rescue => e
-    raise CrawlingError.new(e.message, result)
+    raise CrawlingError.new(e.message, result), e
   ensure
     result.total_requests = ctx.requests_made
     result.total_pages = ctx.fetched_urls.length
@@ -206,19 +182,16 @@ def extract_feed_urls(feed)
   end
 end
 
-def save_to_db(in_memory_storage, db_storage, path_prefix)
+def save_to_db(in_memory_storage, db_storage)
   in_memory_storage.pages.each_value do |page|
-    next unless URI(page[:fetch_url]).path.start_with?(path_prefix)
     db_storage.save_page(page[:canonical_url], page[:fetch_url], page[:content_type], page[:start_link_id], page[:content])
   end
 
   in_memory_storage.redirects.each_value do |redirect|
-    next unless URI(redirect[:to_fetch_url]).path.start_with?(path_prefix)
     db_storage.save_redirect(redirect[:from_fetch_url], redirect[:to_fetch_url], redirect[:start_link_id])
   end
 
   in_memory_storage.permanent_errors.each_value do |permanent_error|
-    next unless URI(permanent_error[:fetch_url]).path.start_with?(path_prefix)
     db_storage.save_permanent_error(permanent_error[:canonical_url], permanent_error[:fetch_url], permanent_error[:start_link_id], permanent_error[:code])
   end
 
@@ -227,18 +200,14 @@ def save_to_db(in_memory_storage, db_storage, path_prefix)
   end
 end
 
-def export_graph(db, start_link_id, logger)
-  start_link_url = db.exec_params('select url from start_links where id = $1', [start_link_id])[0]["url"]
-  start_link = to_canonical_link(start_link_url, logger)
-
+def export_graph(db, start_link_id, start_link, feed_uri, feed_urls, logger)
   redirects = db
     .exec_params(
       'select from_fetch_url, to_fetch_url from redirects where start_link_id = $1',
       [start_link_id]
     )
     .to_h do |row|
-    fetch_uri = URI(row["to_fetch_url"])
-    [row["from_fetch_url"], { uri: fetch_uri, host: fetch_uri.host }]
+    [row["from_fetch_url"], to_canonical_link(row["to_fetch_url"], logger)]
   end
 
   pages = db
@@ -249,52 +218,92 @@ def export_graph(db, start_link_id, logger)
     .to_h { |row| [row["canonical_url"], { fetch_uri: URI(row["fetch_url"]), content_type: row["content_type"], content: row["content"] }] }
     .filter { |_, page| !page[:content].nil? }
 
-  feed_canonical_url = db.exec_params('select canonical_url from feeds where start_link_id = $1', [start_link_id])[0]["canonical_url"]
-  feed_content = pages[feed_canonical_url][:content]
-  feed = RSS::Parser.new(feed_content).parse
-  feed_urls = extract_feed_urls(feed)
-  path_prefix = URI(feed_urls.root_url).path
-
-  def to_node_label(canonical_url, path_prefix)
-    path = "/" + canonical_url.partition("/")[2]
-    path.sub("^#{path_prefix}", "")
+  def to_node_label(canonical_url)
+    "/" + canonical_url.partition("/")[2]
   end
+
+  def feed_url_to_node_label(feed_url, redirects, fetch_uri, logger)
+    feed_link = to_canonical_link(feed_url, logger, fetch_uri)
+    redirected_link = follow_redirects(feed_link, redirects)
+    to_node_label(redirected_link[:canonical_url])
+  end
+
+  root_label = feed_url_to_node_label(feed_urls.root_url, redirects, feed_uri, logger)
+  item_label_to_index = feed_urls
+    .item_urls
+    .map.with_index { |url, index| [feed_url_to_node_label(url, redirects, feed_uri, logger), index] }
+    .to_h
 
   graph = pages.to_h do |canonical_url, page|
     [
-      to_node_label(canonical_url, path_prefix),
-      extract_links(page, start_link[:host], path_prefix, redirects, logger)
+      to_node_label(canonical_url),
+      extract_links(page, start_link[:host], redirects, logger)
         .filter { |link| pages.key?(link[:canonical_url]) }
-        .map { |link| to_node_label(link[:canonical_url], path_prefix) }
+        .map { |link| to_node_label(link[:canonical_url]) }
     ]
   end
 
-  start_link_label = to_node_label(start_link[:canonical_url], path_prefix)
+  start_link_label = to_node_label(start_link[:canonical_url])
 
   File.open("graph/#{start_link_id}.dot", "w") do |dot_f|
     dot_f.write("digraph G {\n")
+    dot_f.write("    graph [overlap=false outputorder=edgesfirst]\n")
+    dot_f.write("    node [style=filled fillcolor=white]\n")
     graph.each_key do |node|
-      attributes = node == start_link_label ? " [shape=box, color=orange, style=filled]" : " [shape=box]"
-      dot_f.write("    \"#{node}\"#{attributes}\n")
+      attributes = { "shape" => "box" }
+      if node == start_link_label && node == root_label
+        attributes["color"] = "orange"
+      elsif node == start_link_label
+        attributes["color"] = "yellow"
+      elsif node == root_label
+        attributes["color"] = "red"
+      elsif item_label_to_index.key?(node)
+        if item_label_to_index.length > 1
+          spectrum_pos = item_label_to_index[node].to_f / (item_label_to_index.length - 1)
+          green = (128 + (1.0 - spectrum_pos) * 127).to_i.to_s(16)
+          blue = (128 + spectrum_pos * 127).to_i.to_s(16)
+        else
+          green = "ff"
+          blue = "00"
+        end
+        attributes["color"] = "\"\#80#{green}#{blue}\""
+      end
+      attributes_str = attributes
+        .map { |k, v| "#{k}=#{v}" }
+        .to_a
+        .join(", ")
+      dot_f.write("    \"#{node}\" [#{attributes_str}]\n")
     end
     graph.each do |node1, node2s|
-      node2s.each do |node2|
+      filtered_node2s = item_label_to_index.key?(node1) ?
+        node2s.filter { |node2| item_label_to_index.key?(node2) } :
+        node2s
+      filtered_node2s.each do |node2|
         dot_f.write("    \"#{node1}\" -> \"#{node2}\"\n")
       end
     end
     dot_f.write("}\n")
   end
 
-  raise "Graph generation failed" unless system("wsl neato -Goverlap=false -Tsvg graph/#{start_link_id}.dot > graph/#{start_link_id}.svg")
+  command_prefix = File.exist?("/dev/null") ? "" : "wsl "
+  raise "Graph generation failed" unless system("#{command_prefix}sfdp -Tsvg graph/#{start_link_id}.dot > graph/#{start_link_id}.svg")
 end
 
 class CrawlContext
-  def initialize
-    @seen_urls = Set.new
-    @fetched_urls = Set.new
-    @redirects = {}
-    @requests_made = 0
-    @main_feed_fetched = false
+  def initialize(ctx = nil)
+    if ctx
+      @seen_urls = ctx.seen_urls.clone
+      @fetched_urls = ctx.fetched_urls.clone
+      @redirects = ctx.redirects.clone
+      @requests_made = ctx.requests_made
+      @main_feed_fetched = ctx.main_feed_fetched
+    else
+      @seen_urls = Set.new
+      @fetched_urls = Set.new
+      @redirects = {}
+      @requests_made = 0
+      @main_feed_fetched = false
+    end
   end
 
   attr_reader :seen_urls, :fetched_urls, :redirects
@@ -304,7 +313,7 @@ end
 PERMANENT_ERROR_CODES = %w[400 401 402 403 404 405 406 407 410 411 412 413 414 415 416 417 418 451]
 
 def crawl_loop(
-  start_link_id, host, path_prefix, start_links, ctx, http_client, early_stop_cond, storage, logger
+  start_link_id, host, start_links, ctx, http_client, early_stop_cond, vicinity_urls, storage, logger
 )
   initial_seen_urls_count = ctx.seen_urls.length
 
@@ -316,6 +325,8 @@ def crawl_loop(
     ctx.seen_urls << link[:canonical_url]
     logger.log("Enqueued #{link}")
   end
+
+  vicinity_urls = Set.new(vicinity_urls)
 
   until current_queue.empty?
     if [:depth_1, :depth_1_main_feed_fetched].include?(early_stop_cond) && current_depth >= 1
@@ -342,7 +353,7 @@ def crawl_loop(
       is_main_feed = false
       if content_type == "text/html"
         content = resp.body
-      elsif !ctx.main_feed_fetched && resp.body && RSS::Parser.new(resp.body).parse # TODO: handle parsing exceptions
+      elsif !ctx.main_feed_fetched && is_feed(resp.body)
         content = resp.body
         is_main_feed = true
       else
@@ -357,11 +368,18 @@ def crawl_loop(
         ctx.main_feed_fetched = true
       end
 
-      extract_links(page, host, path_prefix, ctx.redirects, logger).each do |new_link|
-        next if ctx.seen_urls.include?(new_link[:canonical_url])
-        next_queue << new_link
-        ctx.seen_urls << new_link[:canonical_url]
-        logger.log("Enqueued #{new_link}")
+      page_links = extract_links(page, host, ctx.redirects, logger)
+      is_page_missing_vicinity_links = early_stop_cond == :crawl_urls_vicinity &&
+        !page_links.any? { |page_link| vicinity_urls.include?(page_link[:canonical_url]) }
+      if is_page_missing_vicinity_links
+        logger.log("Page doesn't contain any vicinity links")
+      else
+        page_links.each do |new_link|
+          next if ctx.seen_urls.include?(new_link[:canonical_url])
+          next_queue << new_link
+          ctx.seen_urls << new_link[:canonical_url]
+          logger.log("Enqueued #{new_link}")
+        end
       end
     elsif resp.code.start_with?('3')
       content_type = 'redirect'
@@ -387,7 +405,7 @@ def crawl_loop(
     elsif PERMANENT_ERROR_CODES.include?(resp.code)
       content_type = 'permanent 4xx'
       ctx.fetched_urls << link[:canonical_url]
-      storage.save_permanent_error(link[:canonical_url], link[:uri], start_link_id, resp.code)
+      storage.save_permanent_error(link[:canonical_url], link[:url], start_link_id, resp.code)
     else
       raise "HTTP #{resp.code}" # TODO more cases here
     end
@@ -405,7 +423,15 @@ def crawl_loop(
   queue1 + queue2
 end
 
-def extract_links(page, host, path_prefix, redirects, logger)
+def is_feed(page_content)
+  begin
+    !page_content.nil? && !!RSS::Parser.new(page_content).parse
+  rescue
+    false
+  end
+end
+
+def extract_links(page, host, redirects, logger)
   if page[:content_type] != 'text/html'
     return []
   end
@@ -417,10 +443,8 @@ def extract_links(page, host, path_prefix, redirects, logger)
     next unless element.attributes.key?('href')
     url_attribute = element.attributes['href']
     link = to_canonical_link(url_attribute.to_s, logger, page[:fetch_uri])
-    next if link.nil? || link[:host] != host || !link[:uri].path.start_with?(path_prefix)
-    while redirects.key?(link[:url]) && link != redirects[link[:url]]
-      link = redirects[link[:url]]
-    end
+    next if link.nil? || link[:host] != host
+    link = follow_redirects(link, redirects)
     link[:type] = element.attributes['type']
     links << link
   end
@@ -437,6 +461,9 @@ def to_canonical_link(url, logger, fetch_uri = nil)
     end
     url_escaped = Addressable::URI.escape(url_newlines_removed)
     uri = URI(url_escaped)
+  rescue Addressable::URI::InvalidURIError => e
+    logger.log(e)
+    return nil
   rescue => e
     raise e
   end
@@ -464,4 +491,20 @@ def to_canonical_link(url, logger, fetch_uri = nil)
   end
 
   { canonical_url: canonical_url, host: uri.host, uri: uri, url: uri.to_s }
+end
+
+def to_canonical_url(uri)
+  port_str = (
+    uri.port.nil? || (uri.port == 80 && uri.scheme == 'http') || (uri.port == 443 && uri.scheme == 'https')
+  ) ? '' : ":#{uri.port}"
+  path_str = (uri.path == '/' && uri.query.nil?) ? '' : uri.path
+  query_str = uri.query.nil? ? '' : "?#{uri.query}"
+  "#{uri.host}#{port_str}#{path_str}#{query_str}" # drop scheme and fragment
+end
+
+def follow_redirects(link, redirects)
+  while redirects.key?(link[:url]) && link != redirects[link[:url]]
+    link = redirects[link[:url]]
+  end
+  link
 end

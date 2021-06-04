@@ -4,6 +4,7 @@ require_relative 'db'
 require_relative 'logger'
 require_relative 'report'
 
+report_filename = "report/mt_report_#{DateTime.now.strftime('%F_%H-%M-%S')}.html"
 db = db_connect
 start_link_ids = db.exec('select id from start_links').map { |row| row["id"].to_i }
 id_queue = Queue.new
@@ -11,12 +12,16 @@ start_link_ids.each do |id|
   id_queue << id
 end
 
-FileUtils.rm_rf("log", secure: true)
-FileUtils.mkdir("log")
+unless File.exist?("log")
+  FileUtils.mkdir("log")
+end
+Dir.new("log").each_child do |filename|
+  File.delete("log/#{filename}")
+end
 
 result_queue = Queue.new
 
-thread_count = 32
+thread_count = 16
 threads = []
 thread_count.times do
   thread = Thread.new do
@@ -69,7 +74,7 @@ loop do
     results << result_queue.deq
   end
 
-  output_report(results, start_link_ids.length)
+  output_report(report_filename, results, start_link_ids.length)
 
   puts "Queue size: #{id_queue.length}, Thread statuses: #{statuses}"
 

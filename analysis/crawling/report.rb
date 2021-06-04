@@ -1,6 +1,6 @@
 require 'cgi'
 
-def output_report(results, expected_total)
+def output_report(filename, results, expected_total)
   success_count = 0
   failure_count = 0
   bad_failure_count = 0
@@ -25,8 +25,8 @@ def output_report(results, expected_total)
   status_keys = { success: -1, neutral: 0, failure: 1 }
   sorted_results = evaluated_results.sort_by do |result|
     [
-      result[1].nil? ? [1] * CRAWLING_RESULT_COLUMN_NAMES.length : result[1][:statuses].map { |status| status_keys[status] },
-      result[2],
+      result[1].nil? ? [1] * CrawlingResult.column_names.length : result[1][:statuses].map { |status| status_keys[status] },
+      result[2] || "",
       result[0]
     ]
   end
@@ -37,7 +37,7 @@ def output_report(results, expected_total)
     failure: " style=\"background: lightcoral;\""
   }
 
-  File.open("report/mt_report.html", 'w') do |report_file|
+  File.open(filename, 'w') do |report_file|
     report_file.write("<html>\n")
     report_file.write("<head>\n")
     report_file.write("<title>Report</title>\n")
@@ -56,7 +56,7 @@ def output_report(results, expected_total)
 
     report_file.write("<table>\n<tr>")
     report_file.write("<th>id</th>")
-    CRAWLING_RESULT_COLUMN_NAMES.each do |column_name|
+    CrawlingResult.column_names.each do |column_name|
       report_file.write("<th>#{column_name}</th>")
     end
     report_file.write("<th>error</th>")
@@ -67,7 +67,7 @@ def output_report(results, expected_total)
       report_file.write("<td>#{result[0]}</td>")
 
       if result[1].nil?
-        CRAWLING_RESULT_COLUMN_NAMES.length.times do
+        CrawlingResult.column_names.length.times do
           report_file.write("<td></td>")
         end
       else

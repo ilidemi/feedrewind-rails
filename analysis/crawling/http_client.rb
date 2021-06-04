@@ -1,5 +1,4 @@
 require 'set'
-require_relative 'canonical_url'
 require_relative 'monotonic_now'
 
 HttpResponse = Struct.new(:code, :content_type, :location, :body)
