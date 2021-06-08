@@ -1,5 +1,5 @@
 require 'set'
-require_relative 'db'
+require_relative '../db'
 
 db = connect_db
 query_uris = db
