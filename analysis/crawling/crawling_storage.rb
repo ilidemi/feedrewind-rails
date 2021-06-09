@@ -11,7 +11,7 @@ class CrawlMockDbStorage
     @page_fetch_urls << fetch_url
     @db.exec_params(
       'insert into mock_pages (canonical_url, fetch_url, fetch_time, content_type, start_link_id, content) values ($1, $2, now(), $3, $4, $5)',
-      [canonical_url, fetch_url, content_type, start_link_id, content]
+      [canonical_url, fetch_url, content_type, start_link_id, { value: content, format: 1 }]
     )
   end
 
@@ -43,7 +43,7 @@ class CrawlDbStorage
   def save_page(canonical_url, fetch_url, content_type, start_link_id, content)
     @db.exec_params(
       'insert into pages (canonical_url, fetch_url, content_type, start_link_id, content) values ($1, $2, $3, $4, $5)',
-      [canonical_url, fetch_url, content_type, start_link_id, content]
+      [canonical_url, fetch_url, content_type, start_link_id, { value: content, format: 1 }]
     )
     @mock_db_storage.save_page_if_not_exists(canonical_url, fetch_url, content_type, start_link_id, content)
   end

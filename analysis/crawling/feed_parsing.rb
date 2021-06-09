@@ -1,7 +1,13 @@
-def is_feed(page_content)
+def is_feed(page_content, logger)
   return false if page_content.nil?
 
-  xml = Nokogiri::XML(page_content)
+  begin
+    xml = Nokogiri::XML(page_content)
+  rescue Nokogiri::XML::SyntaxError
+    logger.log("Tried to parse as XML but looks malformed")
+    return false
+  end
+
   unless xml.xpath("/rss/channel").empty?
     return true
   end
@@ -24,7 +30,19 @@ def extract_feed_urls(feed_content)
     root_url = channel.xpath("link")[0].inner_text
     raise "Couldn't extract root url from RSS" if root_url.nil?
 
-    item_urls = channel.xpath("item").map { |item| item.xpath("link")[0].inner_text }
+    item_urls = channel.xpath("item").map do |item|
+      links = item.xpath("link")
+      unless links.empty?
+        next links[0].inner_text
+      end
+
+      permalink_guids = item.xpath("guid").to_a.filter { |guid| guid.attributes["isPermaLink"].to_s == "true" }
+      unless permalink_guids.empty?
+        next permalink_guids[0].inner_text
+      end
+
+      nil
+    end
     raise "Couldn't extract item urls from RSS" if item_urls.any?(&:nil?)
 
     FeedUrls.new(root_url, item_urls)

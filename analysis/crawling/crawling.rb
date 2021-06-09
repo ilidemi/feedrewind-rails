@@ -4,6 +4,7 @@ require 'nokogumbo'
 require 'rss'
 require 'set'
 require_relative 'crawling_storage'
+require_relative 'export_graph'
 require_relative 'feed_parsing'
 require_relative 'http_client'
 
@@ -112,9 +113,13 @@ def discover_feed(db, start_link_id, logger)
     feed_urls = extract_feed_urls(feed_page[:content])
     result.feed_links = feed_urls.item_urls.length
     logger.log("Root url: #{feed_urls.root_url}")
+    logger.log("Items in feed: #{feed_urls.item_urls.length}")
     feed_page_fetch_uri = URI(feed_page[:fetch_url])
 
-    item_links = feed_urls.item_urls.map { |url| to_canonical_link(url, logger, feed_page_fetch_uri) }
+    item_links = feed_urls
+      .item_urls
+      .map { |url| to_canonical_link(url, logger, feed_page_fetch_uri) }
+      .map { |link| follow_redirects(link, ctx, mock_http_client, logger) }
     item_canonical_urls = item_links.map { |link| link[:canonical_url] }
     item_hosts = item_links.map { |link| link[:host] }
     allowed_hosts.merge(item_hosts)
@@ -192,99 +197,6 @@ def save_to_db(in_memory_storage, db_storage)
   end
 end
 
-def export_graph(db, start_link_id, start_link, allowed_hosts, feed_uri, feed_urls, logger)
-  redirects = db
-    .exec_params(
-      'select from_fetch_url, to_fetch_url from redirects where start_link_id = $1',
-      [start_link_id]
-    )
-    .to_h do |row|
-    [row["from_fetch_url"], to_canonical_link(row["to_fetch_url"], logger)]
-  end
-
-  pages = db
-    .exec_params(
-      'select canonical_url, fetch_url, content_type, content from pages where start_link_id = $1',
-      [start_link_id]
-    )
-    .to_h { |row| [row["canonical_url"], { fetch_uri: URI(row["fetch_url"]), content_type: row["content_type"], content: row["content"] }] }
-    .filter { |_, page| !page[:content].nil? }
-
-  def to_node_label(canonical_url, allowed_hosts)
-    if allowed_hosts.length == 1
-      "/" + canonical_url.partition("/")[2]
-    else
-      canonical_url
-    end
-  end
-
-  def feed_url_to_node_label(feed_url, allowed_hosts, redirects, fetch_uri, logger)
-    feed_link = to_canonical_link(feed_url, logger, fetch_uri)
-    redirected_link = follow_redirects(feed_link, redirects)
-    to_node_label(redirected_link[:canonical_url], allowed_hosts)
-  end
-
-  root_label = feed_url_to_node_label(feed_urls.root_url, allowed_hosts, redirects, feed_uri, logger)
-  item_label_to_index = feed_urls
-    .item_urls
-    .map.with_index { |url, index| [feed_url_to_node_label(url, allowed_hosts, redirects, feed_uri, logger), index] }
-    .to_h
-
-  graph = pages.to_h do |canonical_url, page|
-    [
-      to_node_label(canonical_url, allowed_hosts),
-      extract_links(page, allowed_hosts, redirects, logger)[:allowed_host_links]
-        .filter { |link| pages.key?(link[:canonical_url]) }
-        .map { |link| to_node_label(link[:canonical_url], allowed_hosts) }
-    ]
-  end
-
-  start_link_label = to_node_label(start_link[:canonical_url], allowed_hosts)
-
-  File.open("graph/#{start_link_id}.dot", "w") do |dot_f|
-    dot_f.write("digraph G {\n")
-    dot_f.write("    graph [overlap=false outputorder=edgesfirst]\n")
-    dot_f.write("    node [style=filled fillcolor=white]\n")
-    graph.each_key do |node|
-      attributes = { "shape" => "box" }
-      if node == start_link_label && node == root_label
-        attributes["fillcolor"] = "orange"
-      elsif node == start_link_label
-        attributes["fillcolor"] = "yellow"
-      elsif node == root_label
-        attributes["fillcolor"] = "red"
-      elsif item_label_to_index.key?(node)
-        if item_label_to_index.length > 1
-          spectrum_pos = item_label_to_index[node].to_f / (item_label_to_index.length - 1)
-          green = (128 + (1.0 - spectrum_pos) * 127).to_i.to_s(16)
-          blue = (128 + spectrum_pos * 127).to_i.to_s(16)
-        else
-          green = "ff"
-          blue = "00"
-        end
-        attributes["fillcolor"] = "\"\#80#{green}#{blue}\""
-      end
-      attributes_str = attributes
-        .map { |k, v| "#{k}=#{v}" }
-        .to_a
-        .join(", ")
-      dot_f.write("    \"#{node}\" [#{attributes_str}]\n")
-    end
-    graph.each do |node1, node2s|
-      filtered_node2s = item_label_to_index.key?(node1) ?
-        node2s.filter { |node2| item_label_to_index.key?(node2) } :
-        node2s
-      filtered_node2s.each do |node2|
-        dot_f.write("    \"#{node1}\" -> \"#{node2}\"\n")
-      end
-    end
-    dot_f.write("}\n")
-  end
-
-  command_prefix = File.exist?("/dev/null") ? "" : "wsl "
-  raise "Graph generation failed" unless system("#{command_prefix}sfdp -Tsvg graph/#{start_link_id}.dot > graph/#{start_link_id}.svg")
-end
-
 class CrawlContext
   def initialize
     @seen_canonical_urls = Set.new
@@ -302,9 +214,41 @@ end
 
 PERMANENT_ERROR_CODES = %w[400 401 402 403 404 405 406 407 410 411 412 413 414 415 416 417 418 451]
 
+def follow_redirects(start_link, ctx, http_client, logger)
+  logger.log("Start follow redirects for #{start_link}")
+  link = start_link
+  loop do
+    request_start = monotonic_now
+    resp = http_client.request(link[:uri], logger)
+    request_ms = ((monotonic_now - request_start) * 1000).to_i
+    ctx.requests_made += 1
+    logger.log("requests:#{ctx.requests_made} #{resp.code} #{request_ms}ms #{link[:url]}")
+
+    if resp.code.start_with?('3')
+      redirection_url = resp.location
+      redirection_link = to_canonical_link(redirection_url, logger, link[:uri])
+
+      if redirection_link.nil?
+        logger.log("Bad redirection link")
+        break
+      else
+        link = redirection_link
+      end
+    elsif resp.code == "200" || PERMANENT_ERROR_CODES.include?(resp.code)
+      break
+    else
+      raise "HTTP #{resp.code}" # TODO more cases here
+    end
+  end
+
+  logger.log("Follow redirects done")
+  link
+end
+
 def crawl_loop(
   start_link_id, allowed_hosts, start_links, ctx, http_client, early_stop_cond, vicinity_urls, storage, logger
 )
+  logger.log("Starting crawl loop for #{start_links.length} links with early stop at #{early_stop_cond}")
   initial_seen_urls_count = ctx.seen_canonical_urls.length
 
   current_queue = queue1 = []
@@ -329,7 +273,7 @@ def crawl_loop(
       break
     end
 
-    if ctx.seen_canonical_urls.length >= 7200
+    if (ctx.fetched_urls.length + queue1.length + queue2.length) >= 7200
       raise "That's a lot of links. Is the blog really this big?"
     end
 
@@ -346,11 +290,11 @@ def crawl_loop(
       ctx.requests_made += 1
 
       if resp.code == "200"
-        content_type = resp.content_type.split(';')[0]
+        content_type = resp.content_type ? resp.content_type.split(';')[0] : nil
         is_main_feed = false
         if content_type == "text/html"
           content = resp.body
-        elsif !ctx.main_feed_fetched && is_feed(resp.body)
+        elsif !ctx.main_feed_fetched && is_feed(resp.body, logger)
           content = resp.body
           is_main_feed = true
         else
@@ -390,21 +334,25 @@ def crawl_loop(
         redirection_url = resp.location
         redirection_link = to_canonical_link(redirection_url, logger, link[:uri])
 
-        if link[:url] == redirection_link[:url]
-          raise "Redirect to the same place, something's wrong"
-        end
+        if redirection_link.nil?
+          logger.log("Bad redirection link")
+        else
+          if link[:url] == redirection_link[:url]
+            raise "Redirect to the same place, something's wrong"
+          end
 
-        ctx.redirects[link[:url]] = redirection_link
-        storage.save_redirect(link[:url], redirection_link[:url], start_link_id)
+          ctx.redirects[link[:url]] = redirection_link
+          storage.save_redirect(link[:url], redirection_link[:url], start_link_id)
 
-        is_redirect_fetch_url_already_seen = ctx.seen_fetch_urls.include?(redirection_link[:url])
-        # is_redirect_already_fetched = ctx.fetched_urls.include?(redirection_link[:canonical_url])
+          is_redirect_fetch_url_already_seen = ctx.seen_fetch_urls.include?(redirection_link[:url])
+          # is_redirect_already_fetched = ctx.fetched_urls.include?(redirection_link[:canonical_url])
 
-        if !is_redirect_fetch_url_already_seen # || !is_redirect_already_fetched
-          current_queue << redirection_link # Redirections go to the same queue
-          ctx.seen_canonical_urls << redirection_link[:canonical_url]
-          ctx.seen_fetch_urls << redirection_link[:url]
-          logger.log("Enqueued redirect #{redirection_link}")
+          if !is_redirect_fetch_url_already_seen # || !is_redirect_already_fetched
+            current_queue << redirection_link # Redirections go to the same queue
+            ctx.seen_canonical_urls << redirection_link[:canonical_url]
+            ctx.seen_fetch_urls << redirection_link[:url]
+            logger.log("Enqueued redirect #{redirection_link}")
+          end
         end
       elsif PERMANENT_ERROR_CODES.include?(resp.code)
         content_type = 'permanent 4xx'
@@ -423,10 +371,12 @@ def crawl_loop(
       current_depth += 1
     end
 
-    logger.log("total:#{ctx.seen_canonical_urls.length} fetched:#{ctx.fetched_urls.length} new:#{ctx.seen_canonical_urls.length - initial_seen_urls_count} queued:#{queue1.length + queue2.length} disallowed:#{disallowed_host_links.length} #{resp_status} #{link[:url]}")
+    logger.log("total:#{ctx.fetched_urls.length + queue1.length + queue2.length} fetched:#{ctx.fetched_urls.length} new:#{ctx.seen_canonical_urls.length - initial_seen_urls_count} queued:#{queue1.length + queue2.length} seen:#{ctx.seen_canonical_urls.length} disallowed:#{disallowed_host_links.length} requests:#{ctx.requests_made} #{resp_status} #{link[:url]}")
   end
 
-  { allowed_host_links: queue1 + queue2, disallowed_host_links: disallowed_host_links }
+  allowed_host_links = queue1 + queue2
+  logger.log("Crawl loop done, allowed:#{allowed_host_links.length} disallowed:#{disallowed_host_links.length}")
+  { allowed_host_links: allowed_host_links, disallowed_host_links: disallowed_host_links }
 end
 
 def extract_links(page, allowed_hosts, redirects, logger)
@@ -443,7 +393,7 @@ def extract_links(page, allowed_hosts, redirects, logger)
     url_attribute = element.attributes['href']
     link = to_canonical_link(url_attribute.to_s, logger, page[:fetch_uri])
     next if link.nil?
-    link = follow_redirects(link, redirects)
+    link = follow_cached_redirects(link, redirects)
     link[:type] = element.attributes['type']
     if allowed_hosts.include?(link[:host])
       allowed_host_links << link
@@ -461,7 +411,7 @@ def to_canonical_link(url, logger, fetch_uri = nil)
     .sub(/( |\t|\n|\x00|\v|\f|\r|%20|%09|%0a|%00|%0b|%0c|%0d)+\z/i, '')
   url_newlines_removed = url_stripped.delete("\n")
 
-  if !/\A(http(s)?:)?[\-_.!~*'()a-zA-Z\d;\/?@&=+$,]+\z/.match?(url_newlines_removed)
+  if !/\A(http(s)?:)?[\-_.!~*'()a-zA-Z\d;\/?&=+$,]+\z/.match?(url_newlines_removed)
     begin
       url_unescaped = Addressable::URI.unescape(url_newlines_removed)
       unless url_unescaped.valid_encoding?
@@ -474,7 +424,7 @@ def to_canonical_link(url, logger, fetch_uri = nil)
         e.message.include?("Invalid scheme format") ||
         e.message.include?("Absolute URI missing hierarchical segment")
 
-        logger.log("URL \"#{url}\" from \"#{fetch_uri}\" has #{e}")
+        logger.log("Invalid URL: \"#{url}\" from \"#{fetch_uri}\" has #{e}")
         return nil
       else
         raise
@@ -488,9 +438,14 @@ def to_canonical_link(url, logger, fetch_uri = nil)
     return nil
   end
 
-  uri = URI(url_escaped)
+  begin
+    uri = URI(url_escaped)
+  rescue URI::InvalidURIError => e
+    logger.log("Invalid URL: \"#{url}\" from \"#{fetch_uri}\" has #{e}")
+    return nil
+  end
 
-  if uri.scheme.nil? && uri.host.nil? && !fetch_uri.nil? # Relative uri
+  if uri.scheme.nil? && !fetch_uri.nil? # Relative uri
     fetch_uri_classes = { 'http' => URI::HTTP, 'https' => URI::HTTPS }
     path = URI::join(fetch_uri, uri).path
     uri = fetch_uri_classes[fetch_uri.scheme].build(host: fetch_uri.host, path: path, query: uri.query)
@@ -502,11 +457,11 @@ def to_canonical_link(url, logger, fetch_uri = nil)
 
   uri.fragment = nil
   if uri.userinfo != nil
-    logger.log("URI \"#{uri}\" from \"#{fetch_uri}\" has userinfo: #{uri.userinfo}")
+    logger.log("Invalid URL: \"#{uri}\" from \"#{fetch_uri}\" has userinfo: #{uri.userinfo}")
     return nil
   end
   if uri.opaque != nil
-    logger.log("URI \"#{uri}\" from \"#{fetch_uri}\" has opaque: #{uri.opaque}")
+    logger.log("Invalid URL: \"#{uri}\" from \"#{fetch_uri}\" has opaque: #{uri.opaque}")
     return nil
   end
   if uri.registry != nil
@@ -517,7 +472,7 @@ def to_canonical_link(url, logger, fetch_uri = nil)
   { canonical_url: canonical_url, host: uri.host, uri: uri, url: uri.to_s }
 end
 
-WHITELISTED_QUERY_PARAMS = Set.new(%w[blog page year offset skip sort order format])
+WHITELISTED_QUERY_PARAMS = Set.new(%w[blog page year m offset skip sort order format])
 
 def to_canonical_url(uri)
   port_str = (
@@ -541,7 +496,7 @@ def to_canonical_url(uri)
   "#{uri.host}#{port_str}#{path_str}#{query_str}" # drop scheme and fragment too
 end
 
-def follow_redirects(link, redirects)
+def follow_cached_redirects(link, redirects)
   while redirects.key?(link[:url]) && link != redirects[link[:url]]
     link = redirects[link[:url]]
   end

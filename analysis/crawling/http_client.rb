@@ -1,4 +1,5 @@
 require 'set'
+require_relative 'db'
 require_relative 'monotonic_now'
 
 HttpResponse = Struct.new(:code, :content_type, :location, :body)
@@ -47,7 +48,7 @@ class MockHttpClient
     ).to_h do |page_row|
       [
         page_row["fetch_url"],
-        HttpResponse.new("200", page_row["content_type"], nil, page_row["content"])
+        HttpResponse.new("200", page_row["content_type"], nil, unescape_bytea(page_row["content"]))
       ]
     end
 

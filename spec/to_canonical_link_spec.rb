@@ -15,6 +15,7 @@ test_data = [
   ["should parse relative url with /", %w[/abc https://ya.ru/hi/hello], %w[https://ya.ru/abc ya.ru/abc]],
   ["should parse relative url with ./", %w[./abc https://ya.ru/hi/hello], %w[https://ya.ru/hi/abc ya.ru/hi/abc]],
   ["should parse relative url with ../", %w[../abc https://ya.ru/hi/hello/bonjour], %w[https://ya.ru/hi/abc ya.ru/hi/abc]],
+  ["should parse relative url with //", %w[//ya.ru/abc https://ya.ru/hi/hello], %w[https://ya.ru/abc ya.ru/abc]],
   ["should drop fragment", %w[https://ya.ru/abc#def https://ya.ru], %w[https://ya.ru/abc ya.ru/abc]],
   ["should include non-standard port in canonical url", %w[https://ya.ru:444/abc https://ya.ru:444], %w[https://ya.ru:444/abc ya.ru:444/abc]],
   ["should drop standard http port in canonical url", %w[http://ya.ru:80/abc http://ya.ru:80], %w[http://ya.ru/abc ya.ru/abc]],
@@ -42,7 +43,8 @@ test_data = [
   ["should preserve escaped url", %w[https://ya.ru/%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F https://ya.ru], %w[https://ya.ru/%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F ya.ru/%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F]],
   ["should handle half-escaped url", %w[https://ya.ru/Рос%D1%81%D0%B8%D1%8F% https://ya.ru], %w[https://ya.ru/%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%25 ya.ru/%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%25]],
   ["should preserve badly escaped url", %w[https://ya.ru/%25D1%2581%25D0%25B8%25D1%258F https://ya.ru], %w[https://ya.ru/%25D1%2581%25D0%25B8%25D1%258F ya.ru/%25D1%2581%25D0%25B8%25D1%258F]],
-  ["should handle invalid escape", %w[http://www.ratebeer.com/beer/lindemans-p%EAche-lambic-(p%EAcheresse)/345/ https://acko.net/blog/ahoy-vancouver/], %w[http://www.ratebeer.com/beer/lindemans-p%25EAche-lambic-(p%25EAcheresse)/345/ www.ratebeer.com/beer/lindemans-p%25EAche-lambic-(p%25EAcheresse)/345/]]
+  ["should handle invalid escape", %w[http://www.ratebeer.com/beer/lindemans-p%EAche-lambic-(p%EAcheresse)/345/ https://acko.net/blog/ahoy-vancouver/], %w[http://www.ratebeer.com/beer/lindemans-p%25EAche-lambic-(p%25EAcheresse)/345/ www.ratebeer.com/beer/lindemans-p%25EAche-lambic-(p%25EAcheresse)/345/]],
+  ["should ignore invalid uri with two userinfos", %w[http://ex.p.lo.si.v.edhq.g@silvia.woodw.o.r.t.h@www.temposicilia.it/index.php/component/-/index.php?option=com_kide http://yosefk.com/blog/a-better-future-animated-post.html], nil]
 ]
 
 RSpec.describe "to_canonical_link" do
