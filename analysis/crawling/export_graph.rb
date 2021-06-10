@@ -1,6 +1,7 @@
 require_relative 'db'
 
 def export_graph(db, start_link_id, start_link, allowed_hosts, feed_uri, feed_urls, logger)
+  logger.log("Export graph started")
   redirects = db
     .exec_params(
       'select from_fetch_url, to_fetch_url from redirects where start_link_id = $1',
@@ -88,7 +89,5 @@ def export_graph(db, start_link_id, start_link, allowed_hosts, feed_uri, feed_ur
     end
     dot_f.write("}\n")
   end
-
-  command_prefix = File.exist?("/dev/null") ? "" : "wsl "
-  raise "Graph generation failed" unless system("#{command_prefix}sfdp -Tsvg graph/#{start_link_id}.dot > graph/#{start_link_id}.svg")
+  logger.log("Export graph finished")
 end

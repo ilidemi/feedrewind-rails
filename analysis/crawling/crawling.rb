@@ -6,6 +6,7 @@ require 'set'
 require_relative 'crawling_storage'
 require_relative 'export_graph'
 require_relative 'feed_parsing'
+require_relative 'discover_historical_entries'
 require_relative 'http_client'
 
 CRAWLING_RESULT_COLUMNS = [
@@ -19,6 +20,9 @@ CRAWLING_RESULT_COLUMNS = [
   [:duplicate_fetches, :neutral],
   [:items_found, :neutral],
   [:all_items_found, :boolean],
+  [:historical_links_found, :boolean],
+  [:archive_url, :neutral],
+  [:historical_links, :neutral],
   [:total_requests, :neutral],
   [:total_pages, :neutral],
   [:total_network_requests, :neutral],
@@ -119,7 +123,7 @@ def discover_feed(db, start_link_id, logger)
     item_links = feed_urls
       .item_urls
       .map { |url| to_canonical_link(url, logger, feed_page_fetch_uri) }
-      .map { |link| follow_redirects(link, ctx, mock_http_client, logger) }
+      .map { |link| follow_item_redirects(start_link_id, link, ctx, mock_http_client, mock_db_storage, logger) }
     item_canonical_urls = item_links.map { |link| link[:canonical_url] }
     item_hosts = item_links.map { |link| link[:host] }
     allowed_hosts.merge(item_hosts)
@@ -149,11 +153,26 @@ def discover_feed(db, start_link_id, logger)
 
     items_found = item_canonical_urls.count { |url| ctx.seen_canonical_urls.include?(url) }
     result.items_found = items_found
-    result.all_items_found = items_found == item_canonical_urls.length
+    all_items_found = items_found == item_canonical_urls.length
+    result.all_items_found = all_items_found
     logger.log("Items found: #{items_found}/#{item_canonical_urls.length}")
 
     export_graph(db, start_link_id, start_link, allowed_hosts, feed_page_fetch_uri, feed_urls, logger)
-    logger.log("Graph exported")
+
+    if all_items_found
+      historical_links = discover_historical_entries(
+        start_link_id, item_canonical_urls, allowed_hosts, ctx.redirects, db, logger
+      )
+      result.historical_links_found = !!historical_links
+      if historical_links
+        result.archive_url = historical_links[:archive_url]
+        result.historical_links = historical_links[:links].length
+        logger.log("Historical links: #{historical_links[:links].length}")
+        historical_links[:links].each do |historical_link|
+          logger.log(historical_link[:url])
+        end
+      end
+    end
 
     result
   rescue => e
@@ -214,9 +233,10 @@ end
 
 PERMANENT_ERROR_CODES = %w[400 401 402 403 404 405 406 407 410 411 412 413 414 415 416 417 418 451]
 
-def follow_redirects(start_link, ctx, http_client, logger)
-  logger.log("Start follow redirects for #{start_link}")
-  link = start_link
+def follow_item_redirects(start_link_id, item_link, ctx, http_client, mock_db_storage, logger)
+  logger.log("Start follow redirects for #{item_link}")
+  link = item_link
+  seen_urls = [link[:url]]
   loop do
     request_start = monotonic_now
     resp = http_client.request(link[:uri], logger)
@@ -232,9 +252,24 @@ def follow_redirects(start_link, ctx, http_client, logger)
         logger.log("Bad redirection link")
         break
       else
+        if seen_urls.include?(redirection_link[:url])
+          raise "Circular redirect for #{item_link[:url]}: #{seen_urls} -> #{redirection_link[:url]}"
+        end
+        seen_urls << redirection_link[:url]
+        mock_db_storage.save_redirect_if_not_exists(link[:url], redirection_link[:url], start_link_id)
         link = redirection_link
       end
-    elsif resp.code == "200" || PERMANENT_ERROR_CODES.include?(resp.code)
+    elsif resp.code == "200"
+      content_type = response_content_type(resp)
+      content = resp.body # Assuming item links always end in worthy pages
+      mock_db_storage.save_page_if_not_exists(
+        link[:canonical_url], link[:url], content_type, start_link_id, content
+      )
+      break
+    elsif PERMANENT_ERROR_CODES.include?(resp.code)
+      mock_db_storage.save_permanent_error_if_not_exists(
+        link[:canonical_url], link[:url], start_link_id, resp.code
+      )
       break
     else
       raise "HTTP #{resp.code}" # TODO more cases here
@@ -243,6 +278,10 @@ def follow_redirects(start_link, ctx, http_client, logger)
 
   logger.log("Follow redirects done")
   link
+end
+
+def response_content_type(resp)
+  resp.content_type ? resp.content_type.split(';')[0] : nil
 end
 
 def crawl_loop(
@@ -290,7 +329,7 @@ def crawl_loop(
       ctx.requests_made += 1
 
       if resp.code == "200"
-        content_type = resp.content_type ? resp.content_type.split(';')[0] : nil
+        content_type = response_content_type(resp)
         is_main_feed = false
         if content_type == "text/html"
           content = resp.body
@@ -379,7 +418,7 @@ def crawl_loop(
   { allowed_host_links: allowed_host_links, disallowed_host_links: disallowed_host_links }
 end
 
-def extract_links(page, allowed_hosts, redirects, logger)
+def extract_links(page, allowed_hosts, redirects, logger, include_xpath = false)
   if page[:content_type] != 'text/html'
     return { allowed_host_links: [], disallowed_host_links: [] }
   end
@@ -395,6 +434,11 @@ def extract_links(page, allowed_hosts, redirects, logger)
     next if link.nil?
     link = follow_cached_redirects(link, redirects)
     link[:type] = element.attributes['type']
+
+    if include_xpath
+      link[:xpath] = element.path
+    end
+
     if allowed_hosts.include?(link[:host])
       allowed_host_links << link
     else
@@ -496,9 +540,16 @@ def to_canonical_url(uri)
   "#{uri.host}#{port_str}#{path_str}#{query_str}" # drop scheme and fragment too
 end
 
-def follow_cached_redirects(link, redirects)
+def follow_cached_redirects(initial_link, redirects)
+  link = initial_link
+  seen_urls = [link[:url]]
   while redirects.key?(link[:url]) && link != redirects[link[:url]]
-    link = redirects[link[:url]]
+    redirection_link = redirects[link[:url]]
+    if seen_urls.include?(redirection_link[:url])
+      raise "Circular redirect for #{initial_link[:url]}: #{seen_urls} -> #{redirection_link[:url]}"
+    end
+    seen_urls << redirection_link[:url]
+    link = redirection_link
   end
   link
 end

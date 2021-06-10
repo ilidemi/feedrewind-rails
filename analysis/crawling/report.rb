@@ -1,4 +1,6 @@
 require 'cgi'
+require 'fileutils'
+require 'tmpdir'
 
 def output_report(filename, results, expected_total)
   success_count = 0
@@ -37,7 +39,8 @@ def output_report(filename, results, expected_total)
     failure: " style=\"background: lightcoral;\""
   }
 
-  File.open(filename, 'w') do |report_file|
+  temp_filename = File.join(Dir.tmpdir, "rss_catchup_report.html")
+  File.open(temp_filename, 'w') do |report_file|
     report_file.write("<html>\n")
     report_file.write("<head>\n")
     report_file.write("<title>Report</title>\n")
@@ -88,4 +91,9 @@ def output_report(filename, results, expected_total)
     report_file.write("</table>\n")
     report_file.write('</body></html>')
   end
+
+  if File.exist?(filename)
+    File.delete(filename)
+  end
+  FileUtils.mv(temp_filename, filename)
 end

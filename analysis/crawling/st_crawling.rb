@@ -5,7 +5,8 @@ require_relative 'logger'
 db = connect_db
 logger = MyLogger.new($stdout)
 
-result = discover_feed(db, 470, logger)
+start_link_id = 341
+result = discover_feed(db, start_link_id, logger)
 puts CrawlingResult
        .column_names
        .zip(result.column_values, result.column_statuses)

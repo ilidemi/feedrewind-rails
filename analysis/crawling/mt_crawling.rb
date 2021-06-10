@@ -9,6 +9,7 @@ db = connect_db
 start_link_ids = db.exec('select id from start_links').map { |row| row["id"].to_i }
 id_queue = Queue.new
 start_link_ids.each do |id|
+  next unless id % 4 == 1
   id_queue << id
 end
 
@@ -21,7 +22,7 @@ end
 
 result_queue = Queue.new
 
-thread_count = 16
+thread_count = 8
 threads = []
 thread_count.times do
   thread = Thread.new do
