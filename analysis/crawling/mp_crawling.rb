@@ -6,7 +6,7 @@ require_relative 'logger'
 require_relative 'monotonic_now'
 require_relative 'report'
 
-process_count = 8
+process_count = 1
 
 start_time = monotonic_now
 report_filename = "report/mt_report_#{DateTime.now.strftime('%F_%H-%M-%S')}.html"
@@ -14,6 +14,7 @@ db = connect_db
 start_link_ids = db
   .exec('select id from start_links')
   .map { |row| row["id"].to_i }
+start_link_ids = [124]
 id_queue = Queue.new
 start_link_ids.each do |id|
   id_queue << id
@@ -70,12 +71,26 @@ process_count.times do
       begin
         File.open("log/log#{start_link_id}.txt", 'a') do |log_file|
           logger = MyLogger.new(log_file)
-          result = discover_feed(process_db, start_link_id, logger)
+          result = crawl(process_db, start_link_id, logger)
           write_object(result_writer, [start_link_id, result, nil])
         end
       rescue => error
         File.open("log/exception#{start_link_id}.txt", 'w') do |error_file|
-          error_file.write("#{error.to_s}\n#{error.backtrace}")
+          error_file.puts(error.to_s)
+          loop do
+            if error.backtrace
+              error_file.puts("---")
+              error.backtrace.each do |line|
+                error_file.puts(line)
+              end
+            end
+
+            if error.cause
+              error = error.cause
+            else
+              break
+            end
+          end
         end
         result = error.is_a?(CrawlingError) ? error.result : nil
         write_object(result_writer, [start_link_id, result, error.message])

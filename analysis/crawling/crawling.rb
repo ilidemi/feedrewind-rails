@@ -21,8 +21,9 @@ CRAWLING_RESULT_COLUMNS = [
   [:items_found, :neutral],
   [:all_items_found, :boolean],
   [:historical_links_found, :boolean],
-  [:archive_url, :neutral],
   [:historical_links, :neutral],
+  [:archive_url, :neutral],
+  [:oldest_link, :neutral],
   [:total_requests, :neutral],
   [:total_pages, :neutral],
   [:total_network_requests, :neutral],
@@ -70,7 +71,7 @@ class CrawlingError < StandardError
   attr_reader :result
 end
 
-def discover_feed(db, start_link_id, logger)
+def crawl(db, start_link_id, logger)
   start_link_url = db.exec_params('select url from start_links where id = $1', [start_link_id])[0]["url"]
   result = CrawlingResult.new
   result.start_url = start_link_url
@@ -165,8 +166,9 @@ def discover_feed(db, start_link_id, logger)
       )
       result.historical_links_found = !!historical_links
       if historical_links
-        result.archive_url = historical_links[:archive_url]
         result.historical_links = historical_links[:links].length
+        result.archive_url = historical_links[:archive_url]
+        result.oldest_link = historical_links[:links][-1][:canonical_url]
         logger.log("Historical links: #{historical_links[:links].length}")
         historical_links[:links].each do |historical_link|
           logger.log(historical_link[:url])
@@ -432,7 +434,7 @@ def extract_links(page, allowed_hosts, redirects, logger, include_xpath = false)
     url_attribute = element.attributes['href']
     link = to_canonical_link(url_attribute.to_s, logger, page[:fetch_uri])
     next if link.nil?
-    link = follow_cached_redirects(link, redirects)
+    link = follow_cached_redirects(link, redirects).clone
     link[:type] = element.attributes['type']
 
     if include_xpath

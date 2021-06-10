@@ -18,7 +18,7 @@ id  pattern total   url oldest_url
 358 archives    2   https://jeffro.xyz/ https://jeffro.xyz/2019/04/interactive-chart-with-tooltip-using-react-and-d3-js/
 379 archives    1   https://programmingmetaphors.code.blog/ https://programmingmetaphors.code.blog/2019/08/05/programming-metaphors-and-me/
 
-Duplicates => wrong
-Check how 241 gets those urls from that masked xpath
+Duplicates => wrong - done
+Check how 241 gets those urls from that masked xpath - done
 276 has one item in RSS so anything matches
 379 has one item in RSS and actually one entry
