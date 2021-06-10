@@ -21,7 +21,8 @@ CRAWLING_RESULT_COLUMNS = [
   [:items_found, :neutral],
   [:all_items_found, :boolean],
   [:historical_links_found, :boolean],
-  [:historical_links, :neutral],
+  [:historical_links_matching, :boolean],
+  [:historical_links_count, :neutral],
   [:archive_url, :neutral],
   [:oldest_link, :neutral],
   [:total_requests, :neutral],
@@ -36,6 +37,7 @@ class CrawlingResult
   def initialize
     CRAWLING_RESULT_COLUMNS.each do |column|
       instance_variable_set("@#{column[0]}", nil)
+      instance_variable_set("@#{column[0]}_status", nil)
     end
   end
 
@@ -45,6 +47,11 @@ class CrawlingResult
 
   def column_statuses
     CRAWLING_RESULT_COLUMNS.map do |column|
+      manual_status = instance_variable_get("@#{column[0]}_status")
+      if manual_status
+        next manual_status
+      end
+
       if column[1] == :neutral
         :neutral
       elsif column[1] == :boolean
@@ -59,7 +66,7 @@ class CrawlingResult
     attr_reader :column_names
   end
 
-  attr_writer *(CRAWLING_RESULT_COLUMNS.map { |column| column[0] })
+  attr_writer *(CRAWLING_RESULT_COLUMNS.flat_map { |column| [column[0], "#{column[0]}_status".to_sym] })
 end
 
 class CrawlingError < StandardError
@@ -115,7 +122,7 @@ def crawl(db, start_link_id, logger)
     logger.log("Feed url: #{feed_url}")
 
     feed_page = in_memory_storage.pages[feed_url]
-    feed_urls = extract_feed_urls(feed_page[:content])
+    feed_urls = extract_feed_urls(feed_page[:content], logger)
     result.feed_links = feed_urls.item_urls.length
     logger.log("Root url: #{feed_urls.root_url}")
     logger.log("Items in feed: #{feed_urls.item_urls.length}")
@@ -157,23 +164,64 @@ def crawl(db, start_link_id, logger)
     all_items_found = items_found == item_canonical_urls.length
     result.all_items_found = all_items_found
     logger.log("Items found: #{items_found}/#{item_canonical_urls.length}")
-
     export_graph(db, start_link_id, start_link, allowed_hosts, feed_page_fetch_uri, feed_urls, logger)
+    raise "Not all items found" unless all_items_found
 
-    if all_items_found
-      historical_links = discover_historical_entries(
-        start_link_id, item_canonical_urls, allowed_hosts, ctx.redirects, db, logger
-      )
-      result.historical_links_found = !!historical_links
-      if historical_links
-        result.historical_links = historical_links[:links].length
-        result.archive_url = historical_links[:archive_url]
-        result.oldest_link = historical_links[:links][-1][:canonical_url]
-        logger.log("Historical links: #{historical_links[:links].length}")
-        historical_links[:links].each do |historical_link|
-          logger.log(historical_link[:url])
-        end
+    historical_links = discover_historical_entries(
+      start_link_id, item_canonical_urls, allowed_hosts, ctx.redirects, db, logger
+    )
+    result.historical_links_found = !!historical_links
+    raise "Historical links not found" unless historical_links
+
+    entries_count = historical_links[:links].length
+    oldest_link = historical_links[:links][-1][:canonical_url]
+
+    logger.log("Historical links: #{entries_count}")
+    historical_links[:links].each do |historical_link|
+      logger.log(historical_link[:url])
+    end
+
+    historical_ground_truth_rows = db.exec_params(
+      "select pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url from historical_ground_truth where start_link_id = $1",
+      [start_link_id]
+    )
+    if historical_ground_truth_rows.cmd_tuples > 0
+      historical_links_matching = true
+      gt_row = historical_ground_truth_rows[0]
+
+      if gt_row["pattern"] != "archives"
+        historical_links_matching = false
       end
+
+      gt_entries_count = gt_row["entries_count"].to_i
+      if gt_entries_count != entries_count
+        historical_links_matching = false
+        result.historical_links_count_status = :failure
+        result.historical_links_count = "#{entries_count} (#{gt_entries_count})"
+      else
+        result.historical_links_count_status = :success
+        result.historical_links_count = entries_count
+      end
+
+      # TODO: Skipping the check for the main page url for now
+      result.archive_url = historical_links[:archive_url]
+
+      gt_oldest_link = gt_row["oldest_entry_canonical_url"]
+      if gt_oldest_link != oldest_link
+        historical_links_matching = false
+        result.oldest_link_status = :failure
+        result.oldest_link = "#{oldest_link} (#{gt_oldest_link})"
+      else
+        result.oldest_link_status = :success
+        result.oldest_link = oldest_link
+      end
+
+      result.historical_links_matching = historical_links_matching
+    else
+      result.historical_links_matching_status = :neutral
+      result.historical_links_count = entries_count
+      result.archive_url = historical_links[:archive_url]
+      result.oldest_link = oldest_link
     end
 
     result

@@ -1,6 +1,6 @@
 require 'set'
 require_relative 'db'
-require_relative 'monotonic_now'
+require_relative 'util'
 
 HttpResponse = Struct.new(:code, :content_type, :location, :body)
 
