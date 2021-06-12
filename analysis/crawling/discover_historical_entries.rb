@@ -5,7 +5,7 @@ def discover_historical_entries(start_link_id, feed_item_urls, allowed_hosts, re
 
   db.transaction do |transaction|
     transaction.exec_params(
-      "declare pages_cursor cursor for select canonical_url, fetch_url, content_type, content from pages where start_link_id = $1 and content is not null",
+      "declare pages_cursor cursor for select canonical_url, fetch_url, content_type, content from pages where start_link_id = $1 and content is not null order by length(canonical_url) asc",
       [start_link_id]
     )
 
@@ -50,13 +50,19 @@ def discover_historical_entries(start_link_id, feed_item_urls, allowed_hosts, re
             next
           end
 
-          if feed_item_urls != masked_xpath_link_urls[0...feed_item_urls.length]
-            logger.log("Masked xpath #{masked_xpath} has all links #{feed_item_urls} but not in the right order: #{masked_xpath_link_urls}")
-            next
+          if feed_item_urls == masked_xpath_link_urls[0...feed_item_urls.length]
+            logger.log("Masked xpath is good: #{masked_xpath}")
+            return { main_canonical_url: page[:canonical_url], main_fetch_url: page[:fetch_uri].to_s, links: masked_xpath_links }
           end
 
-          logger.log("Masked xpath is good: #{masked_xpath}")
-          return { archive_url: page[:canonical_url], links: masked_xpath_links }
+          reversed_masked_xpath_links = masked_xpath_links.reverse
+          reversed_masked_xpath_link_urls = masked_xpath_link_urls.reverse
+          if feed_item_urls == reversed_masked_xpath_link_urls[0...feed_item_urls.length]
+            logger.log("Masked xpath is good in reverse order: #{masked_xpath}")
+            return { main_canonical_url: page[:canonical_url], main_fetch_url: page[:fetch_uri].to_s, links: reversed_masked_xpath_links }
+          end
+
+          logger.log("Masked xpath #{masked_xpath} has all links #{feed_item_urls} but not in the right order: #{masked_xpath_link_urls}")
         end
       end
     end

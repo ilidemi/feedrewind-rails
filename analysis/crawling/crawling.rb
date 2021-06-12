@@ -11,6 +11,7 @@ require_relative 'http_client'
 
 CRAWLING_RESULT_COLUMNS = [
   [:start_url, :neutral],
+  [:comment, :neutral],
   [:http_client_init_time, :neutral],
   [:feed_requests_made, :neutral],
   [:feed_time, :neutral],
@@ -18,13 +19,13 @@ CRAWLING_RESULT_COLUMNS = [
   [:feed_links, :boolean],
   [:crawl_succeeded, :boolean],
   [:duplicate_fetches, :neutral],
-  [:items_found, :neutral],
+  [:found_items_count, :neutral_present],
   [:all_items_found, :boolean],
   [:historical_links_found, :boolean],
   [:historical_links_matching, :boolean],
-  [:historical_links_count, :neutral],
-  [:archive_url, :neutral],
-  [:oldest_link, :neutral],
+  [:historical_links_count, :neutral_present],
+  [:main_url, :neutral_present],
+  [:oldest_link, :neutral_present],
   [:total_requests, :neutral],
   [:total_pages, :neutral],
   [:total_network_requests, :neutral],
@@ -54,6 +55,8 @@ class CrawlingResult
 
       if column[1] == :neutral
         :neutral
+      elsif column[1] == :neutral_present
+        instance_variable_get("@#{column[0]}") ? :neutral : :failure
       elsif column[1] == :boolean
         instance_variable_get("@#{column[0]}") ? :success : :failure
       else
@@ -81,11 +84,19 @@ end
 def crawl(db, start_link_id, logger)
   start_link_url = db.exec_params('select url from start_links where id = $1', [start_link_id])[0]["url"]
   result = CrawlingResult.new
-  result.start_url = start_link_url
+  result.start_url = "<a href=\"#{start_link_url}\">#{start_link_url}</a>"
   ctx = CrawlContext.new
   start_time = monotonic_now
 
   begin
+    comment_rows = db.exec_params(
+      'select comment from crawler_comments where start_link_id = $1',
+      [start_link_id]
+    )
+    if comment_rows.cmd_tuples == 1
+      result.comment = comment_rows[0]["comment"]
+    end
+
     mock_http_client = MockHttpClient.new(db, start_link_id)
     result.http_client_init_time = (monotonic_now - start_time).to_i
 
@@ -117,12 +128,12 @@ def crawl(db, start_link_id, logger)
 
     raise "Feed not found" if in_memory_storage.feeds.empty?
 
-    feed_url = in_memory_storage.feeds.first[1][:canonical_url]
-    result.feed_url = feed_url
-    logger.log("Feed url: #{feed_url}")
+    feed_link = in_memory_storage.feeds.first[1]
+    result.feed_url = "<a href=\"#{feed_link[:url]}\">#{feed_link[:canonical_url]}</a>"
+    logger.log("Feed url: #{feed_link[:canonical_url]}")
 
-    feed_page = in_memory_storage.pages[feed_url]
-    feed_urls = extract_feed_urls(feed_page[:content], logger)
+    feed_page = in_memory_storage.pages[feed_link[:canonical_url]]
+    feed_urls = extract_feed_urls(feed_page[:content])
     result.feed_links = feed_urls.item_urls.length
     logger.log("Root url: #{feed_urls.root_url}")
     logger.log("Items in feed: #{feed_urls.item_urls.length}")
@@ -150,6 +161,7 @@ def crawl(db, start_link_id, logger)
     db.exec_params('delete from pages where start_link_id = $1', [start_link_id])
     db.exec_params('delete from permanent_errors where start_link_id = $1', [start_link_id])
     db.exec_params('delete from redirects where start_link_id = $1', [start_link_id])
+    db.exec_params('delete from historical where start_link_id = $1', [start_link_id])
     db_storage = CrawlDbStorage.new(db, mock_db_storage)
     save_to_db(in_memory_storage, db_storage)
 
@@ -159,11 +171,11 @@ def crawl(db, start_link_id, logger)
     )
     result.crawl_succeeded = true
 
-    items_found = item_canonical_urls.count { |url| ctx.seen_canonical_urls.include?(url) }
-    result.items_found = items_found
-    all_items_found = items_found == item_canonical_urls.length
+    found_items_count = item_canonical_urls.count { |url| ctx.seen_canonical_urls.include?(url) }
+    result.found_items_count = found_items_count
+    all_items_found = found_items_count == item_canonical_urls.length
     result.all_items_found = all_items_found
-    logger.log("Items found: #{items_found}/#{item_canonical_urls.length}")
+    logger.log("Items found: #{found_items_count}/#{item_canonical_urls.length}")
     export_graph(db, start_link_id, start_link, allowed_hosts, feed_page_fetch_uri, feed_urls, logger)
     raise "Not all items found" unless all_items_found
 
@@ -174,12 +186,16 @@ def crawl(db, start_link_id, logger)
     raise "Historical links not found" unless historical_links
 
     entries_count = historical_links[:links].length
-    oldest_link = historical_links[:links][-1][:canonical_url]
-
+    oldest_link = historical_links[:links][-1]
     logger.log("Historical links: #{entries_count}")
     historical_links[:links].each do |historical_link|
       logger.log(historical_link[:url])
     end
+
+    db.exec_params(
+      "insert into historical (start_link_id, pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url) values ($1, $2, $3, $4, $5)",
+      [start_link_id, "archives", entries_count, historical_links[:main_canonical_url], oldest_link[:canonical_url]]
+    )
 
     historical_ground_truth_rows = db.exec_params(
       "select pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url from historical_ground_truth where start_link_id = $1",
@@ -204,25 +220,26 @@ def crawl(db, start_link_id, logger)
       end
 
       # TODO: Skipping the check for the main page url for now
-      result.archive_url = historical_links[:archive_url]
 
-      gt_oldest_link = gt_row["oldest_entry_canonical_url"]
-      if gt_oldest_link != oldest_link
+      gt_oldest_canonical_url = gt_row["oldest_entry_canonical_url"]
+      if gt_oldest_canonical_url != oldest_link[:canonical_url]
         historical_links_matching = false
         result.oldest_link_status = :failure
-        result.oldest_link = "#{oldest_link} (#{gt_oldest_link})"
+        result.oldest_link = "<a href=\"#{oldest_link[:url]}\">#{oldest_link[:canonical_url]}</a><br>(#{gt_oldest_canonical_url})"
       else
         result.oldest_link_status = :success
-        result.oldest_link = oldest_link
+        result.oldest_link = "<a href=\"#{oldest_link[:url]}\">#{oldest_link[:canonical_url]}</a>"
       end
 
       result.historical_links_matching = historical_links_matching
     else
+      result.historical_links_matching = '?'
       result.historical_links_matching_status = :neutral
       result.historical_links_count = entries_count
-      result.archive_url = historical_links[:archive_url]
       result.oldest_link = oldest_link
     end
+
+    result.main_url = "<a href=\"#{historical_links[:main_fetch_url]}\">#{historical_links[:main_canonical_url]}</a>"
 
     result
   rescue => e
@@ -486,7 +503,10 @@ def extract_links(page, allowed_hosts, redirects, logger, include_xpath = false)
     link[:type] = element.attributes['type']
 
     if include_xpath
-      link[:xpath] = element.path
+      link[:xpath] = element
+        .path
+        .gsub(/([^\]])\//, '\1[1]/') # Add [1] to every node that doesn't have it, except last
+        .gsub(/([^\]])$/, '\1[1]') # Add [1] to the last node too
     end
 
     if allowed_hosts.include?(link[:host])

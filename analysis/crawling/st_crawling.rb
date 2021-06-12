@@ -5,7 +5,7 @@ require_relative 'logger'
 db = connect_db
 logger = MyLogger.new($stdout)
 
-start_link_id = 3
+start_link_id = 470
 result = crawl(db, start_link_id, logger)
 puts CrawlingResult
        .column_names

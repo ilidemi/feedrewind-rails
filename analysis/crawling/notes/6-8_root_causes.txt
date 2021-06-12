@@ -10,7 +10,7 @@ Feed not found 57
     Feed is text/html 1
 Items not found at all 40
     /20
-    Item link 3xx 10 ~ 20
+    Item link 3xx 10 ~ 20 - fixed
     Javascript required 5 ~ 10
     Item link starts with // 2
     Bad starting place without js 1

@@ -33,6 +33,30 @@ def output_report(filename, results, expected_total)
     ]
   end
 
+  if !sorted_results.empty?
+    column_counters = (0...CrawlingResult.column_names.length).map do |index|
+      column_status_counts = sorted_results
+        .map { |result| result[1][:statuses][index] }
+        .each_with_object(Hash.new(0)) { |word, counts| counts[word] += 1 }
+      if column_status_counts.include?(:neutral) && column_status_counts.length == 1
+        []
+      elsif column_status_counts.include?(:neutral)
+        [
+          column_status_counts[:success] || 0,
+          column_status_counts[:neutral] || 0,
+          column_status_counts[:failure] || 0
+        ]
+      else
+        [
+          column_status_counts[:success] || 0,
+          column_status_counts[:failure] || 0
+        ]
+      end
+    end
+  else
+    column_counters = nil
+  end
+
   styles = {
     neutral: '',
     success: " style=\"background: lightgreen;\"",
@@ -59,8 +83,25 @@ def output_report(filename, results, expected_total)
 
     report_file.write("<table>\n<tr>")
     report_file.write("<th>id</th>")
-    CrawlingResult.column_names.each do |column_name|
-      report_file.write("<th>#{column_name}</th>")
+    CrawlingResult.column_names.each_with_index do |column_name, index|
+      if column_counters
+        column_counter = column_counters[index]
+        if column_counter.length == 3
+          column_counter_str = "<br>"
+          column_counter_str += "<span style=\"color: green;\">#{column_counter[0]}</span>"
+          column_counter_str += " / #{column_counter[1]} / "
+          column_counter_str += "<span style=\"color: red;\">#{column_counter[2]}</span>"
+        elsif column_counter.length == 2
+          column_counter_str = "<br>"
+          column_counter_str += "<span style=\"color: green;\">#{column_counter[0]}</span> / "
+          column_counter_str += "<span style=\"color: red;\">#{column_counter[1]}</span>"
+        else
+          column_counter_str = ''
+        end
+      else
+        column_counter_str = ''
+      end
+      report_file.write("<th>#{column_name}#{column_counter_str}</th>")
     end
     report_file.write("<th>error</th>")
     report_file.write("</tr>\n")

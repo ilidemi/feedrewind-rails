@@ -6,14 +6,15 @@ require_relative 'logger'
 require_relative 'report'
 require_relative 'util'
 
-process_count = 8
+max_process_count = 8
 
 start_time = monotonic_now
 report_filename = "report/mt_report_#{DateTime.now.strftime('%F_%H-%M-%S')}.html"
 db = connect_db
 start_link_ids = db
-  .exec('select id from start_links')
+  .exec('select id from start_links where id not in (select start_link_id from known_failures)')
   .map { |row| row["id"].to_i }
+process_count = [max_process_count, start_link_ids.length].min
 id_queue = Queue.new
 start_link_ids.each do |id|
   id_queue << id
@@ -157,7 +158,7 @@ loop do
     elsif elapsed_seconds < 3600
       elapsed_str = "%dm%02ds" % [elapsed_seconds / 60, elapsed_seconds % 60]
     else
-      elapsed_str = "%dh%03dm%02ds" % [elapsed_seconds / 3600, (elapsed_seconds % 3600) / 60, elapsed_seconds % 60]
+      elapsed_str = "%dh%02dm%02ds" % [elapsed_seconds / 3600, (elapsed_seconds % 3600) / 60, elapsed_seconds % 60]
     end
     puts "#{Time.now.strftime('%F %T')} elapsed:#{elapsed_str} total:#{start_link_ids.length} to_dispatch:#{id_queue.length} to_process:#{start_link_ids.length - results.length} running:#{processes_running} #{ids_running}"
   end
