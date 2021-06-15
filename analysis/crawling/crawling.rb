@@ -236,7 +236,7 @@ def crawl(db, start_link_id, logger)
       result.historical_links_matching = '?'
       result.historical_links_matching_status = :neutral
       result.historical_links_count = entries_count
-      result.oldest_link = oldest_link
+      result.oldest_link = "<a href=\"#{oldest_link[:url]}\">#{oldest_link[:canonical_url]}</a>"
     end
 
     result.main_url = "<a href=\"#{historical_links[:main_fetch_url]}\">#{historical_links[:main_canonical_url]}</a>"
@@ -490,7 +490,7 @@ def extract_links(page, allowed_hosts, redirects, logger, include_xpath = false)
     return { allowed_host_links: [], disallowed_host_links: [] }
   end
 
-  document = Nokogiri::HTML5(page[:content], max_attributes: -1)
+  document = Nokogiri::HTML5(page[:content], max_attributes: -1, max_tree_depth: -1)
   link_elements = document.css('a').to_a + document.css('link').to_a
   allowed_host_links = []
   disallowed_host_links = []

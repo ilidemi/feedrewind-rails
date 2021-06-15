@@ -2,7 +2,7 @@ require 'readline'
 require 'set'
 require_relative '../db'
 
-filename = '../notes/6-11_patterns_3.txt'
+filename = '../notes/6-14_patterns_2.txt'
 
 mode = :initial
 type_operations = []
@@ -27,6 +27,7 @@ File.open(filename) do |patterns_file|
       when :good
         next if line.empty?
         good_id = line.to_i
+        raise "Bad id: #{line}" if good_id.nil?
         id_operations << ['insert into historical_ground_truth select * from historical where start_link_id = $1', [good_id]]
       when :new
         next if line.empty?
@@ -38,10 +39,12 @@ File.open(filename) do |patterns_file|
           next
         elsif !bad_fields.id
           bad_fields.id = line.to_i
+          raise "Bad id: #{line}" if bad_fields.id.nil?
         elsif !bad_fields.pattern
           bad_fields.pattern = line
         elsif !bad_fields.count
           bad_fields.count = line.to_i
+          raise "Bad count: #{line}" if bad_fields.count.nil?
         elsif !bad_fields.main_url
           bad_fields.main_url = line
         elsif !bad_fields.oldest_url
@@ -57,6 +60,10 @@ File.open(filename) do |patterns_file|
       end
     end
   end
+end
+
+if bad_fields.id
+  raise "Bad fields are inconsistent around id #{bad_fields.id}"
 end
 
 new_ids = id_operations.map { |operation| operation[1][0] }
@@ -92,7 +99,7 @@ while (buf = Readline.readline("Y/N> "))
 end
 
 type_operations.each do |operation|
-  type = operation[1][0]
+  type = operation[0].rpartition("'")[0].rpartition["'"][2]
   result = db.exec_params(operation[0], operation[1])
   puts type
   result.check
