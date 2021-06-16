@@ -2,7 +2,7 @@ require 'cgi'
 require 'fileutils'
 require 'tmpdir'
 
-def output_report(filename, results, expected_total)
+def output_report(filename, result_column_names, results, expected_total)
   success_count = 0
   failure_count = 0
   bad_failure_count = 0
@@ -27,14 +27,14 @@ def output_report(filename, results, expected_total)
   status_keys = { success: -1, neutral: 0, failure: 1 }
   sorted_results = evaluated_results.sort_by do |result|
     [
-      result[1].nil? ? [1] * CrawlingResult.column_names.length : result[1][:statuses].map { |status| status_keys[status] },
+      result[1].nil? ? [1] * result_column_names.length : result[1][:statuses].map { |status| status_keys[status] },
       result[2] || "",
       result[0]
     ]
   end
 
   if !sorted_results.empty?
-    column_counters = (0...CrawlingResult.column_names.length).map do |index|
+    column_counters = (0...result_column_names.length).map do |index|
       column_status_counts = sorted_results
         .map { |result| result[1][:statuses][index] }
         .each_with_object(Hash.new(0)) { |word, counts| counts[word] += 1 }
@@ -83,7 +83,7 @@ def output_report(filename, results, expected_total)
 
     report_file.write("<table>\n<tr>")
     report_file.write("<th>id</th>")
-    CrawlingResult.column_names.each_with_index do |column_name, index|
+    result_column_names.each_with_index do |column_name, index|
       if column_counters
         column_counter = column_counters[index]
         if column_counter.length == 3
@@ -111,7 +111,7 @@ def output_report(filename, results, expected_total)
       report_file.write("<td>#{result[0]}</td>")
 
       if result[1].nil?
-        CrawlingResult.column_names.length.times do
+        result_column_names.length.times do
           report_file.write("<td></td>")
         end
       else

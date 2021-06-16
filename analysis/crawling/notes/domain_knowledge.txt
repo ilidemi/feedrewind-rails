@@ -19,17 +19,14 @@ RSS gem fails non-deterministically, parsing at XML level works alright
 Parallelization makes reruns faster but Ruby multithreading is single OS thread. Multiprocessing uses all cores but communication is more of a PITA, and a child process can die of OOM and you won't know.
 Ruby is unstable in corner cases: segfaults on debugging exceptions, child processes segfault on interrupt, fork doesn't work on windows
 ruby-prof sucks for threads and processes
+If extraction rules will be returning hints for further crawling and more extraction rules, I will need something resembling a type system with matching
 
 
 # Boiling the ocean
 Caching network requests locally speeds up end to end reruns
 Important to support blogging platforms - multiple rss per domain
-Some individual blogs are more important than others - look up public page ranks
 There is a public crawled dataset with 75M RSS in it
 Starting with known 500, then testing on the next 500 from the internet will give an estimate how generalizable the rules are. After that it's like counting the fish in the ocean by sampling.
-Rule that works on one website can conflict with another website, but haven't seen that yet.
-Make tooling to easier categorize websites manually
-Mechanical turk can help with manual efforts
 Big e2e dashboard is good
 Manual comments in db is good
 
@@ -47,3 +44,11 @@ Same autogeneration process can put one node as /p/a and the other as /p[1]/a, s
 
 # User experience
 If I've seen a blog a month ago, it published new entries, but rss still overlaps with known ones, I can quickly assemble the new list. Will still need to check for deleted posts in the background.
+
+# Ideas
+Rule that works on one website can conflict with another website, but haven't seen that yet.
+Make tooling to easier categorize websites manually
+Mechanical turk can help with manual efforts
+Some individual blogs are more important than others - look up public page ranks
+There can be a little AI that looks at the known signals after each request and tries to figure out the fewest-request way to discover all posts
+There can be an end-user UI like "we're not sure, which of the three options is better?"

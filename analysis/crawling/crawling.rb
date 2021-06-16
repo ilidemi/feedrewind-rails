@@ -4,10 +4,11 @@ require 'nokogumbo'
 require 'rss'
 require 'set'
 require_relative 'crawling_storage'
+require_relative 'discover_historical_entries'
 require_relative 'export_graph'
 require_relative 'feed_parsing'
-require_relative 'discover_historical_entries'
 require_relative 'http_client'
+require_relative 'run_common'
 
 CRAWLING_RESULT_COLUMNS = [
   [:start_url, :neutral],
@@ -32,69 +33,32 @@ CRAWLING_RESULT_COLUMNS = [
   [:total_time, :neutral]
 ]
 
-class CrawlingResult
-  @column_names = CRAWLING_RESULT_COLUMNS.map { |column| column[0].to_s.gsub("_", " ") }
-
+class CrawlRunnable
   def initialize
-    CRAWLING_RESULT_COLUMNS.each do |column|
-      instance_variable_set("@#{column[0]}", nil)
-      instance_variable_set("@#{column[0]}_status", nil)
-    end
+    @result_column_names = to_column_names(CRAWLING_RESULT_COLUMNS)
   end
 
-  def column_values
-    CRAWLING_RESULT_COLUMNS.map { |column| instance_variable_get("@#{column[0]}") }
+  def run(start_link_id, db, logger)
+    crawl(start_link_id, db, logger)
   end
 
-  def column_statuses
-    CRAWLING_RESULT_COLUMNS.map do |column|
-      manual_status = instance_variable_get("@#{column[0]}_status")
-      if manual_status
-        next manual_status
-      end
-
-      if column[1] == :neutral
-        :neutral
-      elsif column[1] == :neutral_present
-        instance_variable_get("@#{column[0]}") ? :neutral : :failure
-      elsif column[1] == :boolean
-        instance_variable_get("@#{column[0]}") ? :success : :failure
-      else
-        raise "Unknown column status symbol: #{column[1]}"
-      end
-    end
-  end
-
-  class << self
-    attr_reader :column_names
-  end
-
-  attr_writer *(CRAWLING_RESULT_COLUMNS.flat_map { |column| [column[0], "#{column[0]}_status".to_sym] })
+  attr_reader :result_column_names
 end
 
-class CrawlingError < StandardError
-  def initialize(message, result)
-    @result = result
-    super(message)
-  end
-
-  attr_reader :result
-end
-
-def crawl(db, start_link_id, logger)
+def crawl(start_link_id, db, logger)
   start_link_url = db.exec_params('select url from start_links where id = $1', [start_link_id])[0]["url"]
-  result = CrawlingResult.new
+  result = RunResult.new(CRAWLING_RESULT_COLUMNS)
   result.start_url = "<a href=\"#{start_link_url}\">#{start_link_url}</a>"
   ctx = CrawlContext.new
   start_time = monotonic_now
 
   begin
-    comment_rows = db.exec_params(
+    comment_row = db.exec_params(
       'select comment from crawler_comments where start_link_id = $1',
       [start_link_id]
-    )
-    if comment_rows.cmd_tuples == 1
-      result.comment = comment_rows[0]["comment"]
+    ).first
+    if comment_row
+      result.comment = comment_row["comment"]
     end
 
     mock_http_client = MockHttpClient.new(db, start_link_id)
@@ -129,11 +93,11 @@ def crawl(db, start_link_id, logger)
     raise "Feed not found" if in_memory_storage.feeds.empty?
 
     feed_link = in_memory_storage.feeds.first[1]
-    result.feed_url = "<a href=\"#{feed_link[:url]}\">#{feed_link[:canonical_url]}</a>"
+    feed_page = in_memory_storage.pages[feed_link[:canonical_url]]
+    result.feed_url = "<a href=\"#{feed_page[:fetch_url]}\">#{feed_link[:canonical_url]}</a>"
     logger.log("Feed url: #{feed_link[:canonical_url]}")
 
-    feed_page = in_memory_storage.pages[feed_link[:canonical_url]]
-    feed_urls = extract_feed_urls(feed_page[:content])
+    feed_urls = extract_feed_urls(feed_page[:content], logger)
     result.feed_links = feed_urls.item_urls.length
     logger.log("Root url: #{feed_urls.root_url}")
     logger.log("Items in feed: #{feed_urls.item_urls.length}")
@@ -243,7 +207,7 @@ def crawl(db, start_link_id, logger)
 
     result
   rescue => e
-    raise CrawlingError.new(e.message, result), e
+    raise RunError.new(e.message, result), e
   ensure
     result.duplicate_fetches = ctx.duplicate_fetches
     result.total_requests = ctx.requests_made

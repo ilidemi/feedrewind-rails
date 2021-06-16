@@ -1,3 +1,6 @@
+require 'date'
+require 'nokogumbo'
+
 def is_feed(page_content, logger)
   return false if page_content.nil?
 
@@ -21,30 +24,45 @@ end
 
 FeedUrls = Struct.new(:root_url, :item_urls)
 
-def extract_feed_urls(feed_content)
+def extract_feed_urls(feed_content, logger)
   xml = Nokogiri::XML(feed_content)
   rss_channels = xml.xpath("/rss/channel")
   if !rss_channels.empty?
     channel = rss_channels[0]
 
-    root_url = channel.xpath("link")[0].inner_text
+    root_url = channel.xpath("link")[0]&.inner_text
     raise "Couldn't extract root url from RSS" if root_url.nil?
 
-    item_urls = channel.xpath("item").map do |item|
+    item_nodes = channel.xpath("item")
+    items = item_nodes.map do |item|
+      pub_dates = item.xpath("pubDate")
+      if pub_dates.length == 1
+        begin
+          pub_date = DateTime.rfc822(pub_dates[0].inner_text)
+        rescue Date::Error
+          logger.log("Invalid pubDate: #{pub_dates[0].inner_text}")
+          pub_date = nil
+        end
+      else
+        pub_date = nil
+      end
+
       links = item.xpath("link")
       unless links.empty?
-        next links[0].inner_text
+        next { pub_date: pub_date, url: links[0].inner_text }
       end
 
       permalink_guids = item.xpath("guid").to_a.filter { |guid| guid.attributes["isPermaLink"].to_s == "true" }
       unless permalink_guids.empty?
-        next permalink_guids[0].inner_text
+        next { pub_date: pub_date, url: permalink_guids[0].inner_text }
       end
 
       nil
     end
-    raise "Couldn't extract item urls from RSS" if item_urls.any?(&:nil?)
+    raise "Couldn't extract item urls from RSS" if items.any?(&:nil?)
 
+    sorted_items = try_sort_reverse_chronological(items, logger)
+    item_urls = sorted_items.map { |item| item[:url] }
     FeedUrls.new(root_url, item_urls)
   else
     atom_feed = xml.xpath("/xmlns:feed")[0]
@@ -52,10 +70,30 @@ def extract_feed_urls(feed_content)
     root_url = get_atom_link(atom_feed)
     raise "Couldn't extract root url from Atom" if root_url.nil?
 
-    entries = atom_feed.xpath("xmlns:entry")
-    entry_urls = entries.map { |entry| get_atom_link(entry) }
-    raise "Couldn't extract entry urls from Atom" if entry_urls.any?(&:nil?)
+    entry_nodes = atom_feed.xpath("xmlns:entry")
+    entries = entry_nodes.map do |entry|
+      published_dates = entry.xpath("xmlns:published")
+      if published_dates.length == 1
+        begin
+          published_date = DateTime.iso8601(published_dates[0].inner_text)
+        rescue Date::Error
+          logger.log("Invalid published: #{published_dates[0].inner_text}")
+          published_date = nil
+        end
+      else
+        published_date = nil
+      end
 
+      link = get_atom_link(entry)
+
+      if link
+        { pub_date: published_date, url: link }
+      end
+    end
+    raise "Couldn't extract entry urls from Atom" if entries.any?(&:nil?)
+
+    sorted_entries = try_sort_reverse_chronological(entries, logger)
+    entry_urls = sorted_entries.map { |entry| entry[:url] }
     FeedUrls.new(root_url, entry_urls)
   end
 end
@@ -68,5 +106,46 @@ def get_atom_link(linkable)
   end
   raise "Not one candidate link: #{link_candidates.length}" if link_candidates.length != 1
 
-  link_candidates[0].attributes["href"].to_s
+  link_candidates[0].attributes["href"]&.to_s
+end
+
+def try_sort_reverse_chronological(items, logger)
+  if items.any? { |item| item[:pub_date].nil? }
+    return items
+  end
+
+  if items.length < 2
+    return items
+  end
+
+  all_dates_equal = true
+  are_dates_ascending_order = true
+  are_dates_descending_order = true
+  items
+    .map { |item| item[:pub_date] }
+    .each_cons(2) do |pub_date1, pub_date2|
+    if pub_date1 != pub_date2
+      all_dates_equal = false
+    end
+    if pub_date1 < pub_date2
+      are_dates_descending_order = false
+    end
+    if pub_date1 > pub_date2
+      are_dates_ascending_order = false
+    end
+  end
+
+  if all_dates_equal
+    logger.log("All item dates are equal")
+  end
+
+  if !are_dates_ascending_order && !are_dates_descending_order
+    logger.log("Item dates are shuffled")
+  end
+
+  if are_dates_ascending_order
+    items.reverse
+  else
+    items
+  end
 end
