@@ -36,15 +36,19 @@ def kill_all_processes(pids, processes_finished)
   end
 end
 
-def mp_run(runnable, output_prefix)
+def mp_run(runnable, output_prefix, start_link_ids_override=nil)
   max_process_count = 8
 
   start_time = monotonic_now
   report_filename = "report/mp_#{output_prefix}_#{DateTime.now.strftime('%F_%H-%M-%S')}.html"
   db = connect_db
-  start_link_ids = db
-    .exec('select id from start_links where id not in (select start_link_id from known_failures)')
-    .map { |row| row["id"].to_i }
+  if start_link_ids_override
+    start_link_ids = start_link_ids_override
+  else
+    start_link_ids = db
+      .exec('select id from start_links where id not in (select start_link_id from known_failures)')
+      .map { |row| row["id"].to_i }
+  end
   process_count = [max_process_count, start_link_ids.length].min
   id_queue = Queue.new
   start_link_ids.each do |id|

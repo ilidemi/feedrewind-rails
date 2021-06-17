@@ -14,6 +14,19 @@ Some blogs can 429 even at 1 request a second after a while
 see to_canonical_link_spec
 
 
+# Figuring out rules
+Manual review is required for the first 500
+Force graph layout is useless to see the structure
+Even the simplest case like archives page has complications: list sorted either way, duplicate consecutive items in list, two star xpaths, first item highlighted, items shuffled by category, 10 recent + others shuffled
+A new blog looks like archives at first (everything on one page), then transitions into another rule
+For small WP blogs, paging takes fewer requests that two level archives by month.
+RSS can be sorted either way
+RSS can have consecutive duplicates
+Same autogeneration process can put one node as /p/a and the other as /p[1]/a, so every intermediate node needs an implicit [1]
+Historical links can lead to other domains than in RSS, and should be included if they match the pattern well
+At the link extraction stage, order of links is very important, so no filter/partition then concat. Sorting by xpath won't work.
+
+
 # Engineering
 RSS gem fails non-deterministically, parsing at XML level works alright
 Parallelization makes reruns faster but Ruby multithreading is single OS thread. Multiprocessing uses all cores but communication is more of a PITA, and a child process can die of OOM and you won't know.
@@ -31,24 +44,13 @@ Big e2e dashboard is good
 Manual comments in db is good
 
 
-# Figuring out rules
-Manual review is required for the first 500
-Force graph layout is useless to see the structure
-Even the simplest case like archives page has complications: list sorted either way, duplicate consecutive items in list, two star xpaths, first item highlighted, items shuffled by category, 10 recent + others shuffled
-A new blog looks like archives at first (everything on one page), then transitions into another rule
-For small WP blogs, paging takes fewer requests that two level archives by month.
-RSS can be sorted either way
-RSS can have consecutive duplicates
-Same autogeneration process can put one node as /p/a and the other as /p[1]/a, so every intermediate node needs an implicit [1]
-
-
 # User experience
 If I've seen a blog a month ago, it published new entries, but rss still overlaps with known ones, I can quickly assemble the new list. Will still need to check for deleted posts in the background.
 
 # Ideas
-Rule that works on one website can conflict with another website, but haven't seen that yet.
 Make tooling to easier categorize websites manually
 Mechanical turk can help with manual efforts
 Some individual blogs are more important than others - look up public page ranks
 There can be a little AI that looks at the known signals after each request and tries to figure out the fewest-request way to discover all posts
 There can be an end-user UI like "we're not sure, which of the three options is better?"
+If I can reliably determine what's wrong with the blog (like RSS of 1 item), I can suggest the user to contact the blog author to fix

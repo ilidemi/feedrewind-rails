@@ -6,7 +6,7 @@ db = connect_db
 logger = MyLogger.new($stdout)
 runnable = HistoricalRunnable.new
 
-start_link_id = 24
+start_link_id = 294
 result = runnable.run(start_link_id, db, logger)
 puts runnable
        .result_column_names

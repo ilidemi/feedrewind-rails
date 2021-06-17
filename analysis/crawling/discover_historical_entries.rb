@@ -8,6 +8,7 @@ HISTORICAL_RESULT_COLUMNS = [
   [:start_url, :neutral],
   [:comment, :neutral],
   [:gt_pattern, :neutral],
+  [:feed_url, :neutral_present],
   [:feed_links, :boolean],
   [:found_items_count, :neutral_present],
   [:all_items_found, :boolean],
@@ -40,6 +41,8 @@ def discover_historical_entries_from_scratch(start_link_id, db, logger)
   start_time = monotonic_now
 
   begin
+    db.exec_params("delete from historical where start_link_id = $1", [start_link_id])
+
     comment_row = db.exec_params(
       'select comment from crawler_comments where start_link_id = $1',
       [start_link_id]
@@ -64,11 +67,12 @@ def discover_historical_entries_from_scratch(start_link_id, db, logger)
     end
 
     feed_row = db.exec_params(
-      "select content, fetch_url from pages where id in (select page_id from feeds where start_link_id = $1)",
+      "select content, canonical_url, fetch_url from pages where id in (select page_id from feeds where start_link_id = $1)",
       [start_link_id]
     ).first
     raise "Feed not found in db" unless feed_row
 
+    result.feed_url = "<a href=\"#{feed_row["fetch_url"]}\">#{feed_row["canonical_url"]}</a>"
     feed_page = { content: unescape_bytea(feed_row["content"]), fetch_uri: URI(feed_row["fetch_url"]) }
     feed_urls = extract_feed_urls(feed_page[:content], logger)
     item_links = feed_urls
@@ -76,9 +80,6 @@ def discover_historical_entries_from_scratch(start_link_id, db, logger)
       .map { |url| to_canonical_link(url, logger, feed_page[:fetch_uri]) }
       .map { |link| follow_cached_redirects(link, redirects) }
     item_canonical_urls = item_links.map { |link| link[:canonical_url] }
-    allowed_hosts = item_links
-      .map { |link| link[:host] }
-      .to_set
 
     result.feed_links = item_links.length
     found_items_placeholders = item_canonical_urls.map.with_index(2) { |_, i| "$#{i}::TEXT" }.join(', ')
@@ -92,14 +93,19 @@ def discover_historical_entries_from_scratch(start_link_id, db, logger)
     result.all_items_found = all_items_found
     raise "Not all items found" unless all_items_found
 
-    historical_links = discover_historical_entries(
-      start_link_id, item_canonical_urls, allowed_hosts, redirects, db, logger
-    )
-
+    historical_links = discover_historical_entries(start_link_id, item_canonical_urls, redirects, db, logger)
     raise "Historical links not found" if historical_links.nil?
+    logger.log("Newest to oldest:")
+    historical_links[:links].each do |link|
+      logger.log(link[:canonical_url])
+    end
 
     entries_count = historical_links[:links].length
     oldest_link = historical_links[:links][-1]
+    db.exec_params(
+      "insert into historical (start_link_id, pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url) values ($1, $2, $3, $4, $5)",
+      [start_link_id, "archives", entries_count, historical_links[:main_canonical_url], oldest_link[:canonical_url]]
+    )
 
     if gt_row
       historical_links_matching = true
@@ -123,6 +129,12 @@ def discover_historical_entries_from_scratch(start_link_id, db, logger)
       end
 
       # TODO: Skipping the check for the main page url for now
+      gt_main_url = gt_row["main_page_canonical_url"]
+      if gt_main_url == historical_links[:main_canonical_url]
+        result.main_url = "<a href=\"#{historical_links[:main_fetch_url]}\">#{historical_links[:main_canonical_url]}</a>"
+      else
+        result.main_url = "<a href=\"#{historical_links[:main_fetch_url]}\">#{historical_links[:main_canonical_url]}</a><br>(#{gt_row["main_page_canonical_url"]})"
+      end
 
       gt_oldest_canonical_url = gt_row["oldest_entry_canonical_url"]
       if gt_oldest_canonical_url == oldest_link[:canonical_url]
@@ -131,7 +143,11 @@ def discover_historical_entries_from_scratch(start_link_id, db, logger)
       else
         historical_links_matching = false
         result.oldest_link_status = :failure
-        result.oldest_link = "<a href=\"#{oldest_link[:url]}\">#{oldest_link[:canonical_url]}</a><br>(#{gt_oldest_canonical_url})"
+        if oldest_link[:canonical_url] == gt_oldest_canonical_url
+          result.oldest_link = "<a href=\"#{oldest_link[:url]}\">#{oldest_link[:canonical_url]}</a>"
+        else
+          result.oldest_link = "<a href=\"#{oldest_link[:url]}\">#{oldest_link[:canonical_url]}</a><br>(#{gt_oldest_canonical_url})"
+        end
       end
 
       result.historical_links_matching = historical_links_matching
@@ -140,10 +156,9 @@ def discover_historical_entries_from_scratch(start_link_id, db, logger)
       result.historical_links_matching_status = :neutral
       result.historical_links_pattern = historical_links[:pattern]
       result.historical_links_count = entries_count
+      result.main_url = "<a href=\"#{historical_links[:main_fetch_url]}\">#{historical_links[:main_canonical_url]}</a>"
       result.oldest_link = "<a href=\"#{oldest_link[:url]}\">#{oldest_link[:canonical_url]}</a>"
     end
-
-    result.main_url = "<a href=\"#{historical_links[:main_fetch_url]}\">#{historical_links[:main_canonical_url]}</a>"
 
     logger.log("Discover historical entries from scratch finished")
     result
@@ -154,9 +169,12 @@ def discover_historical_entries_from_scratch(start_link_id, db, logger)
   end
 end
 
-def discover_historical_entries(start_link_id, feed_item_urls, allowed_hosts, redirects, db, logger)
+def discover_historical_entries(start_link_id, feed_item_urls, redirects, db, logger)
   logger.log("Discover historical entries started")
 
+  best_result = nil
+  best_result_star_count = nil
+  best_count = 0
   db.transaction do |transaction|
     transaction.exec_params(
       "declare pages_cursor cursor for select canonical_url, fetch_url, content_type, content from pages where start_link_id = $1 and content is not null order by length(canonical_url) asc",
@@ -173,66 +191,103 @@ def discover_historical_entries(start_link_id, feed_item_urls, allowed_hosts, re
 
       row = rows[0]
       page = { canonical_url: row["canonical_url"], fetch_uri: URI(row["fetch_url"]), content_type: row["content_type"], content: unescape_bytea(row["content"]) }
-      page_links = extract_links(page, allowed_hosts, redirects, logger, include_xpath = true)
-      allowed_urls = page_links[:allowed_host_links]
+      # Don't pass allowed hosts so that the order of links is preserved
+      page_links = extract_links(page, nil, redirects, logger, include_xpath = true)[:allowed_host_links]
+      page_urls = page_links
         .map { |link| link[:canonical_url] }
         .to_set
-      if feed_item_urls.all? { |item_url| allowed_urls.include?(item_url) }
+      if feed_item_urls.all? { |item_url| page_urls.include?(item_url) }
         logger.log("Possible archives page: #{page[:canonical_url]}")
+        best_page_links = nil
+        if best_result_star_count.nil? || best_result_star_count > 1
+          min_page_links_count = best_count
+        else
+          min_page_links_count = best_count + 1
+        end
 
         logger.log("Trying xpaths with a single star")
-        historical_links = try_masked_xpaths(
+        historical_links_single_star = try_masked_xpaths(
           page_links, feed_item_urls, feed_item_urls_set, :get_single_masked_xpaths,
-          logger
+          :xpath, min_page_links_count, logger
         )
 
-        unless historical_links
-          logger.log("Trying xpaths with two stars")
-          historical_links = try_masked_xpaths(
-            page_links, feed_item_urls, feed_item_urls_set, :get_double_masked_xpaths,
-            logger
-          )
+        if historical_links_single_star
+          best_page_links = historical_links_single_star
+          best_result_star_count = 1
+          best_count = best_page_links[:links].length
         end
 
-        unless historical_links
-          logger.log("Trying xpaths with three stars")
-          historical_links = try_masked_xpaths(
-            page_links, feed_item_urls, feed_item_urls_set, :get_triple_masked_xpaths,
-            logger
-          )
+        if best_result_star_count.nil? || best_result_star_count > 2
+          min_page_links_count = best_count
+        elsif best_result_star_count == 2
+          min_page_links_count = best_count + 1
+        else
+          min_page_links_count = (best_count * 1.5).ceil
         end
 
-        if historical_links
-          return { main_canonical_url: page[:canonical_url], main_fetch_url: page[:fetch_uri].to_s, links: historical_links[:links], pattern: historical_links[:pattern] }
+        logger.log("Trying xpaths with two stars")
+        historical_links_double_star = try_masked_xpaths(
+          page_links, feed_item_urls, feed_item_urls_set, :get_double_masked_xpaths,
+          :class_xpath, min_page_links_count, logger
+        )
+
+        if historical_links_double_star
+          best_page_links = historical_links_double_star
+          best_result_star_count = 2
+          best_count = best_page_links[:links].length
         end
 
-        logger.log("Not an archives page")
+        if best_result_star_count.nil?
+          min_page_links_count = best_count
+        elsif best_result_star_count == 3
+          min_page_links_count = best_count + 1
+        else
+          min_page_links_count = (best_count * 1.5).ceil
+        end
+
+        logger.log("Trying xpaths with three stars")
+        historical_links_triple_star = try_masked_xpaths(
+          page_links, feed_item_urls, feed_item_urls_set, :get_triple_masked_xpaths,
+          :class_xpath, min_page_links_count, logger
+        )
+
+        if historical_links_triple_star
+          best_page_links = historical_links_triple_star
+          best_result_star_count = 3
+          best_count = best_page_links[:links].length
+        end
+
+        if best_page_links
+          best_result = { main_canonical_url: page[:canonical_url], main_fetch_url: page[:fetch_uri].to_s, links: best_page_links[:links], pattern: best_page_links[:pattern] }
+        else
+          logger.log("Not an archives page or the best result (#{best_count}) is not topped")
+        end
       end
     end
   end
 
-  nil
+  logger.log("Discover historical entries finished")
+  best_result
 end
 
-def try_masked_xpaths(page_links, feed_item_urls, feed_item_urls_set, get_masked_xpaths_name, logger)
+def try_masked_xpaths(
+  page_links, feed_item_urls, feed_item_urls_set, get_masked_xpaths_name, xpath_name, min_links_count, logger
+)
   get_masked_xpaths_func = method(get_masked_xpaths_name)
   links_by_masked_xpath = {}
-  page_feed_links, page_non_feed_links = page_links[:allowed_host_links]
-    .partition { |page_link| feed_item_urls_set.include?(page_link[:canonical_url]) }
+  page_feed_links = page_links.filter { |page_link| feed_item_urls_set.include?(page_link[:canonical_url]) }
   page_feed_links.each do |page_feed_link|
-    masked_xpaths = get_masked_xpaths_func.call(page_feed_link[:xpath])
+    masked_xpaths = get_masked_xpaths_func.call(page_feed_link[xpath_name])
     masked_xpaths.each do |masked_xpath|
-      unless links_by_masked_xpath.key?(masked_xpath)
-        links_by_masked_xpath[masked_xpath] = []
-      end
-      links_by_masked_xpath[masked_xpath] << page_feed_link
+      next if links_by_masked_xpath.key?(masked_xpath)
+      links_by_masked_xpath[masked_xpath] = []
     end
   end
-  page_non_feed_links.each do |page_non_feed_link|
-    masked_xpaths = get_masked_xpaths_func.call(page_non_feed_link[:xpath])
+  page_links.each do |page_link|
+    masked_xpaths = get_masked_xpaths_func.call(page_link[xpath_name])
     masked_xpaths.each do |masked_xpath|
       next unless links_by_masked_xpath.key?(masked_xpath)
-      links_by_masked_xpath[masked_xpath] << page_non_feed_link
+      links_by_masked_xpath[masked_xpath] << page_link
     end
   end
   logger.log("Masked xpaths: #{links_by_masked_xpath.length}")
@@ -248,8 +303,11 @@ def try_masked_xpaths(page_links, feed_item_urls, feed_item_urls_set, get_masked
     [masked_xpath, collapsed_links]
   end
 
+  best_xpath_links = nil
   collapsed_links_by_masked_xpath.each do |masked_xpath, masked_xpath_links|
     next if masked_xpath_links.length < feed_item_urls.length
+    next if masked_xpath_links.length < min_links_count
+    next if best_xpath_links && best_xpath_links.length >= masked_xpath_links.length
 
     masked_xpath_link_urls = masked_xpath_links.map { |link| link[:canonical_url] }
     masked_xpath_link_urls_set = masked_xpath_link_urls.to_set
@@ -262,19 +320,29 @@ def try_masked_xpaths(page_links, feed_item_urls, feed_item_urls_set, get_masked
 
     if feed_item_urls == masked_xpath_link_urls[0...feed_item_urls.length]
       collapsion_log_str = get_collapsion_log_str(masked_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath)
-      logger.log("Masked xpath is good: #{masked_xpath}#{collapsion_log_str}")
-      return { pattern: "archives", links: masked_xpath_links }
+      logger.log("Masked xpath is good: #{masked_xpath}#{collapsion_log_str} (#{masked_xpath_links.length} links)")
+      best_xpath_links = masked_xpath_links
+      next
     end
 
     reversed_masked_xpath_links = masked_xpath_links.reverse
     reversed_masked_xpath_link_urls = masked_xpath_link_urls.reverse
     if feed_item_urls == reversed_masked_xpath_link_urls[0...feed_item_urls.length]
       collapsion_log_str = get_collapsion_log_str(masked_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath)
-      logger.log("Masked xpath is good in reverse order: #{masked_xpath}#{collapsion_log_str}")
-      return { pattern: "archives", links: reversed_masked_xpath_links }
+      logger.log("Masked xpath is good in reverse order: #{masked_xpath}#{collapsion_log_str} (#{reversed_masked_xpath_links.length} links)")
+      best_xpath_links = reversed_masked_xpath_links
+      next
     end
 
     logger.log("Masked xpath #{masked_xpath} has all links #{feed_item_urls} but not in the right order: #{masked_xpath_link_urls}")
+  end
+
+  if best_xpath_links
+    return { pattern: "archives", links: best_xpath_links }
+  end
+
+  if feed_item_urls.length < 3
+    return nil
   end
 
   feed_prefix_xpaths_by_length = {}
@@ -301,8 +369,7 @@ def try_masked_xpaths(page_links, feed_item_urls, feed_item_urls_set, get_masked
     next if feed_suffix_start_index.nil?
 
     is_suffix = true
-    feed_item_urls[feed_suffix_start_index..-1].zip(masked_xpath_links).each_with_index do |pair, index|
-      feed_item_url, masked_xpath_link = pair
+    feed_item_urls[feed_suffix_start_index..-1].zip(masked_xpath_links).each do |feed_item_url, masked_xpath_link|
       if feed_item_url.nil?
         break # suffix found
       elsif masked_xpath_link.nil?
@@ -317,6 +384,8 @@ def try_masked_xpaths(page_links, feed_item_urls, feed_item_urls_set, get_masked
 
     target_prefix_length = feed_suffix_start_index
     next unless feed_prefix_xpaths_by_length.key?(target_prefix_length)
+    total_length = target_prefix_length + masked_xpath_links.length
+    next unless total_length > min_links_count
 
     masked_prefix_xpath = feed_prefix_xpaths_by_length[target_prefix_length][0]
     logger.log("Found partition with two xpaths: #{target_prefix_length} + #{masked_xpath_links.length}")

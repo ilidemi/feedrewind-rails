@@ -144,7 +144,7 @@ def crawl(start_link_id, db, logger)
     raise "Not all items found" unless all_items_found
 
     historical_links = discover_historical_entries(
-      start_link_id, item_canonical_urls, allowed_hosts, ctx.redirects, db, logger
+      start_link_id, item_canonical_urls, ctx.redirects, db, logger
     )
     result.historical_links_found = !!historical_links
     raise "Historical links not found" unless historical_links
@@ -449,7 +449,15 @@ def crawl_loop(
   { allowed_host_links: allowed_host_links, disallowed_host_links: disallowed_host_links }
 end
 
-def extract_links(page, allowed_hosts, redirects, logger, include_xpath = false)
+CLASS_SUBSTITUTIONS = {
+  '/' => '%2F',
+  '[' => '%5B',
+  ']' => '%5D',
+  '(' => '%28',
+  ')' => '%29'
+}
+
+def extract_links(page, allowed_hosts, redirects, logger, include_xpaths = false)
   if page[:content_type] != 'text/html'
     return { allowed_host_links: [], disallowed_host_links: [] }
   end
@@ -458,6 +466,7 @@ def extract_links(page, allowed_hosts, redirects, logger, include_xpath = false)
   link_elements = document.css('a').to_a + document.css('link').to_a
   allowed_host_links = []
   disallowed_host_links = []
+  classes_by_xpath = {}
   link_elements.each do |element|
     next unless element.attributes.key?('href')
     url_attribute = element.attributes['href']
@@ -466,14 +475,39 @@ def extract_links(page, allowed_hosts, redirects, logger, include_xpath = false)
     link = follow_cached_redirects(link, redirects).clone
     link[:type] = element.attributes['type']
 
-    if include_xpath
-      link[:xpath] = element
-        .path
-        .gsub(/([^\]])\//, '\1[1]/') # Add [1] to every node that doesn't have it, except last
-        .gsub(/([^\]])$/, '\1[1]') # Add [1] to the last node too
+    if include_xpaths
+      class_xpath = ""
+      xpath = ""
+      prefix_xpath = ""
+      xpath_tokens = element.path.split('/')[1..-1]
+      xpath_tokens.each do |token|
+        prefix_xpath += "/#{token}"
+        unless classes_by_xpath.key?(prefix_xpath)
+          classes_by_xpath[prefix_xpath] = document
+            .at_xpath(prefix_xpath)
+            .attributes['class']
+            &.value
+            &.split(' ')
+            &.map { |klass| klass.gsub(/[\/\[\]()]/, CLASS_SUBSTITUTIONS) }
+            &.sort
+            &.join(',') ||
+            ''
+        end
+        classes = classes_by_xpath[prefix_xpath]
+        bracket_index = token.index("[")
+        if bracket_index
+          class_xpath += "/#{token[0...bracket_index]}(#{classes})#{token[bracket_index..-1]}"
+          xpath += "/#{token}"
+        else
+          class_xpath += "/#{token}(#{classes})[1]"
+          xpath += "/#{token}[1]"
+        end
+      end
+      link[:xpath] = xpath
+      link[:class_xpath] = class_xpath
     end
 
-    if allowed_hosts.include?(link[:host])
+    if allowed_hosts.nil? || allowed_hosts.include?(link[:host])
       allowed_host_links << link
     else
       disallowed_host_links << link
