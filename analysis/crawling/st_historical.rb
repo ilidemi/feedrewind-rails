@@ -1,14 +1,7 @@
-require_relative 'db'
 require_relative 'discover_historical_entries'
-require_relative 'logger'
+require_relative 'st_common'
 
-db = connect_db
-logger = MyLogger.new($stdout)
+start_link_id = 127
+
 runnable = HistoricalRunnable.new
-
-start_link_id = 294
-result = runnable.run(start_link_id, db, logger)
-puts runnable
-       .result_column_names
-       .zip(result.column_values, result.column_statuses)
-       .map { |name, value, status| "#{name}\t#{value}\t#{status}" }
+st_run(runnable, start_link_id)

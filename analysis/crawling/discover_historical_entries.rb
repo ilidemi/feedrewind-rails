@@ -44,11 +44,15 @@ def discover_historical_entries_from_scratch(start_link_id, db, logger)
     db.exec_params("delete from historical where start_link_id = $1", [start_link_id])
 
     comment_row = db.exec_params(
-      'select comment from crawler_comments where start_link_id = $1',
+      'select severity, issue from known_issues where start_link_id = $1',
       [start_link_id]
     ).first
     if comment_row
-      result.comment = comment_row["comment"]
+      result.comment = comment_row["issue"]
+      if comment_row["severity"] == "fail"
+        result.comment_status = :failure
+        raise "Known issue: #{comment_row["issue"]}"
+      end
     end
 
     gt_row = db.exec_params(
@@ -104,7 +108,7 @@ def discover_historical_entries_from_scratch(start_link_id, db, logger)
     oldest_link = historical_links[:links][-1]
     db.exec_params(
       "insert into historical (start_link_id, pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url) values ($1, $2, $3, $4, $5)",
-      [start_link_id, "archives", entries_count, historical_links[:main_canonical_url], oldest_link[:canonical_url]]
+      [start_link_id, historical_links[:pattern], entries_count, historical_links[:main_canonical_url], oldest_link[:canonical_url]]
     )
 
     if gt_row

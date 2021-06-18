@@ -54,11 +54,15 @@ def crawl(start_link_id, db, logger)
 
   begin
     comment_row = db.exec_params(
-      'select comment from crawler_comments where start_link_id = $1',
+      'select severity, issue from known_issues where start_link_id = $1',
       [start_link_id]
     ).first
     if comment_row
-      result.comment = comment_row["comment"]
+      result.comment = comment_row["issue"]
+      if comment_row["severity"] == "fail"
+        result.comment_status = :failure
+        raise "Known issue: #{comment_row["issue"]}"
+      end
     end
 
     mock_http_client = MockHttpClient.new(db, start_link_id)
@@ -482,18 +486,28 @@ def extract_links(page, allowed_hosts, redirects, logger, include_xpaths = false
       xpath_tokens = element.path.split('/')[1..-1]
       xpath_tokens.each do |token|
         prefix_xpath += "/#{token}"
-        unless classes_by_xpath.key?(prefix_xpath)
-          classes_by_xpath[prefix_xpath] = document
-            .at_xpath(prefix_xpath)
-            .attributes['class']
-            &.value
-            &.split(' ')
-            &.map { |klass| klass.gsub(/[\/\[\]()]/, CLASS_SUBSTITUTIONS) }
-            &.sort
-            &.join(',') ||
-            ''
+        if classes_by_xpath.key?(prefix_xpath)
+          classes = classes_by_xpath[prefix_xpath]
+        else
+          begin
+            ancestor = document.at_xpath(prefix_xpath)
+          rescue Nokogiri::XML::XPath::SyntaxError, NoMethodError => e
+            logger.log("Invalid XPath on page #{page[:fetch_uri]}: #{prefix_xpath} has #{e}, skipping this link")
+            next
+          end
+          ancestor_classes = ancestor.attributes['class']
+          if ancestor_classes
+            classes = classes_by_xpath[prefix_xpath] = ancestor_classes
+              .value
+              .split(' ')
+              .map { |klass| klass.gsub(/[\/\[\]()]/, CLASS_SUBSTITUTIONS) }
+              .sort
+              .join(',')
+          else
+            classes = classes_by_xpath[prefix_xpath] = ''
+          end
         end
-        classes = classes_by_xpath[prefix_xpath]
+
         bracket_index = token.index("[")
         if bracket_index
           class_xpath += "/#{token[0...bracket_index]}(#{classes})#{token[bracket_index..-1]}"

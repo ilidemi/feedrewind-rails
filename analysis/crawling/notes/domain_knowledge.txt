@@ -25,6 +25,7 @@ RSS can have consecutive duplicates
 Same autogeneration process can put one node as /p/a and the other as /p[1]/a, so every intermediate node needs an implicit [1]
 Historical links can lead to other domains than in RSS, and should be included if they match the pattern well
 At the link extraction stage, order of links is very important, so no filter/partition then concat. Sorting by xpath won't work.
+meta property article:published_time has precise time
 
 
 # Engineering
@@ -54,3 +55,5 @@ Some individual blogs are more important than others - look up public page ranks
 There can be a little AI that looks at the known signals after each request and tries to figure out the fewest-request way to discover all posts
 There can be an end-user UI like "we're not sure, which of the three options is better?"
 If I can reliably determine what's wrong with the blog (like RSS of 1 item), I can suggest the user to contact the blog author to fix
+If I don't see a pattern, offer to just schedule RSS items
+If item order seems to be random, I can offer to deliver in page order or to do some attempt on sorting
