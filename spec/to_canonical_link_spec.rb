@@ -44,7 +44,8 @@ test_data = [
   ["should handle half-escaped url", %w[https://ya.ru/Рос%D1%81%D0%B8%D1%8F% https://ya.ru], %w[https://ya.ru/%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%25 ya.ru/%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%25]],
   ["should preserve badly escaped url", %w[https://ya.ru/%25D1%2581%25D0%25B8%25D1%258F https://ya.ru], %w[https://ya.ru/%25D1%2581%25D0%25B8%25D1%258F ya.ru/%25D1%2581%25D0%25B8%25D1%258F]],
   ["should handle invalid escape", %w[http://www.ratebeer.com/beer/lindemans-p%EAche-lambic-(p%EAcheresse)/345/ https://acko.net/blog/ahoy-vancouver/], %w[http://www.ratebeer.com/beer/lindemans-p%25EAche-lambic-(p%25EAcheresse)/345/ www.ratebeer.com/beer/lindemans-p%25EAche-lambic-(p%25EAcheresse)/345/]],
-  ["should ignore invalid uri with two userinfos", %w[http://ex.p.lo.si.v.edhq.g@silvia.woodw.o.r.t.h@www.temposicilia.it/index.php/component/-/index.php?option=com_kide http://yosefk.com/blog/a-better-future-animated-post.html], nil]
+  ["should ignore invalid uri with two userinfos", %w[http://ex.p.lo.si.v.edhq.g@silvia.woodw.o.r.t.h@www.temposicilia.it/index.php/component/-/index.php?option=com_kide http://yosefk.com/blog/a-better-future-animated-post.html], nil],
+  ["should ignore url starting with :", %w[:2 https://blog.mozilla.org/en/mozilla/password-security-part-ii/], nil]
 ]
 
 RSpec.describe "to_canonical_link" do

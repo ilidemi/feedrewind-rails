@@ -8,6 +8,7 @@ Filtering links by original host discards some rss posts (medium + dev.to + towa
 Matching redirects on fetch urls introduces more requests if it leads to a known page that would already match a canonical url
 I don't have to write smart logic to find RSS link and determine the right one. Feedly seems to only look at marked head links, presenting all, and their own cache
 Some blogs can 429 even at 1 request a second after a while
+A website generated with Ghost can depend on javascript to load more posts on scroll but also have a hidden <link rel="next> in <head> that leads to page 2
 
 
 # URL processing
@@ -26,6 +27,8 @@ Same autogeneration process can put one node as /p/a and the other as /p[1]/a, s
 Historical links can lead to other domains than in RSS, and should be included if they match the pattern well
 At the link extraction stage, order of links is very important, so no filter/partition then concat. Sorting by xpath won't work.
 meta property article:published_time has precise time
+Same page can have same links in the content area and in the recent posts sidebar, can't just pick one xpath
+Post link can redirect to a login page that requires js, two such posts causing duplicates. Not following redirects in some cases may be better than following them. Redirects don't matter once we're out of RSS.
 
 
 # Engineering
@@ -47,6 +50,7 @@ Manual comments in db is good
 
 # User experience
 If I've seen a blog a month ago, it published new entries, but rss still overlaps with known ones, I can quickly assemble the new list. Will still need to check for deleted posts in the background.
+
 
 # Ideas
 Make tooling to easier categorize websites manually

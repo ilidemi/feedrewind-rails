@@ -4,9 +4,9 @@ require 'nokogumbo'
 require 'rss'
 require 'set'
 require_relative 'crawling_storage'
-require_relative 'discover_historical_entries'
 require_relative 'export_graph'
 require_relative 'feed_parsing'
+require_relative 'historical'
 require_relative 'http_client'
 require_relative 'run_common'
 
@@ -110,7 +110,7 @@ def crawl(start_link_id, db, logger)
     item_links = feed_urls
       .item_urls
       .map { |url| to_canonical_link(url, logger, feed_page_fetch_uri) }
-      .map { |link| follow_item_redirects(start_link_id, link, ctx, mock_http_client, mock_db_storage, logger) }
+      .map { |link| follow_item_redirects(start_link_id, link, ctx, mock_http_client, mock_db_storage, in_memory_storage, logger) }
     item_canonical_urls = item_links.map { |link| link[:canonical_url] }
     item_hosts = item_links.map { |link| link[:host] }
     allowed_hosts.merge(item_hosts)
@@ -139,7 +139,11 @@ def crawl(start_link_id, db, logger)
     )
     result.crawl_succeeded = true
 
-    found_items_count = item_canonical_urls.count { |url| ctx.seen_canonical_urls.include?(url) }
+    found_items_placeholders = item_canonical_urls.map.with_index(2) { |_, i| "$#{i}::TEXT" }.join(', ')
+    found_items_count = db.exec_params(
+      "select count(*) from pages where content is not null and start_link_id = $1 and canonical_url in (#{found_items_placeholders})",
+      [start_link_id] + item_canonical_urls
+    ).first["count"].to_i
     result.found_items_count = found_items_count
     all_items_found = found_items_count == item_canonical_urls.length
     result.all_items_found = all_items_found
@@ -173,7 +177,7 @@ def crawl(start_link_id, db, logger)
       historical_links_matching = true
       gt_row = historical_ground_truth_rows[0]
 
-      if gt_row["pattern"] != "archives"
+      if gt_row["pattern"] != historical_links[:pattern]
         historical_links_matching = false
       end
 
@@ -268,10 +272,14 @@ end
 
 PERMANENT_ERROR_CODES = %w[400 401 402 403 404 405 406 407 410 411 412 413 414 415 416 417 418 451]
 
-def follow_item_redirects(start_link_id, item_link, ctx, http_client, mock_db_storage, logger)
+def follow_item_redirects(
+  start_link_id, item_link, ctx, http_client, mock_db_storage, redirect_storage, logger
+)
   logger.log("Start follow redirects for #{item_link}")
   link = item_link
   seen_urls = [link[:url]]
+  link = follow_cached_redirects(link, ctx.redirects, seen_urls)
+
   loop do
     request_start = monotonic_now
     resp = http_client.request(link[:uri], logger)
@@ -291,8 +299,9 @@ def follow_item_redirects(start_link_id, item_link, ctx, http_client, mock_db_st
           raise "Circular redirect for #{item_link[:url]}: #{seen_urls} -> #{redirection_link[:url]}"
         end
         seen_urls << redirection_link[:url]
-        mock_db_storage.save_redirect_if_not_exists(link[:url], redirection_link[:url], start_link_id)
-        link = redirection_link
+        ctx.redirects[link[:url]] = redirection_link
+        redirect_storage.save_redirect(link[:url], redirection_link[:url], start_link_id)
+        link = follow_cached_redirects(redirection_link, ctx.redirects, seen_urls)
       end
     elsif resp.code == "200"
       content_type = response_content_type(resp)
@@ -385,7 +394,7 @@ def crawl_loop(
 
         page_links = extract_links(page, allowed_hosts, ctx.redirects, logger)
         is_page_missing_vicinity_links = early_stop_cond == :crawl_urls_vicinity &&
-          !page_links[:allowed_host_links].any? { |page_link| vicinity_urls.include?(page_link[:canonical_url]) }
+          !page_links[:allowed_host_links].any? { |page_link| vicinity_urls.include?(page_link[:canonical_url]) } && false
         if is_page_missing_vicinity_links
           logger.log("Page doesn't contain any vicinity links")
         else
@@ -461,7 +470,9 @@ CLASS_SUBSTITUTIONS = {
   ')' => '%29'
 }
 
-def extract_links(page, allowed_hosts, redirects, logger, include_xpaths = false)
+def extract_links(
+  page, allowed_hosts, redirects, logger, include_xpath = false, include_class_xpath = false
+)
   if page[:content_type] != 'text/html'
     return { allowed_host_links: [], disallowed_host_links: [] }
   end
@@ -472,19 +483,49 @@ def extract_links(page, allowed_hosts, redirects, logger, include_xpaths = false
   disallowed_host_links = []
   classes_by_xpath = {}
   link_elements.each do |element|
-    next unless element.attributes.key?('href')
-    url_attribute = element.attributes['href']
-    link = to_canonical_link(url_attribute.to_s, logger, page[:fetch_uri])
+    link = html_element_to_link(
+      element, page[:fetch_uri], document, classes_by_xpath, redirects, logger, include_xpath,
+      include_class_xpath
+    )
     next if link.nil?
-    link = follow_cached_redirects(link, redirects).clone
-    link[:type] = element.attributes['type']
+    if allowed_hosts.nil? || allowed_hosts.include?(link[:host])
+      allowed_host_links << link
+    else
+      disallowed_host_links << link
+    end
+  end
 
-    if include_xpaths
-      class_xpath = ""
-      xpath = ""
-      prefix_xpath = ""
-      xpath_tokens = element.path.split('/')[1..-1]
-      xpath_tokens.each do |token|
+  { allowed_host_links: allowed_host_links, disallowed_host_links: disallowed_host_links }
+end
+
+def html_element_to_link(
+  element, fetch_uri, document, classes_by_xpath, redirects, logger, include_xpath = false,
+  include_class_xpath = false
+)
+  return nil unless element.attributes.key?('href')
+  url_attribute = element.attributes['href']
+  link = to_canonical_link(url_attribute.to_s, logger, fetch_uri)
+  return nil if link.nil?
+  link = follow_cached_redirects(link, redirects).clone
+  link[:type] = element.attributes['type']
+
+  if include_xpath || include_class_xpath
+    class_xpath = ""
+    xpath = ""
+    prefix_xpath = ""
+    xpath_tokens = element.path.split('/')[1..-1]
+    xpath_tokens.each do |token|
+      bracket_index = token.index("[")
+
+      if include_xpath
+        if bracket_index
+          xpath += "/#{token}"
+        else
+          xpath += "/#{token}[1]"
+        end
+      end
+
+      if include_class_xpath
         prefix_xpath += "/#{token}"
         if classes_by_xpath.key?(prefix_xpath)
           classes = classes_by_xpath[prefix_xpath]
@@ -492,8 +533,8 @@ def extract_links(page, allowed_hosts, redirects, logger, include_xpaths = false
           begin
             ancestor = document.at_xpath(prefix_xpath)
           rescue Nokogiri::XML::XPath::SyntaxError, NoMethodError => e
-            logger.log("Invalid XPath on page #{page[:fetch_uri]}: #{prefix_xpath} has #{e}, skipping this link")
-            next
+            logger.log("Invalid XPath on page #{fetch_uri}: #{prefix_xpath} has #{e}, skipping this link")
+            return nil
           end
           ancestor_classes = ancestor.attributes['class']
           if ancestor_classes
@@ -508,27 +549,22 @@ def extract_links(page, allowed_hosts, redirects, logger, include_xpaths = false
           end
         end
 
-        bracket_index = token.index("[")
         if bracket_index
           class_xpath += "/#{token[0...bracket_index]}(#{classes})#{token[bracket_index..-1]}"
-          xpath += "/#{token}"
         else
           class_xpath += "/#{token}(#{classes})[1]"
-          xpath += "/#{token}[1]"
         end
       end
+    end
+
+    if include_xpath
       link[:xpath] = xpath
+    end
+    if include_class_xpath
       link[:class_xpath] = class_xpath
     end
-
-    if allowed_hosts.nil? || allowed_hosts.include?(link[:host])
-      allowed_host_links << link
-    else
-      disallowed_host_links << link
-    end
   end
-
-  { allowed_host_links: allowed_host_links, disallowed_host_links: disallowed_host_links }
+  link
 end
 
 def to_canonical_link(url, logger, fetch_uri = nil)
@@ -543,6 +579,7 @@ def to_canonical_link(url, logger, fetch_uri = nil)
       unless url_unescaped.valid_encoding?
         url_unescaped = url_newlines_removed
       end
+      return nil if url_unescaped.start_with?(":")
       url_escaped = Addressable::URI.escape(url_unescaped)
     rescue Addressable::URI::InvalidURIError => e
       if e.message.include?("Invalid character in host") ||
@@ -560,9 +597,7 @@ def to_canonical_link(url, logger, fetch_uri = nil)
     url_escaped = url_newlines_removed
   end
 
-  if url_escaped.start_with?("mailto:")
-    return nil
-  end
+  return nil if url_escaped.start_with?("mailto:")
 
   begin
     uri = URI(url_escaped)
@@ -577,9 +612,7 @@ def to_canonical_link(url, logger, fetch_uri = nil)
     uri = fetch_uri_classes[fetch_uri.scheme].build(host: fetch_uri.host, path: path, query: uri.query)
   end
 
-  unless %w[http https].include? uri.scheme
-    return nil
-  end
+  return nil unless %w[http https].include? uri.scheme
 
   uri.fragment = nil
   if uri.userinfo != nil
@@ -622,9 +655,11 @@ def to_canonical_url(uri)
   "#{uri.host}#{port_str}#{path_str}#{query_str}" # drop scheme and fragment too
 end
 
-def follow_cached_redirects(initial_link, redirects)
+def follow_cached_redirects(initial_link, redirects, seen_urls=nil)
   link = initial_link
-  seen_urls = [link[:url]]
+  if seen_urls.nil?
+    seen_urls = [link[:url]]
+  end
   while redirects.key?(link[:url]) && link != redirects[link[:url]]
     redirection_link = redirects[link[:url]]
     if seen_urls.include?(redirection_link[:url])

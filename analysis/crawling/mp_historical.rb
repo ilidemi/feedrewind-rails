@@ -1,4 +1,4 @@
-require_relative 'discover_historical_entries'
+require_relative 'historical'
 require_relative 'mp_common'
 
 # require_relative 'db'

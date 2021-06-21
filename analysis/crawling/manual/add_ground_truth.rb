@@ -2,7 +2,7 @@ require 'readline'
 require 'set'
 require_relative '../db'
 
-filename = '../notes/6-17_patterns_3.txt'
+filename = '../notes/6-21_patterns.txt'
 
 mode = :initial
 type_operations = []
