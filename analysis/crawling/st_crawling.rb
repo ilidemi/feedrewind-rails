@@ -3,7 +3,7 @@ require_relative 'st_common'
 
 # raise "There is a lot of useful stuff in db, pls no wipe"
 
-start_link_id = 160
+start_link_id = 483
 
 runnable = CrawlRunnable.new
 st_run(runnable, start_link_id)

@@ -28,8 +28,6 @@ test_data = [
   ["should include only whitelisted query in canonical url", %w[https://ya.ru/abc?blog=1&b=2 https://ya.ru], %w[https://ya.ru/abc?blog=1&b=2 ya.ru/abc?blog=1]],
   ["should drop root path from canonical url if no query", %w[https://ya.ru/ https://ya.ru/], %w[https://ya.ru/ ya.ru]],
   ["should keep root path in canonical url if query", %w[https://ya.ru/?blog https://ya.ru/], %w[https://ya.ru/?blog ya.ru/?blog]],
-  ["should drop final / from canonical url if no query", %w[https://ya.ru/a/ https://ya.ru/], %w[https://ya.ru/a/ ya.ru/a]],
-  ["should keep final / in canonical url if query", %w[https://ya.ru/a/?blog https://ya.ru/], %w[https://ya.ru/a/?blog ya.ru/a/?blog]],
   ["should ignore newlines", %W[https://ya.ru/ab\nc https://ya.ru/], %w[https://ya.ru/abc ya.ru/abc]],
   ["should trim leading and trailing spaces", [" https://ya.ru ", "https://ya.ru"], %w[https://ya.ru ya.ru]],
   ["should trim leading and trailing escaped spaces", ["%20https://waitbutwhy.com/table/like-improve-android-phone%20", "https://waitbutwhy.com/table/like-improve-iphone"], %w[https://waitbutwhy.com/table/like-improve-android-phone waitbutwhy.com/table/like-improve-android-phone]],

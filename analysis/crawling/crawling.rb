@@ -584,8 +584,6 @@ def to_canonical_url(uri)
 
   if uri.path == '/' && uri.query.nil?
     path_str = ''
-  elsif uri.path.end_with?("/") && uri.query.nil?
-    path_str = uri.path[0...-1]
   else
     path_str = uri.path
   end
