@@ -6,7 +6,7 @@ def try_extract_archives(
 )
   return nil unless feed_item_urls.all? { |item_url| page_urls_set.include?(item_url) }
 
-  logger.log("Possible archives page: #{page[:canonical_url]}")
+  logger.log("Possible archives page: #{page.canonical_url}")
   best_result = nil
   best_result_star_count = nil
   best_page_links = nil
@@ -73,8 +73,8 @@ def try_extract_archives(
 
   if best_page_links
     best_result = {
-      main_canonical_url: page[:canonical_url],
-      main_fetch_url: page[:fetch_uri].to_s,
+      main_canonical_url: page.canonical_url,
+      main_fetch_url: page.fetch_uri.to_s,
       links: best_page_links[:links],
       pattern: best_page_links[:pattern],
       extra: "star_count: #{best_result_star_count}#{best_page_links[:extra]}"
@@ -104,7 +104,7 @@ def try_masked_xpaths(
   collapsed_links_by_masked_xpath = links_by_masked_xpath.to_h do |masked_xpath, masked_xpath_links|
     collapsed_links = []
     masked_xpath_links.length.times do |index|
-      if index == 0 || masked_xpath_links[index][:canonical_url] != masked_xpath_links[index - 1][:canonical_url]
+      if index == 0 || masked_xpath_links[index].url != masked_xpath_links[index - 1].url
         collapsed_links << masked_xpath_links[index]
       end
     end
@@ -117,16 +117,18 @@ def try_masked_xpaths(
     next if masked_xpath_links.length < min_links_count
     next if best_xpath_links && best_xpath_links.length >= masked_xpath_links.length
 
-    masked_xpath_link_urls = masked_xpath_links.map { |link| link[:canonical_url] }
-    masked_xpath_link_urls_set = masked_xpath_link_urls.to_set
-    next unless feed_item_urls.all? { |item_url| masked_xpath_link_urls_set.include?(item_url) }
+    masked_xpath_link_canonical_urls = masked_xpath_links.map(&:canonical_url)
+    masked_xpath_link_fetch_urls = masked_xpath_links.map(&:url)
+    masked_xpath_link_canonical_urls_set = masked_xpath_link_canonical_urls.to_set
+    masked_xpath_link_fetch_urls_set = masked_xpath_link_fetch_urls.to_set
+    next unless feed_item_urls.all? { |item_url| masked_xpath_link_canonical_urls_set.include?(item_url) }
 
-    if masked_xpath_link_urls_set.length != masked_xpath_link_urls.length
-      logger.log("Masked xpath #{masked_xpath} has all links but also duplicates: #{masked_xpath_link_urls}")
+    if masked_xpath_link_fetch_urls_set.length != masked_xpath_link_fetch_urls.length
+      logger.log("Masked xpath #{masked_xpath} has all links but also duplicates: #{masked_xpath_link_canonical_urls}")
       next
     end
 
-    if feed_item_urls == masked_xpath_link_urls[0...feed_item_urls.length]
+    if feed_item_urls == masked_xpath_link_canonical_urls[0...feed_item_urls.length]
       collapsion_log_str = get_collapsion_log_str(masked_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath)
       logger.log("Masked xpath is good: #{masked_xpath}#{collapsion_log_str} (#{masked_xpath_links.length} links)")
       best_xpath_links = masked_xpath_links
@@ -134,7 +136,7 @@ def try_masked_xpaths(
     end
 
     reversed_masked_xpath_links = masked_xpath_links.reverse
-    reversed_masked_xpath_link_urls = masked_xpath_link_urls.reverse
+    reversed_masked_xpath_link_urls = masked_xpath_link_canonical_urls.reverse
     if feed_item_urls == reversed_masked_xpath_link_urls[0...feed_item_urls.length]
       collapsion_log_str = get_collapsion_log_str(masked_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath)
       logger.log("Masked xpath is good in reverse order: #{masked_xpath}#{collapsion_log_str} (#{reversed_masked_xpath_links.length} links)")
@@ -142,7 +144,7 @@ def try_masked_xpaths(
       next
     end
 
-    logger.log("Masked xpath #{masked_xpath} has all links #{feed_item_urls} but not in the right order: #{masked_xpath_link_urls}")
+    logger.log("Masked xpath #{masked_xpath} has all links #{feed_item_urls} but not in the right order: #{masked_xpath_link_canonical_urls}")
   end
 
   if best_xpath_links
@@ -166,14 +168,14 @@ def try_masked_xpaths(
         end
         feed_prefix_xpaths_by_length[prefix_length] << masked_xpath
         break
-      elsif feed_item_url != masked_xpath_link[:canonical_url]
+      elsif feed_item_url != masked_xpath_link.canonical_url
         break # Not a prefix
       end
     end
   end
 
   collapsed_links_by_masked_xpath.each do |masked_xpath, masked_xpath_links|
-    feed_suffix_start_index = feed_item_urls.index(masked_xpath_links[0][:canonical_url])
+    feed_suffix_start_index = feed_item_urls.index(masked_xpath_links[0].canonical_url)
     next if feed_suffix_start_index.nil?
 
     is_suffix = true
@@ -183,7 +185,7 @@ def try_masked_xpaths(
       elsif masked_xpath_link.nil?
         is_suffix = false
         break
-      elsif feed_item_url != masked_xpath_link[:canonical_url]
+      elsif feed_item_url != masked_xpath_link.canonical_url
         is_suffix = false
         break
       end
@@ -203,7 +205,7 @@ def try_masked_xpaths(
     logger.log("Suffix xpath: #{masked_xpath}#{suffix_collapsion_log_str}")
 
     combined_links = collapsed_links_by_masked_xpath[masked_prefix_xpath] + masked_xpath_links
-    combined_urls = combined_links.map { |link| link[:canonical_url] }
+    combined_urls = combined_links.map(&:canonical_url)
     combined_urls_set = combined_urls.to_set
     if combined_urls.length != combined_urls_set.length
       logger.log("Combination has all feed links but also duplicates: #{combined_urls}")

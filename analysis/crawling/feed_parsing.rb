@@ -73,6 +73,10 @@ def extract_feed_urls(feed_content, logger)
     entry_nodes = atom_feed.xpath("xmlns:entry")
     entries = entry_nodes.map do |entry|
       published_dates = entry.xpath("xmlns:published")
+      if published_dates.length == 0
+        published_dates = entry.xpath("xmlns:updated")
+      end
+
       if published_dates.length == 1
         begin
           published_date = DateTime.iso8601(published_dates[0].inner_text)

@@ -1,6 +1,6 @@
 def group_links_by_masked_xpath(page_links, feed_item_urls_set, xpath_name, get_masked_xpaths_func)
   links_by_masked_xpath = {}
-  page_feed_links = page_links.filter { |page_link| feed_item_urls_set.include?(page_link[:canonical_url]) }
+  page_feed_links = page_links.filter { |page_link| feed_item_urls_set.include?(page_link.canonical_url) }
   page_feed_links.each do |page_feed_link|
     masked_xpaths = get_masked_xpaths_func.call(page_feed_link[xpath_name])
     masked_xpaths.each do |masked_xpath|

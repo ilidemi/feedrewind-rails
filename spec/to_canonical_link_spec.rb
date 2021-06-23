@@ -1,5 +1,6 @@
 require_relative '../analysis/crawling/crawling'
 require_relative '../analysis/crawling/logger'
+require_relative '../analysis/crawling/structs'
 
 def canonical_link(url, canonical_url)
   uri = URI(url)
@@ -54,7 +55,7 @@ RSpec.describe "to_canonical_link" do
     it test_case[0] do
       if test_case[2]
         expected_uri = URI(test_case[2][0])
-        expected_result = { canonical_url: test_case[2][1], host: expected_uri.host, uri: expected_uri, url: test_case[2][0] }
+        expected_result = Link.new(test_case[2][1], expected_uri, test_case[2][0])
       else
         expected_result = nil
       end

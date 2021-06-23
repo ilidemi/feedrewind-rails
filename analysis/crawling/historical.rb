@@ -80,38 +80,46 @@ def discover_historical_entries_from_scratch(start_link_id, db, logger)
     raise "Feed not found in db" unless feed_row
 
     result.feed_url = "<a href=\"#{feed_row["fetch_url"]}\">#{feed_row["canonical_url"]}</a>"
-    feed_page = { content: unescape_bytea(feed_row["content"]), fetch_uri: URI(feed_row["fetch_url"]) }
-    feed_urls = extract_feed_urls(feed_page[:content], logger)
+    feed_content = unescape_bytea(feed_row["content"])
+    feed_fetch_uri = URI(feed_row["fetch_url"])
+    feed_urls = extract_feed_urls(feed_content, logger)
     item_links = feed_urls
       .item_urls
-      .map { |url| to_canonical_link(url, logger, feed_page[:fetch_uri]) }
+      .map { |url| to_canonical_link(url, logger, feed_fetch_uri) }
       .map { |link| follow_cached_redirects(link, redirects) }
-    item_canonical_urls = item_links.map { |link| link[:canonical_url] }
+    feed_url = feed_row["canonical_url"]
+    item_canonical_urls = item_links.map(&:canonical_url)
 
     result.feed_links = item_links.length
-    found_items_placeholders = item_canonical_urls.map.with_index(2) { |_, i| "$#{i}::TEXT" }.join(', ')
-    found_items_count = db.exec_params(
-      "select count(*) from pages where content is not null and start_link_id = $1 and canonical_url in (#{found_items_placeholders})",
-      [start_link_id] + item_canonical_urls
-    ).first["count"].to_i
+    found_items_count = item_canonical_urls.count do |item_canonical_url|
+      db
+        .exec_params(
+          "select count(*) from pages where content is not null and start_link_id = $1 and canonical_url = $2",
+          [start_link_id, item_canonical_url]
+        )
+        .first["count"]
+        .to_i == 1
+    end
     logger.log("Found feed links: #{found_items_count}")
     result.found_items_count = found_items_count
     all_items_found = found_items_count == item_canonical_urls.length
     result.all_items_found = all_items_found
     raise "Not all items found" unless all_items_found
 
-    historical_links = discover_historical_entries(start_link_id, item_canonical_urls, redirects, db, logger)
+    historical_links = discover_historical_entries(
+      start_link_id, feed_url, item_canonical_urls, redirects, db, logger
+    )
     raise "Historical links not found" if historical_links.nil?
     logger.log("Newest to oldest:")
     historical_links[:links].each do |link|
-      logger.log(link[:canonical_url])
+      logger.log(link.canonical_url)
     end
 
     entries_count = historical_links[:links].length
     oldest_link = historical_links[:links][-1]
     db.exec_params(
       "insert into historical (start_link_id, pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url) values ($1, $2, $3, $4, $5)",
-      [start_link_id, historical_links[:pattern], entries_count, historical_links[:main_canonical_url], oldest_link[:canonical_url]]
+      [start_link_id, historical_links[:pattern], entries_count, historical_links[:main_canonical_url], oldest_link.canonical_url]
     )
 
     if gt_row
@@ -144,16 +152,16 @@ def discover_historical_entries_from_scratch(start_link_id, db, logger)
       end
 
       gt_oldest_canonical_url = gt_row["oldest_entry_canonical_url"]
-      if gt_oldest_canonical_url == oldest_link[:canonical_url]
+      if gt_oldest_canonical_url == oldest_link.canonical_url
         result.oldest_link_status = :success
-        result.oldest_link = "<a href=\"#{oldest_link[:url]}\">#{oldest_link[:canonical_url]}</a>"
+        result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.canonical_url}</a>"
       else
         historical_links_matching = false
         result.oldest_link_status = :failure
-        if oldest_link[:canonical_url] == gt_oldest_canonical_url
-          result.oldest_link = "<a href=\"#{oldest_link[:url]}\">#{oldest_link[:canonical_url]}</a>"
+        if oldest_link.canonical_url == gt_oldest_canonical_url
+          result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.canonical_url}</a>"
         else
-          result.oldest_link = "<a href=\"#{oldest_link[:url]}\">#{oldest_link[:canonical_url]}</a><br>(#{gt_oldest_canonical_url})"
+          result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.canonical_url}</a><br>(#{gt_oldest_canonical_url})"
         end
       end
 
@@ -164,7 +172,7 @@ def discover_historical_entries_from_scratch(start_link_id, db, logger)
       result.historical_links_pattern = historical_links[:pattern]
       result.historical_links_count = entries_count
       result.main_url = "<a href=\"#{historical_links[:main_fetch_url]}\">#{historical_links[:main_canonical_url]}</a>"
-      result.oldest_link = "<a href=\"#{oldest_link[:url]}\">#{oldest_link[:canonical_url]}</a>"
+      result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.canonical_url}</a>"
     end
 
     result.extra = historical_links[:extra]
@@ -185,7 +193,7 @@ SUBPATTERN_PRIORITIES = {
   paged: 4
 }
 
-def discover_historical_entries(start_link_id, feed_item_urls, redirects, db, logger)
+def discover_historical_entries(start_link_id, feed_url, feed_item_urls, redirects, db, logger)
   logger.log("Discover historical entries started")
 
   best_result = nil
@@ -196,8 +204,9 @@ def discover_historical_entries(start_link_id, feed_item_urls, redirects, db, lo
     transaction.exec_params(
       "declare pages_cursor cursor for "\
       "select canonical_url, fetch_url, content_type, content from pages "\
-      "where start_link_id = $1 and content is not null order by length(canonical_url) asc",
-      [start_link_id]
+      "where start_link_id = $1 and content is not null and canonical_url != $2"\
+      "order by length(canonical_url) asc",
+      [start_link_id, feed_url]
     )
 
     feed_item_urls_set = feed_item_urls.to_set
@@ -207,18 +216,13 @@ def discover_historical_entries(start_link_id, feed_item_urls, redirects, db, lo
       if rows.cmd_tuples == 0
         break
       end
+      row = rows.first
 
-      row = rows[0]
-      page = {
-        canonical_url: row["canonical_url"],
-        fetch_uri: URI(row["fetch_url"]),
-        content_type: row["content_type"],
-        content: unescape_bytea(row["content"])
-      }
+      page = Page.new(row["canonical_url"], URI(row["fetch_url"]), start_link_id, row["content_type"], unescape_bytea(row["content"]))
       # Don't pass allowed hosts so that the order of links is preserved
-      page_links = extract_links(page, nil, redirects, logger, true, true)[:allowed_host_links]
+      page_links = extract_links(page, nil, redirects, logger, true, true)
       page_urls_set = page_links
-        .map { |link| link[:canonical_url] }
+        .map(&:canonical_url)
         .to_set
 
       adjusted_best_count = best_result_pattern == :paged ? best_count - 1 : best_count

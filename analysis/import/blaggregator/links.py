@@ -77,8 +77,8 @@ with open('rss.csv', encoding='utf-8') as rss_f:
 
         success_count += 1
         print(f'Success {link}')
-        with open('links.csv', 'a', encoding='utf-8') as links_f:
-            links_f.write(f'{link};{comment}\n')
+        with open('links_rss.csv', 'a', encoding='utf-8') as links_f:
+            links_f.write(f'{link};{rss_url};{comment}\n')
 
 # Handled:
 # Connection failures
@@ -87,7 +87,7 @@ with open('rss.csv', encoding='utf-8') as rss_f:
 # RSS and Atom
 # No posts in feed
 
-# Not handled:
+# Not handled (fixed manually):
 # No alternate link
 # Empty link
 # Relative link

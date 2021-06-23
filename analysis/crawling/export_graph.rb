@@ -1,4 +1,5 @@
 require_relative 'db'
+require_relative 'structs'
 
 def export_graph(db, start_link_id, start_link, allowed_hosts, feed_uri, feed_urls, logger)
   logger.log("Export graph started")
@@ -16,8 +17,8 @@ def export_graph(db, start_link_id, start_link, allowed_hosts, feed_uri, feed_ur
       'select canonical_url, fetch_url, content_type, content from pages where start_link_id = $1',
       [start_link_id]
     )
-    .to_h { |row| [row["canonical_url"], { fetch_uri: URI(row["fetch_url"]), content_type: row["content_type"], content: unescape_bytea(row["content"]) }] }
-    .filter { |_, page| !page[:content].nil? }
+    .to_h { |row| [row["canonical_url"], Page.new(row["canonical_url"], URI(row["fetch_url"]), row["content_type"], unescape_bytea(row["content"]))] }
+    .filter { |_, page| !page.content.nil? }
 
   def to_node_label(canonical_url, allowed_hosts)
     if allowed_hosts.length == 1
@@ -30,7 +31,7 @@ def export_graph(db, start_link_id, start_link, allowed_hosts, feed_uri, feed_ur
   def feed_url_to_node_label(feed_url, allowed_hosts, redirects, fetch_uri, logger)
     feed_link = to_canonical_link(feed_url, logger, fetch_uri)
     redirected_link = follow_cached_redirects(feed_link, redirects)
-    to_node_label(redirected_link[:canonical_url], allowed_hosts)
+    to_node_label(redirected_link.canonical_url, allowed_hosts)
   end
 
   root_label = feed_url_to_node_label(feed_urls.root_url, allowed_hosts, redirects, feed_uri, logger)
@@ -42,13 +43,13 @@ def export_graph(db, start_link_id, start_link, allowed_hosts, feed_uri, feed_ur
   graph = pages.to_h do |canonical_url, page|
     [
       to_node_label(canonical_url, allowed_hosts),
-      extract_links(page, allowed_hosts, redirects, logger)[:allowed_host_links]
-        .filter { |link| pages.key?(link[:canonical_url]) }
-        .map { |link| to_node_label(link[:canonical_url], allowed_hosts) }
+      extract_links(page, allowed_hosts, redirects, logger)
+        .filter { |link| pages.key?(link.canonical_url) }
+        .map { |link| to_node_label(link.canonical_url, allowed_hosts) }
     ]
   end
 
-  start_link_label = to_node_label(start_link[:canonical_url], allowed_hosts)
+  start_link_label = to_node_label(start_link.canonical_url, allowed_hosts)
 
   File.open("graph/#{start_link_id}.dot", "w") do |dot_f|
     dot_f.write("digraph G {\n")
