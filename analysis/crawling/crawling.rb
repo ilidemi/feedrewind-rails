@@ -1,5 +1,4 @@
 require 'addressable/uri'
-require 'net/http'
 require 'nokogumbo'
 require 'rss'
 require 'set'
@@ -98,6 +97,7 @@ def crawl(start_link_id, db, logger)
       start_link = to_canonical_link(start_link_url, logger)
       raise "Bad start link: #{start_link_url}" if start_link.nil?
 
+      ctx.allowed_hosts << start_link.uri.host
       start_result = crawl_request(
         start_link, ctx, mock_http_client, false, start_link_id, db_storage, logger
       )
@@ -122,6 +122,7 @@ def crawl(start_link_id, db, logger)
       feed_link = feed_links.first
     end
     result.feed_url = "<a href=\"#{feed_link.url}\">#{feed_link.canonical_url}</a>"
+    ctx.allowed_hosts << feed_link.uri.host
     feed_result = crawl_request(
       feed_link, ctx, mock_http_client, true, start_link_id, db_storage, logger
     )
@@ -140,25 +141,27 @@ def crawl(start_link_id, db, logger)
     logger.log("Root url: #{feed_urls.root_url}")
     logger.log("Items in feed: #{feed_urls.item_urls.length}")
 
+    root_links = []
+    if feed_urls.root_url
+      root_link = to_canonical_link(feed_urls.root_url, logger, feed_page.fetch_uri)
+      ctx.allowed_hosts << root_link.uri.host
+      root_links << root_link
+    end
     item_links = feed_urls
       .item_urls
       .map { |url| to_canonical_link(url, logger, feed_page.fetch_uri) }
-    root_link = to_canonical_link(feed_urls.root_url, logger, feed_page.fetch_uri)
-    allowed_hosts = Set.new(
-      crawl_start_pages.map { |page| page.fetch_uri.host } +
-        item_links.map { |link| link.uri.host } +
-        [root_link.uri.host]
-    )
-    crawl_start_links = (item_links + [root_link]).uniq { |link| link.canonical_url }
+    item_links.each do |link|
+      ctx.allowed_hosts << link.uri.host
+    end
+    crawl_start_links = (item_links + root_links).uniq { |link| link.canonical_url }
     begin
       crawl_loop(
-        start_link_id, allowed_hosts, crawl_start_links, crawl_start_pages, ctx, mock_http_client, db_storage,
-        logger
+        start_link_id, crawl_start_links, crawl_start_pages, ctx, mock_http_client, db_storage, logger
       )
       result.crawl_succeeded = true
-    rescue => e
-      logger.log("Crawl threw: #{e}")
-      result.crawl_succeeded = false
+      rescue => e
+        logger.log("Crawl threw: #{e}")
+        result.crawl_succeeded = false
     end
 
     # TODO make it work when I need the graph the next time
@@ -258,14 +261,15 @@ class CrawlContext
     @requests_made = 0
     @duplicate_fetches = 0
     @main_feed_fetched = false
+    @allowed_hosts = Set.new
   end
 
-  attr_reader :seen_canonical_urls, :seen_fetch_urls, :fetched_urls, :redirects
+  attr_reader :seen_canonical_urls, :seen_fetch_urls, :fetched_urls, :redirects, :allowed_hosts
   attr_accessor :requests_made, :duplicate_fetches, :main_feed_fetched
 end
 
 def crawl_loop(
-  start_link_id, allowed_hosts, start_links, start_pages, ctx, http_client, storage, logger
+  start_link_id, start_links, start_pages, ctx, http_client, storage, logger
 )
   logger.log("Starting crawl loop for #{start_link_id} with #{start_links.length} links and #{start_pages.length} pages")
   initial_seen_urls_count = ctx.seen_canonical_urls.length
@@ -278,7 +282,7 @@ def crawl_loop(
     logger.log("Enqueued #{link}")
   end
   start_pages.each do |page|
-    crawl_process_page_links(page, allowed_hosts, queue, ctx, logger)
+    crawl_process_page_links(page, ctx.allowed_hosts, queue, ctx, logger)
   end
 
   until queue.empty?
@@ -297,7 +301,7 @@ def crawl_loop(
         link, ctx, http_client, false, start_link_id, storage, logger
       )
       if request_result.is_a?(Page)
-        crawl_process_page_links(request_result, allowed_hosts, queue, ctx, logger)
+        crawl_process_page_links(request_result, ctx.allowed_hosts, queue, ctx, logger)
       elsif request_result.is_a?(PermanentError)
         # Do nothing
       elsif request_result.is_a?(AlreadySeenLink)
@@ -361,11 +365,12 @@ def crawl_request(initial_link, ctx, http_client, is_feed_expected, start_link_i
     logger.log("#{resp.code} #{request_ms}ms #{link.url} -> #{redirection_link.url}")
     ctx.seen_canonical_urls << redirection_link.canonical_url
     ctx.seen_fetch_urls << redirection_link.url
+    ctx.allowed_hosts << redirection_link.uri.host
     link = redirection_link
   end
 
   if resp.code == "200"
-    content_type = response_content_type(resp)
+    content_type = resp.content_type ? resp.content_type.split(';')[0] : nil
     if content_type == "text/html" || (is_feed_expected && is_feed(resp.body, logger))
       content = resp.body
     else
@@ -387,10 +392,6 @@ def crawl_request(initial_link, ctx, http_client, is_feed_expected, start_link_i
   else
     raise "HTTP #{resp.code}" # TODO more cases here
   end
-end
-
-def response_content_type(resp)
-  resp.content_type ? resp.content_type.split(';')[0] : nil
 end
 
 def crawl_process_page_links(page, allowed_hosts, queue, ctx, logger)
@@ -568,6 +569,8 @@ def to_canonical_link(url, logger, fetch_uri = nil)
     raise "URI has extra parts: #{uri} registry:#{uri.registry}"
   end
 
+  uri.path = uri.path.gsub("//", "/")
+
   canonical_url = to_canonical_url(uri)
   Link.new(canonical_url, uri, uri.to_s)
 end
@@ -578,7 +581,14 @@ def to_canonical_url(uri)
   port_str = (
     uri.port.nil? || (uri.port == 80 && uri.scheme == 'http') || (uri.port == 443 && uri.scheme == 'https')
   ) ? '' : ":#{uri.port}"
-  path_str = (uri.path == '/' && uri.query.nil?) ? '' : uri.path
+
+  if uri.path == '/' && uri.query.nil?
+    path_str = ''
+  elsif uri.path.end_with?("/") && uri.query.nil?
+    path_str = uri.path[0...-1]
+  else
+    path_str = uri.path
+  end
 
   if uri.query
     whitelisted_query = uri

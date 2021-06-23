@@ -9,6 +9,7 @@ Matching redirects on fetch urls introduces more requests if it leads to a known
 I don't have to write smart logic to find RSS link and determine the right one. Feedly seems to only look at marked head links, presenting all, and their own cache
 Some blogs can 429 even at 1 request a second after a while
 A website generated with Ghost can depend on javascript to load more posts on scroll but also have a hidden <link rel="next> in <head> that leads to page 2
+A website (seattle times) can time out requests with bad user agent
 
 
 # URL processing
@@ -46,6 +47,7 @@ There is a public crawled dataset with 75M RSS in it
 Starting with known 500, then testing on the next 500 from the internet will give an estimate how generalizable the rules are. After that it's like counting the fish in the ocean by sampling.
 Big e2e dashboard is good
 Manual comments in db is good
+Dataset of 10K feeds: https://github.com/jeryini/distributed-rss/blob/master/target/classes/com/jernejerin/10K-RSS-feeds.csv
 
 
 # User experience

@@ -28,11 +28,14 @@ test_data = [
   ["should include only whitelisted query in canonical url", %w[https://ya.ru/abc?blog=1&b=2 https://ya.ru], %w[https://ya.ru/abc?blog=1&b=2 ya.ru/abc?blog=1]],
   ["should drop root path from canonical url if no query", %w[https://ya.ru/ https://ya.ru/], %w[https://ya.ru/ ya.ru]],
   ["should keep root path in canonical url if query", %w[https://ya.ru/?blog https://ya.ru/], %w[https://ya.ru/?blog ya.ru/?blog]],
+  ["should drop final / from canonical url if no query", %w[https://ya.ru/a/ https://ya.ru/], %w[https://ya.ru/a/ ya.ru/a]],
+  ["should keep final / in canonical url if query", %w[https://ya.ru/a/?blog https://ya.ru/], %w[https://ya.ru/a/?blog ya.ru/a/?blog]],
   ["should ignore newlines", %W[https://ya.ru/ab\nc https://ya.ru/], %w[https://ya.ru/abc ya.ru/abc]],
   ["should trim leading and trailing spaces", [" https://ya.ru ", "https://ya.ru"], %w[https://ya.ru ya.ru]],
   ["should trim leading and trailing escaped spaces", ["%20https://waitbutwhy.com/table/like-improve-android-phone%20", "https://waitbutwhy.com/table/like-improve-iphone"], %w[https://waitbutwhy.com/table/like-improve-android-phone waitbutwhy.com/table/like-improve-android-phone]],
   ["should trim leading and trailing escaped crazy whitespace", [" \t\n\x00\v\f\r%20%09%0a%00%0b%0c%0d%0A%0B%0C%0Dhttps://ya.ru \t\n\x00\v\f\r%20%09%0a%00%0b%0c%0d%0A%0B%0C%0D", "https://ya.ru"], %w[https://ya.ru ya.ru]],
   ["should escape middle spaces", ["/tagged/alex norris", "https://webcomicname.com/post/652255218526011392/amp"], %w[https://webcomicname.com/tagged/alex%20norris webcomicname.com/tagged/alex%20norris]],
+  ["should replace // in path with /", %w[https://NQNStudios.github.io//2020//04//06/byte-size-mindfulness-1.html https://www.natquaylenelson.com/feed.xml], %w[https://NQNStudios.github.io/2020/04/06/byte-size-mindfulness-1.html NQNStudios.github.io/2020/04/06/byte-size-mindfulness-1.html]],
   ["should ignore invalid character in host", ["http://targetWindow.postMessage(message, targetOrigin, [transfer]);", "https://thewitchofendor.com/2019/02/20/"], nil],
   ["should ignore invalid port number", %w[http://localhost:${port}` https://medium.com/samsung-internet-dev/hello-deno-ed1f8961be26?source=post_internal_links---------2----------------------------], nil],
   ["should ignore url with userinfo", ["http://npm install phaser@3.15.1", "https://thewitchofendor.com/2019/01/page/2/"], nil],
@@ -44,7 +47,7 @@ test_data = [
   ["should preserve escaped url", %w[https://ya.ru/%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F https://ya.ru], %w[https://ya.ru/%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F ya.ru/%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F]],
   ["should handle half-escaped url", %w[https://ya.ru/Рос%D1%81%D0%B8%D1%8F% https://ya.ru], %w[https://ya.ru/%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%25 ya.ru/%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%25]],
   ["should preserve badly escaped url", %w[https://ya.ru/%25D1%2581%25D0%25B8%25D1%258F https://ya.ru], %w[https://ya.ru/%25D1%2581%25D0%25B8%25D1%258F ya.ru/%25D1%2581%25D0%25B8%25D1%258F]],
-  ["should handle invalid escape", %w[http://www.ratebeer.com/beer/lindemans-p%EAche-lambic-(p%EAcheresse)/345/ https://acko.net/blog/ahoy-vancouver/], %w[http://www.ratebeer.com/beer/lindemans-p%25EAche-lambic-(p%25EAcheresse)/345/ www.ratebeer.com/beer/lindemans-p%25EAche-lambic-(p%25EAcheresse)/345/]],
+  ["should handle invalid escape", %w[http://www.ratebeer.com/beer/lindemans-p%EAche-lambic-(p%EAcheresse)/345/ https://acko.net/blog/ahoy-vancouver/], %w[http://www.ratebeer.com/beer/lindemans-p%25EAche-lambic-(p%25EAcheresse)/345/ www.ratebeer.com/beer/lindemans-p%25EAche-lambic-(p%25EAcheresse)/345]],
   ["should ignore invalid uri with two userinfos", %w[http://ex.p.lo.si.v.edhq.g@silvia.woodw.o.r.t.h@www.temposicilia.it/index.php/component/-/index.php?option=com_kide http://yosefk.com/blog/a-better-future-animated-post.html], nil],
   ["should ignore url starting with :", %w[:2 https://blog.mozilla.org/en/mozilla/password-security-part-ii/], nil]
 ]

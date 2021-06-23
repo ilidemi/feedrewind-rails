@@ -66,9 +66,7 @@ def extract_feed_urls(feed_content, logger)
     FeedUrls.new(root_url, item_urls)
   else
     atom_feed = xml.xpath("/xmlns:feed")[0]
-
     root_url = get_atom_link(atom_feed)
-    raise "Couldn't extract root url from Atom" if root_url.nil?
 
     entry_nodes = atom_feed.xpath("xmlns:entry")
     entries = entry_nodes.map do |entry|
@@ -108,6 +106,7 @@ def get_atom_link(linkable)
   if link_candidates.empty?
     link_candidates = feed_links.to_a.filter { |link| link.attributes["rel"].nil? }
   end
+  return nil if link_candidates.empty?
   raise "Not one candidate link: #{link_candidates.length}" if link_candidates.length != 1
 
   link_candidates[0].attributes["href"]&.to_s

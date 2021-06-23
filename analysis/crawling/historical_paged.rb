@@ -8,17 +8,12 @@ def try_extract_paged(
   page, page_links, page_urls_set, feed_item_urls, feed_item_urls_set, best_count, subpattern_priorities,
   start_link_id, redirects, db, logger
 )
-  min_page_items = 3
   page_overlapping_links_count = nil
   feed_item_urls.each_with_index do |feed_item_url, index|
     if index == feed_item_urls.length - 1 && page_urls_set.include?(feed_item_url)
       page_overlapping_links_count = feed_item_urls.length
     elsif !page_urls_set.include?(feed_item_url)
-      if index >= min_page_items
-        page_overlapping_links_count = index
-      else
-        return nil
-      end
+      page_overlapping_links_count = index
     end
   end
 
@@ -43,8 +38,6 @@ def try_extract_paged(
 
   page_size_masked_xpaths = []
   links_by_masked_xpath.each do |masked_xpath, masked_xpath_links|
-    next if masked_xpath_links.length < min_page_items
-
     masked_xpath_link_urls = masked_xpath_links.map(&:canonical_url)
     feed_overlap_length = [masked_xpath_link_urls.length, feed_item_urls.length].min
     next unless masked_xpath_link_urls[0...feed_overlap_length] == feed_item_urls[0...feed_overlap_length]
