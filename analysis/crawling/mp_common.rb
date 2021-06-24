@@ -46,7 +46,7 @@ def mp_run(runnable, output_prefix, start_link_ids_override=nil)
     start_link_ids = start_link_ids_override
   else
     start_link_ids = db
-      .exec("select id from start_links where id not in (select start_link_id from known_issues where severity = 'discard')")
+      .exec("select id from start_links where id not in (select start_link_id from known_issues where severity = 'discard') order by id asc")
       .map { |row| row["id"].to_i }
   end
   process_count = [max_process_count, start_link_ids.length].min
