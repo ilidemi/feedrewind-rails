@@ -1,5 +1,6 @@
 require 'date'
 require 'nokogumbo'
+require 'set'
 
 def is_feed(page_content, logger)
   return false if page_content.nil?
@@ -124,9 +125,8 @@ def try_sort_reverse_chronological(items, logger)
   all_dates_equal = true
   are_dates_ascending_order = true
   are_dates_descending_order = true
-  items
-    .map { |item| item[:pub_date] }
-    .each_cons(2) do |pub_date1, pub_date2|
+  item_dates = items.map { |item| item[:pub_date] }
+  item_dates.each_cons(2) do |pub_date1, pub_date2|
     if pub_date1 != pub_date2
       all_dates_equal = false
     end
@@ -138,12 +138,21 @@ def try_sort_reverse_chronological(items, logger)
     end
   end
 
+  are_dates_duplicate = item_dates.to_set.length != item_dates.length
+
   if all_dates_equal
     logger.log("All item dates are equal")
   end
 
   if !are_dates_ascending_order && !are_dates_descending_order
-    logger.log("Item dates are shuffled")
+    if are_dates_duplicate
+      logger.log("Item dates are shuffled but there are also duplicates")
+    else
+      logger.log("Item dates are shuffled but no duplicates, sorting")
+      return items
+        .sort_by { |item| item[:pub_date] }
+        .reverse
+    end
   end
 
   if are_dates_ascending_order

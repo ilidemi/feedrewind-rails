@@ -6,7 +6,7 @@ def st_run(runnable, start_link_id)
   logger = MyLogger.new($stdout)
   error = nil
   begin
-    result = runnable.run(start_link_id, db, logger)
+    result = runnable.run(start_link_id, false, db, logger)
   rescue RunError => e
     result = e.result
     error = e

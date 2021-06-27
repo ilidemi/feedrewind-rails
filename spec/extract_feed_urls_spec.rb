@@ -88,13 +88,37 @@ RSpec.describe "extract_feed_urls" do
       .to eq FeedUrls.new("https://root", %w[https://root/b https://root/a])
   end
 
-  it "should preserve RSS items order if dates are shuffled" do
+  it "should sort RSS items if dates are shuffled but unique" do
     rss_content = %{
       <rss>
         <channel>
           <link>https://root</link>
           <item>
             <pubDate>Wed, 21 Oct 2015 08:28:48 GMT</pubDate>
+            <link>https://root/a</link>
+          </item>
+          <item>
+            <pubDate>Sun, 25 Oct 2015 05:04:05 GMT</pubDate>
+            <link>https://root/b</link>
+          </item>
+          <item>
+            <pubDate>Sun, 20 Oct 2015 05:04:05 GMT</pubDate>
+            <link>https://root/c</link>
+          </item>
+        </channel>
+      </rss>
+    }
+    expect(extract_feed_urls(rss_content, logger))
+      .to eq FeedUrls.new("https://root", %w[https://root/b https://root/a https://root/c])
+  end
+
+  it "should preserve RSS order if dates are shuffled but repeating" do
+    rss_content = %{
+      <rss>
+        <channel>
+          <link>https://root</link>
+          <item>
+            <pubDate>Wed, 20 Oct 2015 05:04:05 GMT</pubDate>
             <link>https://root/a</link>
           </item>
           <item>
@@ -160,23 +184,23 @@ RSpec.describe "extract_feed_urls" do
       .to eq FeedUrls.new("https://root", %w[https://root/a https://root/b])
   end
 
-  it "should fail Atom parsing if channel url is not present" do
+  it "should parse Atom if channel url is not present" do
     atom_content = %{
       <feed xmlns="http://www.w3.org/2005/Atom">
           <link/>
       </feed>
     }
-    expect { extract_feed_urls(atom_content, logger) }
-      .to raise_error(/Couldn't extract root url from Atom/)
+    expect(extract_feed_urls(atom_content, logger))
+      .to eq FeedUrls.new(nil, [])
   end
 
-  it "should fail Atom parsing if channel link is not present" do
+  it "should parse Atom if channel link is not present" do
     atom_content = %{
       <feed xmlns="http://www.w3.org/2005/Atom">
       </feed>
     }
-    expect { extract_feed_urls(atom_content, logger) }
-      .to raise_error(/Not one candidate link: 0/)
+    expect(extract_feed_urls(atom_content, logger))
+      .to eq FeedUrls.new(nil, [])
   end
 
   it "should fail Atom parsing if item url is not present" do
@@ -207,7 +231,7 @@ RSpec.describe "extract_feed_urls" do
       </feed>
     }
     expect { extract_feed_urls(atom_content, logger) }
-      .to raise_error(/Not one candidate link: 0/)
+      .to raise_error(/Couldn't extract entry urls from Atom/)
   end
 
   it "should reverse Atom items if they are chronological" do
@@ -228,12 +252,34 @@ RSpec.describe "extract_feed_urls" do
       .to eq FeedUrls.new("https://root", %w[https://root/b https://root/a])
   end
 
-  it "should preserve Atom items order if dates are shuffled" do
+  it "should sort Atom items if dates are shuffled but unique" do
     atom_content = %{
       <feed xmlns="http://www.w3.org/2005/Atom">
         <link href="https://root"/>
         <entry>
           <published>2020-05-16T00:00:00-04:00</published>
+          <link href="https://root/a"/>
+        </entry>
+        <entry>
+          <published>2021-05-16T00:00:00-04:00</published>
+          <link href="https://root/b"/>
+        </entry>
+        <entry>
+          <published>2019-05-16T00:00:00-04:00</published>
+          <link href="https://root/c"/>
+        </entry>
+      </feed>
+    }
+    expect(extract_feed_urls(atom_content, logger))
+      .to eq FeedUrls.new("https://root", %w[https://root/b https://root/a https://root/c])
+  end
+
+  it "should preserve Atom items order if dates are shuffled and have duplicates" do
+    atom_content = %{
+      <feed xmlns="http://www.w3.org/2005/Atom">
+        <link href="https://root"/>
+        <entry>
+          <published>2019-05-16T00:00:00-04:00</published>
           <link href="https://root/a"/>
         </entry>
         <entry>

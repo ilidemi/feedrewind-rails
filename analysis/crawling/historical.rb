@@ -15,6 +15,7 @@ HISTORICAL_RESULT_COLUMNS = [
   [:found_items_count, :neutral_present],
   [:all_items_found, :boolean],
   [:historical_links_matching, :boolean],
+  [:no_regression, :neutral],
   [:historical_links_pattern, :neutral_present],
   [:historical_links_count, :neutral_present],
   [:main_url, :neutral_present],
@@ -28,14 +29,14 @@ class HistoricalRunnable
     @result_column_names = to_column_names(HISTORICAL_RESULT_COLUMNS)
   end
 
-  def run(start_link_id, db, logger)
-    discover_historical_entries_from_scratch(start_link_id, db, logger)
+  def run(start_link_id, save_successes, db, logger)
+    discover_historical_entries_from_scratch(start_link_id, save_successes, db, logger)
   end
 
   attr_reader :result_column_names
 end
 
-def discover_historical_entries_from_scratch(start_link_id, db, logger)
+def discover_historical_entries_from_scratch(start_link_id, save_successes, db, logger)
   logger.log("Discover historical entries from scratch started")
 
   start_link_url = db.exec_params('select url from start_links where id = $1', [start_link_id])[0]["url"]
@@ -166,6 +167,19 @@ def discover_historical_entries_from_scratch(start_link_id, db, logger)
       end
 
       result.historical_links_matching = historical_links_matching
+
+      has_succeeded_before = db
+        .exec_params("select count(*) from successes where start_link_id = $1", [start_link_id])
+        .first["count"]
+        .to_i == 1
+      no_regression = !has_succeeded_before || historical_links_matching
+      result.no_regression = no_regression
+      result.no_regression_status = no_regression ? :success : :failure
+
+      if save_successes && !has_succeeded_before && historical_links_matching
+        logger.log("First success for this id, saving")
+        db.exec_params("insert into successes (start_link_id, timestamp) values ($1, now())", [start_link_id])
+      end
     else
       result.historical_links_matching = '?'
       result.historical_links_matching_status = :neutral

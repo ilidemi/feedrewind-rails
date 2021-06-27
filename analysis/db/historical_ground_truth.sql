@@ -6,5 +6,6 @@ create table historical_ground_truth
     pattern                    pattern not null,
     entries_count              integer not null,
     main_page_canonical_url    text    not null,
-    oldest_entry_canonical_url text    not null
+    oldest_entry_canonical_url text    not null,
+    last_page_canonical_url    text
 );

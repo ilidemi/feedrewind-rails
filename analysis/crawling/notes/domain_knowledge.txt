@@ -10,6 +10,8 @@ I don't have to write smart logic to find RSS link and determine the right one. 
 Some blogs can 429 even at 1 request a second after a while
 A website generated with Ghost can depend on javascript to load more posts on scroll but also have a hidden <link rel="next> in <head> that leads to page 2
 A website (seattle times) can time out requests with bad user agent
+Link can be under <a> or <link> or <area> tag, these seem to be the only three that have href attribute
+<a> can be in svg which is different xml namespace
 
 
 # URL processing
@@ -24,12 +26,15 @@ A new blog looks like archives at first (everything on one page), then transitio
 For small WP blogs, paging takes fewer requests that two level archives by month.
 RSS can be sorted either way
 RSS can have consecutive duplicates
+RSS can be shuffled but have correct dates
 Same autogeneration process can put one node as /p/a and the other as /p[1]/a, so every intermediate node needs an implicit [1]
 Historical links can lead to other domains than in RSS, and should be included if they match the pattern well
 At the link extraction stage, order of links is very important, so no filter/partition then concat. Sorting by xpath won't work.
 meta property article:published_time has precise time
 Same page can have same links in the content area and in the recent posts sidebar, can't just pick one xpath
 Post link can redirect to a login page that requires js, two such posts causing duplicates. Not following redirects in some cases may be better than following them. Redirects don't matter once we're out of RSS.
+Blogspot blogs are the only ones in the dataset that page with query params
+Blog pages can have different sizes, but the cost of false positive is silently dropping items with different layout.
 
 
 # Engineering

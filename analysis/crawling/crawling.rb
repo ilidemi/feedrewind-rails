@@ -22,6 +22,7 @@ CRAWLING_RESULT_COLUMNS = [
   [:duplicate_fetches, :neutral],
   [:historical_links_found, :boolean],
   [:historical_links_matching, :boolean],
+  [:no_regression, :neutral],
   [:historical_links_pattern, :neutral_present],
   [:historical_links_count, :neutral_present],
   [:main_url, :neutral_present],
@@ -38,14 +39,14 @@ class CrawlRunnable
     @result_column_names = to_column_names(CRAWLING_RESULT_COLUMNS)
   end
 
-  def run(start_link_id, db, logger)
-    crawl(start_link_id, db, logger)
+  def run(start_link_id, save_successes, db, logger)
+    crawl(start_link_id, save_successes, db, logger)
   end
 
   attr_reader :result_column_names
 end
 
-def crawl(start_link_id, db, logger)
+def crawl(start_link_id, save_successes, db, logger)
   start_link_row = db.exec_params('select url, rss_url from start_links where id = $1', [start_link_id])[0]
   start_link_url = start_link_row["url"]
   start_link_feed_url = start_link_row["rss_url"]
@@ -185,7 +186,7 @@ def crawl(start_link_id, db, logger)
 
     db.exec_params(
       "insert into historical (start_link_id, pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url) values ($1, $2, $3, $4, $5)",
-      [start_link_id, "archives", entries_count, historical_links[:main_canonical_url], oldest_link.canonical_url]
+      [start_link_id, historical_links[:pattern], entries_count, historical_links[:main_canonical_url], oldest_link.canonical_url]
     )
 
     if gt_row
@@ -229,9 +230,23 @@ def crawl(start_link_id, db, logger)
       end
 
       result.historical_links_matching = historical_links_matching
+
+      has_succeeded_before = db
+        .exec_params("select count(*) from successes where start_link_id = $1", [start_link_id])
+        .first["count"]
+        .to_i == 1
+      no_regression = !has_succeeded_before || historical_links_matching
+      result.no_regression = no_regression
+      result.no_regression_status = no_regression ? :success : :failure
+
+      if save_successes && !has_succeeded_before && historical_links_matching
+        logger.log("First success for this id, saving")
+        db.exec_params("insert into successes (start_link_id, timestamp) values ($1, now())", [start_link_id])
+      end
     else
       result.historical_links_matching = '?'
       result.historical_links_matching_status = :neutral
+      result.no_regression_status = :neutral
       result.historical_links_pattern = historical_links[:pattern]
       result.historical_links_count = entries_count
       result.main_url = "<a href=\"#{historical_links[:main_fetch_url]}\">#{historical_links[:main_canonical_url]}</a>"
@@ -363,7 +378,8 @@ def crawl_request(initial_link, ctx, http_client, is_feed_expected, start_link_i
     end
 
     logger.log("#{resp.code} #{request_ms}ms #{link.url} -> #{redirection_link.url}")
-    ctx.seen_canonical_urls << redirection_link.canonical_url
+    # Not marking canonical url as seen because redirect key is a fetch url which may be different for the
+    # same canonical url
     ctx.seen_fetch_urls << redirection_link.url
     ctx.allowed_hosts << redirection_link.uri.host
     link = redirection_link
@@ -419,7 +435,9 @@ def extract_links(
   return [] unless page.content_type == 'text/html'
 
   document = nokogiri_html5(page.content)
-  link_elements = document.css('a').to_a + document.css('link').to_a
+  link_elements = document.xpath('//a').to_a +
+    document.xpath('//link').to_a +
+    document.xpath('//area').to_a
   links = []
   classes_by_xpath = {}
   link_elements.each do |element|
@@ -437,7 +455,9 @@ def extract_links(
 end
 
 def nokogiri_html5(content)
-  Nokogiri::HTML5(content, max_attributes: -1, max_tree_depth: -1)
+  html = Nokogiri::HTML5(content, max_attributes: -1, max_tree_depth: -1)
+  html.remove_namespaces!
+  html
 end
 
 def html_element_to_link(
@@ -575,7 +595,20 @@ def to_canonical_link(url, logger, fetch_uri = nil)
   Link.new(canonical_url, uri, uri.to_s)
 end
 
-WHITELISTED_QUERY_PARAMS = Set.new(%w[blog page year m offset skip sort order format])
+WHITELISTED_QUERY_PARAMS = Set.new(
+  [
+    "page",
+    "year",
+    "m", # month, apenwarr
+    "start",
+    "offset",
+    "skip",
+    "updated-max", # blogspot
+    "sort",
+    "order",
+    "format"
+  ]
+)
 
 def to_canonical_url(uri)
   port_str = (

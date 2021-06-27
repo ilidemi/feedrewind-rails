@@ -37,7 +37,7 @@ def kill_all_processes(pids, processes_finished)
 end
 
 def mp_run(runnable, output_prefix, start_link_ids_override=nil)
-  max_process_count = 8
+  max_process_count = 4
 
   start_time = monotonic_now
   report_filename = "report/mp_#{output_prefix}_#{DateTime.now.strftime('%F_%H-%M-%S')}.html"
@@ -89,7 +89,7 @@ def mp_run(runnable, output_prefix, start_link_ids_override=nil)
         begin
           File.open("#{log_dir}/log#{start_link_id}.txt", 'a') do |log_file|
             logger = MyLogger.new(log_file)
-            result = runnable.run(start_link_id, process_db, logger)
+            result = runnable.run(start_link_id, true, process_db, logger)
             write_object(result_writer, [start_link_id, result, nil])
           end
         rescue => error

@@ -2,13 +2,13 @@ require 'readline'
 require 'set'
 require_relative '../db'
 
-filename = '../notes/6-23_patterns_3.txt'
+filename = '../notes/6-26_patterns.txt'
 
 mode = :initial
 type_operations = []
 id_operations = []
 issue_operations = []
-BadFields = Struct.new(:id, :pattern, :count, :main_url, :oldest_url)
+BadFields = Struct.new(:id, :pattern, :count, :main_url, :oldest_url, :last_page_url)
 bad_fields = BadFields.new
 IssueFields = Struct.new(:id, :severity, :issue)
 issue_fields = IssueFields.new
@@ -72,9 +72,18 @@ File.open(filename) do |patterns_file|
           bad_fields.main_url = line
         elsif !bad_fields.oldest_url
           bad_fields.oldest_url = line
+          unless bad_fields.pattern.start_with?("paged")
+            id_operations << [
+              'insert into historical_ground_truth (start_link_id, pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url) values ($1, $2, $3, $4, $5)',
+              [bad_fields.id, bad_fields.pattern, bad_fields.count, bad_fields.main_url, bad_fields.oldest_url]
+            ]
+            bad_fields = BadFields.new
+          end
+        elsif bad_fields.pattern.start_with?("paged") && !bad_fields.last_page_url
+          bad_fields.last_page_url = line
           id_operations << [
-            'insert into historical_ground_truth (start_link_id, pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url) values ($1, $2, $3, $4, $5)',
-            [bad_fields.id, bad_fields.pattern, bad_fields.count, bad_fields.main_url, bad_fields.oldest_url]
+            'insert into historical_ground_truth (start_link_id, pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url, last_page_canonical_url) values ($1, $2, $3, $4, $5, $6)',
+            [bad_fields.id, bad_fields.pattern, bad_fields.count, bad_fields.main_url, bad_fields.oldest_url, bad_fields.last_page_url]
           ]
           bad_fields = BadFields.new
         end

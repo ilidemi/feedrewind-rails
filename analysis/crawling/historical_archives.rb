@@ -2,7 +2,7 @@ require_relative 'historical_common'
 
 def try_extract_archives(
   page, page_links, page_urls_set, feed_item_urls, feed_item_urls_set, best_result_subpattern_priority,
-  best_count, subpattern_priorities, logger
+  min_links_count, subpattern_priorities, logger
 )
   return nil unless feed_item_urls.all? { |item_url| page_urls_set.include?(item_url) }
 
@@ -11,9 +11,9 @@ def try_extract_archives(
   best_result_star_count = nil
   best_page_links = nil
   if best_result_subpattern_priority.nil? || best_result_subpattern_priority > subpattern_priorities[:archives_1star]
-    min_page_links_count = best_count
+    min_page_links_count = min_links_count
   else
-    min_page_links_count = best_count + 1
+    min_page_links_count = min_links_count + 1
   end
 
   logger.log("Trying xpaths with a single star")
@@ -26,15 +26,15 @@ def try_extract_archives(
     best_page_links = historical_links_single_star
     best_result_subpattern_priority = subpattern_priorities[:archives_1star]
     best_result_star_count = 1
-    best_count = best_page_links[:links].length
+    min_links_count = best_page_links[:links].length
   end
 
   if best_result_subpattern_priority.nil? || best_result_subpattern_priority > subpattern_priorities[:archives_2star]
-    min_page_links_count = best_count
+    min_page_links_count = min_links_count
   elsif best_result_subpattern_priority == subpattern_priorities[:archives_2star]
-    min_page_links_count = best_count + 1
+    min_page_links_count = min_links_count + 1
   else
-    min_page_links_count = (best_count * 1.5).ceil
+    min_page_links_count = (min_links_count * 1.5).ceil
   end
 
   logger.log("Trying xpaths with two stars")
@@ -47,15 +47,15 @@ def try_extract_archives(
     best_page_links = historical_links_double_star
     best_result_subpattern_priority = subpattern_priorities[:archives_2star]
     best_result_star_count = 2
-    best_count = best_page_links[:links].length
+    min_links_count = best_page_links[:links].length
   end
 
   if best_result_subpattern_priority.nil? || best_result_subpattern_priority > subpattern_priorities[:archives_3star]
-    min_page_links_count = best_count
+    min_page_links_count = min_links_count
   elsif best_result_subpattern_priority == subpattern_priorities[:archives_3star]
-    min_page_links_count = best_count + 1
+    min_page_links_count = min_links_count + 1
   else
-    min_page_links_count = (best_count * 1.5).ceil
+    min_page_links_count = (min_links_count * 1.5).ceil
   end
 
   logger.log("Trying xpaths with three stars")
@@ -68,7 +68,7 @@ def try_extract_archives(
     best_page_links = historical_links_triple_star
     best_result_subpattern_priority = subpattern_priorities[:archives_3star]
     best_result_star_count = 3
-    best_count = best_page_links[:links].length
+    min_links_count = best_page_links[:links].length
   end
 
   if best_page_links
@@ -80,12 +80,12 @@ def try_extract_archives(
       extra: "star_count: #{best_result_star_count}#{best_page_links[:extra]}"
     }
   else
-    logger.log("Not an archives page or the best result (#{best_count}) is not topped")
+    logger.log("Not an archives page or the min links count (#{min_links_count}) is not reached")
   end
 
   if best_result
-    logger.log("New best count: #{best_count} with #{best_result[:pattern]}")
-    { best_result: best_result, subpattern_priority: best_result_subpattern_priority, count: best_count }
+    logger.log("New best count: #{min_links_count} with #{best_result[:pattern]}")
+    { best_result: best_result, subpattern_priority: best_result_subpattern_priority, count: min_links_count }
   else
     nil
   end

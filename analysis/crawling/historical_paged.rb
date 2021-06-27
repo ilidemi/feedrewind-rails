@@ -17,10 +17,7 @@ def try_extract_paged(
     end
   end
 
-  page2_url_regex = make_page_url_regex(2)
-  links_to_page2 = page_links.filter do |page_link|
-    page_link.uri.host == page.fetch_uri.host && page2_url_regex.match?(page_link.canonical_url)
-  end
+  links_to_page2 = find_links_to_next_page(page_links, page.fetch_uri, 2)
   return nil if links_to_page2.empty?
 
   if links_to_page2.map { |page2_link| page2_link.canonical_url }.to_set.length > 1
@@ -90,7 +87,7 @@ def try_extract_paged(
     next if page2_xpath_links.any? do |page2_xpath_link|
       page1_xpath_urls_set.include?(page2_xpath_link.canonical_url)
     end
-    next if page2_xpath_links.length > page1_xpath_links.length
+    next if page2_xpath_links.length > xpath_page_size
 
     page2_xpath_urls = page2_xpath_links.map(&:canonical_url)
     page2_feed_item_urls = feed_item_urls[xpath_page_size..-1] || []
@@ -108,14 +105,64 @@ def try_extract_paged(
   end
 
   if page2_entry_links.nil?
+    page_size_masked_xpaths_sorted.each do |xpath_page_size, masked_xpath|
+      masked_xpath_star_index = masked_xpath.index("*")
+      masked_xpath_suffix_start = masked_xpath[0...masked_xpath_star_index].rindex("/")
+      masked_xpath_suffix = masked_xpath[masked_xpath_suffix_start..-1]
+      page2_xpath_suffix = "/" + masked_xpath_suffix.gsub("*", "1")
+      page2_xpath_suffix_link_elements = page2_doc.xpath(page2_xpath_suffix)
+      page2_xpath_suffix_links = page2_xpath_suffix_link_elements.filter_map do |element|
+        html_element_to_link(
+          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, redirects, logger, true, false
+        )
+      end
+      next if page2_xpath_suffix_links.length != 1
+
+      page2_xpath_suffix_link = page2_xpath_suffix_links.first
+      page2_xpath_prefix_length = page2_xpath_suffix_link.xpath.length - masked_xpath_suffix.length
+      page2_xpath_prefix = page2_xpath_suffix_link.xpath[0...page2_xpath_prefix_length]
+      page2_masked_xpath = page2_xpath_prefix + masked_xpath_suffix
+
+      page2_xpath_link_elements = page2_doc.xpath(page2_masked_xpath)
+      page2_xpath_links = page2_xpath_link_elements.filter_map do |element|
+        html_element_to_link(
+          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, redirects, logger, true, false
+        )
+      end
+
+      page1_xpath_links = links_by_masked_xpath[masked_xpath]
+      page1_xpath_urls_set = page1_xpath_links
+        .map(&:canonical_url)
+        .to_set
+      next if page2_xpath_links.any? do |page2_xpath_link|
+        page1_xpath_urls_set.include?(page2_xpath_link.canonical_url)
+      end
+      next if page2_xpath_links.length > xpath_page_size
+
+      page2_xpath_urls = page2_xpath_links.map(&:canonical_url)
+      page2_feed_item_urls = feed_item_urls[xpath_page_size..-1] || []
+      feed_overlap_length = [page2_xpath_urls.length, page2_feed_item_urls.length].min
+      next unless page2_xpath_urls[0...feed_overlap_length] == page2_feed_item_urls[0...feed_overlap_length]
+
+      page1_entry_links = page1_xpath_links
+      page2_entry_links = page2_xpath_links
+      good_masked_xpath = page2_masked_xpath
+      page_size = xpath_page_size
+      remaining_feed_item_urls = page2_feed_item_urls[page2_entry_links.length...-1] || []
+      logger.log("Possible page 2: #{link_to_page2.canonical_url}")
+      logger.log("XPath looks good for page 1: #{masked_xpath} (#{page1_entry_links.length} links)")
+      logger.log("XPath looks good for page 2: #{page2_masked_xpath} (#{page2_entry_links.length} links)")
+      break
+    end
+  end
+
+  if page2_entry_links.nil?
     logger.log("Couldn't find an xpath matching page 1 and page 2")
     return nil
   end
 
   page2_links = extract_links(page2, [page2.fetch_uri.host], redirects, logger, true, false)
-  page3_url_regex = make_page_url_regex(3)
-  links_to_page3 = page2_links.filter { |page2_link| page3_url_regex.match?(page2_link.canonical_url) }
-
+  links_to_page3 = find_links_to_next_page(page2_links, page2.fetch_uri, 3)
   if links_to_page3.map { |page3_link| page3_link.canonical_url }.to_set.length > 1
     logger.log("Page 2 #{page2.canonical_url} has multiple page 3 links: #{links_to_page3}")
     return nil
@@ -244,9 +291,7 @@ def extract_page_entry_links(
 
   page_links = extract_links(page, [page.fetch_uri.host], redirects, logger, true, false)
   next_page_number = page_number + 1
-  next_page_url_regex = make_page_url_regex(next_page_number)
-  links_to_next_page = page_links.filter { |page_link| next_page_url_regex.match?(page_link.canonical_url) }
-
+  links_to_next_page = find_links_to_next_page(page_links, page.fetch_uri, next_page_number)
   if links_to_next_page.map(&:canonical_url).to_set.length > 1
     logger.log("Page #{page_number} #{page.canonical_url} has multiple page #{next_page_number} links: #{links_to_next_page}")
     return nil
@@ -266,13 +311,40 @@ def fetch_page(start_link_id, canonical_url, db)
     "select fetch_url, content_type, content from pages where start_link_id = $1 and content is not null and canonical_url = $2",
     [start_link_id, canonical_url]
   ).first
-  if row.nil?
-    return nil
-  end
+  return nil if row.nil?
 
   Page.new(canonical_url, URI(row["fetch_url"]), start_link_id, row["content_type"], unescape_bytea(row["content"]))
 end
 
+def find_links_to_next_page(current_page_links, current_page_uri, next_page_number)
+  blogspot_regex = /updated-max=([^&]+)/
+  if next_page_number >= 3 &&
+    current_page_uri.path == "/search" &&
+    current_page_uri.query &&
+    (current_date_match = blogspot_regex.match(current_page_uri.query))
+
+    current_page_links.filter do |link|
+      !link.xpath.start_with?("/html[1]/head[1]") &&
+        link.uri.path == "/search" &&
+        link.uri.query &&
+        (next_date_match = blogspot_regex.match(link.uri.query)) &&
+        next_date_match[1] < current_date_match[1]
+    end
+  else
+    if next_page_number == 2
+      blogspot_next_page_links = current_page_links.filter do |link|
+        link.uri.path == "/search" &&
+          link.uri.query &&
+          blogspot_regex.match(link.uri.query)
+      end
+      return blogspot_next_page_links unless blogspot_next_page_links.empty?
+    end
+
+    next_page_regex = make_page_url_regex(next_page_number)
+    current_page_links.filter { |link| next_page_regex.match(link.uri.path) }
+  end
+end
+
 def make_page_url_regex(next_page_number)
-  Regexp.new("/page/?#{next_page_number}([^\\d]|$)")
+  Regexp.new("/(:?index-?#{next_page_number}[^\\d^/]*|(:?page)?#{next_page_number})/?$")
 end
