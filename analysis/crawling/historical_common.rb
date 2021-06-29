@@ -35,3 +35,14 @@ def get_collapsion_log_str(masked_xpath, links_by_masked_xpath, collapsed_links_
     ''
   end
 end
+
+def get_double_masked_xpaths(xpath)
+  matches = xpath.to_enum(:scan, /\[\d+\]/).map { Regexp.last_match }
+  matches.combination(2).map do |match1, match2|
+    start1, finish1 = match1.offset(0)
+    start2, finish2 = match2.offset(0)
+    xpath[0..start1] + '*' +
+      xpath[(finish1 - 1)..start2] + '*' +
+      xpath[(finish2 - 1)..-1]
+  end
+end

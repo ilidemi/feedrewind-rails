@@ -37,7 +37,7 @@ def kill_all_processes(pids, processes_finished)
 end
 
 def mp_run(runnable, output_prefix, start_link_ids_override=nil)
-  max_process_count = 4
+  max_process_count = 2
 
   start_time = monotonic_now
   report_filename = "report/mp_#{output_prefix}_#{DateTime.now.strftime('%F_%H-%M-%S')}.html"

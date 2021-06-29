@@ -235,9 +235,10 @@ def crawl(start_link_id, save_successes, db, logger)
         .exec_params("select count(*) from successes where start_link_id = $1", [start_link_id])
         .first["count"]
         .to_i == 1
-      no_regression = !has_succeeded_before || historical_links_matching
-      result.no_regression = no_regression
-      result.no_regression_status = no_regression ? :success : :failure
+      if has_succeeded_before
+        result.no_regression = historical_links_matching
+        result.no_regression_status = historical_links_matching ? :success : :failure
+      end
 
       if save_successes && !has_succeeded_before && historical_links_matching
         logger.log("First success for this id, saving")
@@ -610,6 +611,8 @@ WHITELISTED_QUERY_PARAMS = Set.new(
   ]
 )
 
+WHITELISTED_QUERY_PARAM_REGEX = /.*page/ # freshpaint
+
 def to_canonical_url(uri)
   port_str = (
     uri.port.nil? || (uri.port == 80 && uri.scheme == 'http') || (uri.port == 443 && uri.scheme == 'https')
@@ -626,7 +629,7 @@ def to_canonical_url(uri)
       .query
       .split("&")
       .map { |token| token.partition("=") }
-      .filter { |param, _, _| WHITELISTED_QUERY_PARAMS.include?(param) }
+      .filter { |param, _, _| WHITELISTED_QUERY_PARAMS.include?(param) || WHITELISTED_QUERY_PARAM_REGEX.match?(param) }
       .map { |param, equals, value| equals.empty? ? param : value.empty? ? "#{param}=" : "#{param}=#{value}" }
       .join("&")
     query_str = whitelisted_query.empty? ? '' : "?#{whitelisted_query}"

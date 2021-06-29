@@ -172,9 +172,10 @@ def discover_historical_entries_from_scratch(start_link_id, save_successes, db, 
         .exec_params("select count(*) from successes where start_link_id = $1", [start_link_id])
         .first["count"]
         .to_i == 1
-      no_regression = !has_succeeded_before || historical_links_matching
-      result.no_regression = no_regression
-      result.no_regression_status = no_regression ? :success : :failure
+      if has_succeeded_before
+        result.no_regression = historical_links_matching
+        result.no_regression_status = historical_links_matching ? :success : :failure
+      end
 
       if save_successes && !has_succeeded_before && historical_links_matching
         logger.log("First success for this id, saving")
