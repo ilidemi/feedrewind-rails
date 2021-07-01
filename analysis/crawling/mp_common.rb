@@ -6,6 +6,8 @@ require_relative 'logger'
 require_relative 'report'
 require_relative 'util'
 
+MAX_PROCESS_COUNT = 3
+
 def has_data_to_read(io)
   select_result = IO.select([io], nil, nil, 0)
   select_result && select_result[0][0] == io
@@ -37,8 +39,6 @@ def kill_all_processes(pids, processes_finished)
 end
 
 def mp_run(runnable, output_prefix, start_link_ids_override=nil)
-  max_process_count = 2
-
   start_time = monotonic_now
   report_filename = "report/mp_#{output_prefix}_#{DateTime.now.strftime('%F_%H-%M-%S')}.html"
   db = connect_db
@@ -49,7 +49,7 @@ def mp_run(runnable, output_prefix, start_link_ids_override=nil)
       .exec("select id from start_links where id not in (select start_link_id from known_issues where severity = 'discard') order by id asc")
       .map { |row| row["id"].to_i }
   end
-  process_count = [max_process_count, start_link_ids.length].min
+  process_count = [MAX_PROCESS_COUNT, start_link_ids.length].min
   id_queue = Queue.new
   start_link_ids.each do |id|
     id_queue << id
@@ -61,6 +61,13 @@ def mp_run(runnable, output_prefix, start_link_ids_override=nil)
   end
   Dir.new(log_dir).each_child do |filename|
     File.delete("#{log_dir}/#{filename}")
+  end
+
+  begin
+    `free`
+    is_free_available = true
+  rescue Errno::ENOENT
+    is_free_available = false
   end
 
   pids = []
@@ -170,7 +177,16 @@ def mp_run(runnable, output_prefix, start_link_ids_override=nil)
           elapsed_seconds % 60
         ]
       end
-      puts "#{Time.now.strftime('%F %T')} elapsed:#{elapsed_str} total:#{start_link_ids.length} to_dispatch:#{id_queue.length} to_process:#{start_link_ids.length - results.length} running:#{processes_running} #{ids_running}"
+
+      if is_free_available
+        free_output = `free -m`
+        memory_tokens = free_output.split("\n")[1].split(" ")
+        memory_log = " memory total:#{memory_tokens[1]} used:#{memory_tokens[2]} shared:#{memory_tokens[4]} cache:#{memory_tokens[5]} free:#{memory_tokens[3]}"
+      else
+        memory_log = ''
+      end
+
+      puts "#{Time.now.strftime('%F %T')} elapsed:#{elapsed_str} total:#{start_link_ids.length} to_dispatch:#{id_queue.length} to_process:#{start_link_ids.length - results.length} running:#{processes_running} #{ids_running}#{memory_log}"
     end
 
     iteration += 1

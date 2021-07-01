@@ -107,6 +107,7 @@ def try_extract_paged(
     logger.log("Page 2 not found in db: #{link_to_page2.canonical_url}")
     return nil
   end
+  logger.log("Possible page 2: #{link_to_page2.canonical_url}")
   page2_doc = Nokogiri::HTML5(page2.content)
 
   page2_classes_by_xpath = {}
@@ -141,18 +142,20 @@ def try_extract_paged(
 
     if includes_first_post
       decorated_first_post_log = ''
-      page1_entry_links = page1_xpath_links
+      possible_page1_entry_links = page1_xpath_links
     else
       decorated_first_post_log = ", assuming the first post is decorated"
-      page1_entry_links = [page1_link_to_newest_post] + page1_xpath_links
+      possible_page1_entry_links = [page1_link_to_newest_post] + page1_xpath_links
     end
+    next if page1_entry_links && page2_entry_links &&
+      (possible_page1_entry_links + page2_xpath_links).length <= (page1_entry_links + page2_entry_links).length
+
+    page1_entry_links = possible_page1_entry_links
     page2_entry_links = page2_xpath_links
     good_masked_xpath = masked_xpath
     page_size = xpath_page_size
     remaining_feed_item_urls = page2_feed_item_urls[page2_entry_links.length...-1] || []
-    logger.log("Possible page 2: #{link_to_page2.canonical_url}")
     logger.log("XPath looks good for page 2: #{masked_xpath} (#{page1_entry_links.length} + #{page2_entry_links.length} links#{decorated_first_post_log})")
-    break
   end
 
   if page2_entry_links.nil? && paging_pattern != :blogspot
@@ -382,7 +385,7 @@ def find_link_to_second_page(current_page_links, current_page, logger)
     }
   end
 
-  link_to_page2_path_regex = Regexp.new("/(:?[^/^\\d]+2[^/^\\d]*|(:?page)?2)/?$")
+  link_to_page2_path_regex = Regexp.new("/(:?index-?2[^/^\\d]*|(:?page)?2)/?$")
   link_to_page2_query_regex = /([^?^&]*page=)2(:?&|$)/
   links_to_page2 = current_page_links.filter do |link|
     link.uri.host == current_page.fetch_uri.host && (
@@ -442,7 +445,7 @@ def find_link_to_next_page(current_page_links, current_page, next_page_number, p
     else
       expected_query_substring = paging_pattern[:query_template] % next_page_number
       links_to_next_page = current_page_links.filter do |link|
-        link.uri.host == paging_pattern[:host] && link.uri.query.include?(expected_query_substring)
+        link.uri.host == paging_pattern[:host] && link.uri.query&.include?(expected_query_substring)
       end
     end
   end

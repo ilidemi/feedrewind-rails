@@ -591,6 +591,7 @@ def to_canonical_link(url, logger, fetch_uri = nil)
   end
 
   uri.path = uri.path.gsub("//", "/")
+  uri.query = uri.query&.gsub("+", "%2B")
 
   canonical_url = to_canonical_url(uri)
   Link.new(canonical_url, uri, uri.to_s)
