@@ -6,5 +6,6 @@ class MyLogger
   def log(message)
     @log_file.write("#{Time.now} #{message}\n")
     @log_file.flush
+    nil
   end
 end

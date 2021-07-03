@@ -1,3 +1,10 @@
+SUBPATTERN_PRIORITIES = {
+  archives_1star: 1,
+  archives_2star: 2,
+  archives_3star: 3,
+  paged: 4
+}
+
 def group_links_by_masked_xpath(page_links, feed_item_urls_set, xpath_name, get_masked_xpaths_func)
   links_by_masked_xpath = {}
   page_feed_links = page_links.filter { |page_link| feed_item_urls_set.include?(page_link.canonical_url) }

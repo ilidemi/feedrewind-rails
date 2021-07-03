@@ -1,14 +1,289 @@
 require 'set'
 require_relative 'crawling'
-require_relative 'db'
-require_relative 'historical_common'
+require_relative 'historical_archives'
 require_relative 'structs'
+
+GUIDED_CRAWLING_RESULT_COLUMNS = [
+  [:start_url, :neutral],
+  [:comment, :neutral],
+  [:gt_pattern, :neutral],
+  [:feed_requests_made, :neutral],
+  [:feed_time, :neutral],
+  [:feed_url, :boolean],
+  [:feed_links, :boolean],
+  [:duplicate_fetches, :neutral],
+  [:historical_links_found, :boolean],
+  [:historical_links_matching, :boolean],
+  [:no_regression, :neutral],
+  [:historical_links_pattern, :neutral_present],
+  [:historical_links_count, :neutral_present],
+  [:main_url, :neutral_present],
+  [:oldest_link, :neutral_present],
+  [:extra, :neutral],
+  [:total_requests, :neutral],
+  [:total_pages, :neutral],
+  [:total_network_requests, :neutral],
+  [:total_time, :neutral]
+]
+
+class GuidedCrawlRunnable
+  def initialize
+    @result_column_names = to_column_names(GUIDED_CRAWLING_RESULT_COLUMNS)
+  end
+
+  def run(start_link_id, _, db, logger)
+    guided_crawl(start_link_id, db, logger)
+  end
+
+  attr_reader :result_column_names
+end
+
+def guided_crawl(start_link_id, db, logger)
+  start_link_row = db.exec_params('select url, rss_url from start_links where id = $1', [start_link_id])[0]
+  start_link_url = start_link_row["url"]
+  start_link_feed_url = start_link_row["rss_url"]
+  result = RunResult.new(GUIDED_CRAWLING_RESULT_COLUMNS)
+  result.start_url = "<a href=\"#{start_link_url}\">#{start_link_url}</a>"
+  ctx = CrawlContext.new
+  start_time = monotonic_now
+
+  begin
+    comment_row = db.exec_params(
+      'select severity, issue from known_issues where start_link_id = $1',
+      [start_link_id]
+    ).first
+    if comment_row
+      result.comment = comment_row["issue"]
+      if comment_row["severity"] == "fail"
+        result.comment_status = :failure
+        raise "Known issue: #{comment_row["issue"]}"
+      end
+    end
+
+    gt_row = db.exec_params(
+      "select pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url from historical_ground_truth where start_link_id = $1",
+      [start_link_id]
+    ).first
+    if gt_row
+      result.gt_pattern = gt_row["pattern"]
+    end
+
+    mock_http_client = MockJitHttpClient.new(db, start_link_id)
+    mock_db_storage = GuidedCrawlMockDbStorage.new(db, start_link_id)
+    db.exec_params('delete from feeds where start_link_id = $1', [start_link_id])
+    db.exec_params('delete from pages where start_link_id = $1', [start_link_id])
+    db.exec_params('delete from permanent_errors where start_link_id = $1', [start_link_id])
+    db.exec_params('delete from redirects where start_link_id = $1', [start_link_id])
+    db.exec_params('delete from historical where start_link_id = $1', [start_link_id])
+    db_storage = CrawlDbStorage.new(db, mock_db_storage)
+
+    start_link = to_canonical_link(start_link_url, logger)
+    raise "Bad start link: #{start_link_url}" if start_link.nil?
+
+    ctx.allowed_hosts << start_link.uri.host
+    start_result = crawl_request(
+      start_link, ctx, mock_http_client, false, start_link_id, db_storage, logger
+    )
+    raise "Unexpected start result: #{start_result}" unless start_result.is_a?(Page) && start_result.content
+    start_page = start_result
+
+    feed_start_time = monotonic_now
+    if start_link_feed_url
+      feed_link = to_canonical_link(start_link_feed_url, logger)
+      raise "Bad feed link: #{start_link_feed_url}" if feed_link.nil?
+    else
+      ctx.seen_canonical_urls << start_result.canonical_url
+      ctx.seen_fetch_urls << start_result.fetch_uri.to_s
+      start_document = nokogiri_html5(start_page.content)
+      feed_links = start_document
+        .xpath("/html/head/link[@rel='alternate']")
+        .to_a
+        .filter { |link| %w[application/rss+xml application/atom+xml].include?(link.attributes["type"]&.value) }
+        .map { |link| link.attributes["href"]&.value }
+        .map { |url| to_canonical_link(url, logger, start_link.uri) }
+        .filter { |link| !link.url.end_with?("?alt=rss") }
+        .filter { |link| !link.url.end_with?("/comments/feed/") }
+      raise "No feed links for id #{start_link_id} (#{start_page.fetch_uri})" if feed_links.empty?
+      raise "Multiple feed links for id #{start_link_id} (#{start_page.fetch_uri})" if feed_links.length > 1
+
+      feed_link = feed_links.first
+    end
+    result.feed_url = "<a href=\"#{feed_link.url}\">#{feed_link.canonical_url}</a>"
+    ctx.allowed_hosts << feed_link.uri.host
+    feed_result = crawl_request(
+      feed_link, ctx, mock_http_client, true, start_link_id, db_storage, logger
+    )
+    raise "Unexpected feed result: #{feed_result}" unless feed_result.is_a?(Page) && feed_result.content
+
+    feed_page = feed_result
+    ctx.seen_canonical_urls << feed_page.canonical_url
+    ctx.seen_fetch_urls << feed_page.fetch_uri.to_s
+    db_storage.save_feed(start_link_id, feed_page.canonical_url)
+    result.feed_requests_made = ctx.requests_made
+    result.feed_time = (monotonic_now - feed_start_time).to_i
+    logger.log("Feed url: #{feed_page.canonical_url}")
+
+    feed_urls = extract_feed_urls(feed_page.content, logger)
+    result.feed_links = feed_urls.item_urls.length
+    logger.log("Root url: #{feed_urls.root_url}")
+    logger.log("Items in feed: #{feed_urls.item_urls.length}")
+
+    if feed_urls.root_url
+      root_link = to_canonical_link(feed_urls.root_url, logger, feed_page.fetch_uri)
+      ctx.allowed_hosts << root_link.uri.host
+    end
+    feed_item_links = feed_urls
+      .item_urls
+      .map { |url| to_canonical_link(url, logger, feed_page.fetch_uri) }
+    feed_item_links.each do |link|
+      ctx.allowed_hosts << link.uri.host
+    end
+    feed_item_urls = feed_item_links.map(&:canonical_url)
+
+    historical_result = guided_crawl_loop(
+      start_link_id, start_page, feed_item_urls, ctx, mock_http_client, db_storage, logger
+    )
+    result.historical_links_found = !!historical_result
+    has_succeeded_before = db
+      .exec_params("select count(*) from successes where start_link_id = $1", [start_link_id])
+      .first["count"]
+      .to_i == 1
+    unless historical_result
+      if gt_row
+        result.historical_links_pattern_status = :failure
+        result.historical_links_pattern = "(#{gt_row["pattern"]})"
+        result.historical_links_count_status = :failure
+        result.historical_links_count = "(#{gt_row["entries_count"]})"
+        result.main_url_status = :failure
+        result.main_url = "(#{gt_row["main_page_canonical_url"]})"
+        result.oldest_link_status = :failure
+        result.oldest_link = "(#{gt_row["oldest_entry_canonical_url"]})"
+        if has_succeeded_before
+          result.no_regression = false
+          result.no_regression_status = :failure
+        end
+      end
+      raise "Historical links not found"
+    end
+
+    entries_count = historical_result[:links].length
+    oldest_link = historical_result[:links][-1]
+    logger.log("Historical links: #{entries_count}")
+    historical_result[:links].each do |historical_link|
+      logger.log(historical_link.url)
+    end
+
+    db.exec_params(
+      "insert into historical (start_link_id, pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url) values ($1, $2, $3, $4, $5)",
+      [start_link_id, historical_result[:pattern], entries_count, historical_result[:main_canonical_url], oldest_link.canonical_url]
+    )
+
+    if gt_row
+      historical_links_matching = true
+
+      if historical_result[:pattern] == gt_row["pattern"]
+        result.historical_links_pattern_status = :success
+        result.historical_links_pattern = historical_result[:pattern]
+      else
+        result.historical_links_pattern_status = :failure
+        result.historical_links_pattern = "#{historical_result[:pattern]}<br>(#{gt_row["pattern"]})"
+        historical_links_matching = false
+      end
+
+      gt_entries_count = gt_row["entries_count"].to_i
+      if gt_entries_count != entries_count
+        historical_links_matching = false
+        result.historical_links_count_status = :failure
+        result.historical_links_count = "#{entries_count} (#{gt_entries_count})"
+      else
+        result.historical_links_count_status = :success
+        result.historical_links_count = entries_count
+      end
+
+      # TODO: Skipping the check for the main page url for now
+      gt_main_url = gt_row["main_page_canonical_url"]
+      if gt_main_url == historical_result[:main_canonical_url]
+        result.main_url = "<a href=\"#{historical_result[:main_fetch_url]}\">#{historical_result[:main_canonical_url]}</a>"
+      else
+        result.main_url = "<a href=\"#{historical_result[:main_fetch_url]}\">#{historical_result[:main_canonical_url]}</a><br>(#{gt_row["main_page_canonical_url"]})"
+      end
+
+      gt_oldest_canonical_url = gt_row["oldest_entry_canonical_url"]
+      if gt_oldest_canonical_url.sub(/\/+$/, "") != oldest_link.canonical_url.sub(/\/+$/, "")
+        historical_links_matching = false
+        result.oldest_link_status = :failure
+        result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.canonical_url}</a><br>(#{gt_oldest_canonical_url})"
+      else
+        result.oldest_link_status = :success
+        result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.canonical_url}</a>"
+      end
+
+      result.historical_links_matching = historical_links_matching
+
+      if has_succeeded_before
+        result.no_regression = historical_links_matching
+        result.no_regression_status = historical_links_matching ? :success : :failure
+      end
+    else
+      result.historical_links_matching = '?'
+      result.historical_links_matching_status = :neutral
+      result.no_regression_status = :neutral
+      result.historical_links_pattern = historical_result[:pattern]
+      result.historical_links_count = entries_count
+      result.main_url = "<a href=\"#{historical_result[:main_fetch_url]}\">#{historical_result[:main_canonical_url]}</a>"
+      result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.canonical_url}</a>"
+    end
+
+    result.extra = historical_result[:extra]
+
+    result
+  rescue => e
+    raise RunError.new(e.message, result), e
+  ensure
+    result.duplicate_fetches = ctx.duplicate_fetches
+    result.total_requests = ctx.requests_made
+    result.total_pages = ctx.fetched_urls.length
+    result.total_network_requests = defined?(mock_http_client) && mock_http_client && mock_http_client.network_requests_made
+    result.total_time = (monotonic_now - start_time).to_i
+  end
+end
+
+def guided_crawl_loop(start_link_id, start_page, feed_item_urls, ctx, mock_http_client, db_storage, logger)
+  start_page_links = extract_links(start_page, nil, ctx.redirects, logger, true, true)
+  start_page_urls_set = start_page_links
+    .map { |link| link.canonical_url }
+    .to_set
+  feed_item_urls_set = feed_item_urls.to_set
+
+  paged_result = try_extract_paged_no_db(
+    start_page, start_page_links, start_page_urls_set, feed_item_urls, feed_item_urls_set, 0,
+    start_link_id, ctx, mock_http_client, db_storage, logger
+  )
+
+  archives_result = try_extract_archives(
+    start_page, start_page_links, start_page_urls_set, feed_item_urls, feed_item_urls_set, nil, 1, logger
+  )
+
+  if paged_result && archives_result
+    if paged_result[:count] > archives_result[:count]
+      return paged_result[:best_result]
+    else
+      return archives_result[:best_result]
+    end
+  elsif paged_result
+    return paged_result[:best_result]
+  elsif archives_result
+    return archives_result[:best_result]
+  end
+
+  logger.log("Pattern not detected")
+end
 
 BLOGSPOT_POSTS_BY_DATE_REGEX = /(\(date-outer\)\[)\d+(.+\(post-outer\)\[)\d+/
 
-def try_extract_paged(
-  page1, page1_links, page_urls_set, feed_item_urls, feed_item_urls_set, best_count, start_link_id, redirects,
-  db, logger
+def try_extract_paged_no_db(
+  page1, page1_links, page_urls_set, feed_item_urls, feed_item_urls_set, best_count, start_link_id, ctx,
+  mock_http_client, db_storage, logger
 )
   page_overlapping_links_count = nil
   feed_item_urls.each_with_index do |feed_item_url, index|
@@ -28,7 +303,7 @@ def try_extract_paged(
 
   links_by_masked_xpath = nil
   if paging_pattern == :blogspot
-    page1_class_xpath_links = extract_links(page1, [page1.fetch_uri.host], redirects, logger, true, true)
+    page1_class_xpath_links = extract_links(page1, [page1.fetch_uri.host], ctx.redirects, logger, true, true)
     page1_links_grouped_by_date = page1_class_xpath_links.filter do |page_link|
       BLOGSPOT_POSTS_BY_DATE_REGEX.match(page_link.class_xpath)
     end
@@ -101,9 +376,9 @@ def try_extract_paged(
     .sort_by { |xpath_page_size, _, _| -xpath_page_size }
   logger.log("Max prefix: #{page_size_masked_xpaths.first[0]}")
 
-  page2 = fetch_page(start_link_id, link_to_page2.canonical_url, db)
-  if page2.nil?
-    logger.log("Page 2 not found in db: #{link_to_page2.canonical_url}")
+  page2 = crawl_request(link_to_page2, ctx, mock_http_client, false, start_link_id, db_storage, logger)
+  unless page2 && page2.is_a?(Page) && page2.content
+    logger.log("Page 2 is not a page: #{page2}")
     return nil
   end
   logger.log("Possible page 2: #{link_to_page2.canonical_url}")
@@ -120,7 +395,7 @@ def try_extract_paged(
     page2_xpath_link_elements = page2_doc.xpath(masked_xpath)
     page2_xpath_links = page2_xpath_link_elements.filter_map do |element|
       html_element_to_link(
-        element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, redirects, logger, true, false
+        element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, ctx.redirects, logger, true, false
       )
     end
     next if page2_xpath_links.empty?
@@ -166,7 +441,7 @@ def try_extract_paged(
       page2_xpath_suffix_link_elements = page2_doc.xpath(page2_xpath_suffix)
       page2_xpath_suffix_links = page2_xpath_suffix_link_elements.filter_map do |element|
         html_element_to_link(
-          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, redirects, logger, true, false
+          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, ctx.redirects, logger, true, false
         )
       end
       next if page2_xpath_suffix_links.length != 1
@@ -179,7 +454,7 @@ def try_extract_paged(
       page2_xpath_link_elements = page2_doc.xpath(page2_masked_xpath)
       page2_xpath_links = page2_xpath_link_elements.filter_map do |element|
         html_element_to_link(
-          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, redirects, logger, true, false
+          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, ctx.redirects, logger, true, false
         )
       end
 
@@ -214,7 +489,7 @@ def try_extract_paged(
     return nil
   end
 
-  page2_links = extract_links(page2, [page2.fetch_uri.host], redirects, logger, true, false)
+  page2_links = extract_links(page2, [page2.fetch_uri.host], ctx.redirects, logger, true, false)
   link_to_page3 = find_link_to_next_page(page2_links, page2, 3, paging_pattern, logger)
   return nil if link_to_page3 == :multiple
   if link_to_page3 && page2_entry_links.length != page_size
@@ -254,7 +529,7 @@ def try_extract_paged(
     link_to_last_page = link_to_next_page
     loop_page_result = extract_page_entry_links(
       link_to_next_page, next_page_number, paging_pattern, good_masked_xpath, page_size,
-      remaining_feed_item_urls, start_link_id, known_entry_urls_set, db, redirects, logger
+      remaining_feed_item_urls, start_link_id, known_entry_urls_set, ctx, mock_http_client, db_storage, logger
     )
 
     if loop_page_result.nil?
@@ -298,12 +573,12 @@ end
 
 def extract_page_entry_links(
   link_to_page, page_number, paging_pattern, masked_xpath, page_size, remaining_feed_item_urls, start_link_id,
-  known_entry_urls_set, db, redirects, logger
+  known_entry_urls_set, ctx, mock_http_client, db_storage, logger
 )
   logger.log("Possible page #{page_number}: #{link_to_page.canonical_url}")
-  page = fetch_page(start_link_id, link_to_page.canonical_url, db)
-  if page.nil?
-    logger.log("Page #{page_number} not found in db: #{link_to_page.canonical_url}")
+  page = crawl_request(link_to_page, ctx, mock_http_client, false, start_link_id, db_storage, logger)
+  unless page && page.is_a?(Page) && page.content
+    logger.log("Page #{page_number} is not a page: #{page}")
     return nil
   end
   page_doc = nokogiri_html5(page.content)
@@ -312,7 +587,7 @@ def extract_page_entry_links(
   page_entry_link_elements = page_doc.xpath(masked_xpath)
   page_entry_links = page_entry_link_elements.filter_map.with_index do |element, index|
     # Redirects don't matter after we're out of feed
-    link_redirects = index < remaining_feed_item_urls.length ? redirects : {}
+    link_redirects = index < remaining_feed_item_urls.length ? ctx.redirects : {}
     html_element_to_link(
       element, page.fetch_uri, page_doc, page_classes_by_xpath, link_redirects, logger, true, false
     )
@@ -340,7 +615,7 @@ def extract_page_entry_links(
     return nil
   end
 
-  page_links = extract_links(page, [page.fetch_uri.host], redirects, logger, true, false)
+  page_links = extract_links(page, [page.fetch_uri.host], ctx.redirects, logger, true, false)
   next_page_number = page_number + 1
   link_to_next_page = find_link_to_next_page(page_links, page, next_page_number, paging_pattern, logger)
   return nil if link_to_next_page == :multiple

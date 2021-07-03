@@ -1,4 +1,5 @@
 graph
 crawl_log
 historical_log
+guided_crawl_log
 report

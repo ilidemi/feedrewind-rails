@@ -1,6 +1,5 @@
 require 'addressable/uri'
 require 'nokogumbo'
-require 'rss'
 require 'set'
 require_relative 'crawling_storage'
 require_relative 'export_graph'
@@ -94,7 +93,6 @@ def crawl(start_link_id, save_successes, db, logger)
       feed_link = to_canonical_link(start_link_feed_url, logger)
       raise "Bad feed link: #{start_link_feed_url}" if feed_link.nil?
     else
-      feed_start_time = monotonic_now
       start_link = to_canonical_link(start_link_url, logger)
       raise "Bad start link: #{start_link_url}" if start_link.nil?
 

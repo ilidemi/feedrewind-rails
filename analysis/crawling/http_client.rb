@@ -104,3 +104,49 @@ class MockHttpClient
 
   attr_reader :page_fetch_urls, :permanent_error_fetch_urls, :redirect_fetch_urls, :network_requests_made
 end
+
+class MockJitHttpClient
+  def initialize(db, start_link_id)
+    @db = db
+    @start_link_id = start_link_id
+    @http_client = HttpClient.new
+    @network_requests_made = 0
+  end
+
+  def request(uri, logger)
+    fetch_url = uri.to_s
+
+    page_row = @db.exec_params(
+      "select content_type, content from mock_pages where start_link_id = $1 and fetch_url = $2",
+      [@start_link_id, fetch_url]
+    ).first
+
+    if page_row
+      return HttpResponse.new("200", page_row["content_type"], nil, unescape_bytea(page_row["content"]))
+    end
+
+    permanent_error_row = @db.exec_params(
+      "select code from mock_permanent_errors where start_link_id = $1 and fetch_url = $2",
+      [@start_link_id, fetch_url]
+    ).first
+
+    if permanent_error_row
+      return HttpResponse.new(permanent_error_row["code"], nil, nil, "Mock permanent error content")
+    end
+
+    redirect_row = @db.exec_params(
+      "select to_fetch_url from mock_redirects where start_link_id = $1 and from_fetch_url = $2",
+      [@start_link_id, fetch_url]
+    ).first
+
+    if redirect_row
+      return HttpResponse.new("301", nil, redirect_row["to_fetch_url"], "Mock redirect content")
+    end
+
+    logger.log("URI not in mock tables, falling back on http client: #{uri}")
+    @network_requests_made += 1
+    @http_client.request(uri, logger)
+  end
+
+  attr_reader :network_requests_made
+end

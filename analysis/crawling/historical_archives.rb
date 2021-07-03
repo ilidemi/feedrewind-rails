@@ -2,7 +2,7 @@ require_relative 'historical_common'
 
 def try_extract_archives(
   page, page_links, page_urls_set, feed_item_urls, feed_item_urls_set, best_result_subpattern_priority,
-  min_links_count, subpattern_priorities, logger
+  min_links_count, logger
 )
   return nil unless feed_item_urls.all? { |item_url| page_urls_set.include?(item_url) }
 
@@ -10,7 +10,7 @@ def try_extract_archives(
   best_result = nil
   best_result_star_count = nil
   best_page_links = nil
-  if best_result_subpattern_priority.nil? || best_result_subpattern_priority > subpattern_priorities[:archives_1star]
+  if best_result_subpattern_priority.nil? || best_result_subpattern_priority > SUBPATTERN_PRIORITIES[:archives_1star]
     min_page_links_count = min_links_count
   else
     min_page_links_count = min_links_count + 1
@@ -24,14 +24,14 @@ def try_extract_archives(
 
   if historical_links_single_star
     best_page_links = historical_links_single_star
-    best_result_subpattern_priority = subpattern_priorities[:archives_1star]
+    best_result_subpattern_priority = SUBPATTERN_PRIORITIES[:archives_1star]
     best_result_star_count = 1
     min_links_count = best_page_links[:links].length
   end
 
-  if best_result_subpattern_priority.nil? || best_result_subpattern_priority > subpattern_priorities[:archives_2star]
+  if best_result_subpattern_priority.nil? || best_result_subpattern_priority > SUBPATTERN_PRIORITIES[:archives_2star]
     min_page_links_count = min_links_count
-  elsif best_result_subpattern_priority == subpattern_priorities[:archives_2star]
+  elsif best_result_subpattern_priority == SUBPATTERN_PRIORITIES[:archives_2star]
     min_page_links_count = min_links_count + 1
   else
     min_page_links_count = (min_links_count * 1.5).ceil
@@ -45,14 +45,14 @@ def try_extract_archives(
 
   if historical_links_double_star
     best_page_links = historical_links_double_star
-    best_result_subpattern_priority = subpattern_priorities[:archives_2star]
+    best_result_subpattern_priority = SUBPATTERN_PRIORITIES[:archives_2star]
     best_result_star_count = 2
     min_links_count = best_page_links[:links].length
   end
 
-  if best_result_subpattern_priority.nil? || best_result_subpattern_priority > subpattern_priorities[:archives_3star]
+  if best_result_subpattern_priority.nil? || best_result_subpattern_priority > SUBPATTERN_PRIORITIES[:archives_3star]
     min_page_links_count = min_links_count
-  elsif best_result_subpattern_priority == subpattern_priorities[:archives_3star]
+  elsif best_result_subpattern_priority == SUBPATTERN_PRIORITIES[:archives_3star]
     min_page_links_count = min_links_count + 1
   else
     min_page_links_count = (min_links_count * 1.5).ceil
@@ -66,7 +66,7 @@ def try_extract_archives(
 
   if historical_links_triple_star
     best_page_links = historical_links_triple_star
-    best_result_subpattern_priority = subpattern_priorities[:archives_3star]
+    best_result_subpattern_priority = SUBPATTERN_PRIORITIES[:archives_3star]
     best_result_star_count = 3
     min_links_count = best_page_links[:links].length
   end
@@ -144,7 +144,10 @@ def try_masked_xpaths(
       next
     end
 
-    logger.log("Masked xpath #{masked_xpath} has all links #{feed_item_urls} but not in the right order: #{masked_xpath_link_canonical_urls}")
+    logger.log("Masked xpath #{masked_xpath} has all links")
+    logger.log("#{feed_item_urls}")
+    logger.log("but not in the right order:")
+    logger.log("#{masked_xpath_link_canonical_urls}")
   end
 
   if best_xpath_links

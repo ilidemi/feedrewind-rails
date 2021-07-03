@@ -133,8 +133,23 @@ def output_report(filename, result_column_names, results, expected_total)
     report_file.write('</body></html>')
   end
 
-  if File.exist?(filename)
-    File.delete(filename)
+  write_attempts = 0
+  loop do
+    begin
+      write_attempts += 1
+      if File.exist?(filename)
+        File.delete(filename)
+      end
+      FileUtils.mv(temp_filename, filename)
+      break
+    rescue Errno::EACCES => e
+      if write_attempts >= 20
+        puts("Couldn't write report")
+        raise e
+      else
+        puts("Cannot write report, retrying in 100ms")
+        sleep(0.1)
+      end
+    end
   end
-  FileUtils.mv(temp_filename, filename)
 end

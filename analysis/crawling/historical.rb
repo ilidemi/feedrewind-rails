@@ -201,13 +201,6 @@ def discover_historical_entries_from_scratch(start_link_id, save_successes, db, 
   end
 end
 
-SUBPATTERN_PRIORITIES = {
-  archives_1star: 1,
-  archives_2star: 2,
-  archives_3star: 3,
-  paged: 4
-}
-
 def discover_historical_entries(start_link_id, feed_url, feed_item_urls, redirects, db, logger)
   logger.log("Discover historical entries started")
 
@@ -243,7 +236,7 @@ def discover_historical_entries(start_link_id, feed_url, feed_item_urls, redirec
       adjusted_best_count = best_result_pattern == :paged ? best_count - 1 : best_count
       archives_result = try_extract_archives(
         page, page_links, page_urls_set, feed_item_urls, feed_item_urls_set, best_result_subpattern_priority,
-        adjusted_best_count, SUBPATTERN_PRIORITIES, logger
+        adjusted_best_count, logger
       )
       if archives_result
         best_result = archives_result[:best_result]
@@ -254,7 +247,7 @@ def discover_historical_entries(start_link_id, feed_url, feed_item_urls, redirec
 
       paged_result = try_extract_paged(
         page, page_links, page_urls_set, feed_item_urls, feed_item_urls_set, best_count,
-        SUBPATTERN_PRIORITIES, start_link_id, redirects, db, logger
+        start_link_id, redirects, db, logger
       )
       if paged_result
         best_result = paged_result[:best_result]
