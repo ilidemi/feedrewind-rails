@@ -1,6 +1,5 @@
-require_relative '../analysis/crawling/crawling'
+require_relative '../analysis/crawling/canonical_link'
 require_relative '../analysis/crawling/logger'
-require_relative '../analysis/crawling/structs'
 
 def canonical_link(url, canonical_url)
   uri = URI(url)

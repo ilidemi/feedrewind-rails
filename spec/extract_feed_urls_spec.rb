@@ -1,8 +1,15 @@
 require_relative '../analysis/crawling/feed_parsing'
 require_relative '../analysis/crawling/logger'
 
-RSpec.describe "extract_feed_urls" do
+RSpec.describe "extract_feed_links" do
   logger = MyLogger.new($stdout)
+
+  def feed_links(root_url, entry_urls, logger)
+    FeedLinks.new(
+      root_url ? to_canonical_link(root_url, logger) : nil,
+      entry_urls.map { |url| url ? to_canonical_link(url, logger) : nil }
+    )
+  end
 
   it "should parse RSS feeds" do
     rss_content = %{
@@ -18,8 +25,8 @@ RSpec.describe "extract_feed_urls" do
         </channel>
       </rss>
     }
-    expect(extract_feed_urls(rss_content, logger))
-      .to eq FeedUrls.new("https://root", %w[https://root/a https://root/b])
+    expect(extract_feed_links(rss_content, "https://root/feed", logger))
+      .to eq feed_links("https://root", %w[https://root/a https://root/b], logger)
   end
 
   it "should parse urls from RSS guid permalinks" do
@@ -36,8 +43,8 @@ RSpec.describe "extract_feed_urls" do
         </channel>
       </rss>
     }
-    expect(extract_feed_urls(rss_content, logger))
-      .to eq FeedUrls.new("https://root", %w[https://root/a https://root/b])
+    expect(extract_feed_links(rss_content, "https://root/feed", logger))
+      .to eq feed_links("https://root", %w[https://root/a https://root/b], logger)
   end
 
   it "should fail RSS parsing if channel url is not present" do
@@ -47,7 +54,7 @@ RSpec.describe "extract_feed_urls" do
         </channel>
       </rss>
     }
-    expect { extract_feed_urls(rss_content, logger) }
+    expect { extract_feed_links(rss_content, "https://root/feed", logger) }
       .to raise_error(/Couldn't extract root url from RSS/)
   end
 
@@ -64,7 +71,7 @@ RSpec.describe "extract_feed_urls" do
         </channel>
       </rss>
     }
-    expect { extract_feed_urls(rss_content, logger) }
+    expect { extract_feed_links(rss_content, "https://root/feed", logger) }
       .to raise_error(/Couldn't extract item urls from RSS/)
   end
 
@@ -84,8 +91,8 @@ RSpec.describe "extract_feed_urls" do
         </channel>
       </rss>
     }
-    expect(extract_feed_urls(rss_content, logger))
-      .to eq FeedUrls.new("https://root", %w[https://root/b https://root/a])
+    expect(extract_feed_links(rss_content, "https://root/feed", logger))
+      .to eq feed_links("https://root", %w[https://root/b https://root/a], logger)
   end
 
   it "should sort RSS items if dates are shuffled but unique" do
@@ -108,8 +115,8 @@ RSpec.describe "extract_feed_urls" do
         </channel>
       </rss>
     }
-    expect(extract_feed_urls(rss_content, logger))
-      .to eq FeedUrls.new("https://root", %w[https://root/b https://root/a https://root/c])
+    expect(extract_feed_links(rss_content, "https://root/feed", logger))
+      .to eq feed_links("https://root", %w[https://root/b https://root/a https://root/c], logger)
   end
 
   it "should preserve RSS order if dates are shuffled but repeating" do
@@ -132,8 +139,8 @@ RSpec.describe "extract_feed_urls" do
         </channel>
       </rss>
     }
-    expect(extract_feed_urls(rss_content, logger))
-      .to eq FeedUrls.new("https://root", %w[https://root/a https://root/b https://root/c])
+    expect(extract_feed_links(rss_content, "https://root/feed", logger))
+      .to eq feed_links("https://root", %w[https://root/a https://root/b https://root/c], logger)
   end
 
   it "should parse RSS if a date is invalid" do
@@ -148,8 +155,28 @@ RSpec.describe "extract_feed_urls" do
         </channel>
       </rss>
     }
-    expect(extract_feed_urls(rss_content, logger))
-      .to eq FeedUrls.new("https://root", %w[https://root/a])
+    expect(extract_feed_links(rss_content, "https://root/feed", logger))
+      .to eq feed_links("https://root", %w[https://root/a], logger)
+  end
+
+  it "should prioritize feedburner orig links in RSS" do
+    rss_content = %{
+      <rss xmlns:feedburner="http://rssnamespace.org/feedburner/ext/1.0">
+        <channel>
+          <link>https://root</link>
+          <item>
+            <link>https://feedburner/a</link>
+            <feedburner:origLink>https://root/a</feedburner:origLink>
+          </item>
+          <item>
+            <link>https://feedburner/b</link>
+            <feedburner:origLink>https://root/b</feedburner:origLink>
+          </item>
+        </channel>
+      </rss>
+    }
+    expect(extract_feed_links(rss_content, "https://root/feed", logger))
+      .to eq feed_links("https://root", %w[https://root/a https://root/b], logger)
   end
 
   it "should parse Atom feeds" do
@@ -164,8 +191,8 @@ RSpec.describe "extract_feed_urls" do
         </entry>
       </feed>
     }
-    expect(extract_feed_urls(atom_content, logger))
-      .to eq FeedUrls.new("https://root", %w[https://root/a https://root/b])
+    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+      .to eq feed_links("https://root", %w[https://root/a https://root/b], logger)
   end
 
   it "should parse Atom links without rel" do
@@ -180,8 +207,8 @@ RSpec.describe "extract_feed_urls" do
         </entry>
       </feed>
     }
-    expect(extract_feed_urls(atom_content, logger))
-      .to eq FeedUrls.new("https://root", %w[https://root/a https://root/b])
+    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+      .to eq feed_links("https://root", %w[https://root/a https://root/b], logger)
   end
 
   it "should parse Atom if channel url is not present" do
@@ -190,8 +217,8 @@ RSpec.describe "extract_feed_urls" do
           <link/>
       </feed>
     }
-    expect(extract_feed_urls(atom_content, logger))
-      .to eq FeedUrls.new(nil, [])
+    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+      .to eq feed_links(nil, [], logger)
   end
 
   it "should parse Atom if channel link is not present" do
@@ -199,8 +226,8 @@ RSpec.describe "extract_feed_urls" do
       <feed xmlns="http://www.w3.org/2005/Atom">
       </feed>
     }
-    expect(extract_feed_urls(atom_content, logger))
-      .to eq FeedUrls.new(nil, [])
+    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+      .to eq feed_links(nil, [], logger)
   end
 
   it "should fail Atom parsing if item url is not present" do
@@ -215,7 +242,7 @@ RSpec.describe "extract_feed_urls" do
         </entry>
       </feed>
     }
-    expect { extract_feed_urls(atom_content, logger) }
+    expect { extract_feed_links(atom_content, "https://root/feed", logger) }
       .to raise_error(/Couldn't extract entry urls from Atom/)
   end
 
@@ -230,7 +257,7 @@ RSpec.describe "extract_feed_urls" do
         </entry>
       </feed>
     }
-    expect { extract_feed_urls(atom_content, logger) }
+    expect { extract_feed_links(atom_content, "https://root/feed", logger) }
       .to raise_error(/Couldn't extract entry urls from Atom/)
   end
 
@@ -248,8 +275,8 @@ RSpec.describe "extract_feed_urls" do
         </entry>
       </feed>
     }
-    expect(extract_feed_urls(atom_content, logger))
-      .to eq FeedUrls.new("https://root", %w[https://root/b https://root/a])
+    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+      .to eq feed_links("https://root", %w[https://root/b https://root/a], logger)
   end
 
   it "should sort Atom items if dates are shuffled but unique" do
@@ -270,8 +297,8 @@ RSpec.describe "extract_feed_urls" do
         </entry>
       </feed>
     }
-    expect(extract_feed_urls(atom_content, logger))
-      .to eq FeedUrls.new("https://root", %w[https://root/b https://root/a https://root/c])
+    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+      .to eq feed_links("https://root", %w[https://root/b https://root/a https://root/c], logger)
   end
 
   it "should preserve Atom items order if dates are shuffled and have duplicates" do
@@ -292,8 +319,8 @@ RSpec.describe "extract_feed_urls" do
         </entry>
       </feed>
     }
-    expect(extract_feed_urls(atom_content, logger))
-      .to eq FeedUrls.new("https://root", %w[https://root/a https://root/b https://root/c])
+    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+      .to eq feed_links("https://root", %w[https://root/a https://root/b https://root/c], logger)
   end
 
   it "should parse Atom if a date is invalid" do
@@ -306,7 +333,25 @@ RSpec.describe "extract_feed_urls" do
         </entry>
       </feed>
     }
-    expect(extract_feed_urls(atom_content, logger))
-      .to eq FeedUrls.new("https://root", %w[https://root/a])
+    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+      .to eq feed_links("https://root", %w[https://root/a], logger)
+  end
+
+  it "should prioritize feedburner orig links in Atom" do
+    atom_content = %{
+      <feed xmlns="http://www.w3.org/2005/Atom" xmlns:feedburner="http://rssnamespace.org/feedburner/ext/1.0">
+        <link rel="alternate" href="https://root"/>
+        <entry>
+          <link rel="alternate" href="https://feedburner/a"/>
+          <feedburner:origLink>https://root/a</feedburner:origLink>
+        </entry>
+        <entry>
+          <link rel="alternate" href="https://feedburner/b"/>
+          <feedburner:origLink>https://root/b</feedburner:origLink>
+        </entry>
+      </feed>
+    }
+    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+      .to eq feed_links("https://root", %w[https://root/a https://root/b], logger)
   end
 end

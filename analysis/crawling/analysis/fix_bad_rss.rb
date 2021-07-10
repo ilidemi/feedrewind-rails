@@ -22,7 +22,7 @@ single_reasonable_feed_url_by_id = {}
 multiple_feeds_by_id = {}
 
 start_link_urls_sources.each do |id, start_url, _|
-  canonical_url = to_canonical_link(start_url, logger).canonical_url
+  canonical_url = to_canonical_link(start_url, logger).canonical_uri.to_s
   page_rows = db.exec_params(
     "select content from mock_pages where start_link_id = $1 and canonical_url = $2",
     [id, canonical_url]

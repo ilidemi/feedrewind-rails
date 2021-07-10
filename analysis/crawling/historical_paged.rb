@@ -1,39 +1,38 @@
 require 'set'
 require_relative 'crawling'
-require_relative 'db'
 require_relative 'historical_common'
 require_relative 'structs'
 
 BLOGSPOT_POSTS_BY_DATE_REGEX = /(\(date-outer\)\[)\d+(.+\(post-outer\)\[)\d+/
 
 def try_extract_paged(
-  page1, page1_links, page_urls_set, feed_item_urls, feed_item_urls_set, best_count, start_link_id, redirects,
-  db, logger
+  page1, page1_links, page_canonical_uris_set, feed_entry_canonical_uris, feed_entry_canonical_uris_set,
+  canonical_equality_cfg, best_count, start_link_id, ctx, mock_http_client, db_storage, logger
 )
   page_overlapping_links_count = nil
-  feed_item_urls.each_with_index do |feed_item_url, index|
-    if index == feed_item_urls.length - 1 && page_urls_set.include?(feed_item_url)
-      page_overlapping_links_count = feed_item_urls.length
-    elsif !page_urls_set.include?(feed_item_url)
+  feed_entry_canonical_uris.each_with_index do |feed_entry_canonical_uri, index|
+    if index == feed_entry_canonical_uris.length - 1 && page_canonical_uris_set.include?(feed_entry_canonical_uri)
+      page_overlapping_links_count = feed_entry_canonical_uris.length
+    elsif !page_canonical_uris_set.include?(feed_entry_canonical_uri)
       page_overlapping_links_count = index
     end
   end
 
-  link_pattern_to_page2 = find_link_to_second_page(page1_links, page1, logger)
+  link_pattern_to_page2 = find_link_to_second_page(page1_links, page1, canonical_equality_cfg, logger)
   return nil unless link_pattern_to_page2
   link_to_page2 = link_pattern_to_page2[:link]
   paging_pattern = link_pattern_to_page2[:paging_pattern]
 
-  logger.log("Possible page 1: #{page1.canonical_url} (#{page_overlapping_links_count} overlaps)")
+  logger.log("Possible page 1: #{page1.canonical_uri} (#{page_overlapping_links_count} overlaps)")
 
   links_by_masked_xpath = nil
   if paging_pattern == :blogspot
-    page1_class_xpath_links = extract_links(page1, [page1.fetch_uri.host], redirects, logger, true, true)
+    page1_class_xpath_links = extract_links(page1, [page1.fetch_uri.host], ctx.redirects, logger, true, true)
     page1_links_grouped_by_date = page1_class_xpath_links.filter do |page_link|
       BLOGSPOT_POSTS_BY_DATE_REGEX.match(page_link.class_xpath)
     end
     page1_feed_links_grouped_by_date = page1_links_grouped_by_date.filter do |page_link|
-      feed_item_urls_set.include?(page_link.canonical_url)
+      feed_entry_canonical_uris_set.include?(page_link.canonical_uri)
     end
     unless page1_feed_links_grouped_by_date.empty?
       links_by_masked_xpath = {}
@@ -58,37 +57,41 @@ def try_extract_paged(
   if links_by_masked_xpath.nil?
     get_masked_xpaths_func = method(:get_single_masked_xpaths)
     links_by_masked_xpath = group_links_by_masked_xpath(
-      page1_links, feed_item_urls_set, :xpath, get_masked_xpaths_func
+      page1_links, feed_entry_canonical_uris_set, :xpath, get_masked_xpaths_func
     )
   end
 
   page_size_masked_xpaths = []
   page1_link_to_newest_post = page1_links
-    .filter { |page_link| page_link.canonical_url == feed_item_urls.first }
+    .filter { |page_link| canonical_uri_equal?(page_link.canonical_uri, feed_entry_canonical_uris.first, canonical_equality_cfg) }
     .first
   links_by_masked_xpath.each do |masked_xpath, masked_xpath_links|
-    masked_xpath_link_urls = masked_xpath_links.map(&:canonical_url)
-    feed_overlap_length = [masked_xpath_link_urls.length, feed_item_urls.length].min
-    if masked_xpath_link_urls[0...feed_overlap_length] == feed_item_urls[0...feed_overlap_length]
+    masked_xpath_canonical_uris = masked_xpath_links.map(&:canonical_uri)
+    feed_overlap_length = [masked_xpath_canonical_uris.length, feed_entry_canonical_uris.length].min
+    is_overlap_matching = masked_xpath_canonical_uris[0...feed_overlap_length]
+      .zip(feed_entry_canonical_uris[0...feed_overlap_length])
+      .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
+    if is_overlap_matching
       includes_newest_post = true
     else
-      feed_minus_one_overlap_length = [masked_xpath_link_urls.length, feed_item_urls.length - 1].min
-      if page1_link_to_newest_post &&
-        masked_xpath_link_urls[0...feed_minus_one_overlap_length] == feed_item_urls[1..feed_minus_one_overlap_length]
-
+      feed_minus_one_overlap_length = [masked_xpath_canonical_uris.length, feed_entry_canonical_uris.length - 1].min
+      is_overlap_minus_one_matching = masked_xpath_canonical_uris[0...feed_minus_one_overlap_length]
+        .zip(feed_entry_canonical_uris[1..feed_minus_one_overlap_length])
+        .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
+      if page1_link_to_newest_post && is_overlap_minus_one_matching
         includes_newest_post = false
       else
         next
       end
     end
 
-    masked_xpath_link_urls_set = masked_xpath_link_urls.to_set
-    if masked_xpath_link_urls_set.length != masked_xpath_link_urls.length
-      logger.log("Masked xpath #{masked_xpath} has duplicates: #{masked_xpath_link_urls}")
+    masked_xpath_canonical_uris_set = masked_xpath_canonical_uris.to_canonical_uri_set(canonical_equality_cfg)
+    if masked_xpath_canonical_uris_set.length != masked_xpath_canonical_uris.length
+      logger.log("Masked xpath #{masked_xpath} has duplicates: #{masked_xpath_canonical_uris}")
       next
     end
 
-    xpath_page_size = includes_newest_post ? masked_xpath_link_urls.length : masked_xpath_link_urls.length + 1
+    xpath_page_size = masked_xpath_canonical_uris.length + (includes_newest_post ? 0 : 1)
     page_size_masked_xpaths << [xpath_page_size, masked_xpath, includes_newest_post]
   end
 
@@ -98,15 +101,21 @@ def try_extract_paged(
   end
 
   page_size_masked_xpaths_sorted = page_size_masked_xpaths
-    .sort_by { |xpath_page_size, _, _| -xpath_page_size }
+    .sort_by
+    .with_index do |page_size_masked_xpath, index|
+      [
+        -page_size_masked_xpath[0], # -page_size
+        index # for stable sort, which should put header before footer
+      ]
+    end
   logger.log("Max prefix: #{page_size_masked_xpaths.first[0]}")
 
-  page2 = fetch_page(start_link_id, link_to_page2.canonical_url, db)
-  if page2.nil?
-    logger.log("Page 2 not found in db: #{link_to_page2.canonical_url}")
+  page2 = crawl_request(link_to_page2, ctx, mock_http_client, false, start_link_id, db_storage, logger)
+  unless page2 && page2.is_a?(Page) && page2.content
+    logger.log("Page 2 is not a page: #{page2}")
     return nil
   end
-  logger.log("Possible page 2: #{link_to_page2.canonical_url}")
+  logger.log("Possible page 2: #{link_to_page2.canonical_uri}")
   page2_doc = Nokogiri::HTML5(page2.content)
 
   page2_classes_by_xpath = {}
@@ -114,30 +123,33 @@ def try_extract_paged(
   page2_entry_links = nil
   good_masked_xpath = nil
   page_size = nil
-  remaining_feed_item_urls = nil
+  remaining_feed_entry_canonical_uris = nil
 
   page_size_masked_xpaths_sorted.each do |xpath_page_size, masked_xpath, includes_first_post|
     page2_xpath_link_elements = page2_doc.xpath(masked_xpath)
     page2_xpath_links = page2_xpath_link_elements.filter_map do |element|
       html_element_to_link(
-        element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, redirects, logger, true, false
+        element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, ctx.redirects, logger, true, false
       )
     end
     next if page2_xpath_links.empty?
 
     page1_xpath_links = links_by_masked_xpath[masked_xpath]
-    page1_xpath_urls_set = page1_xpath_links
-      .map(&:canonical_url)
-      .to_set
+    page1_xpath_canonical_uris_set = page1_xpath_links
+      .map(&:canonical_uri)
+      .to_canonical_uri_set(canonical_equality_cfg)
     next if page2_xpath_links.any? do |page2_xpath_link|
-      page1_xpath_urls_set.include?(page2_xpath_link.canonical_url)
+      page1_xpath_canonical_uris_set.include?(page2_xpath_link.canonical_uri)
     end
     next if page2_xpath_links.length > xpath_page_size
 
-    page2_xpath_urls = page2_xpath_links.map(&:canonical_url)
-    page2_feed_item_urls = feed_item_urls[xpath_page_size..-1] || []
-    feed_overlap_length = [page2_xpath_urls.length, page2_feed_item_urls.length].min
-    next unless page2_xpath_urls[0...feed_overlap_length] == page2_feed_item_urls[0...feed_overlap_length]
+    page2_xpath_canonical_uris = page2_xpath_links.map(&:canonical_uri)
+    page2_feed_entry_canonical_uris = feed_entry_canonical_uris[xpath_page_size..-1] || []
+    feed_overlap_length = [page2_xpath_canonical_uris.length, page2_feed_entry_canonical_uris.length].min
+    is_overlap_matching = page2_xpath_canonical_uris[0...feed_overlap_length]
+      .zip(page2_feed_entry_canonical_uris[0...feed_overlap_length])
+      .all? { |xpath_uri, feed_uri| canonical_uri_equal?(xpath_uri, feed_uri, canonical_equality_cfg) }
+    next unless is_overlap_matching
 
     if includes_first_post
       decorated_first_post_log = ''
@@ -153,7 +165,7 @@ def try_extract_paged(
     page2_entry_links = page2_xpath_links
     good_masked_xpath = masked_xpath
     page_size = xpath_page_size
-    remaining_feed_item_urls = page2_feed_item_urls[page2_entry_links.length...-1] || []
+    remaining_feed_entry_canonical_uris = page2_feed_entry_canonical_uris[page2_entry_links.length...-1] || []
     logger.log("XPath looks good for page 2: #{masked_xpath} (#{page1_entry_links.length} + #{page2_entry_links.length} links#{decorated_first_post_log})")
   end
 
@@ -166,7 +178,7 @@ def try_extract_paged(
       page2_xpath_suffix_link_elements = page2_doc.xpath(page2_xpath_suffix)
       page2_xpath_suffix_links = page2_xpath_suffix_link_elements.filter_map do |element|
         html_element_to_link(
-          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, redirects, logger, true, false
+          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, ctx.redirects, logger, true, false
         )
       end
       next if page2_xpath_suffix_links.length != 1
@@ -179,30 +191,33 @@ def try_extract_paged(
       page2_xpath_link_elements = page2_doc.xpath(page2_masked_xpath)
       page2_xpath_links = page2_xpath_link_elements.filter_map do |element|
         html_element_to_link(
-          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, redirects, logger, true, false
+          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, ctx.redirects, logger, true, false
         )
       end
 
       page1_xpath_links = links_by_masked_xpath[masked_xpath]
-      page1_xpath_urls_set = page1_xpath_links
-        .map(&:canonical_url)
-        .to_set
+      page1_xpath_canonical_uris_set = page1_xpath_links
+        .map(&:canonical_uri)
+        .to_canonical_uri_set(canonical_equality_cfg)
       next if page2_xpath_links.any? do |page2_xpath_link|
-        page1_xpath_urls_set.include?(page2_xpath_link.canonical_url)
+        page1_xpath_canonical_uris_set.include?(page2_xpath_link.canonical_uri)
       end
       next if page2_xpath_links.length > xpath_page_size
 
-      page2_xpath_urls = page2_xpath_links.map(&:canonical_url)
-      page2_feed_item_urls = feed_item_urls[xpath_page_size..-1] || []
-      feed_overlap_length = [page2_xpath_urls.length, page2_feed_item_urls.length].min
-      next unless page2_xpath_urls[0...feed_overlap_length] == page2_feed_item_urls[0...feed_overlap_length]
+      page2_xpath_canonical_uris = page2_xpath_links.map(&:canonical_uri)
+      page2_feed_entry_canonical_uris = feed_entry_canonical_uris[xpath_page_size..-1] || []
+      feed_overlap_length = [page2_xpath_canonical_uris.length, page2_feed_entry_canonical_uris.length].min
+      is_overlap_matching = page2_xpath_canonical_uris[0...feed_overlap_length]
+        .zip(page2_feed_entry_canonical_uris[0...feed_overlap_length])
+        .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
+      next unless is_overlap_matching
 
       page1_entry_links = page1_xpath_links
       page2_entry_links = page2_xpath_links
       good_masked_xpath = page2_masked_xpath
       page_size = xpath_page_size
-      remaining_feed_item_urls = page2_feed_item_urls[page2_entry_links.length...-1] || []
-      logger.log("Possible page 2: #{link_to_page2.canonical_url}")
+      remaining_feed_entry_canonical_uris = page2_feed_entry_canonical_uris[page2_entry_links.length...-1] || []
+      logger.log("Possible page 2: #{link_to_page2.canonical_uri}")
       logger.log("XPath looks good for page 1: #{masked_xpath} (#{page1_entry_links.length} links)")
       logger.log("XPath looks good for page 2: #{page2_masked_xpath} (#{page2_entry_links.length} links)")
       break
@@ -214,8 +229,10 @@ def try_extract_paged(
     return nil
   end
 
-  page2_links = extract_links(page2, [page2.fetch_uri.host], redirects, logger, true, false)
-  link_to_page3 = find_link_to_next_page(page2_links, page2, 3, paging_pattern, logger)
+  page2_links = extract_links(page2, [page2.fetch_uri.host], ctx.redirects, logger, true, false)
+  link_to_page3 = find_link_to_next_page(
+    page2_links, page2, canonical_equality_cfg, 3, paging_pattern, logger
+  )
   return nil if link_to_page3 == :multiple
   if link_to_page3 && page2_entry_links.length != page_size
     logger.log("There are at least 3 pages and page 2 size (#{page2_entry_links.length}) is not equal to expected page size (#{page_size})")
@@ -232,20 +249,20 @@ def try_extract_paged(
     logger.log("New best count: #{entry_links.length} with 2 pages of #{page_size}")
     return {
       best_result: {
-        main_canonical_url: page1.canonical_url,
+        main_canonical_url: page1.canonical_uri.to_s,
         main_fetch_url: page1.fetch_uri.to_s,
         links: entry_links,
         pattern: "paged_last",
-        extra: "page_count: 2<br>page_size: #{page_size}<br>last_page:<a href=\"#{page2.fetch_uri}\">#{page2.canonical_url}</a>"
+        extra: "page_count: 2<br>page_size: #{page_size}<br>last_page:<a href=\"#{page2.fetch_uri}\">#{page2.canonical_uri}</a>"
       },
       subpattern_priority: SUBPATTERN_PRIORITIES[:paged],
       count: entry_links.length
     }
   end
 
-  known_entry_urls_set = entry_links
-    .map(&:canonical_url)
-    .to_set
+  known_entry_canonical_uris_set = entry_links
+    .map(&:canonical_uri)
+    .to_canonical_uri_set(canonical_equality_cfg)
   link_to_next_page = link_to_page3
   link_to_last_page = nil
   next_page_number = 3
@@ -254,7 +271,8 @@ def try_extract_paged(
     link_to_last_page = link_to_next_page
     loop_page_result = extract_page_entry_links(
       link_to_next_page, next_page_number, paging_pattern, good_masked_xpath, page_size,
-      remaining_feed_item_urls, start_link_id, known_entry_urls_set, db, redirects, logger
+      remaining_feed_entry_canonical_uris, start_link_id, known_entry_canonical_uris_set,
+      canonical_equality_cfg, ctx, mock_http_client, db_storage, logger
     )
 
     if loop_page_result.nil?
@@ -262,10 +280,12 @@ def try_extract_paged(
     end
 
     entry_links += loop_page_result[:page_entry_links]
-    known_entry_urls_set.merge(loop_page_result[:page_entry_links].map(&:canonical_url))
+    known_entry_canonical_uris_set.merge!(
+      loop_page_result[:page_entry_links].map(&:canonical_uri)
+    )
     link_to_next_page = loop_page_result[:link_to_next_page]
     next_page_number += 1
-    remaining_feed_item_urls = remaining_feed_item_urls[loop_page_result[:page_entry_links].length...-1] || []
+    remaining_feed_entry_canonical_uris = remaining_feed_entry_canonical_uris[loop_page_result[:page_entry_links].length...-1] || []
   end
 
   if entry_links.length <= best_count
@@ -279,17 +299,17 @@ def try_extract_paged(
     first_page_links_to_last_page = false
   else
     first_page_links_to_last_page = !!find_link_to_next_page(
-      page1_links, page1, page_count, paging_pattern, logger
+      page1_links, page1, canonical_equality_cfg, page_count, paging_pattern, logger
     )
   end
   logger.log("New best count: #{entry_links.length} with #{page_count} pages of #{page_size}")
   {
     best_result: {
-      main_canonical_url: page1.canonical_url,
+      main_canonical_url: page1.canonical_uri.to_s,
       main_fetch_url: page1.fetch_uri.to_s,
       links: entry_links,
       pattern: first_page_links_to_last_page ? "paged_last" : "paged_next",
-      extra: "page_count: #{page_count}<br>page_size: #{page_size}<br><a href=\"#{link_to_last_page.url}\">#{link_to_last_page.canonical_url}</a>"
+      extra: "page_count: #{page_count}<br>page_size: #{page_size}<br><a href=\"#{link_to_last_page.url}\">#{link_to_last_page.canonical_uri}</a>"
     },
     subpattern_priority: SUBPATTERN_PRIORITIES[:paged],
     count: entry_links.length
@@ -297,13 +317,14 @@ def try_extract_paged(
 end
 
 def extract_page_entry_links(
-  link_to_page, page_number, paging_pattern, masked_xpath, page_size, remaining_feed_item_urls, start_link_id,
-  known_entry_urls_set, db, redirects, logger
+  link_to_page, page_number, paging_pattern, masked_xpath, page_size, remaining_feed_entry_canonical_uris,
+  start_link_id, known_entry_canonical_uris_set, canonical_equality_cfg, ctx, mock_http_client, db_storage,
+  logger
 )
-  logger.log("Possible page #{page_number}: #{link_to_page.canonical_url}")
-  page = fetch_page(start_link_id, link_to_page.canonical_url, db)
-  if page.nil?
-    logger.log("Page #{page_number} not found in db: #{link_to_page.canonical_url}")
+  logger.log("Possible page #{page_number}: #{link_to_page.canonical_uri}")
+  page = crawl_request(link_to_page, ctx, mock_http_client, false, start_link_id, db_storage, logger)
+  unless page && page.is_a?(Page) && page.content
+    logger.log("Page #{page_number} is not a page: #{page}")
     return nil
   end
   page_doc = nokogiri_html5(page.content)
@@ -312,7 +333,7 @@ def extract_page_entry_links(
   page_entry_link_elements = page_doc.xpath(masked_xpath)
   page_entry_links = page_entry_link_elements.filter_map.with_index do |element, index|
     # Redirects don't matter after we're out of feed
-    link_redirects = index < remaining_feed_item_urls.length ? redirects : {}
+    link_redirects = index < remaining_feed_entry_canonical_uris.length ? ctx.redirects : {}
     html_element_to_link(
       element, page.fetch_uri, page_doc, page_classes_by_xpath, link_redirects, logger, true, false
     )
@@ -323,26 +344,31 @@ def extract_page_entry_links(
     return nil
   end
 
-  page_known_urls = page_entry_links
-    .map(&:canonical_url)
-    .filter { |page_url| known_entry_urls_set.include?(page_url) }
-  unless page_known_urls.empty?
-    logger.log("Page #{page_number} has known links: #{page_known_urls}")
+  page_known_canonical_uris = page_entry_links
+    .map(&:canonical_uri)
+    .filter { |page_uri| known_entry_canonical_uris_set.include?(page_uri) }
+  unless page_known_canonical_uris.empty?
+    logger.log("Page #{page_number} has known links: #{page_known_canonical_uris}")
     return nil
   end
 
-  page_entry_urls = page_entry_links.map(&:canonical_url)
-  feed_overlap_length = [page_entry_urls.length, remaining_feed_item_urls.length].min
-  unless page_entry_urls[0...feed_overlap_length] == remaining_feed_item_urls[0...feed_overlap_length]
+  page_entry_canonical_uris = page_entry_links.map(&:canonical_uri)
+  feed_overlap_length = [page_entry_canonical_uris.length, remaining_feed_entry_canonical_uris.length].min
+  is_overlap_matching = page_entry_canonical_uris[0...feed_overlap_length]
+    .zip(remaining_feed_entry_canonical_uris[0...feed_overlap_length])
+    .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
+  unless is_overlap_matching
     logger.log("Page #{page_number} doesn't overlap with feed")
-    logger.log("Page urls: #{page_entry_urls[0...feed_overlap_length]}")
-    logger.log("Feed urls: #{remaining_feed_item_urls[0...feed_overlap_length]}")
+    logger.log("Page urls: #{page_entry_canonical_uris[0...feed_overlap_length]}")
+    logger.log("Feed urls: #{remaining_feed_entry_canonical_uris[0...feed_overlap_length]}")
     return nil
   end
 
-  page_links = extract_links(page, [page.fetch_uri.host], redirects, logger, true, false)
+  page_links = extract_links(page, [page.fetch_uri.host], ctx.redirects, logger, true, false)
   next_page_number = page_number + 1
-  link_to_next_page = find_link_to_next_page(page_links, page, next_page_number, paging_pattern, logger)
+  link_to_next_page = find_link_to_next_page(
+    page_links, page, canonical_equality_cfg, next_page_number, paging_pattern, logger
+  )
   return nil if link_to_next_page == :multiple
   if link_to_next_page && page_entry_links.length != page_size
     logger.log("There are at least #{next_page_number} pages and page #{page_number} size (#{page_entry_links.length}) is not equal to expected page size (#{page_size})")
@@ -352,19 +378,9 @@ def extract_page_entry_links(
   { page_entry_links: page_entry_links, link_to_next_page: link_to_next_page }
 end
 
-def fetch_page(start_link_id, canonical_url, db)
-  row = db.exec_params(
-    "select fetch_url, content_type, content from pages where start_link_id = $1 and content is not null and canonical_url = $2",
-    [start_link_id, canonical_url]
-  ).first
-  return nil if row.nil?
-
-  Page.new(canonical_url, URI(row["fetch_url"]), start_link_id, row["content_type"], unescape_bytea(row["content"]))
-end
-
 BLOGSPOT_QUERY_REGEX = /updated-max=([^&]+)/
 
-def find_link_to_second_page(current_page_links, current_page, logger)
+def find_link_to_second_page(current_page_links, current_page, canonical_equality_cfg, logger)
   blogspot_next_page_links = current_page_links.filter do |link|
     link.uri.path == "/search" &&
       link.uri.query &&
@@ -373,8 +389,12 @@ def find_link_to_second_page(current_page_links, current_page, logger)
 
   unless blogspot_next_page_links.empty?
     links_to_page2 = blogspot_next_page_links
-    if links_to_page2.map { |link| link.canonical_url }.to_set.length > 1
-      logger.log("Page #{current_page.canonical_url} has multiple page 2 links: #{links_to_page2}")
+    if links_to_page2
+      .map(&:canonical_uri)
+      .to_canonical_uri_set(canonical_equality_cfg)
+      .length > 1
+
+      logger.log("Page #{current_page.canonical_uri} has multiple page 2 links: #{links_to_page2}")
       return nil
     end
 
@@ -393,8 +413,12 @@ def find_link_to_second_page(current_page_links, current_page, logger)
   end
   return nil if links_to_page2.empty?
 
-  if links_to_page2.map { |link| link.canonical_url }.to_set.length > 1
-    logger.log("Page #{current_page.canonical_url} has multiple page 2 links: #{links_to_page2}")
+  if links_to_page2
+    .map(&:canonical_uri)
+    .to_canonical_uri_set(canonical_equality_cfg)
+    .length > 1
+
+    logger.log("Page #{current_page.canonical_uri} has multiple page 2 links: #{links_to_page2}")
     return nil
   end
 
@@ -422,7 +446,9 @@ def find_link_to_second_page(current_page_links, current_page, logger)
   end
 end
 
-def find_link_to_next_page(current_page_links, current_page, next_page_number, paging_pattern, logger)
+def find_link_to_next_page(
+  current_page_links, current_page, canonical_equality_cfg, next_page_number, paging_pattern, logger
+)
   if paging_pattern == :blogspot
     return nil unless current_page.fetch_uri.path == "/search" &&
       current_page.fetch_uri.query &&
@@ -449,10 +475,15 @@ def find_link_to_next_page(current_page_links, current_page, next_page_number, p
     end
   end
 
-  if links_to_next_page.map { |link| link.canonical_url }.to_set.length > 1
-    logger.log("Page #{next_page_number - 1} #{current_page.canonical_url} has multiple page #{next_page_number} links: #{links_to_next_page}")
+  if links_to_next_page
+    .map(&:canonical_uri)
+    .to_canonical_uri_set(canonical_equality_cfg)
+    .length > 1
+
+    logger.log("Page #{next_page_number - 1} #{current_page.canonical_uri} has multiple page #{next_page_number} links: #{links_to_next_page}")
     return :multiple
   end
 
   links_to_next_page.first
 end
+
