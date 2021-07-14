@@ -7,7 +7,7 @@ BLOGSPOT_POSTS_BY_DATE_REGEX = /(\(date-outer\)\[)\d+(.+\(post-outer\)\[)\d+/
 
 def try_extract_paged(
   page1, page1_links, page_canonical_uris_set, feed_entry_canonical_uris, feed_entry_canonical_uris_set,
-  canonical_equality_cfg, best_count, start_link_id, ctx, mock_http_client, db_storage, logger
+  canonical_equality_cfg, min_links_count, start_link_id, ctx, mock_http_client, db_storage, logger
 )
   page_overlapping_links_count = nil
   feed_entry_canonical_uris.each_with_index do |feed_entry_canonical_uri, index|
@@ -235,14 +235,13 @@ def try_extract_paged(
   )
   return nil if link_to_page3 == :multiple
   if link_to_page3 && page2_entry_links.length != page_size
-    logger.log("There are at least 3 pages and page 2 size (#{page2_entry_links.length}) is not equal to expected page size (#{page_size})")
-    return nil
+    raise "There are at least 3 pages and page 2 size (#{page2_entry_links.length}) is not equal to expected page size (#{page_size})"
   end
 
   entry_links = page1_entry_links + page2_entry_links
   unless link_to_page3
-    if entry_links.length <= best_count
-      logger.log("Best count #{best_count} not topped (#{entry_links.length})")
+    if entry_links.length < min_links_count
+      logger.log("Min links count #{min_links_count} not reached (#{entry_links.length})")
       return nil
     end
 
@@ -288,8 +287,8 @@ def try_extract_paged(
     remaining_feed_entry_canonical_uris = remaining_feed_entry_canonical_uris[loop_page_result[:page_entry_links].length...-1] || []
   end
 
-  if entry_links.length <= best_count
-    logger.log("Best count #{best_count} not topped (#{entry_links.length})")
+  if entry_links.length < min_links_count
+    logger.log("Min links count #{min_links_count} not reached (#{entry_links.length})")
     return nil
   end
 
@@ -371,8 +370,7 @@ def extract_page_entry_links(
   )
   return nil if link_to_next_page == :multiple
   if link_to_next_page && page_entry_links.length != page_size
-    logger.log("There are at least #{next_page_number} pages and page #{page_number} size (#{page_entry_links.length}) is not equal to expected page size (#{page_size})")
-    return nil
+    raise "There are at least #{next_page_number} pages and page #{page_number} size (#{page_entry_links.length}) is not equal to expected page size (#{page_size})"
   end
 
   { page_entry_links: page_entry_links, link_to_next_page: link_to_next_page }

@@ -2,14 +2,16 @@
 1 Archives discard empty: 209
 4 Archives scoped by path: 71 176 237 101
 
-8 Uneven pages: 260 398 2 23 110 440 499 8
+11 Uneven pages: 260 398 2 23 110 440 499 8 41 121 35
 1 Paged with two stars: 361
 1 Xpath is not the best after page 2: 227
 2 Paged scoped by path: 499 99
+1 First post decorated on every page: 86
+2 Custom next page link: 2 534
 
 6 Archives 2 level: 465 495 6 43 155 35
 4 Archives categories: 194 210 401 456
-6 Archives shuffled parse list date: 449 39 105 43 208 210
+7 Archives shuffled parse list date: 449 39 105 43 208 210 97
 9 Archives shuffled parse post date: 296 71 176 237 437 456 341 406 527
 
 5 Chained: 108 127 244 290 122
@@ -23,7 +25,9 @@
 2 RSS is complete with 31+ all on the same page or 101+: 302 37
 
 1 html canonical matters: 237
+1 Redirect through meta http-equiv="refresh" 12
 3 Xpath needs [last()]: 263 318 474
+1 Feed links need comparison by unique prefix: 469
 
 19 Guided crawl: 47 9 59 60 62 73 243 365 469 8 14 34 35 40 41 86 121 122 341
 5 Resilient crawl: 34 122 243 230 472

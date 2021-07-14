@@ -13,9 +13,14 @@ GUIDED_CRAWLING_RESULT_COLUMNS = [
   [:feed_url, :boolean],
   [:feed_links, :boolean],
   [:duplicate_fetches, :neutral],
-  [:historical_links_found, :boolean],
-  [:historical_links_matching, :boolean],
   [:no_regression, :neutral],
+  [:no_guided_regression, :neutral],
+  [:historical_links_found, :boolean],
+  [:is_start_page_main_page, :boolean],
+  [:does_start_page_link_to_main_page, :boolean],
+  [:is_main_page_linked_from_both_entries, :boolean],
+  [:unique_links_from_both_entries, :neutral],
+  [:historical_links_matching, :boolean],
   [:historical_links_pattern, :neutral_present],
   [:historical_links_count, :neutral_present],
   [:main_url, :neutral_present],
@@ -32,14 +37,14 @@ class GuidedCrawlRunnable
     @result_column_names = to_column_names(GUIDED_CRAWLING_RESULT_COLUMNS)
   end
 
-  def run(start_link_id, _, db, logger)
-    guided_crawl(start_link_id, db, logger)
+  def run(start_link_id, save_successes, db, logger)
+    guided_crawl(start_link_id, save_successes, db, logger)
   end
 
   attr_reader :result_column_names
 end
 
-def guided_crawl(start_link_id, db, logger)
+def guided_crawl(start_link_id, save_successes, db, logger)
   start_link_row = db.exec_params('select url, rss_url from start_links where id = $1', [start_link_id])[0]
   start_link_url = start_link_row["url"]
   start_link_feed_url = start_link_row["rss_url"]
@@ -108,7 +113,7 @@ def guided_crawl(start_link_id, db, logger)
 
       feed_link = feed_links.first
     end
-    result.feed_url = "<a href=\"#{feed_link.url}\">#{feed_link.canonical_uri.to_s}</a>"
+    result.feed_url = "<a href=\"#{feed_link.url}\">feed</a>"
     ctx.allowed_hosts << feed_link.uri.host
     feed_result = crawl_request(
       feed_link, ctx, mock_http_client, true, start_link_id, db_storage, logger
@@ -122,28 +127,48 @@ def guided_crawl(start_link_id, db, logger)
     result.feed_time = (monotonic_now - feed_start_time).to_i
     logger.log("Feed url: #{feed_page.canonical_uri}")
 
-    host_redirect = compute_host_redirect(start_link, start_page, feed_link, feed_page)
-    feed_links = extract_feed_links(feed_page.content, feed_page.fetch_uri, host_redirect, logger)
+    feed_links = extract_feed_links(feed_page.content, feed_page.fetch_uri, logger)
     result.feed_links = feed_links.entry_links.length
     logger.log("Root url: #{feed_links.root_link}")
     logger.log("Entries in feed: #{feed_links.entry_links.length}")
 
+    feed_entry_hosts = Set.new
     if feed_links.root_link
       ctx.allowed_hosts << feed_links.root_link.uri.host
     end
     feed_links.entry_links.each do |entry_link|
       ctx.allowed_hosts << entry_link.uri.host
+      feed_entry_hosts << entry_link.uri.host
     end
-    feed_entry_canonical_uris = feed_links.entry_links.map(&:canonical_uri)
 
-    canonical_equality_cfg = CanonicalEqualityConfig.new(Set.new, feed_links.is_tumblr)
-    historical_result = guided_crawl_loop(
-      start_link_id, start_page, feed_entry_canonical_uris, ctx, canonical_equality_cfg, mock_http_client,
-      db_storage, logger
+    same_hosts = Set.new
+    [[start_link, start_page], [feed_link, feed_page]].each do |link, page|
+      if link.uri.host != page.fetch_uri.host &&
+        canonical_uri_same_path?(link.canonical_uri, page.canonical_uri) &&
+        (feed_entry_hosts.include?(link.uri.host) || feed_entry_hosts.include?(page.fetch_uri.host))
+
+        same_hosts << link.uri.host << page.fetch_uri.host
+      end
+    end
+
+    canonical_equality_cfg = CanonicalEqualityConfig.new(same_hosts, feed_links.is_tumblr)
+    ctx.fetched_canonical_uris.update_equality_config(canonical_equality_cfg)
+    historical_result_combo = guided_crawl_loop(
+      start_link_id, start_page, feed_links.entry_links, ctx, canonical_equality_cfg, mock_http_client,
+      db_storage, CanonicalUri.from_db_string(gt_row["main_page_canonical_url"]), logger
     )
+    historical_result = historical_result_combo[:best_result]
     result.historical_links_found = !!historical_result
+    result.is_start_page_main_page = historical_result_combo[:is_start_page_main_page]
+    result.does_start_page_link_to_main_page = historical_result_combo[:does_start_page_link_to_main_page]
+    result.is_main_page_linked_from_both_entries = historical_result_combo[:is_main_page_linked_from_both_entries]
+    result.unique_links_from_both_entries = historical_result_combo[:unique_links_from_both_entries]
     has_succeeded_before = db
       .exec_params("select count(*) from successes where start_link_id = $1", [start_link_id])
+      .first["count"]
+      .to_i == 1
+    has_guided_succeeded_before = db
+      .exec_params("select count(*) from guided_successes where start_link_id = $1", [start_link_id])
       .first["count"]
       .to_i == 1
     unless historical_result
@@ -159,6 +184,10 @@ def guided_crawl(start_link_id, db, logger)
         if has_succeeded_before
           result.no_regression = false
           result.no_regression_status = :failure
+        end
+        if has_guided_succeeded_before
+          result.no_guided_regression = false
+          result.no_guided_regression_status = :failure
         end
       end
       raise "Historical links not found"
@@ -222,10 +251,20 @@ def guided_crawl(start_link_id, db, logger)
         result.no_regression = historical_links_matching
         result.no_regression_status = historical_links_matching ? :success : :failure
       end
+      if has_guided_succeeded_before
+        result.no_guided_regression = historical_links_matching
+        result.no_guided_regression_status = historical_links_matching ? :success : :failure
+      elsif historical_links_matching && save_successes
+        db.exec_params(
+          "insert into guided_successes (start_link_id, timestamp) values ($1, now())", [start_link_id]
+        )
+        logger.log("Saved guided success")
+      end
     else
       result.historical_links_matching = '?'
       result.historical_links_matching_status = :neutral
       result.no_regression_status = :neutral
+      result.no_guided_regression_status = :neutral
       result.historical_links_pattern = historical_result[:pattern]
       result.historical_links_count = entries_count
       result.main_url = "<a href=\"#{historical_result[:main_fetch_url]}\">#{historical_result[:main_canonical_url]}</a>"
@@ -240,95 +279,205 @@ def guided_crawl(start_link_id, db, logger)
   ensure
     result.duplicate_fetches = ctx.duplicate_fetches
     result.total_requests = ctx.requests_made
-    result.total_pages = ctx.fetched_urls.length
+    result.total_pages = ctx.fetched_canonical_uris.length
     result.total_network_requests = defined?(mock_http_client) && mock_http_client && mock_http_client.network_requests_made
     result.total_time = (monotonic_now - start_time).to_i
   end
 end
 
-def compute_host_redirect(start_link, start_page, feed_link, feed_page)
-  start_same_path = canonical_uri_same_path?(start_link.canonical_uri, start_page.canonical_uri)
-  feed_same_path = canonical_uri_same_path?(feed_link.canonical_uri, feed_page.canonical_uri)
-  start_from_host = start_link.uri.host
-  start_to_host = start_page.fetch_uri.host
-  feed_from_host = feed_link.uri.host
-  feed_to_host = feed_page.fetch_uri.host
-
-  if !start_same_path
-    # Can't say anything about redirects
-    return HostRedirectConfig.new(nil, nil, nil)
-  elsif !feed_same_path
-    # Feed redirect should be ignored but start redirect is informative
-    return HostRedirectConfig.new(start_from_host, start_to_host, nil)
-  end
-
-  # Both start and feed paths are the same, now we can look at hosts
-
-  all_hosts = [start_from_host, start_to_host, feed_from_host, feed_to_host]
-  raise "Too many hosts: #{all_hosts}" if all_hosts.to_set.length > 2
-
-  base_host = start_from_host
-  if start_to_host == base_host && feed_from_host == base_host && feed_to_host == base_host
-    # A: No redirects observed
-    HostRedirectConfig.new(nil, nil, nil)
-  elsif start_to_host == base_host && feed_from_host == base_host && feed_to_host != base_host
-    # B: RSS must be hosted elsewhere and entries shouldn't be hosted there
-    HostRedirectConfig.new(nil, nil, feed_to_host)
-  elsif start_to_host == base_host && feed_from_host != base_host && feed_to_host == base_host
-    # C: RSS uncovered redirect from old to new host
-    HostRedirectConfig.new(feed_from_host, base_host, nil)
-  elsif start_to_host == base_host && feed_from_host != base_host && feed_to_host != base_host
-    # B: RSS must be hosted elsewhere and entries shouldn't be hosted there
-    HostRedirectConfig.new(nil, nil, feed_to_host)
-  elsif start_to_host != base_host && feed_from_host == base_host && feed_to_host == base_host
-    # D
-    raise "Start page redirects from A to B but RSS stays at A: #{all_hosts}"
-  elsif start_to_host != base_host && feed_from_host == base_host && feed_to_host != base_host
-    # E: Both start page and RSS redirect from base host to another one
-    HostRedirectConfig.new(base_host, start_to_host, nil)
-  elsif start_to_host != base_host && feed_from_host != base_host && feed_to_host == base_host
-    # F
-    raise "Start page redirects from A to B, RSS redirects from B to A: #{all_hosts}"
-  elsif start_to_host != base_host && feed_from_host != base_host && feed_to_host != base_host
-    # E: Start page redirects from base host to the one that also has RSS
-    HostRedirectConfig.new(base_host, start_to_host, nil)
-  else
-    raise "Host redirect check is not exhaustive"
-  end
-end
+ARCHIVES_REGEX = "/(?:archives?|posts?|all)(?:\\.[a-z]+)?/*$"
+MAIN_PAGE_REGEX = "/(?:archives?|blog|posts?|articles|writing|journal|all)(?:\\.[a-z]+)?/*$"
 
 def guided_crawl_loop(
-  start_link_id, start_page, feed_entry_canonical_uris, ctx, canonical_equality_cfg, mock_http_client,
-  db_storage, logger
+  start_link_id, start_page, feed_entry_links, ctx, canonical_equality_cfg, mock_http_client,
+  db_storage, gt_main_page_canonical_uri, logger
 )
   start_page_links = extract_links(start_page, nil, ctx.redirects, logger, true, true)
   start_page_canonical_uris_set = start_page_links
     .map(&:canonical_uri)
     .to_canonical_uri_set(canonical_equality_cfg)
+  feed_entry_canonical_uris = feed_entry_links.map(&:canonical_uri)
   feed_entry_canonical_uris_set = feed_entry_canonical_uris.to_canonical_uri_set(canonical_equality_cfg)
 
+  does_start_page_path_match_archives = start_page.canonical_uri.path.match?(ARCHIVES_REGEX)
+  if does_start_page_path_match_archives
+    start_page_result = try_extract_historical(
+      start_page, start_page_links, start_page_canonical_uris_set, feed_entry_canonical_uris,
+      feed_entry_canonical_uris_set, canonical_equality_cfg, start_link_id, ctx, mock_http_client,
+      db_storage, logger
+    )
+
+    return { best_result: start_page_result } if start_page_result
+    logger.log("Start page matches archives regex but is not the main page")
+  else
+    logger.log("Start page doesn't match archives regex")
+  end
+
+  logger.log("Trying select links from start page")
+
+  allowed_hosts = canonical_equality_cfg.same_hosts.empty? ?
+    [start_page.canonical_uri.host] :
+    canonical_equality_cfg.same_hosts
+
+  start_page_archives_links = start_page_links
+    .filter { |link| allowed_hosts.include?(link.uri.host) && link.canonical_uri.path.match?(ARCHIVES_REGEX) }
+  logger.log("Checking #{start_page_archives_links.length} archives links")
+  start_page_archives_links_result = crawl_historical(
+    start_page_archives_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set,
+    canonical_equality_cfg, start_link_id, ctx, mock_http_client, db_storage, logger
+  )
+  return { best_result: start_page_archives_links_result } if start_page_archives_links_result
+
+  start_page_main_page_links = start_page_links
+    .filter { |link| allowed_hosts.include?(link.uri.host) && link.canonical_uri.path.match?(MAIN_PAGE_REGEX) }
+  logger.log("Checking #{start_page_main_page_links.length} main page links")
+  start_page_main_page_links_result = crawl_historical(
+    start_page_main_page_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set,
+    canonical_equality_cfg, start_link_id, ctx, mock_http_client, db_storage, logger
+  )
+  return { best_result: start_page_main_page_links_result } if start_page_main_page_links_result
+  logger.log("Start page doesn't link to the main page")
+
+  unless does_start_page_path_match_archives
+    start_page_result = try_extract_historical(
+      start_page, start_page_links, start_page_canonical_uris_set, feed_entry_canonical_uris,
+      feed_entry_canonical_uris_set, canonical_equality_cfg, start_link_id, ctx, mock_http_client,
+      db_storage, logger
+    )
+
+    return { best_result: start_page_result } if start_page_result
+    logger.log("Start page doesn't match archives regex and is not the main page")
+  end
+
+  logger.log("Trying common links from the first two entries")
+
+  raise "Too few entries in feed: #{feed_entry_links.length}" if feed_entry_links.length < 2
+  entry1_page = crawl_request(feed_entry_links[0], ctx, mock_http_client, false, start_link_id, db_storage, logger)
+  entry2_page = crawl_request(feed_entry_links[1], ctx, mock_http_client, false, start_link_id, db_storage, logger)
+  raise "Couldn't fetch entry 1: #{entry1_page}" if !entry1_page.is_a?(Page) || !entry1_page.content
+  raise "Couldn't fetch entry 2: #{entry2_page}" if !entry2_page.is_a?(Page) || !entry2_page.content
+
+  entry1_links = extract_links(entry1_page, allowed_hosts, ctx.redirects, logger, true, true)
+  entry2_links = extract_links(entry2_page, allowed_hosts, ctx.redirects, logger, true, true)
+  entry1_canonical_uris_set = entry1_links
+    .map(&:canonical_uri)
+    .to_canonical_uri_set(canonical_equality_cfg)
+  entry2_canonical_uris_set = entry2_links
+    .map(&:canonical_uri)
+    .to_canonical_uri_set(canonical_equality_cfg)
+
+  links_from_both_entries = []
+  entry1_canonical_uris_set2 = CanonicalUriSet.new([], canonical_equality_cfg)
+  entry1_links.each do |entry1_link|
+    next if entry1_canonical_uris_set2.include?(entry1_link.canonical_uri)
+
+    entry1_canonical_uris_set2 << entry1_link.canonical_uri
+    links_from_both_entries << entry1_link if entry2_canonical_uris_set.include?(entry1_link.canonical_uri)
+  end
+
+  archives_links_from_both_entries, non_archives_links_from_both_entries = links_from_both_entries
+    .partition { |link| link.canonical_uri.path.match?(ARCHIVES_REGEX) }
+  logger.log("Checking #{archives_links_from_both_entries.length} archives links")
+  archives_links_from_both_entries_result = crawl_historical(
+    archives_links_from_both_entries, feed_entry_canonical_uris, feed_entry_canonical_uris_set,
+    canonical_equality_cfg, start_link_id, ctx, mock_http_client, db_storage, logger
+  )
+  return { best_result: archives_links_from_both_entries_result } if archives_links_from_both_entries_result
+
+  main_page_links_from_both_entries, other_links_from_both_entries = non_archives_links_from_both_entries
+    .partition { |link| link.canonical_uri.path.match?(MAIN_PAGE_REGEX) }
+  logger.log("Checking #{main_page_links_from_both_entries.length} main page links")
+  main_page_links_from_both_entries_result = crawl_historical(
+    main_page_links_from_both_entries, feed_entry_canonical_uris, feed_entry_canonical_uris_set,
+    canonical_equality_cfg, start_link_id, ctx, mock_http_client, db_storage, logger
+  )
+  return { best_result: main_page_links_from_both_entries_result } if main_page_links_from_both_entries_result
+
+  logger.log("Checking #{other_links_from_both_entries.length} other links")
+  other_links_from_both_entries_result = crawl_historical(
+    other_links_from_both_entries, feed_entry_canonical_uris, feed_entry_canonical_uris_set,
+    canonical_equality_cfg, start_link_id, ctx, mock_http_client, db_storage, logger
+  )
+  return { best_result: other_links_from_both_entries_result } if other_links_from_both_entries_result
+  logger.log("Pattern not detected")
+
+  # STATS
+  is_start_page_main_page = canonical_uri_equal?(
+    start_page.canonical_uri, gt_main_page_canonical_uri, canonical_equality_cfg
+  )
+  does_start_page_link_to_main_page = start_page_canonical_uris_set.include?(gt_main_page_canonical_uri)
+  is_main_page_linked_from_both_entries =
+    entry1_canonical_uris_set.include?(gt_main_page_canonical_uri) &&
+      entry2_canonical_uris_set.include?(gt_main_page_canonical_uri)
+
+  unless is_start_page_main_page || does_start_page_link_to_main_page
+    logger.log("Would need to crawl #{links_from_both_entries.length} links common for two entries:")
+    links_from_both_entries.each do |uri|
+      logger.log(uri)
+    end
+  end
+  # STATS END
+
+  {
+    is_start_page_main_page: is_start_page_main_page,
+    does_start_page_link_to_main_page: does_start_page_link_to_main_page,
+    is_main_page_linked_from_both_entries: is_main_page_linked_from_both_entries,
+    unique_links_from_both_entries: links_from_both_entries.length,
+    best_result: nil
+  }
+end
+
+def crawl_historical(
+  links, feed_entry_canonical_uris, feed_entry_canonical_uris_set, canonical_equality_cfg, start_link_id, ctx,
+  mock_http_client, db_storage, logger
+)
+  links.each do |link|
+    next if ctx.fetched_canonical_uris.include?(link.canonical_uri)
+
+    link_page = crawl_request(link, ctx, mock_http_client, false, start_link_id, db_storage, logger)
+    unless link_page.is_a?(Page) && link_page.content
+      logger.log("Couldn't fetch link: #{link_page}")
+      next
+    end
+
+    link_page_links = extract_links(link_page, nil, ctx.redirects, logger, true, true)
+    link_page_canonical_uris_set = link_page_links
+      .map(&:canonical_uri)
+      .to_canonical_uri_set(canonical_equality_cfg)
+    link_result = try_extract_historical(
+      link_page, link_page_links, link_page_canonical_uris_set, feed_entry_canonical_uris,
+      feed_entry_canonical_uris_set, canonical_equality_cfg, start_link_id, ctx, mock_http_client,
+      db_storage, logger
+    )
+
+    return link_result if link_result
+  end
+  nil
+end
+
+def try_extract_historical(
+  page, page_links, page_canonical_uris_set, feed_entry_canonical_uris, feed_entry_canonical_uris_set,
+  canonical_equality_cfg, start_link_id, ctx, mock_http_client, db_storage, logger
+)
   paged_result = try_extract_paged(
-    start_page, start_page_links, start_page_canonical_uris_set, feed_entry_canonical_uris,
-    feed_entry_canonical_uris_set, canonical_equality_cfg, 0, start_link_id, ctx, mock_http_client,
-    db_storage, logger
+    page, page_links, page_canonical_uris_set, feed_entry_canonical_uris, feed_entry_canonical_uris_set,
+    canonical_equality_cfg, 1, start_link_id, ctx, mock_http_client, db_storage, logger
   )
 
   archives_result = try_extract_archives(
-    start_page, start_page_links, start_page_canonical_uris_set, feed_entry_canonical_uris,
-    feed_entry_canonical_uris_set, canonical_equality_cfg, nil, 1, logger
+    page, page_links, page_canonical_uris_set, feed_entry_canonical_uris, feed_entry_canonical_uris_set,
+    canonical_equality_cfg, nil, 1, logger
   )
 
   if paged_result && archives_result
     if paged_result[:count] > archives_result[:count]
-      return paged_result[:best_result]
+      paged_result[:best_result]
     else
-      return archives_result[:best_result]
+      archives_result[:best_result]
     end
   elsif paged_result
-    return paged_result[:best_result]
+    paged_result[:best_result]
   elsif archives_result
-    return archives_result[:best_result]
+    archives_result[:best_result]
   end
-
-  logger.log("Pattern not detected")
 end

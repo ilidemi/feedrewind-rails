@@ -26,7 +26,7 @@ end
 
 FeedLinks = Struct.new(:root_link, :entry_links, :is_tumblr)
 
-def extract_feed_links(feed_content, fetch_uri, host_redirect, logger)
+def extract_feed_links(feed_content, fetch_uri, logger)
   xml = Nokogiri::XML(feed_content)
   has_feedburner_namespace = xml.namespaces.key?("xmlns:feedburner")
   rss_channel = xml.at_xpath("/rss/channel")
@@ -114,19 +114,6 @@ def extract_feed_links(feed_content, fetch_uri, host_redirect, logger)
   end
   root_link = root_url ? to_canonical_link(root_url, logger, fetch_uri) : nil
   entry_links = entry_urls.map { |entry_url| entry_url ? to_canonical_link(entry_url, logger, fetch_uri) : nil }
-
-  entry_links.map! do |entry_link|
-    case entry_link.uri.host
-    when host_redirect.redirect_from_host
-      entry_link.uri.host = host_redirect.redirect_to_host
-      to_canonical_link(entry_link.uri.to_s, logger)
-    when host_redirect.weird_feed_host
-      raise "Entry points to the same host as feed but feed is third party: #{entry_link.url} (#{host_redirect.weird_feed_host})"
-    else
-      entry_link
-    end
-  end
-
   FeedLinks.new(root_link, entry_links, is_tumblr)
 end
 

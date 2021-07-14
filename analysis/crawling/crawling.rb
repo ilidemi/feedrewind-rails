@@ -10,7 +10,7 @@ require_relative 'structs'
 class CrawlContext
   def initialize
     @seen_fetch_urls = Set.new
-    @fetched_urls = Set.new
+    @fetched_canonical_uris = CanonicalUriSet.new([], CanonicalEqualityConfig.new(Set.new, false))
     @redirects = {}
     @requests_made = 0
     @duplicate_fetches = 0
@@ -18,7 +18,7 @@ class CrawlContext
     @allowed_hosts = Set.new
   end
 
-  attr_reader :seen_fetch_urls, :fetched_urls, :redirects, :allowed_hosts
+  attr_reader :seen_fetch_urls, :fetched_canonical_uris, :redirects, :allowed_hosts
   attr_accessor :requests_made, :duplicate_fetches, :main_feed_fetched
 end
 
@@ -31,6 +31,13 @@ def crawl_request(initial_link, ctx, http_client, is_feed_expected, start_link_i
   link = initial_link
   seen_urls = [link.url]
   link = follow_cached_redirects(link, ctx.redirects, seen_urls)
+  if !link.equal?(initial_link) &&
+    (ctx.seen_fetch_urls.include?(link.url) ||
+      ctx.fetched_canonical_uris.include?(link.canonical_uri))
+
+    logger.log("Cached redirect #{initial_link.url} -> #{link.url} (already seen)")
+    return AlreadySeenLink.new(link)
+  end
   resp = nil
   request_ms = nil
 
@@ -59,7 +66,7 @@ def crawl_request(initial_link, ctx, http_client, is_feed_expected, start_link_i
     redirection_link = follow_cached_redirects(redirection_link, ctx.redirects, seen_urls)
 
     if ctx.seen_fetch_urls.include?(redirection_link.url) ||
-      ctx.fetched_urls.include?(redirection_link.canonical_uri.to_s) # TODO: is fetched_urls needed?
+      ctx.fetched_canonical_uris.include?(redirection_link.canonical_uri)
 
       logger.log("#{resp.code} #{request_ms}ms #{link.url} -> #{redirection_link.url} (already seen)")
       return AlreadySeenLink.new(link)
@@ -80,14 +87,18 @@ def crawl_request(initial_link, ctx, http_client, is_feed_expected, start_link_i
     else
       content = nil
     end
-    ctx.fetched_urls << link.canonical_uri.to_s
-    storage.save_page(
-      link.canonical_uri.to_s, link.url, content_type, start_link_id, content
-    )
-    logger.log("#{resp.code} #{content_type} #{request_ms}ms #{link.url}")
+    if !ctx.fetched_canonical_uris.include?(link.canonical_uri)
+      ctx.fetched_canonical_uris << link.canonical_uri
+      storage.save_page(
+        link.canonical_uri.to_s, link.url, content_type, start_link_id, content
+      )
+      logger.log("#{resp.code} #{content_type} #{request_ms}ms #{link.url}")
+    else
+      logger.log("#{resp.code} #{content_type} #{request_ms}ms #{link.url} - canonical uri already seen but ok")
+    end
     Page.new(link.canonical_uri, link.uri, start_link_id, content_type, content)
   elsif PERMANENT_ERROR_CODES.include?(resp.code)
-    ctx.fetched_urls << link.canonical_uri.to_s
+    ctx.fetched_canonical_uris << link.canonical_uri
     storage.save_permanent_error(
       link.canonical_uri.to_s, link.url, start_link_id, resp.code
     )

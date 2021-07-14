@@ -138,21 +138,29 @@ class CanonicalUri
   attr_reader :host, :port, :path, :query
 end
 
-CanonicalEqualityConfig = Struct.new(:same_servers, :expect_tumblr_paths)
+CanonicalEqualityConfig = Struct.new(:same_hosts, :expect_tumblr_paths)
 
-TUMBLR_PATH_REGEX = "^(/post/\\d+)(?:/[^/]+)?/?$"
+def trim_trailing_slashes(path)
+  trailing_slash_count = 0
+  while path[-trailing_slash_count - 1] == '/' do
+    trailing_slash_count += 1
+  end
+  path[0..-trailing_slash_count - 1]
+end
 
 def canonical_uri_same_path?(canonical_uri1, canonical_uri2)
   path1 = canonical_uri1.path
   path2 = canonical_uri2.path
-  path1 == path2 || path1 + '/' == path2 || path1 == path2 + '/'
+  path1 == path2 || trim_trailing_slashes(path1) == trim_trailing_slashes(path2)
 end
 
+TUMBLR_PATH_REGEX = "^(/post/\\d+)(?:/[^/]+)?/?$"
+
 def canonical_uri_equal?(canonical_uri1, canonical_uri2, canonical_equality_cfg)
-  same_servers = canonical_equality_cfg.same_servers
-  server1 = canonical_uri1.host + canonical_uri1.port
-  server2 = canonical_uri2.host + canonical_uri2.port
-  return false unless server1 == server2 || (same_servers.include?(server1) && same_servers.include?(server2))
+  same_hosts = canonical_equality_cfg.same_hosts
+  host1 = canonical_uri1.host
+  host2 = canonical_uri2.host
+  return false unless host1 == host2 || (same_hosts.include?(host1) && same_hosts.include?(host2))
 
   if canonical_equality_cfg.expect_tumblr_paths
     tumblr_match1 = canonical_uri1.path.match(TUMBLR_PATH_REGEX)
@@ -167,14 +175,39 @@ end
 class CanonicalUriSet
   def initialize(canonical_uris, canonical_equality_cfg)
     @canonical_equality_cfg = canonical_equality_cfg
+    @canonical_uris = []
     @paths_queries_by_server = {}
     @length = 0
     merge!(canonical_uris)
   end
 
+  def add(canonical_uri)
+    server = canonical_uri.host + canonical_uri.port
+    server_key = @canonical_equality_cfg.same_hosts.include?(server) ? :same_hosts : server
+    unless @paths_queries_by_server.key?(server_key)
+      @paths_queries_by_server[server_key] = {}
+    end
+
+    queries_by_trimmed_path = @paths_queries_by_server[server_key]
+    trimmed_path = trim_path(canonical_uri.path)
+    unless queries_by_trimmed_path.key?(trimmed_path)
+      queries_by_trimmed_path[trimmed_path] = Set.new
+    end
+
+    return if queries_by_trimmed_path[trimmed_path].include?(canonical_uri.query)
+
+    queries_by_trimmed_path[trimmed_path] << canonical_uri.query
+    @canonical_uris << canonical_uri
+    @length += 1
+  end
+
+  def <<(item)
+    add(item)
+  end
+
   def include?(canonical_uri)
     server = canonical_uri.host + canonical_uri.port
-    server_key = @canonical_equality_cfg.same_servers.include?(server) ? :same_servers : server
+    server_key = @canonical_equality_cfg.same_hosts.include?(server) ? :same_hosts : server
     trimmed_path = trim_path(canonical_uri.path)
     @paths_queries_by_server.key?(server_key) &&
       @paths_queries_by_server[server_key].key?(trimmed_path) &&
@@ -183,23 +216,17 @@ class CanonicalUriSet
 
   def merge!(canonical_uris)
     canonical_uris.each do |canonical_uri|
-      server = canonical_uri.host + canonical_uri.port
-      server_key = @canonical_equality_cfg.same_servers.include?(server) ? :same_servers : server
-      unless @paths_queries_by_server.key?(server_key)
-        @paths_queries_by_server[server_key] = {}
-      end
-
-      queries_by_trimmed_path = @paths_queries_by_server[server_key]
-      trimmed_path = trim_path(canonical_uri.path)
-      unless queries_by_trimmed_path.key?(trimmed_path)
-        queries_by_trimmed_path[trimmed_path] = Set.new
-      end
-
-      next if queries_by_trimmed_path[trimmed_path].include?(canonical_uri.query)
-
-      queries_by_trimmed_path[trimmed_path] << canonical_uri.query
-      @length += 1
+      add(canonical_uri)
     end
+  end
+
+  def update_equality_config(canonical_equality_cfg)
+    canonical_uris = @canonical_uris
+    @canonical_equality_cfg = canonical_equality_cfg
+    @canonical_uris = []
+    @paths_queries_by_server = {}
+    @length = 0
+    merge!(canonical_uris)
   end
 
   attr_reader :length
@@ -212,7 +239,7 @@ class CanonicalUriSet
       return tumblr_match[1] if tumblr_match
     end
 
-    path.delete_suffix('/')
+    trim_trailing_slashes(path)
   end
 end
 
