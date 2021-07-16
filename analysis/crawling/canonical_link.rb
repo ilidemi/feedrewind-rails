@@ -68,6 +68,8 @@ def to_canonical_link(url, logger, fetch_uri = nil)
   Link.new(canonical_uri, uri, uri.to_s)
 end
 
+TRIM_TRAILING_SLASHES_REGEX = Regexp.new("^(.+[^/])?/*$")
+
 class CanonicalUri
   WHITELISTED_QUERY_PARAMS = Set.new(
     [
@@ -90,6 +92,7 @@ class CanonicalUri
     @host = host
     @port = port
     @path = path
+    @trimmed_path = path.match(TRIM_TRAILING_SLASHES_REGEX)[1]
     @query = query
   end
 
@@ -135,23 +138,13 @@ class CanonicalUri
     raise "Equality check for CanonicalUris is not supported, please use the standalone function"
   end
 
-  attr_reader :host, :port, :path, :query
+  attr_reader :host, :port, :path, :trimmed_path, :query
 end
 
 CanonicalEqualityConfig = Struct.new(:same_hosts, :expect_tumblr_paths)
 
-def trim_trailing_slashes(path)
-  trailing_slash_count = 0
-  while path[-trailing_slash_count - 1] == '/' do
-    trailing_slash_count += 1
-  end
-  path[0..-trailing_slash_count - 1]
-end
-
 def canonical_uri_same_path?(canonical_uri1, canonical_uri2)
-  path1 = canonical_uri1.path
-  path2 = canonical_uri2.path
-  path1 == path2 || trim_trailing_slashes(path1) == trim_trailing_slashes(path2)
+  canonical_uri1.trimmed_path == canonical_uri2.trimmed_path
 end
 
 TUMBLR_PATH_REGEX = "^(/post/\\d+)(?:/[^/]+)?/?$"
@@ -189,7 +182,7 @@ class CanonicalUriSet
     end
 
     queries_by_trimmed_path = @paths_queries_by_server[server_key]
-    trimmed_path = trim_path(canonical_uri.path)
+    trimmed_path = trim_path(canonical_uri)
     unless queries_by_trimmed_path.key?(trimmed_path)
       queries_by_trimmed_path[trimmed_path] = Set.new
     end
@@ -208,7 +201,7 @@ class CanonicalUriSet
   def include?(canonical_uri)
     server = canonical_uri.host + canonical_uri.port
     server_key = @canonical_equality_cfg.same_hosts.include?(server) ? :same_hosts : server
-    trimmed_path = trim_path(canonical_uri.path)
+    trimmed_path = trim_path(canonical_uri)
     @paths_queries_by_server.key?(server_key) &&
       @paths_queries_by_server[server_key].key?(trimmed_path) &&
       @paths_queries_by_server[server_key][trimmed_path].include?(canonical_uri.query)
@@ -233,13 +226,13 @@ class CanonicalUriSet
 
   private
 
-  def trim_path(path)
+  def trim_path(canonical_uri)
     if @canonical_equality_cfg.expect_tumblr_paths
       tumblr_match = path.match(TUMBLR_PATH_REGEX)
       return tumblr_match[1] if tumblr_match
     end
 
-    trim_trailing_slashes(path)
+    canonical_uri.trimmed_path
   end
 end
 

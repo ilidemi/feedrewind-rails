@@ -1,6 +1,7 @@
 6 Archives parse date: 178 337 354 396 194 401
 1 Archives discard empty: 209
 4 Archives scoped by path: 71 176 237 101
+13 Archives filter feed by path prefix: 132 439 140 458 301 370 217 304 230 251 150 338 409
 
 11 Uneven pages: 260 398 2 23 110 440 499 8 41 121 35
 1 Paged with two stars: 361
@@ -8,21 +9,23 @@
 2 Paged scoped by path: 499 99
 1 First post decorated on every page: 86
 2 Custom next page link: 2 534
+2 Paged filter feed by path prefix: 324 225
 
 6 Archives 2 level: 465 495 6 43 155 35
 4 Archives categories: 194 210 401 456
 7 Archives shuffled parse list date: 449 39 105 43 208 210 97
-9 Archives shuffled parse post date: 296 71 176 237 437 456 341 406 527
+10 Archives shuffled parse post date: 296 71 176 237 437 456 341 406 527 95
 
 5 Chained: 108 127 244 290 122
 
-21 Non-post RSS: 209 150 145 147 217 225 251 301 304 324 338 370 375 410 439 440 458 230 132 140 409
+6 Non-post RSS without one prefix: 209 145 147 375 410 440
 3 Hidden post in RSS: 43 126 292
 4 Post not in RSS: 198 355 381 486
 1 Mistaken link in RSS: 50
-4 RSS dates are bogus: 157 183 371 393
+5 RSS dates are bogus: 157 183 371 393 114
 5 RSS same timestamp reordered: 332 362 442 457 546
 2 RSS is complete with 31+ all on the same page or 101+: 302 37
+1 RSS post has redirect: 81
 
 1 html canonical matters: 237
 1 Redirect through meta http-equiv="refresh" 12
@@ -38,7 +41,7 @@ Javascript
     3 Substack (css footer-substack.*): 17 70 90
     17 Medium (medium.com/feed/... or medium in host, show more): 68 72 81 85 87 95 112 114 115 185 259 262 284 298 325 333 350
     2 Load more (css .*load-more.*): 78 120
-    7 Load and scroll (some entry links not found): 131 149 171 180 468 547 548
+    5 Load and scroll (some entry links not found): 131 149 171 468
     2 YouTube (host): 438 441
 
 12 Fail for now: 192 346 428 470 504 394 295 535 329 509 501 247

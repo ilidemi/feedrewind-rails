@@ -1,6 +1,5 @@
 require 'base64'
 require 'fileutils'
-require_relative 'crawling'
 require_relative 'db'
 require_relative 'logger'
 require_relative 'report'
@@ -38,7 +37,7 @@ def kill_all_processes(pids, processes_finished)
   end
 end
 
-def mp_run(runnable, output_prefix, start_link_ids_override=nil)
+def mp_run(runnable, allow_puppeteer, output_prefix, start_link_ids_override=nil)
   start_time = monotonic_now
   report_filename = "report/mp_#{output_prefix}_#{DateTime.now.strftime('%F_%H-%M-%S')}.html"
   db = connect_db
@@ -96,7 +95,7 @@ def mp_run(runnable, output_prefix, start_link_ids_override=nil)
         begin
           File.open("#{log_dir}/log#{start_link_id}.txt", 'a') do |log_file|
             logger = MyLogger.new(log_file)
-            result = runnable.run(start_link_id, true, process_db, logger)
+            result = runnable.run(start_link_id, true, allow_puppeteer, process_db, logger)
             write_object(result_writer, [start_link_id, result, nil])
           end
         rescue => error

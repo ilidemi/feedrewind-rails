@@ -1,5 +1,5 @@
 require 'set'
-require_relative 'crawling'
+require_relative 'guided_crawling'
 require_relative 'historical_common'
 require_relative 'structs'
 
@@ -110,7 +110,7 @@ def try_extract_paged(
     end
   logger.log("Max prefix: #{page_size_masked_xpaths.first[0]}")
 
-  page2 = crawl_request(link_to_page2, ctx, mock_http_client, false, start_link_id, db_storage, logger)
+  page2 = crawl_request(link_to_page2, ctx, mock_http_client, false, false, start_link_id, db_storage, logger)
   unless page2 && page2.is_a?(Page) && page2.content
     logger.log("Page 2 is not a page: #{page2}")
     return nil
@@ -321,20 +321,19 @@ def extract_page_entry_links(
   logger
 )
   logger.log("Possible page #{page_number}: #{link_to_page.canonical_uri}")
-  page = crawl_request(link_to_page, ctx, mock_http_client, false, start_link_id, db_storage, logger)
-  unless page && page.is_a?(Page) && page.content
+  page = crawl_request(link_to_page, ctx, mock_http_client, false, false, start_link_id, db_storage, logger)
+  unless page && page.is_a?(Page) && page.document
     logger.log("Page #{page_number} is not a page: #{page}")
     return nil
   end
-  page_doc = nokogiri_html5(page.content)
 
   page_classes_by_xpath = {}
-  page_entry_link_elements = page_doc.xpath(masked_xpath)
+  page_entry_link_elements = page.document.xpath(masked_xpath)
   page_entry_links = page_entry_link_elements.filter_map.with_index do |element, index|
     # Redirects don't matter after we're out of feed
     link_redirects = index < remaining_feed_entry_canonical_uris.length ? ctx.redirects : {}
     html_element_to_link(
-      element, page.fetch_uri, page_doc, page_classes_by_xpath, link_redirects, logger, true, false
+      element, page.fetch_uri, page.document, page_classes_by_xpath, link_redirects, logger, true, false
     )
   end
 

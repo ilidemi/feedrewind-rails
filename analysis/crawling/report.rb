@@ -36,7 +36,7 @@ def output_report(filename, result_column_names, results, expected_total)
   if !sorted_results.empty?
     column_counters = (0...result_column_names.length).map do |index|
       column_status_counts = sorted_results
-        .map { |result| result[1][:statuses][index] }
+        .map { |result| result[1] ? result[1][:statuses][index] : :failure }
         .each_with_object(Hash.new(0)) { |word, counts| counts[word] += 1 }
       if column_status_counts.include?(:neutral) && column_status_counts.length == 1
         []

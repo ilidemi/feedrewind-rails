@@ -61,7 +61,7 @@ def try_extract_archives(
   logger.log("Trying xpaths with three stars")
   historical_links_triple_star = try_masked_xpaths(
     page_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set, canonical_equality_cfg,
-    :get_triple_masked_xpaths,:class_xpath, min_page_links_count, logger
+    :get_triple_masked_xpaths, :class_xpath, min_page_links_count, logger
   )
 
   if historical_links_triple_star
