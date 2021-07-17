@@ -103,14 +103,14 @@ def try_extract_paged(
   page_size_masked_xpaths_sorted = page_size_masked_xpaths
     .sort_by
     .with_index do |page_size_masked_xpath, index|
-      [
-        -page_size_masked_xpath[0], # -page_size
-        index # for stable sort, which should put header before footer
-      ]
-    end
+    [
+      -page_size_masked_xpath[0], # -page_size
+      index # for stable sort, which should put header before footer
+    ]
+  end
   logger.log("Max prefix: #{page_size_masked_xpaths.first[0]}")
 
-  page2 = crawl_request(link_to_page2, ctx, mock_http_client, false, false, start_link_id, db_storage, logger)
+  page2 = crawl_request(link_to_page2, ctx, mock_http_client, nil, false, start_link_id, db_storage, logger)
   unless page2 && page2.is_a?(Page) && page2.content
     logger.log("Page 2 is not a page: #{page2}")
     return nil
@@ -247,14 +247,11 @@ def try_extract_paged(
 
     logger.log("New best count: #{entry_links.length} with 2 pages of #{page_size}")
     return {
-      best_result: {
-        main_canonical_url: page1.canonical_uri.to_s,
-        main_fetch_url: page1.fetch_uri.to_s,
-        links: entry_links,
-        pattern: "paged_last",
-        extra: "page_count: 2<br>page_size: #{page_size}<br>last_page:<a href=\"#{page2.fetch_uri}\">#{page2.canonical_uri}</a>"
-      },
-      subpattern_priority: SUBPATTERN_PRIORITIES[:paged],
+      main_canonical_url: page1.canonical_uri.to_s,
+      main_fetch_url: page1.fetch_uri.to_s,
+      links: entry_links,
+      pattern: "paged_last",
+      extra: "page_count: 2<br>page_size: #{page_size}<br>last_page:<a href=\"#{page2.fetch_uri}\">#{page2.canonical_uri}</a>",
       count: entry_links.length
     }
   end
@@ -303,14 +300,11 @@ def try_extract_paged(
   end
   logger.log("New best count: #{entry_links.length} with #{page_count} pages of #{page_size}")
   {
-    best_result: {
-      main_canonical_url: page1.canonical_uri.to_s,
-      main_fetch_url: page1.fetch_uri.to_s,
-      links: entry_links,
-      pattern: first_page_links_to_last_page ? "paged_last" : "paged_next",
-      extra: "page_count: #{page_count}<br>page_size: #{page_size}<br><a href=\"#{link_to_last_page.url}\">#{link_to_last_page.canonical_uri}</a>"
-    },
-    subpattern_priority: SUBPATTERN_PRIORITIES[:paged],
+    main_canonical_url: page1.canonical_uri.to_s,
+    main_fetch_url: page1.fetch_uri.to_s,
+    links: entry_links,
+    pattern: first_page_links_to_last_page ? "paged_last" : "paged_next",
+    extra: "page_count: #{page_count}<br>page_size: #{page_size}<br><a href=\"#{link_to_last_page.url}\">#{link_to_last_page.canonical_uri}</a>",
     count: entry_links.length
   }
 end
@@ -321,7 +315,7 @@ def extract_page_entry_links(
   logger
 )
   logger.log("Possible page #{page_number}: #{link_to_page.canonical_uri}")
-  page = crawl_request(link_to_page, ctx, mock_http_client, false, false, start_link_id, db_storage, logger)
+  page = crawl_request(link_to_page, ctx, mock_http_client, nil, false, start_link_id, db_storage, logger)
   unless page && page.is_a?(Page) && page.document
     logger.log("Page #{page_number} is not a page: #{page}")
     return nil

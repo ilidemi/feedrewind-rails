@@ -1,4 +1,5 @@
 require 'addressable/uri'
+require 'set'
 require_relative 'structs'
 
 def to_canonical_link(url, logger, fetch_uri = nil)
@@ -228,7 +229,7 @@ class CanonicalUriSet
 
   def trim_path(canonical_uri)
     if @canonical_equality_cfg.expect_tumblr_paths
-      tumblr_match = path.match(TUMBLR_PATH_REGEX)
+      tumblr_match = canonical_uri.path.match(TUMBLR_PATH_REGEX)
       return tumblr_match[1] if tumblr_match
     end
 

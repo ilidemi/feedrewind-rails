@@ -1,6 +1,8 @@
+require_relative '../canonical_link'
 require_relative '../db'
 require_relative '../logger'
 require_relative '../feed_parsing'
+require_relative '../guided_crawling'
 
 start_link_ids = [209, 150, 145, 147, 217, 225, 251, 301, 304, 324, 338, 370, 375, 410, 439, 440, 458, 230, 132, 140, 409]
 
@@ -19,16 +21,39 @@ start_link_ids.each do |start_link_id|
   fetch_uri = URI(row["fetch_url"])
   pattern = row["pattern"]
   feed_links = extract_feed_links(content, fetch_uri, logger)
-  results << {
-    links: feed_links.entry_links,
-    count: feed_links.entry_links.length,
-    id: start_link_id,
-    pattern: pattern
-  }
+  feed_uris = feed_links.entry_links.map(&:canonical_uri)
+  feed_urls = feed_uris.map(&:to_s)
+  path_prefix, feed_filtered_uris = try_filter_non_posts_from_feed(feed_uris, Set.new)
+  if feed_filtered_uris
+    feed_filtered_uris_set = feed_filtered_uris.to_canonical_uri_set(CanonicalEqualityConfig.new(Set.new, false))
+    feed_non_post_paths = feed_uris
+      .filter { |uri| !feed_filtered_uris_set.include?(uri) }
+      .map { |uri| uri.path + uri.query }
+    results << {
+      urls: feed_urls,
+      count: feed_links.entry_links.length,
+      removed_count: feed_filtered_uris.length - feed_links.entry_links.length,
+      post_prefix: "/" + path_prefix.join("/") + "/*",
+      non_post_paths: feed_non_post_paths,
+      id: start_link_id,
+      pattern: pattern
+    }
+  else
+    results << {
+      urls: feed_urls,
+      count: feed_links.entry_links.length,
+      id: start_link_id,
+      pattern: pattern
+    }
+  end
 end
 
 results.sort_by! { |result| result[:count] }
 
 results.each do |result|
-  puts "#{result[:id]} #{result[:count]} #{result[:pattern]} #{result[:links].map { |link| link.canonical_uri.to_s }}"
+  if result.key?(:post_prefix)
+    puts "#{result[:id]} #{result[:pattern]} #{result[:count]} #{result[:post_prefix]} #{result[:removed_count]} #{result[:non_post_paths].join(" ")}"
+  else
+    puts "#{result[:id]} #{result[:pattern]} #{result[:count]}: #{result[:urls]}"
+  end
 end

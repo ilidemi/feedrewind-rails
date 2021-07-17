@@ -25,7 +25,7 @@
 5 RSS dates are bogus: 157 183 371 393 114
 5 RSS same timestamp reordered: 332 362 442 457 546
 2 RSS is complete with 31+ all on the same page or 101+: 302 37
-1 RSS post has redirect: 81
+2 RSS post has redirect: 81 306
 
 1 html canonical matters: 237
 1 Redirect through meta http-equiv="refresh" 12
