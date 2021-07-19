@@ -487,7 +487,7 @@ def html_element_to_link(
   link = to_canonical_link(url_attribute.to_s, logger, fetch_uri)
   return nil if link.nil?
   link = follow_cached_redirects(link, redirects).clone
-  link.type = element.attributes['type']
+  link.element = element
 
   if include_xpath || include_class_xpath
     class_xpath = ""

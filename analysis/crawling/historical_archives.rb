@@ -8,6 +8,7 @@ def try_extract_archives(
 
   logger.log("Possible archives page: #{page.canonical_uri}")
   best_page_links = nil
+  fewer_stars_canonical_uris = nil
   best_star_count = nil
   did_almost_match_feed = false
   almost_match_length = nil
@@ -15,13 +16,15 @@ def try_extract_archives(
   logger.log("Trying xpaths with a single star")
   historical_links_single_star = try_masked_xpaths(
     page_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set, canonical_equality_cfg,
-    :get_single_masked_xpaths, :xpath, min_links_count, logger
+    :get_single_masked_xpaths, :xpath, fewer_stars_canonical_uris,
+    min_links_count, logger
   )
 
   if historical_links_single_star[:is_full_match]
     best_page_links = historical_links_single_star
     best_star_count = 1
     min_links_count = best_page_links[:links].length + 1
+    fewer_stars_canonical_uris = best_page_links[:links].map(&:canonical_uri)
   else
     did_almost_match_feed ||= historical_links_single_star[:did_almost_match_feed]
     unless almost_match_length && almost_match_length > historical_links_single_star[:almost_match_length]
@@ -32,13 +35,15 @@ def try_extract_archives(
   logger.log("Trying xpaths with two stars")
   historical_links_double_star = try_masked_xpaths(
     page_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set, canonical_equality_cfg,
-    :get_double_masked_xpaths, :class_xpath, min_links_count, logger
+    :get_double_masked_xpaths, :class_xpath, fewer_stars_canonical_uris,
+    min_links_count, logger
   )
 
   if historical_links_double_star[:is_full_match]
     best_page_links = historical_links_double_star
     best_star_count = 2
     min_links_count = best_page_links[:links].length + 1
+    fewer_stars_canonical_uris = best_page_links[:links].map(&:canonical_uri)
   else
     did_almost_match_feed ||= historical_links_double_star[:did_almost_match_feed]
     unless almost_match_length && almost_match_length > historical_links_double_star[:almost_match_length]
@@ -49,7 +54,8 @@ def try_extract_archives(
   logger.log("Trying xpaths with three stars")
   historical_links_triple_star = try_masked_xpaths(
     page_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set, canonical_equality_cfg,
-    :get_triple_masked_xpaths, :class_xpath, min_links_count, logger
+    :get_triple_masked_xpaths, :class_xpath, fewer_stars_canonical_uris,
+    min_links_count, logger
   )
 
   if historical_links_triple_star[:is_full_match]
@@ -92,7 +98,7 @@ end
 
 def try_masked_xpaths(
   page_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set, canonical_equality_cfg,
-  get_masked_xpaths_name, xpath_name, min_links_count, logger
+  get_masked_xpaths_name, xpath_name, fewer_stars_canonical_uris, min_links_count, logger
 )
   get_masked_xpaths_func = method(get_masked_xpaths_name)
   links_by_masked_xpath = group_links_by_masked_xpath(
@@ -140,10 +146,16 @@ def try_masked_xpaths(
       next
     end
 
-    is_masked_xpath_matching_feed = feed_entry_canonical_uris
+    is_matching_feed = feed_entry_canonical_uris
       .zip(masked_xpath_canonical_uris[0...feed_entry_canonical_uris.length])
       .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
-    if is_masked_xpath_matching_feed
+    is_matching_fewer_stars_links = !fewer_stars_canonical_uris ||
+      fewer_stars_canonical_uris
+        .zip(masked_xpath_canonical_uris[0...fewer_stars_canonical_uris.length])
+        .all? do |xpath_uri, fewer_stars_uri|
+        canonical_uri_equal?(xpath_uri, fewer_stars_uri, canonical_equality_cfg)
+      end
+    if is_matching_feed && is_matching_fewer_stars_links
       collapsion_log_str = get_collapsion_log_str(masked_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath)
       logger.log("Masked xpath is good: #{masked_xpath}#{collapsion_log_str} (#{masked_xpath_links.length} links)")
       best_xpath = masked_xpath
@@ -153,10 +165,16 @@ def try_masked_xpaths(
 
     reversed_masked_xpath_links = masked_xpath_links.reverse
     reversed_masked_xpath_canonical_uris = masked_xpath_canonical_uris.reverse
-    is_reversed_masked_xpath_matching_feed = feed_entry_canonical_uris
+    is_reversed_matching_feed = feed_entry_canonical_uris
       .zip(reversed_masked_xpath_canonical_uris[0...feed_entry_canonical_uris.length])
       .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
-    if is_reversed_masked_xpath_matching_feed
+    is_reversed_matching_fewer_stars_links = !fewer_stars_canonical_uris ||
+      fewer_stars_canonical_uris
+        .zip(reversed_masked_xpath_canonical_uris[0...fewer_stars_canonical_uris.length])
+        .all? do |xpath_uri, fewer_stars_uri|
+        canonical_uri_equal?(xpath_uri, fewer_stars_uri, canonical_equality_cfg)
+      end
+    if is_reversed_matching_feed && is_reversed_matching_fewer_stars_links
       collapsion_log_str = get_collapsion_log_str(masked_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath)
       logger.log("Masked xpath is good in reverse order: #{masked_xpath}#{collapsion_log_str} (#{reversed_masked_xpath_links.length} links)")
       best_xpath = masked_xpath
@@ -168,6 +186,10 @@ def try_masked_xpaths(
     logger.log("#{feed_entry_canonical_uris.map(&:to_s)}")
     logger.log("but not in the right order:")
     logger.log("#{masked_xpath_canonical_uris.map(&:to_s)}")
+    if fewer_stars_canonical_uris
+      logger.log("or not matching fewer stars links:")
+      logger.log("#{fewer_stars_canonical_uris.map(&:to_s)}")
+    end
   end
 
   if best_xpath_links
@@ -201,21 +223,23 @@ def try_masked_xpaths(
         end
         feed_prefix_xpaths_by_length[prefix_length] << masked_xpath
         break
-      elsif !canonical_uri_equal?(feed_entry_canonical_uri, masked_xpath_link.canonical_uri, canonical_equality_cfg)
+      elsif !canonical_uri_equal?(
+        feed_entry_canonical_uri, masked_xpath_link.canonical_uri, canonical_equality_cfg
+      )
         break # Not a prefix
       end
     end
   end
 
-  collapsed_links_by_masked_xpath.each do |masked_xpath, masked_xpath_links|
+  collapsed_links_by_masked_xpath.each do |masked_suffix_xpath, masked_suffix_xpath_links|
     feed_suffix_start_index = feed_entry_canonical_uris.index do |entry_uri|
-      canonical_uri_equal?(entry_uri, masked_xpath_links[0].canonical_uri, canonical_equality_cfg)
+      canonical_uri_equal?(entry_uri, masked_suffix_xpath_links[0].canonical_uri, canonical_equality_cfg)
     end
-    next if feed_suffix_start_index.nil?
+    next unless feed_suffix_start_index
 
     is_suffix = true
     feed_entry_canonical_uris[feed_suffix_start_index..-1]
-      .zip(masked_xpath_links)
+      .zip(masked_suffix_xpath_links)
       .each do |feed_entry_canonical_uri, masked_xpath_link|
 
       if feed_entry_canonical_uri.nil?
@@ -223,7 +247,9 @@ def try_masked_xpaths(
       elsif masked_xpath_link.nil?
         is_suffix = false
         break
-      elsif !canonical_uri_equal?(feed_entry_canonical_uri, masked_xpath_link.canonical_uri, canonical_equality_cfg)
+      elsif !canonical_uri_equal?(
+        feed_entry_canonical_uri, masked_xpath_link.canonical_uri, canonical_equality_cfg
+      )
         is_suffix = false
         break
       end
@@ -232,21 +258,75 @@ def try_masked_xpaths(
 
     target_prefix_length = feed_suffix_start_index
     next unless feed_prefix_xpaths_by_length.key?(target_prefix_length)
-    total_length = target_prefix_length + masked_xpath_links.length
+    total_length = target_prefix_length + masked_suffix_xpath_links.length
     next unless total_length >= min_links_count
 
     masked_prefix_xpath = feed_prefix_xpaths_by_length[target_prefix_length][0]
-    logger.log("Found partition with two xpaths: #{target_prefix_length} + #{masked_xpath_links.length}")
-    prefix_collapsion_log_str = get_collapsion_log_str(masked_prefix_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath)
-    logger.log("Prefix xpath: #{masked_prefix_xpath}#{prefix_collapsion_log_str}")
-    suffix_collapsion_log_str = get_collapsion_log_str(masked_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath)
-    logger.log("Suffix xpath: #{masked_xpath}#{suffix_collapsion_log_str}")
+    masked_prefix_xpath_links = collapsed_links_by_masked_xpath[masked_prefix_xpath]
 
-    combined_links = collapsed_links_by_masked_xpath[masked_prefix_xpath] + masked_xpath_links
+    # Ensure the first suffix link appears on the page after the last prefix link
+    # Find the lowest common parent and see if prefix parent comes before suffix parent
+    last_prefix_link = masked_prefix_xpath_links.last
+    first_suffix_link = masked_suffix_xpath_links.first
+    # Link can't be a parent of another link. Not actually expecting that but just in case
+    next if last_prefix_link.element.pointer_id == first_suffix_link.element.parent.pointer_id ||
+      first_suffix_link.element.pointer_id == last_prefix_link.element.parent.pointer_id
+    prefix_parent_id_to_self_and_child = {}
+    current_prefix_element = last_prefix_link.element
+    while current_prefix_element.is_a?(Nokogiri::XML::Element) do
+      prefix_parent_id_to_self_and_child[current_prefix_element.parent.pointer_id] =
+        [current_prefix_element.parent, current_prefix_element]
+      current_prefix_element = current_prefix_element.parent
+    end
+    top_suffix_element = first_suffix_link.element
+    while top_suffix_element.is_a?(Nokogiri::XML::Element) &&
+      !prefix_parent_id_to_self_and_child.key?(top_suffix_element.parent.pointer_id) do
+
+      top_suffix_element = top_suffix_element.parent
+    end
+    common_parent, top_prefix_element =
+      prefix_parent_id_to_self_and_child[top_suffix_element.parent.pointer_id]
+    top_prefix_element_id = top_prefix_element.pointer_id
+    top_suffix_element_id = top_suffix_element.pointer_id
+    is_last_prefix_before_first_suffix = nil
+    common_parent.children.each do |child|
+      if child.pointer_id == top_prefix_element_id
+        is_last_prefix_before_first_suffix = true
+        break
+      end
+      if child.pointer_id == top_suffix_element_id
+        is_last_prefix_before_first_suffix = false
+        break
+      end
+    end
+    next unless is_last_prefix_before_first_suffix
+
+    logger.log("Found partition with two xpaths: #{target_prefix_length} + #{masked_suffix_xpath_links.length}")
+    prefix_collapsion_log_str = get_collapsion_log_str(
+      masked_prefix_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath
+    )
+    logger.log("Prefix xpath: #{masked_prefix_xpath}#{prefix_collapsion_log_str}")
+    suffix_collapsion_log_str = get_collapsion_log_str(
+      masked_suffix_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath
+    )
+    logger.log("Suffix xpath: #{masked_suffix_xpath}#{suffix_collapsion_log_str}")
+
+    combined_links = masked_prefix_xpath_links + masked_suffix_xpath_links
     combined_canonical_uris = combined_links.map(&:canonical_uri)
     combined_canonical_uris_set = combined_canonical_uris.to_canonical_uri_set(canonical_equality_cfg)
     if combined_canonical_uris.length != combined_canonical_uris_set.length
       logger.log("Combination has all feed links but also duplicates: #{combined_canonical_uris}")
+      next
+    end
+
+    is_matching_fewer_stars_links = !fewer_stars_canonical_uris ||
+      fewer_stars_canonical_uris
+        .zip(combined_canonical_uris[0...fewer_stars_canonical_uris.length])
+        .all? do |xpath_uri, fewer_stars_uri|
+        canonical_uri_equal?(xpath_uri, fewer_stars_uri, canonical_equality_cfg)
+      end
+    unless is_matching_fewer_stars_links
+      logger.log("Combination doesn't match fewer stars links")
       next
     end
 
@@ -255,7 +335,7 @@ def try_masked_xpaths(
       is_full_match: true,
       pattern: "archives_2xpaths",
       links: combined_links,
-      extra: "<br>counts: #{target_prefix_length} + #{masked_xpath_links.length}<br>prefix_xpath: #{masked_prefix_xpath}<br>suffix_xpath: #{masked_xpath}"
+      extra: "<br>counts: #{target_prefix_length} + #{masked_suffix_xpath_links.length}<br>prefix_xpath: #{masked_prefix_xpath}<br>suffix_xpath: #{masked_suffix_xpath}"
     }
   end
 
