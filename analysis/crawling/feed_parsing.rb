@@ -24,7 +24,7 @@ def is_feed(page_content, logger)
   false
 end
 
-FeedLinks = Struct.new(:root_link, :entry_links, :is_tumblr)
+FeedLinks = Struct.new(:root_link, :entry_links, :generator)
 
 def extract_feed_links(feed_content, fetch_uri, logger)
   xml = Nokogiri::XML(feed_content)
@@ -77,7 +77,15 @@ def extract_feed_links(feed_content, fetch_uri, logger)
     entry_urls = sorted_items.map { |item| item[:url] }
 
     generator_node = rss_channel.at_xpath("generator")
-    is_tumblr = generator_node && generator_node.inner_text.downcase.start_with?("tumblr")
+    generator = nil
+    if generator_node
+      generator_text = generator_node.inner_text.downcase
+      if generator_text.start_with?("tumblr")
+        generator = :tumblr
+      elsif generator_text == "blogger"
+        generator = :blogger
+      end
+    end
   else
     atom_feed = xml.at_xpath("/xmlns:feed")
     root_url = get_atom_link(atom_feed, false)
@@ -110,11 +118,19 @@ def extract_feed_links(feed_content, fetch_uri, logger)
 
     sorted_entries = try_sort_reverse_chronological(entries, logger)
     entry_urls = sorted_entries.map { |entry| entry[:url] }
-    is_tumblr = false
+
+    generator_node = atom_feed.at_xpath("xmlns:generator")
+    generator = nil
+    if generator_node
+      generator_text = generator_node.inner_text.downcase
+      if generator_text == "blogger"
+        generator = :blogger
+      end
+    end
   end
   root_link = root_url ? to_canonical_link(root_url, logger, fetch_uri) : nil
   entry_links = entry_urls.map { |entry_url| entry_url ? to_canonical_link(entry_url, logger, fetch_uri) : nil }
-  FeedLinks.new(root_link, entry_links, is_tumblr)
+  FeedLinks.new(root_link, entry_links, generator)
 end
 
 def finalize_feed_links(possible_redirect_feed_links, entry_to_host, logger)

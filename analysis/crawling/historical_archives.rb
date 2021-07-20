@@ -7,6 +7,7 @@ def try_extract_archives(
   return nil unless feed_entry_canonical_uris.all? { |item_uri| page_canonical_uris_set.include?(item_uri) }
 
   logger.log("Possible archives page: #{page.canonical_uri}")
+  min_links_count_one_xpath = min_links_count_two_xpaths = min_links_count
   best_page_links = nil
   fewer_stars_canonical_uris = nil
   best_star_count = nil
@@ -17,13 +18,18 @@ def try_extract_archives(
   historical_links_single_star = try_masked_xpaths(
     page_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set, canonical_equality_cfg,
     :get_single_masked_xpaths, :xpath, fewer_stars_canonical_uris,
-    min_links_count, logger
+    min_links_count_one_xpath, min_links_count_two_xpaths, logger
   )
 
   if historical_links_single_star[:is_full_match]
     best_page_links = historical_links_single_star
     best_star_count = 1
-    min_links_count = best_page_links[:links].length + 1
+    if historical_links_single_star[:is_one_xpath]
+      min_links_count_one_xpath = best_page_links[:links].length + 1
+    else
+      min_links_count_one_xpath = best_page_links[:links].length
+    end
+    min_links_count_two_xpaths = best_page_links[:links].length + 1
     fewer_stars_canonical_uris = best_page_links[:links].map(&:canonical_uri)
   else
     did_almost_match_feed ||= historical_links_single_star[:did_almost_match_feed]
@@ -36,13 +42,18 @@ def try_extract_archives(
   historical_links_double_star = try_masked_xpaths(
     page_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set, canonical_equality_cfg,
     :get_double_masked_xpaths, :class_xpath, fewer_stars_canonical_uris,
-    min_links_count, logger
+    min_links_count_one_xpath, min_links_count_two_xpaths, logger
   )
 
   if historical_links_double_star[:is_full_match]
     best_page_links = historical_links_double_star
     best_star_count = 2
-    min_links_count = best_page_links[:links].length + 1
+    if historical_links_double_star[:is_one_xpath]
+      min_links_count_one_xpath = best_page_links[:links].length + 1
+    else
+      min_links_count_one_xpath = best_page_links[:links].length
+    end
+    min_links_count_two_xpaths = best_page_links[:links].length + 1
     fewer_stars_canonical_uris = best_page_links[:links].map(&:canonical_uri)
   else
     did_almost_match_feed ||= historical_links_double_star[:did_almost_match_feed]
@@ -55,7 +66,7 @@ def try_extract_archives(
   historical_links_triple_star = try_masked_xpaths(
     page_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set, canonical_equality_cfg,
     :get_triple_masked_xpaths, :class_xpath, fewer_stars_canonical_uris,
-    min_links_count, logger
+    min_links_count_one_xpath, min_links_count_two_xpaths, logger
   )
 
   if historical_links_triple_star[:is_full_match]
@@ -98,7 +109,8 @@ end
 
 def try_masked_xpaths(
   page_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set, canonical_equality_cfg,
-  get_masked_xpaths_name, xpath_name, fewer_stars_canonical_uris, min_links_count, logger
+  get_masked_xpaths_name, xpath_name, fewer_stars_canonical_uris, min_links_count_one_xpath,
+  min_links_count_two_xpaths, logger
 )
   get_masked_xpaths_func = method(get_masked_xpaths_name)
   links_by_masked_xpath = group_links_by_masked_xpath(
@@ -133,7 +145,7 @@ def try_masked_xpaths(
     end
 
     next if masked_xpath_links.length < feed_entry_canonical_uris.length
-    next if masked_xpath_links.length < min_links_count
+    next if masked_xpath_links.length < min_links_count_one_xpath
     next if best_xpath_links && best_xpath_links.length >= masked_xpath_links.length
 
     masked_xpath_canonical_uris_set = masked_xpath_canonical_uris.to_canonical_uri_set(canonical_equality_cfg)
@@ -197,6 +209,7 @@ def try_masked_xpaths(
       is_full_match: true,
       pattern: "archives",
       links: best_xpath_links,
+      is_one_xpath: true,
       extra: "<br>xpath: #{best_xpath}"
     }
   end
@@ -259,7 +272,7 @@ def try_masked_xpaths(
     target_prefix_length = feed_suffix_start_index
     next unless feed_prefix_xpaths_by_length.key?(target_prefix_length)
     total_length = target_prefix_length + masked_suffix_xpath_links.length
-    next unless total_length >= min_links_count
+    next unless total_length >= min_links_count_two_xpaths
 
     masked_prefix_xpath = feed_prefix_xpaths_by_length[target_prefix_length][0]
     masked_prefix_xpath_links = collapsed_links_by_masked_xpath[masked_prefix_xpath]
@@ -335,6 +348,7 @@ def try_masked_xpaths(
       is_full_match: true,
       pattern: "archives_2xpaths",
       links: combined_links,
+      is_one_xpath: false,
       extra: "<br>counts: #{target_prefix_length} + #{masked_suffix_xpath_links.length}<br>prefix_xpath: #{masked_prefix_xpath}<br>suffix_xpath: #{masked_suffix_xpath}"
     }
   end

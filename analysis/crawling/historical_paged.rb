@@ -7,7 +7,8 @@ BLOGSPOT_POSTS_BY_DATE_REGEX = /(\(date-outer\)\[)\d+(.+\(post-outer\)\[)\d+/
 
 def try_extract_paged(
   page1, page1_links, page_canonical_uris_set, feed_entry_canonical_uris, feed_entry_canonical_uris_set,
-  canonical_equality_cfg, min_links_count, start_link_id, ctx, mock_http_client, db_storage, logger
+  feed_generator, canonical_equality_cfg, min_links_count, start_link_id, ctx, mock_http_client, db_storage,
+  logger
 )
   page_overlapping_links_count = nil
   feed_entry_canonical_uris.each_with_index do |feed_entry_canonical_uri, index|
@@ -18,15 +19,18 @@ def try_extract_paged(
     end
   end
 
-  link_pattern_to_page2 = find_link_to_second_page(page1_links, page1, canonical_equality_cfg, logger)
+  link_pattern_to_page2 = find_link_to_second_page(
+    page1_links, page1, feed_generator, canonical_equality_cfg, logger
+  )
   return nil unless link_pattern_to_page2
   link_to_page2 = link_pattern_to_page2[:link]
   paging_pattern = link_pattern_to_page2[:paging_pattern]
+  paging_pattern_extra = paging_pattern.is_a?(Hash) ? '' : "<br>paging_pattern: #{paging_pattern}"
 
   logger.log("Possible page 1: #{page1.canonical_uri} (#{page_overlapping_links_count} overlaps)")
 
   links_by_masked_xpath = nil
-  if paging_pattern == :blogspot
+  if paging_pattern == :blogger
     page1_class_xpath_links = extract_links(page1, [page1.fetch_uri.host], ctx.redirects, logger, true, true)
     page1_links_grouped_by_date = page1_class_xpath_links.filter do |page_link|
       BLOGSPOT_POSTS_BY_DATE_REGEX.match(page_link.class_xpath)
@@ -169,7 +173,7 @@ def try_extract_paged(
     logger.log("XPath looks good for page 2: #{masked_xpath} (#{page1_entry_links.length} + #{page2_entry_links.length} links#{decorated_first_post_log})")
   end
 
-  if page2_entry_links.nil? && paging_pattern != :blogspot
+  if page2_entry_links.nil? && paging_pattern != :blogger
     page_size_masked_xpaths_sorted.each do |xpath_page_size, masked_xpath|
       masked_xpath_star_index = masked_xpath.index("*")
       masked_xpath_suffix_start = masked_xpath[0...masked_xpath_star_index].rindex("/")
@@ -251,7 +255,7 @@ def try_extract_paged(
       main_fetch_url: page1.fetch_uri.to_s,
       links: entry_links,
       pattern: "paged_last",
-      extra: "page_count: 2<br>page_size: #{page_size}<br>last_page:<a href=\"#{page2.fetch_uri}\">#{page2.canonical_uri}</a>",
+      extra: "page_count: 2<br>page_size: #{page_size}<br>last_page:<a href=\"#{page2.fetch_uri}\">#{page2.canonical_uri}</a>#{paging_pattern_extra}",
       count: entry_links.length
     }
   end
@@ -291,7 +295,7 @@ def try_extract_paged(
 
   page_count = next_page_number - 1
 
-  if paging_pattern == :blogspot
+  if paging_pattern == :blogger
     first_page_links_to_last_page = false
   else
     first_page_links_to_last_page = !!find_link_to_next_page(
@@ -304,7 +308,7 @@ def try_extract_paged(
     main_fetch_url: page1.fetch_uri.to_s,
     links: entry_links,
     pattern: first_page_links_to_last_page ? "paged_last" : "paged_next",
-    extra: "page_count: #{page_count}<br>page_size: #{page_size}<br><a href=\"#{link_to_last_page.url}\">#{link_to_last_page.canonical_uri}</a>",
+    extra: "page_count: #{page_count}<br>page_size: #{page_size}<br><a href=\"#{link_to_last_page.url}\">#{link_to_last_page.canonical_uri}</a>#{paging_pattern_extra}",
     count: entry_links.length
   }
 end
@@ -371,14 +375,14 @@ end
 
 BLOGSPOT_QUERY_REGEX = /updated-max=([^&]+)/
 
-def find_link_to_second_page(current_page_links, current_page, canonical_equality_cfg, logger)
+def find_link_to_second_page(current_page_links, current_page, feed_generator, canonical_equality_cfg, logger)
   blogspot_next_page_links = current_page_links.filter do |link|
     link.uri.path == "/search" &&
       link.uri.query &&
       BLOGSPOT_QUERY_REGEX.match(link.uri.query)
   end
 
-  unless blogspot_next_page_links.empty?
+  if feed_generator == :blogger && !blogspot_next_page_links.empty?
     links_to_page2 = blogspot_next_page_links
     if links_to_page2
       .map(&:canonical_uri)
@@ -391,7 +395,7 @@ def find_link_to_second_page(current_page_links, current_page, canonical_equalit
 
     return {
       link: links_to_page2.first,
-      paging_pattern: :blogspot
+      paging_pattern: :blogger
     }
   end
 
@@ -440,7 +444,7 @@ end
 def find_link_to_next_page(
   current_page_links, current_page, canonical_equality_cfg, next_page_number, paging_pattern, logger
 )
-  if paging_pattern == :blogspot
+  if paging_pattern == :blogger
     return nil unless current_page.fetch_uri.path == "/search" &&
       current_page.fetch_uri.query &&
       (current_date_match = BLOGSPOT_QUERY_REGEX.match(current_page.fetch_uri.query))
