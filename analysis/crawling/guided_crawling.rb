@@ -613,6 +613,18 @@ def guided_crawl_loop(
   logger.log("Start page doesn't link to archives")
   pages_without_puppeteer.push(*start_page_archives_pages_without_puppeteer)
 
+  unless does_start_page_path_match_archives
+    start_page_result = try_extract_historical(
+      start_page, start_page_links, start_page_canonical_uris_set, feed_entry_links,
+      feed_entry_canonical_uris, feed_entry_canonical_uris_set, feed_generator, canonical_equality_cfg,
+      start_link_id, ctx, mock_http_client, db_storage, logger
+    )
+
+    return { best_result: start_page_result } if start_page_result
+    logger.log("Start page is not the main page")
+    pages_without_puppeteer << start_page unless start_page.is_puppeteer_used
+  end
+
   start_page_main_page_links = start_page_links
     .filter { |link| allowed_hosts.include?(link.uri.host) && link.canonical_uri.path.match?(MAIN_PAGE_REGEX) }
   logger.log("Checking #{start_page_main_page_links.length} main page links") unless start_page_main_page_links.empty?
@@ -624,18 +636,6 @@ def guided_crawl_loop(
   return { best_result: start_page_main_page_links_result } if start_page_main_page_links_result
   logger.log("Start page doesn't link to the main page")
   pages_without_puppeteer.push(*start_page_main_pages_without_puppeteer)
-
-  unless does_start_page_path_match_archives
-    start_page_result = try_extract_historical(
-      start_page, start_page_links, start_page_canonical_uris_set, feed_entry_links,
-      feed_entry_canonical_uris, feed_entry_canonical_uris_set, feed_generator, canonical_equality_cfg,
-      start_link_id, ctx, mock_http_client, db_storage, logger
-    )
-
-    return { best_result: start_page_result } if start_page_result
-    logger.log("Start page doesn't match archives regex and is not the main page")
-    pages_without_puppeteer << start_page unless start_page.is_puppeteer_used
-  end
 
   logger.log("Trying common links from the first two entries")
 

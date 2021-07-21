@@ -4,7 +4,9 @@ def try_extract_archives(
   page, page_links, page_canonical_uris_set, feed_entry_links, feed_entry_canonical_uris,
   feed_entry_canonical_uris_set, canonical_equality_cfg, min_links_count, logger
 )
-  return nil unless feed_entry_canonical_uris.all? { |item_uri| page_canonical_uris_set.include?(item_uri) }
+  return nil unless feed_entry_canonical_uris
+    .count { |item_uri| page_canonical_uris_set.include?(item_uri) } >=
+    almost_match_length(feed_entry_canonical_uris.length)
 
   logger.log("Possible archives page: #{page.canonical_uri}")
   min_links_count_one_xpath = min_links_count_two_xpaths = min_links_count
@@ -31,8 +33,8 @@ def try_extract_archives(
     end
     min_links_count_two_xpaths = best_page_links[:links].length + 1
     fewer_stars_canonical_uris = best_page_links[:links].map(&:canonical_uri)
-  else
-    did_almost_match_feed ||= historical_links_single_star[:did_almost_match_feed]
+  elsif historical_links_single_star[:did_almost_match_feed]
+    did_almost_match_feed = true
     unless almost_match_length && almost_match_length > historical_links_single_star[:almost_match_length]
       almost_match_length = historical_links_single_star[:almost_match_length]
     end
@@ -55,8 +57,8 @@ def try_extract_archives(
     end
     min_links_count_two_xpaths = best_page_links[:links].length + 1
     fewer_stars_canonical_uris = best_page_links[:links].map(&:canonical_uri)
-  else
-    did_almost_match_feed ||= historical_links_double_star[:did_almost_match_feed]
+  elsif historical_links_double_star[:did_almost_match_feed]
+    did_almost_match_feed = true
     unless almost_match_length && almost_match_length > historical_links_double_star[:almost_match_length]
       almost_match_length = historical_links_double_star[:almost_match_length]
     end
@@ -72,8 +74,8 @@ def try_extract_archives(
   if historical_links_triple_star[:is_full_match]
     best_page_links = historical_links_triple_star
     best_star_count = 3
-  else
-    did_almost_match_feed ||= historical_links_triple_star[:did_almost_match_feed]
+  elsif historical_links_triple_star[:did_almost_match_feed]
+    did_almost_match_feed = true
     unless almost_match_length && almost_match_length > historical_links_triple_star[:almost_match_length]
       almost_match_length = historical_links_triple_star[:almost_match_length]
     end
@@ -154,7 +156,7 @@ def try_masked_xpaths(
     next unless feed_entry_canonical_uris.all? { |item_uri| masked_xpath_canonical_uris_set.include?(item_uri) }
 
     if masked_xpath_fetch_urls_set.length != masked_xpath_fetch_urls.length
-      logger.log("Masked xpath #{masked_xpath} has all links but also duplicates: #{masked_xpath_canonical_uris}")
+      logger.log("Masked xpath #{masked_xpath} has all links but also duplicates: #{masked_xpath_canonical_uris.map(&:to_s)}")
       next
     end
 
@@ -328,7 +330,7 @@ def try_masked_xpaths(
     combined_canonical_uris = combined_links.map(&:canonical_uri)
     combined_canonical_uris_set = combined_canonical_uris.to_canonical_uri_set(canonical_equality_cfg)
     if combined_canonical_uris.length != combined_canonical_uris_set.length
-      logger.log("Combination has all feed links but also duplicates: #{combined_canonical_uris}")
+      logger.log("Combination has all feed links but also duplicates: #{combined_canonical_uris.map(&:to_s)}")
       next
     end
 
@@ -367,8 +369,10 @@ def almost_match_length(feed_length)
     feed_length - 1
   elsif feed_length <= 25
     feed_length - 2
-  else
+  elsif feed_length <= 62
     feed_length - 3
+  else
+    feed_length - 7
   end
 end
 

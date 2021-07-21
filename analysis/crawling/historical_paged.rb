@@ -126,7 +126,7 @@ def try_extract_paged(
   page1_entry_links = nil
   page2_entry_links = nil
   good_masked_xpath = nil
-  page_size = nil
+  page_sizes = []
   remaining_feed_entry_canonical_uris = nil
 
   page_size_masked_xpaths_sorted.each do |xpath_page_size, masked_xpath, includes_first_post|
@@ -145,7 +145,6 @@ def try_extract_paged(
     next if page2_xpath_links.any? do |page2_xpath_link|
       page1_xpath_canonical_uris_set.include?(page2_xpath_link.canonical_uri)
     end
-    next if page2_xpath_links.length > xpath_page_size
 
     page2_xpath_canonical_uris = page2_xpath_links.map(&:canonical_uri)
     page2_feed_entry_canonical_uris = feed_entry_canonical_uris[xpath_page_size..-1] || []
@@ -168,7 +167,7 @@ def try_extract_paged(
     page1_entry_links = possible_page1_entry_links
     page2_entry_links = page2_xpath_links
     good_masked_xpath = masked_xpath
-    page_size = xpath_page_size
+    page_sizes << xpath_page_size << page2_xpath_links.length
     remaining_feed_entry_canonical_uris = page2_feed_entry_canonical_uris[page2_entry_links.length...-1] || []
     logger.log("XPath looks good for page 2: #{masked_xpath} (#{page1_entry_links.length} + #{page2_entry_links.length} links#{decorated_first_post_log})")
   end
@@ -206,7 +205,6 @@ def try_extract_paged(
       next if page2_xpath_links.any? do |page2_xpath_link|
         page1_xpath_canonical_uris_set.include?(page2_xpath_link.canonical_uri)
       end
-      next if page2_xpath_links.length > xpath_page_size
 
       page2_xpath_canonical_uris = page2_xpath_links.map(&:canonical_uri)
       page2_feed_entry_canonical_uris = feed_entry_canonical_uris[xpath_page_size..-1] || []
@@ -219,7 +217,7 @@ def try_extract_paged(
       page1_entry_links = page1_xpath_links
       page2_entry_links = page2_xpath_links
       good_masked_xpath = page2_masked_xpath
-      page_size = xpath_page_size
+      page_sizes << xpath_page_size << page2_xpath_links.length
       remaining_feed_entry_canonical_uris = page2_feed_entry_canonical_uris[page2_entry_links.length...-1] || []
       logger.log("Possible page 2: #{link_to_page2.canonical_uri}")
       logger.log("XPath looks good for page 1: #{masked_xpath} (#{page1_entry_links.length} links)")
@@ -238,9 +236,6 @@ def try_extract_paged(
     page2_links, page2, canonical_equality_cfg, 3, paging_pattern, logger
   )
   return nil if link_to_page3 == :multiple
-  if link_to_page3 && page2_entry_links.length != page_size
-    raise "There are at least 3 pages and page 2 size (#{page2_entry_links.length}) is not equal to expected page size (#{page_size})"
-  end
 
   entry_links = page1_entry_links + page2_entry_links
   unless link_to_page3
@@ -249,13 +244,14 @@ def try_extract_paged(
       return nil
     end
 
-    logger.log("New best count: #{entry_links.length} with 2 pages of #{page_size}")
+    logger.log("New best count: #{entry_links.length} with 2 pages of #{page_sizes}")
+    page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
     return {
       main_canonical_url: page1.canonical_uri.to_s,
       main_fetch_url: page1.fetch_uri.to_s,
       links: entry_links,
       pattern: "paged_last",
-      extra: "page_count: 2<br>page_size: #{page_size}<br>last_page:<a href=\"#{page2.fetch_uri}\">#{page2.canonical_uri}</a>#{paging_pattern_extra}",
+      extra: "page_count: 2<br>page_sizes: #{page_size_counts}<br>last_page:<a href=\"#{page2.fetch_uri}\">#{page2.canonical_uri}</a>#{paging_pattern_extra}",
       count: entry_links.length
     }
   end
@@ -270,7 +266,7 @@ def try_extract_paged(
   while link_to_next_page
     link_to_last_page = link_to_next_page
     loop_page_result = extract_page_entry_links(
-      link_to_next_page, next_page_number, paging_pattern, good_masked_xpath, page_size,
+      link_to_next_page, next_page_number, paging_pattern, good_masked_xpath,
       remaining_feed_entry_canonical_uris, start_link_id, known_entry_canonical_uris_set,
       canonical_equality_cfg, ctx, mock_http_client, db_storage, logger
     )
@@ -284,6 +280,7 @@ def try_extract_paged(
       loop_page_result[:page_entry_links].map(&:canonical_uri)
     )
     link_to_next_page = loop_page_result[:link_to_next_page]
+    page_sizes << loop_page_result[:page_entry_links].length
     next_page_number += 1
     remaining_feed_entry_canonical_uris = remaining_feed_entry_canonical_uris[loop_page_result[:page_entry_links].length...-1] || []
   end
@@ -302,19 +299,20 @@ def try_extract_paged(
       page1_links, page1, canonical_equality_cfg, page_count, paging_pattern, logger
     )
   end
-  logger.log("New best count: #{entry_links.length} with #{page_count} pages of #{page_size}")
+  logger.log("New best count: #{entry_links.length} with #{page_count} pages of #{page_sizes}")
+  page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
   {
     main_canonical_url: page1.canonical_uri.to_s,
     main_fetch_url: page1.fetch_uri.to_s,
     links: entry_links,
     pattern: first_page_links_to_last_page ? "paged_last" : "paged_next",
-    extra: "page_count: #{page_count}<br>page_size: #{page_size}<br><a href=\"#{link_to_last_page.url}\">#{link_to_last_page.canonical_uri}</a>#{paging_pattern_extra}",
+    extra: "page_count: #{page_count}<br>page_sizes: #{page_size_counts}<br><a href=\"#{link_to_last_page.url}\">#{link_to_last_page.canonical_uri}</a>#{paging_pattern_extra}",
     count: entry_links.length
   }
 end
 
 def extract_page_entry_links(
-  link_to_page, page_number, paging_pattern, masked_xpath, page_size, remaining_feed_entry_canonical_uris,
+  link_to_page, page_number, paging_pattern, masked_xpath, remaining_feed_entry_canonical_uris,
   start_link_id, known_entry_canonical_uris_set, canonical_equality_cfg, ctx, mock_http_client, db_storage,
   logger
 )
@@ -366,9 +364,6 @@ def extract_page_entry_links(
     page_links, page, canonical_equality_cfg, next_page_number, paging_pattern, logger
   )
   return nil if link_to_next_page == :multiple
-  if link_to_next_page && page_entry_links.length != page_size
-    raise "There are at least #{next_page_number} pages and page #{page_number} size (#{page_entry_links.length}) is not equal to expected page size (#{page_size})"
-  end
 
   { page_entry_links: page_entry_links, link_to_next_page: link_to_next_page }
 end
