@@ -22,9 +22,9 @@ GUIDED_CRAWLING_RESULT_COLUMNS = [
   [:no_regression, :neutral],
   [:no_guided_regression, :neutral],
   [:historical_links_found, :boolean],
-  [:is_start_page_main_page, :boolean],
-  [:does_start_page_link_to_main_page, :boolean],
-  [:is_main_page_linked_from_both_entries, :boolean],
+  [:is_start_page_main_page, :neutral],
+  [:does_start_page_link_to_main_page, :neutral],
+  [:is_main_page_linked_from_both_entries, :neutral],
   [:unique_links_from_both_entries, :neutral],
   [:historical_links_matching, :boolean],
   [:historical_links_pattern, :neutral_present],
@@ -493,7 +493,7 @@ def html_element_to_link(
     class_xpath = ""
     xpath = ""
     prefix_xpath = ""
-    xpath_tokens = element.path.split('/')[1..-1]
+    xpath_tokens = element.path.split('/')[1..]
     xpath_tokens.each do |token|
       bracket_index = token.index("[")
 
@@ -530,7 +530,7 @@ def html_element_to_link(
         end
 
         if bracket_index
-          class_xpath += "/#{token[0...bracket_index]}(#{classes})#{token[bracket_index..-1]}"
+          class_xpath += "/#{token[...bracket_index]}(#{classes})#{token[bracket_index..]}"
         else
           class_xpath += "/#{token}(#{classes})[1]"
         end
@@ -752,8 +752,8 @@ def guided_crawl_loop(
 
   unless is_start_page_main_page || does_start_page_link_to_main_page
     logger.log("Would need to crawl #{links_from_both_entries.length} links common for two entries:")
-    links_from_both_entries.each do |uri|
-      logger.log(uri)
+    links_from_both_entries.each do |link|
+      logger.log(link.canonical_uri.to_s)
     end
   end
   # STATS END

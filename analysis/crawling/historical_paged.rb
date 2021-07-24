@@ -59,10 +59,7 @@ def try_extract_paged(
   end
 
   if links_by_masked_xpath.nil?
-    get_masked_xpaths_func = method(:get_single_masked_xpaths)
-    links_by_masked_xpath = group_links_by_masked_xpath(
-      page1_links, feed_entry_canonical_uris_set, :xpath, get_masked_xpaths_func
-    )
+    links_by_masked_xpath = group_links_by_masked_xpath(page1_links, feed_entry_canonical_uris_set, :xpath, 1)
   end
 
   page_size_masked_xpaths = []
@@ -72,14 +69,14 @@ def try_extract_paged(
   links_by_masked_xpath.each do |masked_xpath, masked_xpath_links|
     masked_xpath_canonical_uris = masked_xpath_links.map(&:canonical_uri)
     feed_overlap_length = [masked_xpath_canonical_uris.length, feed_entry_canonical_uris.length].min
-    is_overlap_matching = masked_xpath_canonical_uris[0...feed_overlap_length]
-      .zip(feed_entry_canonical_uris[0...feed_overlap_length])
+    is_overlap_matching = masked_xpath_canonical_uris[...feed_overlap_length]
+      .zip(feed_entry_canonical_uris[...feed_overlap_length])
       .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
     if is_overlap_matching
       includes_newest_post = true
     else
       feed_minus_one_overlap_length = [masked_xpath_canonical_uris.length, feed_entry_canonical_uris.length - 1].min
-      is_overlap_minus_one_matching = masked_xpath_canonical_uris[0...feed_minus_one_overlap_length]
+      is_overlap_minus_one_matching = masked_xpath_canonical_uris[...feed_minus_one_overlap_length]
         .zip(feed_entry_canonical_uris[1..feed_minus_one_overlap_length])
         .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
       if page1_link_to_newest_post && is_overlap_minus_one_matching
@@ -147,10 +144,10 @@ def try_extract_paged(
     end
 
     page2_xpath_canonical_uris = page2_xpath_links.map(&:canonical_uri)
-    page2_feed_entry_canonical_uris = feed_entry_canonical_uris[xpath_page_size..-1] || []
+    page2_feed_entry_canonical_uris = feed_entry_canonical_uris[xpath_page_size..] || []
     feed_overlap_length = [page2_xpath_canonical_uris.length, page2_feed_entry_canonical_uris.length].min
-    is_overlap_matching = page2_xpath_canonical_uris[0...feed_overlap_length]
-      .zip(page2_feed_entry_canonical_uris[0...feed_overlap_length])
+    is_overlap_matching = page2_xpath_canonical_uris[...feed_overlap_length]
+      .zip(page2_feed_entry_canonical_uris[...feed_overlap_length])
       .all? { |xpath_uri, feed_uri| canonical_uri_equal?(xpath_uri, feed_uri, canonical_equality_cfg) }
     next unless is_overlap_matching
 
@@ -175,7 +172,7 @@ def try_extract_paged(
   if page2_entry_links.nil? && paging_pattern != :blogger
     page_size_masked_xpaths_sorted.each do |xpath_page_size, masked_xpath|
       masked_xpath_star_index = masked_xpath.index("*")
-      masked_xpath_suffix_start = masked_xpath[0...masked_xpath_star_index].rindex("/")
+      masked_xpath_suffix_start = masked_xpath[...masked_xpath_star_index].rindex("/")
       masked_xpath_suffix = masked_xpath[masked_xpath_suffix_start..-1]
       page2_xpath_suffix = "/" + masked_xpath_suffix.gsub("*", "1")
       page2_xpath_suffix_link_elements = page2_doc.xpath(page2_xpath_suffix)
@@ -188,7 +185,7 @@ def try_extract_paged(
 
       page2_xpath_suffix_link = page2_xpath_suffix_links.first
       page2_xpath_prefix_length = page2_xpath_suffix_link.xpath.length - masked_xpath_suffix.length
-      page2_xpath_prefix = page2_xpath_suffix_link.xpath[0...page2_xpath_prefix_length]
+      page2_xpath_prefix = page2_xpath_suffix_link.xpath[...page2_xpath_prefix_length]
       page2_masked_xpath = page2_xpath_prefix + masked_xpath_suffix
 
       page2_xpath_link_elements = page2_doc.xpath(page2_masked_xpath)
@@ -207,10 +204,10 @@ def try_extract_paged(
       end
 
       page2_xpath_canonical_uris = page2_xpath_links.map(&:canonical_uri)
-      page2_feed_entry_canonical_uris = feed_entry_canonical_uris[xpath_page_size..-1] || []
+      page2_feed_entry_canonical_uris = feed_entry_canonical_uris[xpath_page_size..] || []
       feed_overlap_length = [page2_xpath_canonical_uris.length, page2_feed_entry_canonical_uris.length].min
-      is_overlap_matching = page2_xpath_canonical_uris[0...feed_overlap_length]
-        .zip(page2_feed_entry_canonical_uris[0...feed_overlap_length])
+      is_overlap_matching = page2_xpath_canonical_uris[...feed_overlap_length]
+        .zip(page2_feed_entry_canonical_uris[...feed_overlap_length])
         .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
       next unless is_overlap_matching
 
@@ -348,13 +345,13 @@ def extract_page_entry_links(
 
   page_entry_canonical_uris = page_entry_links.map(&:canonical_uri)
   feed_overlap_length = [page_entry_canonical_uris.length, remaining_feed_entry_canonical_uris.length].min
-  is_overlap_matching = page_entry_canonical_uris[0...feed_overlap_length]
-    .zip(remaining_feed_entry_canonical_uris[0...feed_overlap_length])
+  is_overlap_matching = page_entry_canonical_uris[...feed_overlap_length]
+    .zip(remaining_feed_entry_canonical_uris[...feed_overlap_length])
     .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
   unless is_overlap_matching
     logger.log("Page #{page_number} doesn't overlap with feed")
-    logger.log("Page urls: #{page_entry_canonical_uris[0...feed_overlap_length]}")
-    logger.log("Feed urls: #{remaining_feed_entry_canonical_uris[0...feed_overlap_length]}")
+    logger.log("Page urls: #{page_entry_canonical_uris[...feed_overlap_length]}")
+    logger.log("Feed urls: #{remaining_feed_entry_canonical_uris[...feed_overlap_length]}")
     return nil
   end
 
@@ -415,7 +412,7 @@ def find_link_to_second_page(current_page_links, current_page, feed_generator, c
   link = links_to_page2.first
   if link_to_page2_path_regex.match?(link.uri.path)
     page_number_index = link.uri.path.rindex('2')
-    path_template = link.uri.path[0...page_number_index] + '%d' + link.uri.path[(page_number_index + 1)..-1]
+    path_template = link.uri.path[...page_number_index] + '%d' + link.uri.path[(page_number_index + 1)..]
     {
       link: link,
       paging_pattern: {

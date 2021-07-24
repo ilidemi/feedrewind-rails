@@ -1,25 +1,27 @@
-6 Archives parse date: 178 337 354 396 194 401
+1 Archives parse post date: 337
 6 Archives scoped by path: 71 176 237 101 314 478
 1 Archives almost match feed with more links: 217
 1 Archives with repetitions due to bug: 120
+1 Archives match one section dates with feed: 396
+2 Archives need stars to be the actual branching point: 354 396
 
 1 Paged with two stars: 361
 1 Xpath is not the best after page 2: 227
 2 Paged scoped by path: 499 99
 1 First post decorated on every page: 86
 2 Custom next page link: 2 534
-2 Paged filter feed by path prefix: 324 225
-2 Paged from feed if almost match: 410 440
+4 Paged from feed if almost match: 324 225 410 440
 1 Paged with 1 post overlap: 40
 
-5 Archives 2 level: 465 495 6 43 155
-4 Archives categories: 194 210 401 456
-6 Archives shuffled parse list date: 449 105 43 208 210 97
-10 Archives shuffled parse post date: 296 71 176 237 437 456 341 406 527 95
+4 Archives 2 level: 465 495 6 155
+4 Archives categories parse list date: 194 401 210 43
+1 Archives categories parse post date: 456
+3 Archives shuffled parse list date: 449 208 97
+10 Archives shuffled parse post date: 296 71 176 237 437 341 406 527 95 105
 
 5 Chained: 108 127 244 290 122
 
-3 Hidden post in RSS: 43 126 292
+2 Hidden post in RSS: 43 292
 4 Post not in RSS: 198 355 381 486
 1 Mistaken link in RSS: 50
 6 RSS dates are bogus: 157 183 371 393 114 516

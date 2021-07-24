@@ -108,7 +108,7 @@ def output_report(filename, result_column_names, results, expected_total)
 
     sorted_results.each do |result|
       report_file.write("<tr>")
-      report_file.write("<td>#{result[0]}</td>")
+      report_file.write("<td>#{result[0].to_s.rjust(4, '0')}</td>")
 
       if result[1].nil?
         result_column_names.length.times do

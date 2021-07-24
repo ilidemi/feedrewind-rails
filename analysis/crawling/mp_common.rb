@@ -21,7 +21,7 @@ end
 def read_object(io)
   safe_serialized = io.gets
   return nil if safe_serialized.nil?
-  serialized = Base64.strict_decode64(safe_serialized[0...-1])
+  serialized = Base64.strict_decode64(safe_serialized[...-1])
   Marshal.load(serialized)
 end
 
