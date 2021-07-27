@@ -2,8 +2,6 @@
 6 Archives scoped by path: 71 176 237 101 314 478
 1 Archives almost match feed with more links: 217
 1 Archives with repetitions due to bug: 120
-1 Archives match one section dates with feed: 396
-2 Archives need stars to be the actual branching point: 354 396
 
 1 Paged with two stars: 361
 1 Xpath is not the best after page 2: 227
@@ -16,7 +14,6 @@
 4 Archives 2 level: 465 495 6 155
 4 Archives categories parse list date: 194 401 210 43
 1 Archives categories parse post date: 456
-3 Archives shuffled parse list date: 449 208 97
 10 Archives shuffled parse post date: 296 71 176 237 437 341 406 527 95 105
 
 5 Chained: 108 127 244 290 122
