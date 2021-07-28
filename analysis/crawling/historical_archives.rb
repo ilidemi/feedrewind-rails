@@ -1,6 +1,7 @@
 require 'set'
-require 'time'
+require_relative 'date_extraction'
 require_relative 'historical_common'
+require_relative 'historical_sort'
 
 def try_extract_archives(
   page, page_links, page_canonical_uris_set, feed_entry_links, feed_entry_canonical_uris,
@@ -12,12 +13,12 @@ def try_extract_archives(
 
   logger.log("Possible archives page: #{page.canonical_uri}")
   min_links_count_one_xpath = min_links_count_two_xpaths = min_links_count
-  best_page_links = nil
+  best_historical_result = nil
   best_page_canonical_uris = nil
   fewer_stars_have_dates = false
   best_star_count = nil
-  did_almost_match_feed = false
-  almost_match_length = nil
+  almost_feed_match = nil
+  shuffled_full_matches = []
 
   links_by_masked_xpath_by_star_count = {}
   star_count_xpath_name = [
@@ -28,73 +29,94 @@ def try_extract_archives(
 
   star_count_xpath_name.each do |star_count, xpath_name|
     logger.log("Trying xpaths with #{star_count} stars")
-    historical_links = try_masked_xpath(
+    historical_result = try_masked_xpath(
       page_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set, canonical_equality_cfg,
       star_count, xpath_name, best_page_canonical_uris, fewer_stars_have_dates, min_links_count_one_xpath,
       min_links_count_two_xpaths, logger
     )
 
-    links_by_masked_xpath_by_star_count[star_count] = historical_links[:links_by_masked_xpath]
-    if historical_links[:is_full_match]
-      best_page_links = historical_links
+    links_by_masked_xpath_by_star_count[star_count] = historical_result[:links_by_masked_xpath]
+    if historical_result[:type] == :full_match
+      best_historical_result = historical_result
       best_star_count = star_count.to_s
-      if historical_links[:is_one_xpath]
-        min_links_count_one_xpath = best_page_links[:links].length + 1
+      if historical_result[:is_one_xpath]
+        min_links_count_one_xpath = best_historical_result[:links].length + 1
       else
-        min_links_count_one_xpath = best_page_links[:links].length
+        min_links_count_one_xpath = best_historical_result[:links].length
       end
-      min_links_count_two_xpaths = best_page_links[:links].length + 1
-      best_page_canonical_uris = best_page_links[:links].map(&:canonical_uri)
-      fewer_stars_have_dates = best_page_links[:has_dates]
-    elsif historical_links[:did_almost_match_feed]
-      did_almost_match_feed = true
-      unless almost_match_length && almost_match_length > historical_links[:almost_match_length]
-        almost_match_length = historical_links[:almost_match_length]
+      min_links_count_two_xpaths = best_historical_result[:links].length + 1
+      best_page_canonical_uris = best_historical_result[:links].map(&:canonical_uri)
+      fewer_stars_have_dates = best_historical_result[:has_dates]
+    elsif historical_result[:type] == :almost_feed_match
+      unless almost_feed_match && almost_feed_match[:length] > historical_result[:length]
+        almost_feed_match = historical_result
       end
+    elsif historical_result[:type] == :shuffled_full_match
+      shuffled_full_matches << historical_result
     end
   end
 
   links_by_masked_xpath_by_star_count.each do |star_count, links_by_masked_xpath|
     logger.log("Trying xpaths with 1+#{star_count} stars")
-    historical_links = try_two_masked_xpaths(
+    historical_result = try_two_masked_xpaths(
       links_by_masked_xpath_by_star_count[1], links_by_masked_xpath, feed_entry_canonical_uris,
       canonical_equality_cfg, best_page_canonical_uris, min_links_count_two_xpaths, logger
     )
 
-    if historical_links
-      best_page_links = historical_links
+    if historical_result
+      best_historical_result = historical_result
       best_star_count = "1+#{star_count}"
-      min_links_count_two_xpaths = best_page_links[:links].length + 1
-      best_page_canonical_uris = best_page_links[:links].map(&:canonical_uri)
+      min_links_count_two_xpaths = best_historical_result[:links].length + 1
+      best_page_canonical_uris = best_historical_result[:links].map(&:canonical_uri)
     end
   end
 
-  if best_page_links
-    logger.log("New best count: #{best_page_links[:links].length} with #{best_page_links[:pattern]}")
-    {
-      main_canonical_url: page.canonical_uri.to_s,
-      main_fetch_url: page.fetch_uri.to_s,
-      links: best_page_links[:links],
-      pattern: best_page_links[:pattern],
-      extra: "star_count: #{best_star_count}#{best_page_links[:extra]}",
-      count: best_page_links[:links].length
-    }
-  else
-    logger.log("Not an archives page or the min links count (#{min_links_count}) is not reached")
-    if did_almost_match_feed
-      logger.log("Almost matched feed (#{almost_match_length}/#{feed_entry_canonical_uris.length})")
-      {
+  result = {}
+
+  better_shuffled_full_matches = shuffled_full_matches.filter do |shuffled_full_match|
+    !best_historical_result || shuffled_full_match[:links].length > best_historical_result[:links].length
+  end
+  unless better_shuffled_full_matches.empty?
+    result[:shuffled] = []
+    better_shuffled_full_matches.each do |shuffled_full_match|
+      logger.log("Shuffled count: #{shuffled_full_match[:links].length}")
+      result[:shuffled] << {
         main_canonical_url: page.canonical_uri.to_s,
         main_fetch_url: page.fetch_uri.to_s,
-        links: feed_entry_links,
-        pattern: "feed",
-        extra: "almost_match: #{almost_match_length}/#{feed_entry_canonical_uris.length}",
-        count: feed_entry_canonical_uris.length
+        links: shuffled_full_match[:links],
+        pattern: shuffled_full_match[:pattern],
+        extra: "star_count: #{best_star_count}#{shuffled_full_match[:extra]}",
+        count: shuffled_full_match[:links].length
       }
-    else
-      nil
     end
   end
+
+  if best_historical_result
+    logger.log("Best count: #{best_historical_result[:links].length} with #{best_historical_result[:pattern]}")
+    result[:sorted] = {
+      main_canonical_url: page.canonical_uri.to_s,
+      main_fetch_url: page.fetch_uri.to_s,
+      links: best_historical_result[:links],
+      pattern: best_historical_result[:pattern],
+      extra: "star_count: #{best_star_count}#{best_historical_result[:extra]}",
+      count: best_historical_result[:links].length
+    }
+  elsif almost_feed_match
+    logger.log("Almost matched feed (#{almost_feed_match[:length]}/#{feed_entry_canonical_uris.length})")
+    result[:sorted] = {
+      main_canonical_url: page.canonical_uri.to_s,
+      main_fetch_url: page.fetch_uri.to_s,
+      links: feed_entry_links,
+      pattern: "feed",
+      extra: "almost_match: #{almost_feed_match[:length]}/#{feed_entry_canonical_uris.length}",
+      count: feed_entry_canonical_uris.length
+    }
+  end
+
+  return result unless result.empty?
+
+  logger.log("Not an archives page or the min links count (#{min_links_count}) is not reached")
+  nil
 end
 
 def almost_match_length(feed_length)
@@ -145,7 +167,7 @@ def try_masked_xpath(
     last_star_index = masked_xpath.rindex("*")
     link_ancestors_till_star = masked_xpath[last_star_index..].count("/")
     relative_xpath_to_top_parent = "/.." * link_ancestors_till_star
-    date_relative_xpaths = []
+    date_relative_xpaths_sources = []
     max_date = nil
     masked_xpath_links_matching_feed.each_with_index do |link, index|
       link_top_parent = link.element
@@ -153,42 +175,55 @@ def try_masked_xpath(
         link_top_parent = link_top_parent.parent
       end
       link_top_parent_path = link_top_parent.path
-      link_date_relative_xpaths = []
+      link_date_relative_xpaths_sources = []
       link_top_parent.traverse do |element|
-        next unless element.text?
-
-        date = try_extract_date(element.content)
-        next unless date
+        date_source = try_extract_date(element)
+        next unless date_source
 
         date_relative_xpath = (relative_xpath_to_top_parent + element.path[link_top_parent_path.length..])
           .delete_prefix("/")
-        link_date_relative_xpaths << date_relative_xpath
+        link_date_relative_xpaths_sources << { xpath: date_relative_xpath, source: date_source[:source] }
 
-        if !max_date || date > max_date
-          max_date = date
+        if !max_date || date_source[:date] > max_date
+          max_date = date_source[:date]
         end
       end
 
       if index == 0
-        date_relative_xpaths = link_date_relative_xpaths
+        date_relative_xpaths_sources = link_date_relative_xpaths_sources
       else
-        link_date_relative_xpaths_set = link_date_relative_xpaths.to_set
-        date_relative_xpaths.filter! { |xpath| link_date_relative_xpaths_set.include?(xpath) }
+        link_date_relative_xpaths_sources_set = link_date_relative_xpaths_sources.to_set
+        date_relative_xpaths_sources
+          .filter! { |xpath_source| link_date_relative_xpaths_sources_set.include?(xpath_source) }
       end
     end
-    next if date_relative_xpaths.length != 1
 
-    date_relative_xpaths_by_masked_xpath[masked_xpath] = date_relative_xpaths.first
+    date_relative_xpaths_from_time = date_relative_xpaths_sources
+      .filter_map { |xpath_source| xpath_source[:source] == :time ? xpath_source[:xpath] : nil }
+    if date_relative_xpaths_sources.length == 1
+      date_relative_xpath = date_relative_xpaths_sources.first[:xpath]
+    elsif date_relative_xpaths_from_time.length == 1
+      date_relative_xpath = date_relative_xpaths_from_time.first
+    else
+      next
+    end
+
+    date_relative_xpaths_by_masked_xpath[masked_xpath] = date_relative_xpath
     max_dates_by_masked_xpath[masked_xpath] = max_date
   end
+
+  no_match = {
+    type: :no_match,
+    links_by_masked_xpath: collapsed_links_by_masked_xpath
+  }
 
   # Try to find the masked xpath that matches all feed entries and covers as many links as possible
   best_xpath = nil
   best_xpath_links = nil
   best_xpath_has_dates = nil
   best_pattern = nil
-  did_almost_match_feed = false
-  almost_match_length = nil
+  almost_feed_match = nil
+  shuffled_full_match = nil
   collapsed_links_by_masked_xpath.each do |masked_xpath, masked_xpath_links|
     # If each entry has a date, filter links to ones with dates
     masked_xpath_link_dates = nil
@@ -197,17 +232,18 @@ def try_masked_xpath(
       masked_xpath_link_dates = []
       masked_xpath_links.each do |link|
         link_date_xpath = date_relative_xpaths_by_masked_xpath[masked_xpath]
-        link_date_nodes = link
+        link_dates = link
           .element
           .xpath(link_date_xpath)
           .to_a
-          .filter(&:text?)
-        next if link_date_nodes.empty?
-        if link_date_nodes.length > 1
-          logger.log("Multiple dates found for #{link.xpath} + #{link_date_xpath}: #{link_date_nodes}")
+          .filter_map { |element| try_extract_date(element) }
+          .map { |date_source| date_source[:date] }
+        next if link_dates.empty?
+        if link_dates.length > 1
+          logger.log("Multiple dates found for #{link.xpath} + #{link_date_xpath}: #{link_dates}")
           next
         end
-        date = try_extract_date(link_date_nodes.first.content)
+        date = link_dates.first
         next unless date && date <= max_dates_by_masked_xpath[masked_xpath]
 
         filtered_masked_xpath_links << link
@@ -226,10 +262,14 @@ def try_masked_xpath(
     masked_xpath_canonical_uris = masked_xpath_links.map(&:canonical_uri)
     if masked_xpath_links.length < feed_entry_canonical_uris.length &&
       masked_xpath_links.length >= almost_match_length(feed_entry_canonical_uris.length) &&
-      masked_xpath_canonical_uris.all? { |uri| feed_entry_canonical_uris_set.include?(uri) }
+      masked_xpath_canonical_uris.all? { |uri| feed_entry_canonical_uris_set.include?(uri) } &&
+      (!almost_feed_match || almost_feed_match[:length] < masked_xpath_links.length)
 
-      did_almost_match_feed = true
-      almost_match_length = masked_xpath_links.length
+      almost_feed_match = {
+        type: :almost_feed_match,
+        length: masked_xpath_links.length,
+        links_by_masked_xpath: collapsed_links_by_masked_xpath
+      }
     end
 
     next if masked_xpath_links.length < feed_entry_canonical_uris.length
@@ -246,7 +286,7 @@ def try_masked_xpath(
     if masked_xpath_link_dates
       masked_xpath_links_dates = masked_xpath_links
         .zip(masked_xpath_link_dates)
-        .uniq{ |link, date| [link.url, date] }
+        .uniq { |link, date| [link.url, date] }
       if masked_xpath_links_dates.length != masked_xpath_fetch_urls_set.length
         masked_xpath_canonical_urls_dates = masked_xpath_canonical_uris
           .zip(masked_xpath_link_dates)
@@ -284,18 +324,28 @@ def try_masked_xpath(
     is_reversed_matching_feed = feed_entry_canonical_uris
       .zip(reversed_masked_xpath_canonical_uris[...feed_entry_canonical_uris.length])
       .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
-    is_reversed_matching_fewer_stars_links = !fewer_stars_canonical_uris ||
+    is_reversed_matching_fewer_stars_links_prefix = !fewer_stars_canonical_uris ||
       fewer_stars_canonical_uris
-        .zip(reversed_masked_xpath_canonical_uris[...fewer_stars_canonical_uris.length])
+        .zip(reversed_masked_xpath_canonical_uris[..fewer_stars_canonical_uris.length])
         .all? do |xpath_uri, fewer_stars_uri|
         canonical_uri_equal?(xpath_uri, fewer_stars_uri, canonical_equality_cfg)
       end
-    if is_reversed_matching_feed && is_reversed_matching_fewer_stars_links
+    is_reversed_matching_fewer_stars_links_suffix = !fewer_stars_canonical_uris ||
+      fewer_stars_canonical_uris
+        .zip(reversed_masked_xpath_canonical_uris[-fewer_stars_canonical_uris.length..])
+        .all? do |xpath_uri, fewer_stars_uri|
+        canonical_uri_equal?(xpath_uri, fewer_stars_uri, canonical_equality_cfg)
+      end
+    if is_reversed_matching_feed &&
+      (is_reversed_matching_fewer_stars_links_prefix || is_reversed_matching_fewer_stars_links_suffix)
+
       best_xpath = masked_xpath
       best_xpath_links = reversed_masked_xpath_links
       best_xpath_has_dates = date_relative_xpaths_by_masked_xpath.key?(masked_xpath)
       best_pattern = "archives"
-      collapsion_log_str = get_collapsion_log_str(masked_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath)
+      collapsion_log_str = get_collapsion_log_str(
+        masked_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath
+      )
       dates_log_str = best_xpath_has_dates ? ", dates" : ''
       logger.log("Masked xpath is good in reverse order: #{masked_xpath}#{collapsion_log_str} (#{reversed_masked_xpath_links.length} links#{dates_log_str})")
       next
@@ -303,17 +353,34 @@ def try_masked_xpath(
 
     if masked_xpath_links_dates
       best_xpath = masked_xpath
-      best_xpath_links_dates = masked_xpath_links_dates
-        .sort_by
-        .with_index { |link_date, index| [link_date[1], -index] }
-        .reverse
+      best_xpath_links_dates = sort_links_dates(masked_xpath_links_dates)
       best_xpath_links = best_xpath_links_dates.map { |link_date| link_date[0] }
       best_xpath_has_dates = true
       best_pattern = "archives_shuffled"
-      collapsion_log_str = get_collapsion_log_str(masked_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath)
+      collapsion_log_str = get_collapsion_log_str(
+        masked_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath
+      )
       newest_date = best_xpath_links_dates.first[1]
       oldest_date = best_xpath_links_dates.last[1]
       logger.log("Masked xpath is good sorted by date: #{masked_xpath}#{collapsion_log_str} (#{masked_xpath_links.length} links from #{oldest_date} to #{newest_date})")
+      next
+    end
+
+    if is_matching_fewer_stars_links ||
+      is_reversed_matching_fewer_stars_links_prefix ||
+      is_reversed_matching_fewer_stars_links_suffix
+
+      collapsion_log_str = get_collapsion_log_str(
+        masked_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath
+      )
+      logger.log("Masked xpath is good but shuffled: #{masked_xpath}#{collapsion_log_str} (#{masked_xpath_links.length} links)")
+      shuffled_full_match = {
+        type: :shuffled_full_match,
+        pattern: "archives_shuffled",
+        links: masked_xpath_links,
+        extra: "<br>xpath: #{best_xpath}",
+        links_by_masked_xpath: collapsed_links_by_masked_xpath
+      }
       next
     end
 
@@ -321,15 +388,13 @@ def try_masked_xpath(
     logger.log("#{feed_entry_canonical_uris.map(&:to_s)}")
     logger.log("but not in the right order:")
     logger.log("#{masked_xpath_canonical_uris.map(&:to_s)}")
-    if fewer_stars_canonical_uris
-      logger.log("or not matching fewer stars links:")
-      logger.log("#{fewer_stars_canonical_uris.map(&:to_s)}")
-    end
+    logger.log("and/or not matching fewer stars links:")
+    logger.log("#{fewer_stars_canonical_uris.map(&:to_s)}")
   end
 
   if best_xpath_links
     return {
-      is_full_match: true,
+      type: :full_match,
       pattern: best_pattern,
       links: best_xpath_links,
       has_dates: best_xpath_has_dates,
@@ -339,12 +404,8 @@ def try_masked_xpath(
   end
 
   if feed_entry_canonical_uris.length < 3
-    return {
-      is_full_match: false,
-      did_almost_match_feed: did_almost_match_feed,
-      almost_match_length: almost_match_length,
-      links_by_masked_xpath: collapsed_links_by_masked_xpath
-    }
+    return almost_feed_match if almost_feed_match
+    return no_match
   end
 
   # Try to see if the first post doesn't match due to being decorated somehow but other strictly fit
@@ -385,7 +446,7 @@ def try_masked_xpath(
 
     if best_xpath_links_without_first
       return {
-        is_full_match: true,
+        type: :full_match,
         pattern: "archives_2xpaths",
         links: [first_link] + best_xpath_links_without_first,
         extra: "<br>counts: 1 + #{best_xpath_links_without_first.length}<br>prefix_xpath: #{first_link.xpath}<br>suffix_xpath: #{best_xpath_without_first}",
@@ -394,12 +455,9 @@ def try_masked_xpath(
     end
   end
 
-  {
-    is_full_match: false,
-    did_almost_match_feed: did_almost_match_feed,
-    almost_match_length: almost_match_length,
-    links_by_masked_xpath: collapsed_links_by_masked_xpath
-  }
+  return almost_feed_match if almost_feed_match
+  return shuffled_full_match if shuffled_full_match
+  no_match
 end
 
 def try_two_masked_xpaths(
@@ -528,34 +586,4 @@ def try_two_masked_xpaths(
   end
 
   nil
-end
-
-def try_extract_date(text)
-  text = text.strip
-  return nil if text.empty?
-
-  # Assuming dates can't get longer than that
-  # Longest seen was "(September 12 2005, last updated September 17 2005)"
-  # at https://tratt.net/laurie/blog/archive.html
-  return nil if text.length > 60
-
-  return nil if text.include?("/") # Can't distinguish between MM/DD/YY and DD/MM/YY
-  return nil unless text.match?(/\d/) # Dates must have numbers
-
-  begin
-    date_hash = Date._parse(text)
-    return nil unless date_hash && date_hash.key?(:year) && date_hash.key?(:mon) && date_hash.key?(:mday)
-
-    text_numbers = text.scan(/\d+/)
-    year_string = date_hash[:year].to_s
-    day_string = date_hash[:mday].to_s
-    day_string_padded = day_string.rjust(2, '0')
-    return nil unless text_numbers.any? { |number| [year_string, year_string[-2..]].include?(number) }
-    return nil unless text_numbers.any? { |number| [day_string, day_string_padded].include?(number) }
-
-    date = Date.new(date_hash[:year], date_hash[:mon], date_hash[:mday])
-    return date
-  rescue
-    return nil
-  end
 end

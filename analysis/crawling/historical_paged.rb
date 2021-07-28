@@ -241,7 +241,7 @@ def try_extract_paged(
       return nil
     end
 
-    logger.log("New best count: #{entry_links.length} with 2 pages of #{page_sizes}")
+    logger.log("Best count: #{entry_links.length} with 2 pages of #{page_sizes}")
     page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
     return {
       main_canonical_url: page1.canonical_uri.to_s,
@@ -296,7 +296,7 @@ def try_extract_paged(
       page1_links, page1, canonical_equality_cfg, page_count, paging_pattern, logger
     )
   end
-  logger.log("New best count: #{entry_links.length} with #{page_count} pages of #{page_sizes}")
+  logger.log("Best count: #{entry_links.length} with #{page_count} pages of #{page_sizes}")
   page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
   {
     main_canonical_url: page1.canonical_uri.to_s,

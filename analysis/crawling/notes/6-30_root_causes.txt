@@ -1,7 +1,6 @@
 1 Archives parse post date: 337
 6 Archives scoped by path: 71 176 237 101 314 478
 1 Archives almost match feed with more links: 217
-1 Archives with repetitions due to bug: 120
 
 1 Paged with two stars: 361
 1 Xpath is not the best after page 2: 227

@@ -1,4 +1,4 @@
-require_relative '../analysis/crawling/historical_archives'
+require_relative '../analysis/crawling/date_extraction'
 
 passing_dates = [
   ["-  1 February 2015", 2015, 2, 1],
@@ -37,7 +37,8 @@ passing_dates = [
   ["on 2020-10-09", 2020, 10, 9],
   ["Posted by ＳｔｕｆｆｏｎｍｙＭｉｎｄ on February 25, 2021", 2021, 2, 25],
   ["Things I learnt 23 June 2019", 2019, 6, 23],
-  ["Tue 18 November 2014", 2014, 11, 18]
+  ["Tue 18 November 2014", 2014, 11, 18],
+  ["2021-07-16 17:00:00+00:00", 2021, 7, 16]
 ]
 
 failing_dates = [
@@ -66,7 +67,7 @@ failing_dates = [
 RSpec.describe "try_extract_date" do
   passing_dates.each do |text, year, month, day|
     it text do
-      date = try_extract_date(text)
+      date = try_extract_date_from_text(text)
       expect(date.year).to eq year
       expect(date.month).to eq month
       expect(date.day).to eq day
@@ -75,7 +76,7 @@ RSpec.describe "try_extract_date" do
 
   failing_dates.each do |text|
     it text do
-      date = try_extract_date(text)
+      date = try_extract_date_from_text(text)
       expect(date).to be_nil
     end
   end

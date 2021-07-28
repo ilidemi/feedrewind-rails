@@ -4,6 +4,7 @@ require_relative 'crawling_storage'
 require_relative 'feed_parsing'
 require_relative 'historical_archives'
 require_relative 'historical_paged'
+require_relative 'historical_sort'
 require_relative 'http_client'
 require_relative 'puppeteer_client'
 require_relative 'run_common'
@@ -588,7 +589,9 @@ def guided_crawl_loop(
       start_link_id, ctx, mock_http_client, db_storage, logger
     )
 
-    return { best_result: start_page_result } if start_page_result
+    if start_page_result
+      return postprocess_result(start_page_result, ctx, mock_http_client, start_link_id, db_storage, logger)
+    end
     logger.log("Start page matches archives regex but is not the main page")
     pages_without_puppeteer << start_page unless start_page.is_puppeteer_used
   else
@@ -609,7 +612,11 @@ def guided_crawl_loop(
     feed_generator, canonical_equality_cfg, start_link_id, ctx, mock_http_client, puppeteer_client,
     db_storage, logger
   )
-  return { best_result: start_page_archives_links_result } if start_page_archives_links_result
+  if start_page_archives_links_result
+    return postprocess_result(
+      start_page_archives_links_result, ctx, mock_http_client, start_link_id, db_storage, logger
+    )
+  end
   logger.log("Start page doesn't link to archives")
   pages_without_puppeteer.push(*start_page_archives_pages_without_puppeteer)
 
@@ -620,7 +627,9 @@ def guided_crawl_loop(
       start_link_id, ctx, mock_http_client, db_storage, logger
     )
 
-    return { best_result: start_page_result } if start_page_result
+    if start_page_result
+      return postprocess_result(start_page_result, ctx, mock_http_client, start_link_id, db_storage, logger)
+    end
     logger.log("Start page is not the main page")
     pages_without_puppeteer << start_page unless start_page.is_puppeteer_used
   end
@@ -633,7 +642,11 @@ def guided_crawl_loop(
     feed_generator, canonical_equality_cfg, start_link_id, ctx, mock_http_client, puppeteer_client,
     db_storage, logger
   )
-  return { best_result: start_page_main_page_links_result } if start_page_main_page_links_result
+  if start_page_main_page_links_result
+    return postprocess_result(
+      start_page_main_page_links_result, ctx, mock_http_client, start_link_id, db_storage, logger
+    )
+  end
   logger.log("Start page doesn't link to the main page")
   pages_without_puppeteer.push(*start_page_main_pages_without_puppeteer)
 
@@ -681,7 +694,11 @@ def guided_crawl_loop(
     feed_entry_canonical_uris_set, feed_generator, canonical_equality_cfg, start_link_id, ctx,
     mock_http_client, puppeteer_client, db_storage, logger
   )
-  return { best_result: archives_links_from_both_entries_result } if archives_links_from_both_entries_result
+  if archives_links_from_both_entries_result
+    return postprocess_result(
+      archives_links_from_both_entries_result, ctx, mock_http_client, start_link_id, db_storage, logger
+    )
+  end
   logger.log("First two entries don't link to archives")
   pages_without_puppeteer.push(*archives_pages_without_puppeteer_from_both_entries)
 
@@ -693,7 +710,11 @@ def guided_crawl_loop(
     feed_entry_canonical_uris_set, feed_generator, canonical_equality_cfg, start_link_id, ctx,
     mock_http_client, puppeteer_client, db_storage, logger
   )
-  return { best_result: main_page_links_from_both_entries_result } if main_page_links_from_both_entries_result
+  if main_page_links_from_both_entries_result
+    return postprocess_result(
+      main_page_links_from_both_entries_result, ctx, mock_http_client, start_link_id, db_storage, logger
+    )
+  end
   logger.log("First two entries don't link to the main page")
   pages_without_puppeteer.push(*main_pages_without_puppeteer_from_both_entries)
 
@@ -704,7 +725,11 @@ def guided_crawl_loop(
     feed_generator, canonical_equality_cfg, start_link_id, ctx, mock_http_client, puppeteer_client,
     db_storage, logger
   )
-  return { best_result: other_links_from_both_entries_result } if other_links_from_both_entries_result
+  if other_links_from_both_entries_result
+    return postprocess_result(
+      other_links_from_both_entries_result, ctx, mock_http_client, start_link_id, db_storage, logger
+    )
+  end
   logger.log("First two entries don't link to something with a pattern")
 
   logger.log("Retrying #{pages_without_puppeteer.length} pages with Puppeteer")
@@ -736,7 +761,9 @@ def guided_crawl_loop(
       feed_entry_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set, feed_generator,
       canonical_equality_cfg, start_link_id, ctx, mock_http_client, db_storage, logger
     )
-    return { best_result: puppeteer_result } if puppeteer_result
+    if puppeteer_result
+      return postprocess_result(puppeteer_result, ctx, mock_http_client, start_link_id, db_storage, logger)
+    end
   end
 
   logger.log("Pattern not detected")
@@ -818,14 +845,59 @@ def try_extract_historical(
   )
 
   if paged_result && archives_result
-    if paged_result[:count] > archives_result[:count]
-      paged_result
+    if paged_result[:count] > archives_result[:sorted][:count]
+      { sorted: paged_result }
     else
       archives_result
     end
   elsif paged_result
-    paged_result
+    { sorted: paged_result }
   elsif archives_result
     archives_result
   end
+end
+
+def postprocess_result(result, ctx, mock_http_client, start_link_id, db_storage, logger)
+  best_result = result[:sorted]
+  if result[:shuffled]
+    pages_by_canonical_url = {}
+    sorted_shuffled_results = result[:shuffled].sort_by { |shuffled_result| shuffled_result[:links].length }
+
+    sorted_shuffled_results.each do |shuffled_result|
+      result_pages = []
+      sort_state = nil
+      shuffled_result[:links].each do |link|
+        if pages_by_canonical_url.key?(link.canonical_uri.to_s)
+          page = pages_by_canonical_url[link.canonical_uri.to_s]
+        else
+          page = crawl_request(
+            link, ctx, mock_http_client, nil, false, start_link_id, db_storage,
+            logger
+          )
+          unless page.is_a?(Page) && page.document
+            logger.log("Couldn't fetch link during result postprocess: #{page}")
+            return { best_result: best_result }
+          end
+        end
+
+        sort_state = historical_sort_add_page(page, sort_state, logger)
+        if sort_state.nil?
+          return { best_result: best_result }
+        end
+        result_pages << page
+        pages_by_canonical_url[page.canonical_uri.to_s] = page
+      end
+
+      sorted_links = historical_sort(shuffled_result[:links], sort_state, logger)
+      unless sorted_links
+        logger.log("Couldn't sort links: #{sort_state}")
+        return { best_result: best_result }
+      end
+
+      best_result = shuffled_result.merge({ links: sorted_links })
+    end
+
+  end
+
+  { best_result: best_result }
 end
