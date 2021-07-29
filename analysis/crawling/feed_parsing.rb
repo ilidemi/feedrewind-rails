@@ -84,6 +84,8 @@ def extract_feed_links(feed_content, fetch_uri, logger)
         generator = :tumblr
       elsif generator_text == "blogger"
         generator = :blogger
+      elsif generator_text == "medium"
+        generator = :medium
       end
     end
   else

@@ -221,6 +221,25 @@ RSpec.describe "extract_feed_links" do
       .to eq :blogger
   end
 
+  it "should recognize Medium RSS generator" do
+    rss_content = %{
+      <rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:cc="http://cyber.law.harvard.edu/rss/creativeCommonsRssModule.html" version="2.0">
+        <channel>
+          <link>https://root</link>
+          <generator>Medium</generator>
+          <item>
+            <link>https://root/a</link>
+          </item>
+          <item>
+            <link>https://root/b</link>
+          </item>
+        </channel>
+      </rss>
+    }
+    expect(extract_feed_links(rss_content, "https://root/feed", logger).generator)
+      .to eq :medium
+  end
+
   it "should parse Atom feeds" do
     atom_content = %{
       <feed xmlns="http://www.w3.org/2005/Atom">

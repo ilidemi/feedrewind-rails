@@ -41,6 +41,11 @@ passing_dates = [
   ["2021-07-16 17:00:00+00:00", 2021, 7, 16]
 ]
 
+passing_dates_with_guessed_year = [
+  ["Jan 23", 1, 23],
+  ["July 5", 7, 5]
+]
+
 failing_dates = [
   "",
   "   \n\t",
@@ -67,8 +72,16 @@ failing_dates = [
 RSpec.describe "try_extract_date" do
   passing_dates.each do |text, year, month, day|
     it text do
-      date = try_extract_date_from_text(text)
+      date = try_extract_text_date(text, false)
       expect(date.year).to eq year
+      expect(date.month).to eq month
+      expect(date.day).to eq day
+    end
+  end
+
+  passing_dates_with_guessed_year.each do |text, month, day|
+    it text do
+      date = try_extract_text_date(text, true)
       expect(date.month).to eq month
       expect(date.day).to eq day
     end
@@ -76,7 +89,7 @@ RSpec.describe "try_extract_date" do
 
   failing_dates.each do |text|
     it text do
-      date = try_extract_date_from_text(text)
+      date = try_extract_text_date(text, true)
       expect(date).to be_nil
     end
   end
