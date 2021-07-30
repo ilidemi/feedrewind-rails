@@ -19,7 +19,7 @@ def try_extract_archives(
   best_star_count = nil
   almost_feed_match = nil
   shuffled_full_matches = []
-  medium_shuffled_first_link_match = nil
+  medium_shuffled_pinned_entry_match = nil
 
   links_by_masked_xpath_by_star_count = {}
   star_count_xpath_name = [
@@ -53,12 +53,12 @@ def try_extract_archives(
         almost_feed_match = historical_result
       end
     elsif historical_result[:type] == :shuffled_full_match
-      shuffled_full_matches << historical_result
-    elsif historical_result[:type] == :medium_shuffled_first_link_match
-      unless medium_shuffled_first_link_match &&
-        medium_shuffled_first_link_match[:other_links].length > historical_result[:other_links].length
+      shuffled_full_matches << historical_result.merge({ star_count: star_count })
+    elsif historical_result[:type] == :medium_shuffled_pinned_entry_match
+      unless medium_shuffled_pinned_entry_match &&
+        medium_shuffled_pinned_entry_match[:other_links].length > historical_result[:other_links].length
 
-        medium_shuffled_first_link_match = historical_result
+        medium_shuffled_pinned_entry_match = historical_result
       end
     end
   end
@@ -80,20 +80,20 @@ def try_extract_archives(
 
   result = {}
 
-  better_shuffled_full_matches = shuffled_full_matches.filter do |shuffled_full_match|
-    !best_historical_result || shuffled_full_match[:links].length > best_historical_result[:links].length
+  good_shuffled_full_matches = shuffled_full_matches.filter do |match|
+    !best_historical_result || match[:links].length > best_historical_result[:links].length
   end
-  unless better_shuffled_full_matches.empty?
+  unless good_shuffled_full_matches.empty?
     result[:shuffled] = []
-    better_shuffled_full_matches.each do |shuffled_full_match|
-      logger.log("Shuffled count: #{shuffled_full_match[:links].length}")
+    good_shuffled_full_matches.each do |match|
+      logger.log("Shuffled count: #{match[:links].length}")
       result[:shuffled] << {
         main_canonical_url: page.canonical_uri.to_s,
         main_fetch_url: page.fetch_uri.to_s,
-        links: shuffled_full_match[:links],
-        pattern: shuffled_full_match[:pattern],
-        extra: "star_count: #{best_star_count}#{shuffled_full_match[:extra]}",
-        count: shuffled_full_match[:links].length
+        links: match[:links],
+        pattern: match[:pattern],
+        extra: "star_count: #{match[:star_count]}#{match[:extra]}",
+        count: match[:links].length
       }
     end
   end
@@ -120,16 +120,16 @@ def try_extract_archives(
     }
   end
 
-  if medium_shuffled_first_link_match
-    links_count = 1 + medium_shuffled_first_link_match[:other_links_dates].length
-    logger.log("Medium match with shuffled first link: #{links_count}")
+  if medium_shuffled_pinned_entry_match
+    links_count = 1 + medium_shuffled_pinned_entry_match[:other_links_dates].length
+    logger.log("Medium match with shuffled pinned entry: #{links_count}")
     result[:medium_with_shuffled_first_link] = {
       main_canonical_url: page.canonical_uri.to_s,
       main_fetch_url: page.fetch_uri.to_s,
-      pinned_entry_link: medium_shuffled_first_link_match[:pinned_entry_link],
-      other_links_dates: medium_shuffled_first_link_match[:other_links_dates],
-      pattern: medium_shuffled_first_link_match[:pattern],
-      extra: medium_shuffled_first_link_match[:extra],
+      pinned_entry_link: medium_shuffled_pinned_entry_match[:pinned_entry_link],
+      other_links_dates: medium_shuffled_pinned_entry_match[:other_links_dates],
+      pattern: medium_shuffled_pinned_entry_match[:pattern],
+      extra: medium_shuffled_pinned_entry_match[:extra],
       count: links_count
     }
   end
@@ -194,8 +194,9 @@ def try_masked_xpath(
   almost_feed_match = nil
   shuffled_full_match = nil
   collapsed_links_by_masked_xpath.each do |masked_xpath, masked_xpath_links|
+    is_sorted, is_reverse_sorted = check_link_paths_sorting(masked_xpath_links)
+
     # If each entry has a date, filter links to ones with dates
-    masked_xpath_link_dates = nil
     if date_extraction_by_masked_xpath.key?(masked_xpath)
       date_extraction = date_extraction_by_masked_xpath[masked_xpath]
       filtered_masked_xpath_links = []
@@ -214,11 +215,19 @@ def try_masked_xpath(
           next
         end
 
-        date = link_dates.first
-        next unless date && date <= date_extraction.max_date
-
         filtered_masked_xpath_links << link
-        masked_xpath_link_dates << date
+        masked_xpath_link_dates << link_dates.first
+      end
+
+      if is_sorted.nil?
+        is_sorted = masked_xpath_link_dates
+          .each_cons(2)
+          .all? { |date1, date2| date1 >= date2 }
+      end
+      if is_reverse_sorted.nil?
+        is_reverse_sorted = masked_xpath_link_dates
+          .each_cons(2)
+          .all? { |date1, date2| date1 <= date2 }
       end
 
       if filtered_masked_xpath_links.length != masked_xpath_links.length
@@ -227,6 +236,8 @@ def try_masked_xpath(
       end
     else
       next if fewer_stars_have_dates
+
+      masked_xpath_link_dates = nil
     end
 
     # If the set of links is almost covering feed, the feed could be complete with few random links thrown in
@@ -264,12 +275,18 @@ def try_masked_xpath(
         .all? do |xpath_uri, fewer_stars_uri|
         canonical_uri_equal?(xpath_uri, fewer_stars_uri, canonical_equality_cfg)
       end
-    if is_matching_feed && !has_duplicates && (!fewer_stars_canonical_uris || is_matching_fewer_stars_links)
+    if is_sorted != false &&
+      is_matching_feed &&
+      !has_duplicates &&
+      (!fewer_stars_canonical_uris || is_matching_fewer_stars_links)
+
       best_xpath = masked_xpath
       best_xpath_links = masked_xpath_links
       best_xpath_has_dates = date_extraction_by_masked_xpath.key?(masked_xpath)
       best_pattern = "archives"
-      collapsion_log_str = get_collapsion_log_str(masked_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath)
+      collapsion_log_str = get_collapsion_log_str(
+        masked_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath
+      )
       dates_log_str = best_xpath_has_dates ? ", dates" : ''
       logger.log("Masked xpath is good: #{masked_xpath}#{collapsion_log_str} (#{masked_xpath_links.length} links#{dates_log_str})")
       next
@@ -292,7 +309,8 @@ def try_masked_xpath(
         .all? do |xpath_uri, fewer_stars_uri|
         canonical_uri_equal?(xpath_uri, fewer_stars_uri, canonical_equality_cfg)
       end
-    if is_reversed_matching_feed &&
+    if is_reverse_sorted != false &&
+      is_reversed_matching_feed &&
       !has_duplicates &&
       (!fewer_stars_canonical_uris ||
         is_reversed_matching_fewer_stars_links_prefix ||
@@ -322,9 +340,26 @@ def try_masked_xpath(
         next
       end
 
+      sorted_masked_xpath_links_dates = sort_links_dates(masked_xpath_links_dates)
+      sorted_masked_xpath_links = sorted_masked_xpath_links_dates.map { |link_date| link_date[0] }
+      sorted_masked_xpath_canonical_uris = sorted_masked_xpath_links.map(&:canonical_uri)
+      is_sorted_matching_feed = feed_entry_canonical_uris
+        .zip(sorted_masked_xpath_canonical_uris[...feed_entry_canonical_uris.length])
+        .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
+      unless is_sorted_matching_feed
+        logger.log("Masked xpath #{masked_xpath} has all links with dates but doesn't match feed after sorting")
+        logger.log("Masked xpath links:")
+        sorted_masked_xpath_links_dates_log = sorted_masked_xpath_links_dates
+          .map { |link_date| [link_date[0].canonical_uri.to_s, link_date[1]] }
+        logger.log(sorted_masked_xpath_links_dates_log)
+        logger.log("Feed links:")
+        logger.log(feed_entry_canonical_uris.map(&:to_s))
+        next
+      end
+
       best_xpath = masked_xpath
-      best_xpath_links_dates = sort_links_dates(masked_xpath_links_dates)
-      best_xpath_links = best_xpath_links_dates.map { |link_date| link_date[0] }
+      best_xpath_links_dates = sorted_masked_xpath_links_dates
+      best_xpath_links = sorted_masked_xpath_links
       best_xpath_has_dates = true
       best_pattern = "archives_shuffled"
       collapsion_log_str = get_collapsion_log_str(
@@ -359,14 +394,14 @@ def try_masked_xpath(
       collapsion_log_str = get_collapsion_log_str(
         masked_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath
       )
-      dedup_log_str = dedup_masked_xpath_links.length > masked_xpath_links.length ?
+      dedup_log_str = masked_xpath_links.length > dedup_masked_xpath_links.length ?
         " (dedup #{masked_xpath_links.length} -> #{dedup_masked_xpath_links.length})" :
         ""
-      logger.log("Masked xpath is good but shuffled: #{masked_xpath}#{collapsion_log_str}#{dedup_log_str} (#{masked_xpath_links.length} links)")
+      logger.log("Masked xpath is good but shuffled: #{masked_xpath}#{collapsion_log_str}#{dedup_log_str} (#{dedup_masked_xpath_links.length} links)")
       shuffled_full_match = {
         type: :shuffled_full_match,
         pattern: "archives_shuffled",
-        links: masked_xpath_links,
+        links: dedup_masked_xpath_links,
         extra: "<br>xpath: #{best_xpath}",
         links_by_masked_xpath: collapsed_links_by_masked_xpath
       }
@@ -403,7 +438,7 @@ def try_masked_xpath(
   first_link = page_links.find do |page_link|
     canonical_uri_equal?(page_link.canonical_uri, feed_entry_canonical_uris.first, canonical_equality_cfg)
   end
-  medium_shuffled_first_link_match = nil
+  medium_shuffled_pinned_entry_match = nil
   if first_link
     medium_date_extraction_by_masked_xpath = get_date_extraction_by_masked_xpath(
       collapsed_links_by_masked_xpath, feed_entry_canonical_uris, feed_entry_canonical_uris_set,
@@ -414,7 +449,6 @@ def try_masked_xpath(
     collapsed_links_by_masked_xpath.each do |masked_xpath, masked_xpath_links|
       next if masked_xpath_links.length < feed_entry_canonical_uris.length - 1
       next if masked_xpath_links.length < min_links_count_two_xpaths - 1
-      next if best_xpath_links && best_xpath_links.length >= masked_xpath_links.length + 1
       next if best_xpath_links_without_first &&
         best_xpath_links_without_first.length >= masked_xpath_links.length
 
@@ -466,8 +500,6 @@ def try_masked_xpath(
           end
 
           date = link_dates.first
-          next nil unless date && date <= date_extraction.max_date
-
           [link, date]
         end
 
@@ -480,8 +512,8 @@ def try_masked_xpath(
           masked_xpath, links_by_masked_xpath, collapsed_links_by_masked_xpath
         )
         logger.log("Masked xpath is good but shuffled: #{masked_xpath}#{collapsion_log_str} (1 + #{other_links_dates.length} links)")
-        medium_shuffled_first_link_match = {
-          type: :medium_shuffled_first_link_match,
+        medium_shuffled_pinned_entry_match = {
+          type: :medium_shuffled_pinned_entry_match,
           pattern: "archives_shuffled_2xpaths",
           pinned_entry_link: pinned_entry_link,
           other_links_dates: other_links_dates,
@@ -489,7 +521,6 @@ def try_masked_xpath(
           links_by_masked_xpath: collapsed_links_by_masked_xpath
         }
       end
-
     end
 
     if best_xpath_links_without_first
@@ -505,11 +536,11 @@ def try_masked_xpath(
 
   return almost_feed_match if almost_feed_match
   return shuffled_full_match if shuffled_full_match
-  return medium_shuffled_first_link_match if medium_shuffled_first_link_match
+  return medium_shuffled_pinned_entry_match if medium_shuffled_pinned_entry_match
   no_match
 end
 
-DateExtraction = Struct.new(:relative_xpath, :max_date)
+DateExtraction = Struct.new(:relative_xpath)
 
 def get_date_extraction_by_masked_xpath(
   links_by_masked_xpath, feed_entry_canonical_uris, feed_entry_canonical_uris_set, canonical_equality_cfg,
@@ -529,7 +560,6 @@ def get_date_extraction_by_masked_xpath(
     link_ancestors_till_star = masked_xpath[last_star_index..].count("/")
     relative_xpath_to_top_parent = "/.." * link_ancestors_till_star
     date_relative_xpaths_sources = []
-    max_date = nil
     masked_xpath_links_matching_feed.each_with_index do |link, index|
       link_top_parent = link.element
       link_ancestors_till_star.times do
@@ -544,13 +574,7 @@ def get_date_extraction_by_masked_xpath(
         date_relative_xpath = (relative_xpath_to_top_parent + element.path[link_top_parent_path.length..])
           .delete_prefix("/")
         relative_xpath_source = { xpath: date_relative_xpath, source: date_source[:source] }
-        if date_source[:date]
-          link_date_relative_xpaths_sources << relative_xpath_source
-
-          if !max_date || date_source[:date] > max_date
-            max_date = date_source[:date]
-          end
-        end
+        link_date_relative_xpaths_sources << relative_xpath_source if date_source[:date]
       end
 
       if index == 0
@@ -572,10 +596,31 @@ def get_date_extraction_by_masked_xpath(
       next
     end
 
-    date_extraction_by_masked_xpath[masked_xpath] = DateExtraction.new(date_relative_xpath, max_date)
+    date_extraction_by_masked_xpath[masked_xpath] = DateExtraction.new(date_relative_xpath)
   end
 
   date_extraction_by_masked_xpath
+end
+
+def check_link_paths_sorting(links)
+  nil_result = [nil, nil]
+  return nil_result if links.length < 2
+  return nil_result if links.any? { |link| link.canonical_uri.trimmed_path.nil? }
+
+  paths_without_last, _, paths_last = links
+    .map { |link| link.canonical_uri.trimmed_path.rpartition("/") }
+    .transpose
+  return nil_result unless paths_without_last.to_set.length == 1
+  return nil_result unless paths_last.all? { |last| last.match?(/^\d+$/) }
+
+  paths_last_numbers = paths_last.map(&:to_i)
+  is_sorted = paths_last_numbers
+    .each_cons(2)
+    .all? { |number1, number2| number1 >= number2 }
+  is_reverse_sorted = paths_last_numbers
+    .each_cons(2)
+    .all? { |number1, number2| number1 <= number2 }
+  [is_sorted, is_reverse_sorted]
 end
 
 def try_two_masked_xpaths(

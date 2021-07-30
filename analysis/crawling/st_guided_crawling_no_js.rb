@@ -1,7 +1,7 @@
 require_relative 'guided_crawling'
 require_relative 'st_common'
 
-start_link_id = 120 # 105
+start_link_id = 10
 
 runnable = GuidedCrawlRunnable.new
 st_run(runnable, start_link_id, false)

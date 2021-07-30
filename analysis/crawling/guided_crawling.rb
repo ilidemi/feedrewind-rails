@@ -895,8 +895,11 @@ def postprocess_result(
       end
 
       sorted_canonical_uris = sorted_links.map(&:canonical_uri)
-      is_matching_feed = feed_entry_canonical_uris
-        .zip(sorted_canonical_uris[...feed_entry_canonical_uris.length])
+      canonical_uris_set = sorted_canonical_uris.to_canonical_uri_set(canonical_equality_cfg)
+      present_feed_entry_canonical_uris = feed_entry_canonical_uris
+        .filter { |entry_uri| canonical_uris_set.include?(entry_uri) }
+      is_matching_feed = present_feed_entry_canonical_uris
+        .zip(sorted_canonical_uris[...present_feed_entry_canonical_uris.length])
         .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
       unless is_matching_feed
         logger.log("Sorted links")
@@ -931,8 +934,11 @@ def postprocess_result(
     )
 
     sorted_canonical_uris = sorted_links.map(&:canonical_uri)
-    is_matching_feed = feed_entry_canonical_uris
-      .zip(sorted_canonical_uris[...feed_entry_canonical_uris.length])
+    canonical_uris_set = sorted_canonical_uris.to_canonical_uri_set(canonical_equality_cfg)
+    present_feed_entry_canonical_uris = feed_entry_canonical_uris
+      .filter { |entry_uri| canonical_uris_set.include?(entry_uri) }
+    is_matching_feed = present_feed_entry_canonical_uris
+      .zip(sorted_canonical_uris[...present_feed_entry_canonical_uris.length])
       .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
     unless is_matching_feed
       logger.log("Sorted links")

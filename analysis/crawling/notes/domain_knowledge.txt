@@ -36,6 +36,7 @@ Post link can redirect to a login page that requires js, two such posts causing 
 Blogspot blogs are the only ones in the dataset that page with query params
 Blog pages can have different sizes, but the cost of false positive is silently dropping items with different layout
 Blogspot blogs are the only ones in the dataset that group posts on page by date and require two stars in xpath
+Dates on the page might have significant typos (https://what-if.xkcd.com/archive/)
 
 
 # Engineering
