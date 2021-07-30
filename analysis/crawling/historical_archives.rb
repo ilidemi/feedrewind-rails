@@ -194,8 +194,6 @@ def try_masked_xpath(
   almost_feed_match = nil
   shuffled_full_match = nil
   collapsed_links_by_masked_xpath.each do |masked_xpath, masked_xpath_links|
-    is_sorted, is_reverse_sorted = check_link_paths_sorting(masked_xpath_links)
-
     # If each entry has a date, filter links to ones with dates
     if date_extraction_by_masked_xpath.key?(masked_xpath)
       date_extraction = date_extraction_by_masked_xpath[masked_xpath]
@@ -219,15 +217,17 @@ def try_masked_xpath(
         masked_xpath_link_dates << link_dates.first
       end
 
-      if is_sorted.nil?
+      if star_count >= 2
         is_sorted = masked_xpath_link_dates
           .each_cons(2)
           .all? { |date1, date2| date1 >= date2 }
-      end
-      if is_reverse_sorted.nil?
         is_reverse_sorted = masked_xpath_link_dates
           .each_cons(2)
           .all? { |date1, date2| date1 <= date2 }
+      else
+        # Trust the ordering of links more than dates
+        is_sorted = nil
+        is_reverse_sorted = nil
       end
 
       if filtered_masked_xpath_links.length != masked_xpath_links.length
@@ -238,6 +238,8 @@ def try_masked_xpath(
       next if fewer_stars_have_dates
 
       masked_xpath_link_dates = nil
+      is_sorted = nil
+      is_reverse_sorted = nil
     end
 
     # If the set of links is almost covering feed, the feed could be complete with few random links thrown in
@@ -600,27 +602,6 @@ def get_date_extraction_by_masked_xpath(
   end
 
   date_extraction_by_masked_xpath
-end
-
-def check_link_paths_sorting(links)
-  nil_result = [nil, nil]
-  return nil_result if links.length < 2
-  return nil_result if links.any? { |link| link.canonical_uri.trimmed_path.nil? }
-
-  paths_without_last, _, paths_last = links
-    .map { |link| link.canonical_uri.trimmed_path.rpartition("/") }
-    .transpose
-  return nil_result unless paths_without_last.to_set.length == 1
-  return nil_result unless paths_last.all? { |last| last.match?(/^\d+$/) }
-
-  paths_last_numbers = paths_last.map(&:to_i)
-  is_sorted = paths_last_numbers
-    .each_cons(2)
-    .all? { |number1, number2| number1 >= number2 }
-  is_reverse_sorted = paths_last_numbers
-    .each_cons(2)
-    .all? { |number1, number2| number1 <= number2 }
-  [is_sorted, is_reverse_sorted]
 end
 
 def try_two_masked_xpaths(
