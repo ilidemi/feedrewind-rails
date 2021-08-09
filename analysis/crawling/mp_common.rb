@@ -5,7 +5,7 @@ require_relative 'logger'
 require_relative 'report'
 require_relative 'util'
 
-MAX_PROCESS_COUNT = 8
+MAX_PROCESS_COUNT = 16
 
 def has_data_to_read(io)
   select_result = IO.select([io], nil, nil, 0)
