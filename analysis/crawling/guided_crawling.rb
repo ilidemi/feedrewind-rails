@@ -234,27 +234,33 @@ def guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       raise "Historical links not found"
     end
 
-    entries_count = historical_result[:links].length
-    oldest_link = historical_result[:links][-1]
+    entries_count = historical_result.links.length
+    oldest_link = historical_result.links.last
     logger.log("Historical links: #{entries_count}")
-    historical_result[:links].each do |historical_link|
+    historical_result.links.each do |historical_link|
       logger.log(historical_link.url)
     end
 
     db.exec_params(
-      "insert into historical (start_link_id, pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url) values ($1, $2, $3, $4, $5)",
-      [start_link_id, historical_result[:pattern], entries_count, historical_result[:main_canonical_url], oldest_link.canonical_uri.to_s]
+      "insert into historical "\
+      "(start_link_id, pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url) "\
+      "values "\
+      "($1, $2, $3, $4, $5)",
+      [
+        start_link_id, historical_result.pattern, entries_count, historical_result.main_canonical_url,
+        oldest_link.canonical_uri.to_s
+      ]
     )
 
     if gt_row
       historical_links_matching = true
 
-      if historical_result[:pattern] == gt_row["pattern"]
+      if historical_result.pattern == gt_row["pattern"]
         result.historical_links_pattern_status = :success
-        result.historical_links_pattern = historical_result[:pattern]
+        result.historical_links_pattern = historical_result.pattern
       else
         result.historical_links_pattern_status = :failure
-        result.historical_links_pattern = "#{historical_result[:pattern]}<br>(#{gt_row["pattern"]})"
+        result.historical_links_pattern = "#{historical_result.pattern}<br>(#{gt_row["pattern"]})"
         historical_links_matching = false
       end
 
@@ -270,10 +276,10 @@ def guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
 
       # TODO: Skipping the check for the main page url for now
       gt_main_url = gt_row["main_page_canonical_url"]
-      if gt_main_url == historical_result[:main_canonical_url]
-        result.main_url = "<a href=\"#{historical_result[:main_fetch_url]}\">#{historical_result[:main_canonical_url]}</a>"
+      if gt_main_url == historical_result.main_canonical_url
+        result.main_url = "<a href=\"#{historical_result.main_fetch_url}\">#{historical_result.main_canonical_url}</a>"
       else
-        result.main_url = "<a href=\"#{historical_result[:main_fetch_url]}\">#{historical_result[:main_canonical_url]}</a><br>(#{gt_row["main_page_canonical_url"]})"
+        result.main_url = "<a href=\"#{historical_result.main_fetch_url}\">#{historical_result.main_canonical_url}</a><br>(#{gt_row["main_page_canonical_url"]})"
       end
 
       gt_oldest_canonical_uri = CanonicalUri.from_db_string(gt_row["oldest_entry_canonical_url"])
@@ -306,13 +312,13 @@ def guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       result.historical_links_matching_status = :neutral
       result.no_regression_status = :neutral
       result.no_guided_regression_status = :neutral
-      result.historical_links_pattern = historical_result[:pattern]
+      result.historical_links_pattern = historical_result.pattern
       result.historical_links_count = entries_count
-      result.main_url = "<a href=\"#{historical_result[:main_fetch_url]}\">#{historical_result[:main_canonical_url]}</a>"
+      result.main_url = "<a href=\"#{historical_result.main_fetch_url}\">#{historical_result.main_canonical_url}</a>"
       result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.canonical_uri}</a>"
     end
 
-    result.extra = historical_result[:extra]
+    result.extra = historical_result.extra
 
     result
   rescue => e
@@ -819,6 +825,10 @@ def crawl_historical(
   [nil, pages_without_puppeteer]
 end
 
+HistoricalResult = Struct.new(
+  :main_canonical_url, :main_fetch_url, :pattern, :links, :extra, keyword_init: true
+)
+
 def try_extract_historical(
   page, page_links, page_canonical_uris_set, feed_entry_links, feed_entry_canonical_uris,
   feed_entry_canonical_uris_set, feed_generator, canonical_equality_cfg, start_link_id, ctx, mock_http_client,
@@ -834,39 +844,105 @@ def try_extract_historical(
     feed_entry_canonical_uris_set, feed_generator, canonical_equality_cfg, 1, logger
   )
 
-  if paged_result && archives_result
-    if paged_result[:count] > archives_result[:sorted][:count]
-      result = { sorted: paged_result }
+  if paged_result && archives_result&.main_result
+    if paged_result.links.count > archives_result.main_result.count
+      result = paged_result
     else
       result = archives_result
     end
   elsif paged_result
-    result = { sorted: paged_result }
+    result = paged_result
   elsif archives_result
     result = archives_result
   else
     return nil
   end
 
-  postprocess_result(
+  postprocessed_result = postprocess_result(
     result, feed_entry_canonical_uris, canonical_equality_cfg, ctx, mock_http_client, start_link_id,
     db_storage, logger
   )
+  return nil unless postprocessed_result
+
+  {
+    best_result: HistoricalResult.new(
+      main_canonical_url: page.canonical_uri.to_s,
+      main_fetch_url: page.fetch_uri.to_s,
+      pattern: postprocessed_result.pattern,
+      links: postprocessed_result.links,
+      extra: postprocessed_result.extra
+    )
+  }
 end
+
+PostprocessedResult = Struct.new(:pattern, :links, :extra, keyword_init: true)
 
 def postprocess_result(
   result, feed_entry_canonical_uris, canonical_equality_cfg, ctx, mock_http_client, start_link_id, db_storage,
   logger
 )
-  best_result = result[:sorted] ? { best_result: result[:sorted] } : nil
-  if result[:shuffled]
-    pages_by_canonical_url = {}
-    sorted_shuffled_results = result[:shuffled].sort_by { |shuffled_result| shuffled_result[:links].length }
+  return result unless result.is_a?(ArchivesResult)
 
-    sorted_shuffled_results.each do |shuffled_result|
+  if result.main_result.is_a?(MediumWithPinnedEntryResult)
+    medium_result = result.main_result
+    pinned_entry_page = crawl_request(
+      medium_result.pinned_entry_link, ctx, mock_http_client, nil, false,
+      start_link_id, db_storage, logger
+    )
+    unless pinned_entry_page.is_a?(Page) && pinned_entry_page.document
+      logger.log("Couldn't fetch first Medium link during result postprocess: #{pinned_entry_page}")
+      return nil
+    end
+
+    pinned_entry_page_links = extract_links(
+      pinned_entry_page, [pinned_entry_page.fetch_uri.host], ctx.redirects, logger
+    )
+
+    sorted_links = historical_archives_medium_sort_finish(
+      medium_result.pinned_entry_link, pinned_entry_page_links, medium_result.other_links_dates,
+      canonical_equality_cfg
+    )
+    unless sorted_links
+      logger.log("Couldn't sort links during result postprocess")
+      return nil
+    end
+
+    sorted_canonical_uris = sorted_links.map(&:canonical_uri)
+    canonical_uris_set = sorted_canonical_uris.to_canonical_uri_set(canonical_equality_cfg)
+    present_feed_entry_canonical_uris = feed_entry_canonical_uris
+      .filter { |entry_uri| canonical_uris_set.include?(entry_uri) }
+    is_matching_feed = present_feed_entry_canonical_uris
+      .zip(sorted_canonical_uris[...present_feed_entry_canonical_uris.length])
+      .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
+    unless is_matching_feed
+      logger.log("Sorted links")
+      logger.log("#{sorted_canonical_uris.map(&:to_s)}")
+      logger.log("are not matching feed:")
+      logger.log("#{feed_entry_canonical_uris.map(&:to_s)}")
+      return nil
+    end
+
+    return PostprocessedResult.new(
+      pattern: medium_result.pattern,
+      links: sorted_links,
+      extra: medium_result.extra
+    )
+  end
+
+  best_result = result.main_result
+
+  if result.tentative_better_results
+    pages_by_canonical_url = {}
+    sorted_tentative_results = result
+      .tentative_better_results.sort_by { |tentative_result| tentative_result.count }
+
+    sorted_tentative_results.each do |tentative_result|
       result_pages = []
       sort_state = nil
-      shuffled_result[:links].each do |link|
+      links_with_dates, links_without_dates = tentative_result
+        .links_maybe_dates.partition { |_, maybe_date| maybe_date }
+      links_without_dates = links_without_dates.map(&:first)
+      links_without_dates.each do |link|
         if pages_by_canonical_url.key?(link.canonical_uri.to_s)
           page = pages_by_canonical_url[link.canonical_uri.to_s]
         else
@@ -881,18 +957,16 @@ def postprocess_result(
         end
 
         sort_state = historical_archives_sort_add(page, sort_state, logger)
-        if sort_state.nil?
-          return best_result
-        end
+        return best_result unless sort_state
+
         result_pages << page
         pages_by_canonical_url[page.canonical_uri.to_s] = page
       end
 
-      sorted_links = historical_archives_sort_finish(shuffled_result[:links], sort_state, logger)
-      unless sorted_links
-        logger.log("Couldn't sort links: #{sort_state}")
-        return best_result
-      end
+      sorted_links = historical_archives_sort_finish(
+        links_with_dates, links_without_dates, sort_state, logger
+      )
+      return best_result unless sorted_links
 
       sorted_canonical_uris = sorted_links.map(&:canonical_uri)
       canonical_uris_set = sorted_canonical_uris.to_canonical_uri_set(canonical_equality_cfg)
@@ -909,55 +983,12 @@ def postprocess_result(
         return best_result
       end
 
-      best_result = { best_result: shuffled_result.merge({ links: sorted_links }) }
-    end
-  end
-
-  if result[:medium_with_shuffled_first_link]
-    medium_result = result[:medium_with_shuffled_first_link]
-    pinned_entry_link = medium_result[:pinned_entry_link]
-    pinned_entry_page = crawl_request(
-      pinned_entry_link, ctx, mock_http_client, nil, false, start_link_id,
-      db_storage, logger
-    )
-    unless pinned_entry_page.is_a?(Page) && pinned_entry_page.document
-      logger.log("Couldn't fetch first Medium link during result postprocess: #{pinned_entry_page}")
-      return best_result
-    end
-
-    pinned_entry_page_links = extract_links(
-      pinned_entry_page, [pinned_entry_page.fetch_uri.host], ctx.redirects, logger
-    )
-
-    sorted_links = historical_archives_medium_sort_finish(
-      pinned_entry_link, pinned_entry_page_links, medium_result[:other_links_dates], canonical_equality_cfg
-    )
-
-    sorted_canonical_uris = sorted_links.map(&:canonical_uri)
-    canonical_uris_set = sorted_canonical_uris.to_canonical_uri_set(canonical_equality_cfg)
-    present_feed_entry_canonical_uris = feed_entry_canonical_uris
-      .filter { |entry_uri| canonical_uris_set.include?(entry_uri) }
-    is_matching_feed = present_feed_entry_canonical_uris
-      .zip(sorted_canonical_uris[...present_feed_entry_canonical_uris.length])
-      .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
-    unless is_matching_feed
-      logger.log("Sorted links")
-      logger.log("#{sorted_canonical_uris.map(&:to_s)}")
-      logger.log("are not matching feed:")
-      logger.log("#{feed_entry_canonical_uris.map(&:to_s)}")
-      return best_result
-    end
-
-    best_result = {
-      best_result: {
-        main_canonical_url: medium_result[:main_canonical_url],
-        main_fetch_url: medium_result[:main_fetch_url],
+      best_result = PostprocessedResult.new(
+        pattern: tentative_result.pattern,
         links: sorted_links,
-        pattern: medium_result[:pattern],
-        extra: medium_result[:extra],
-        count: medium_result[:count]
-      }
-    }
+        extra: tentative_result.extra
+      )
+    end
   end
 
   best_result

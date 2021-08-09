@@ -28,7 +28,7 @@ def try_extract_text_date(text, guess_year)
   # at https://tratt.net/laurie/blog/archive.html
   return nil if text.length > 60
 
-  return nil if text.include?("/") # Can't distinguish between MM/DD/YY and DD/MM/YY
+  return nil if text.match?(/\d\/\d/) # Can't distinguish between MM/DD/YY and DD/MM/YY
   return nil unless text.match?(/\d/) # Dates must have numbers
 
   begin

@@ -3,6 +3,8 @@ require_relative 'guided_crawling'
 require_relative 'historical_common'
 require_relative 'structs'
 
+PagedResult = Struct.new(:pattern, :links, :count, :extra, keyword_init: true)
+
 BLOGSPOT_POSTS_BY_DATE_REGEX = /(\(date-outer\)\[)\d+(.+\(post-outer\)\[)\d+/
 
 def try_extract_paged(
@@ -243,14 +245,11 @@ def try_extract_paged(
 
     logger.log("Best count: #{entry_links.length} with 2 pages of #{page_sizes}")
     page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
-    return {
-      main_canonical_url: page1.canonical_uri.to_s,
-      main_fetch_url: page1.fetch_uri.to_s,
-      links: entry_links,
+    return PagedResult.new(
       pattern: "paged_last",
-      extra: "page_count: 2<br>page_sizes: #{page_size_counts}<br>last_page:<a href=\"#{page2.fetch_uri}\">#{page2.canonical_uri}</a>#{paging_pattern_extra}",
-      count: entry_links.length
-    }
+      links: entry_links,
+      extra: "page_count: 2<br>page_sizes: #{page_size_counts}<br>last_page:<a href=\"#{page2.fetch_uri}\">#{page2.canonical_uri}</a>#{paging_pattern_extra}"
+    )
   end
 
   known_entry_canonical_uris_set = entry_links
@@ -298,14 +297,11 @@ def try_extract_paged(
   end
   logger.log("Best count: #{entry_links.length} with #{page_count} pages of #{page_sizes}")
   page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
-  {
-    main_canonical_url: page1.canonical_uri.to_s,
-    main_fetch_url: page1.fetch_uri.to_s,
-    links: entry_links,
+  PagedResult.new(
     pattern: first_page_links_to_last_page ? "paged_last" : "paged_next",
-    extra: "page_count: #{page_count}<br>page_sizes: #{page_size_counts}<br><a href=\"#{link_to_last_page.url}\">#{link_to_last_page.canonical_uri}</a>#{paging_pattern_extra}",
-    count: entry_links.length
-  }
+    links: entry_links,
+    extra: "page_count: #{page_count}<br>page_sizes: #{page_size_counts}<br><a href=\"#{link_to_last_page.url}\">#{link_to_last_page.canonical_uri}</a>#{paging_pattern_extra}"
+  )
 end
 
 def extract_page_entry_links(

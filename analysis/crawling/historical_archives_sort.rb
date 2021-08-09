@@ -36,7 +36,8 @@ def historical_archives_sort_add(page, sort_state, logger)
   new_sort_state
 end
 
-def historical_archives_sort_finish(links, sort_state, logger)
+def historical_archives_sort_finish(links_with_known_dates, links, sort_state, logger)
+  sort_state ||= {}
   dates_by_xpath_from_time = sort_state
     .filter_map { |xpath_source, dates| xpath_source[1] == :time ? [xpath_source[0], dates] : nil }
     .to_h
@@ -47,10 +48,12 @@ def historical_archives_sort_finish(links, sort_state, logger)
     xpath, dates = dates_by_xpath_from_time.first
     logger.log("Good shuffled date xpath from time: #{xpath}")
   else
+    logger.log("Couldn't sort links: #{sort_state}")
     return nil
   end
 
-  sorted_links_dates = sort_links_dates(links.zip(dates))
+  links_dates = links_with_known_dates + links.zip(dates)
+  sorted_links_dates = sort_links_dates(links_dates)
   sorted_links = sorted_links_dates.map { |link, _| link }
   sorted_links
 end
@@ -64,11 +67,17 @@ def historical_archives_medium_sort_finish(
       pinned_entry_link.canonical_uri, link.canonical_uri, canonical_equality_cfg
     )
 
-    date = try_extract_text_date(link.element.content, true)
-    next unless date
+    link.element.traverse do |child_element|
+      next unless child_element.text?
 
-    pinned_entry_date = date
-    break
+      date = try_extract_text_date(child_element.content, true)
+      next unless date
+
+      pinned_entry_date = date
+      break
+    end
+
+    break if pinned_entry_date
   end
 
   return nil unless pinned_entry_date
