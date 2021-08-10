@@ -6,13 +6,13 @@ require_relative 'historical_common'
 ArchivesResult = Struct.new(:main_result, :tentative_better_results)
 
 def try_extract_archives(
-  page, page_links, page_canonical_uris_set, feed_entry_links, feed_entry_canonical_uris,
-  feed_entry_canonical_uris_set, feed_generator, canonical_equality_cfg, min_links_count, logger
+  page, page_links, page_curis_set, feed_entry_links, feed_entry_curis, feed_entry_curis_set, feed_generator,
+  curi_eq_cfg, min_links_count, logger
 )
-  almost_match_threshold = get_almost_match_threshold(feed_entry_canonical_uris.length)
-  return nil unless feed_entry_canonical_uris
-    .count { |item_uri| page_canonical_uris_set.include?(item_uri) } >= almost_match_threshold
-  logger.log("Possible archives page: #{page.canonical_uri}")
+  almost_match_threshold = get_almost_match_threshold(feed_entry_curis.length)
+  return nil unless feed_entry_curis
+    .count { |entry_curi| page_curis_set.include?(entry_curi) } >= almost_match_threshold
+  logger.log("Possible archives page: #{page.curi}")
 
   star_count_xpath_names = [
     [1, :xpath],
@@ -23,7 +23,7 @@ def try_extract_archives(
   extractions_by_masked_xpath_by_star_count = {}
   star_count_xpath_names.each do |star_count, xpath_name|
     links_by_masked_xpath = group_links_by_masked_xpath(
-      page_links, feed_entry_canonical_uris_set, xpath_name, star_count
+      page_links, feed_entry_curis_set, xpath_name, star_count
     )
     logger.log("Masked xpaths with #{star_count} stars: #{links_by_masked_xpath.length}")
 
@@ -31,8 +31,8 @@ def try_extract_archives(
       [
         masked_xpath,
         get_masked_xpath_extraction(
-          masked_xpath, masked_xpath_links, star_count, feed_entry_canonical_uris,
-          feed_entry_canonical_uris_set, canonical_equality_cfg, almost_match_threshold, logger
+          masked_xpath, masked_xpath_links, star_count, feed_entry_curis, feed_entry_curis_set, curi_eq_cfg,
+          almost_match_threshold, logger
         )
       ]
     end
@@ -42,71 +42,71 @@ def try_extract_archives(
 
   main_result = nil
 
-  sorted_fewer_stars_canonical_uris = nil
+  sorted_fewer_stars_curis = nil
   sorted_fewer_stars_have_dates = nil
   extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
     sorted_result = try_extract_sorted(
-      extractions_by_masked_xpath, feed_entry_canonical_uris, canonical_equality_cfg, nil,
-      star_count, sorted_fewer_stars_canonical_uris, sorted_fewer_stars_have_dates, min_links_count, logger
+      extractions_by_masked_xpath, feed_entry_curis, curi_eq_cfg, nil, star_count,
+      sorted_fewer_stars_curis, sorted_fewer_stars_have_dates, min_links_count, logger
     )
     if sorted_result
       main_result = sorted_result
       min_links_count = sorted_result.count + 1
-      sorted_fewer_stars_canonical_uris = sorted_result.links.map(&:canonical_uri)
+      sorted_fewer_stars_curis = sorted_result.links.map(&:curi)
       sorted_fewer_stars_have_dates = sorted_result.has_dates
     end
   end
 
-  if feed_entry_canonical_uris.length < 3
-    logger.log("Skipping sorted match with highlighted first link because the feed is small (#{feed_entry_canonical_uris.length})")
+  if feed_entry_curis.length < 3
+    logger.log("Skipping sorted match with highlighted first link because the feed is small (#{feed_entry_curis.length})")
   else
-    sorted1_fewer_stars_canonical_uris = nil
+    sorted1_fewer_stars_curis = nil
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       sorted1_result = try_extract_sorted_highlight_first_link(
-        extractions_by_masked_xpath, feed_entry_canonical_uris, canonical_equality_cfg, page_links,
-        star_count, sorted1_fewer_stars_canonical_uris, min_links_count, logger
+        extractions_by_masked_xpath, feed_entry_curis, curi_eq_cfg, page_links, star_count,
+        sorted1_fewer_stars_curis, min_links_count, logger
       )
       if sorted1_result
         main_result = sorted1_result
         min_links_count = sorted1_result.count + 1
-        sorted1_fewer_stars_canonical_uris = sorted1_result.links.map(&:canonical_uri)
+        sorted1_fewer_stars_curis = sorted1_result.links.map(&:curi)
       end
     end
   end
 
   medium_pinned_entry_result = try_extract_medium_with_pinned_entry(
-    extractions_by_masked_xpath_by_star_count[1], feed_entry_canonical_uris, canonical_equality_cfg,
-    feed_generator, page_links, min_links_count, logger
+    extractions_by_masked_xpath_by_star_count[1], feed_entry_curis, curi_eq_cfg, feed_generator, page_links,
+    min_links_count, logger
   )
   if medium_pinned_entry_result
     main_result = medium_pinned_entry_result
     min_links_count = medium_pinned_entry_result.count + 1
   end
 
-  sorted_2xpaths_fewer_stars_canonical_uris = nil
+  sorted_2xpaths_fewer_stars_curis = nil
   extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
     sorted_2xpaths_result = try_extract_sorted_2xpaths(
-      extractions_by_masked_xpath_by_star_count[1], extractions_by_masked_xpath, feed_entry_canonical_uris,
-      canonical_equality_cfg, star_count, sorted_2xpaths_fewer_stars_canonical_uris, min_links_count, logger
+      extractions_by_masked_xpath_by_star_count[1], extractions_by_masked_xpath, feed_entry_curis,
+      curi_eq_cfg, star_count, sorted_2xpaths_fewer_stars_curis, min_links_count, logger
     )
     if sorted_2xpaths_result
       main_result = sorted_2xpaths_result
       min_links_count = sorted_2xpaths_result.count + 1
-      sorted_2xpaths_fewer_stars_canonical_uris = sorted_2xpaths_result.links.map(&:canonical_uri)
+      sorted_2xpaths_fewer_stars_curis = sorted_2xpaths_result.links.map(&:curi)
     end
   end
 
-  almost_feed_fewer_stars_canonical_uris = nil
+  almost_feed_fewer_stars_curis = nil
   extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
     almost_feed_result = try_extract_almost_matching_feed(
-      extractions_by_masked_xpath, feed_entry_links, feed_entry_canonical_uris_set, canonical_equality_cfg,
-      almost_match_threshold, star_count, almost_feed_fewer_stars_canonical_uris, min_links_count,
+      extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_set, curi_eq_cfg,
+      almost_match_threshold, star_count, almost_feed_fewer_stars_curis, min_links_count,
       logger
     )
     if almost_feed_result
       main_result = almost_feed_result
       min_links_count = almost_feed_result.count + 1
-      almost_feed_fewer_stars_canonical_uris = almost_feed_result.links.map(&:canonical_uri)
+      almost_feed_fewer_stars_curis = almost_feed_result.links.map(&:curi)
     end
   end
 
@@ -117,8 +117,8 @@ def try_extract_archives(
   else
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       shuffled_result = try_extract_shuffled(
-        extractions_by_masked_xpath, feed_entry_canonical_uris, canonical_equality_cfg,
-        nil, star_count, min_links_count, logger
+        extractions_by_masked_xpath, feed_entry_curis, curi_eq_cfg, nil, star_count,
+        min_links_count, logger
       )
       if shuffled_result
         tentative_better_results << shuffled_result
@@ -127,18 +127,18 @@ def try_extract_archives(
     end
   end
 
-  sorted_almost_fewer_stars_canonical_uris = nil
+  sorted_almost_fewer_stars_curis = nil
   sorted_almost_fewer_stars_have_dates = nil
   extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
     sorted_almost_result = try_extract_sorted(
-      extractions_by_masked_xpath, feed_entry_canonical_uris, canonical_equality_cfg, almost_match_threshold,
-      star_count, sorted_almost_fewer_stars_canonical_uris, sorted_almost_fewer_stars_have_dates,
+      extractions_by_masked_xpath, feed_entry_curis, curi_eq_cfg, almost_match_threshold, star_count,
+      sorted_almost_fewer_stars_curis, sorted_almost_fewer_stars_have_dates,
       min_links_count, logger
     )
     if sorted_almost_result
       main_result = sorted_almost_result
       min_links_count = sorted_almost_result.count + 1
-      sorted_almost_fewer_stars_canonical_uris = sorted_almost_result.links.map(&:canonical_uri)
+      sorted_almost_fewer_stars_curis = sorted_almost_result.links.map(&:curi)
       sorted_almost_fewer_stars_have_dates = sorted_almost_result.has_dates
     end
   end
@@ -148,8 +148,8 @@ def try_extract_archives(
   else
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       shuffled_almost_result = try_extract_shuffled(
-        extractions_by_masked_xpath, feed_entry_canonical_uris, canonical_equality_cfg, almost_match_threshold,
-        star_count, min_links_count, logger
+        extractions_by_masked_xpath, feed_entry_curis, curi_eq_cfg, almost_match_threshold, star_count,
+        min_links_count, logger
       )
       if shuffled_almost_result
         tentative_better_results << shuffled_almost_result
@@ -159,7 +159,7 @@ def try_extract_archives(
   end
 
   long_feed_result = try_extract_long_feed(
-    feed_entry_links, page_canonical_uris_set, min_links_count, logger
+    feed_entry_links, page_curis_set, min_links_count, logger
   )
   if long_feed_result
     main_result = long_feed_result
@@ -183,7 +183,7 @@ def get_almost_match_threshold(feed_length)
   end
 end
 
-LinksExtraction = Struct.new(:links, :canonical_uris, :canonical_uris_set, :has_duplicates)
+LinksExtraction = Struct.new(:links, :curis, :curis_set, :has_duplicates)
 DatesExtraction = Struct.new(:dates, :are_sorted, :are_reverse_sorted)
 MaskedXpathExtraction = Struct.new(
   :links_extraction, :log_lines, :markup_dates_extraction, :medium_markup_dates,
@@ -191,15 +191,13 @@ MaskedXpathExtraction = Struct.new(
 )
 
 def get_masked_xpath_extraction(
-  masked_xpath, links, star_count, feed_entry_canonical_uris, feed_entry_canonical_uris_set,
-  canonical_equality_cfg, almost_match_threshold, logger
+  masked_xpath, links, star_count, feed_entry_curis, feed_entry_curis_set, curi_eq_cfg,
+  almost_match_threshold, logger
 )
   collapsed_links = []
   links.length.times do |index|
     if index == 0 ||
-      !canonical_uri_equal?(
-        links[index].canonical_uri, links[index - 1].canonical_uri, canonical_equality_cfg
-      )
+      !canonical_uri_equal?(links[index].curi, links[index - 1].curi, curi_eq_cfg)
 
       collapsed_links << links[index]
     end
@@ -216,12 +214,12 @@ def get_masked_xpath_extraction(
   almost_markup_dates_extraction = DatesExtraction.new(nil, nil, nil)
 
   links_matching_feed = collapsed_links
-    .filter { |link| feed_entry_canonical_uris_set.include?(link.canonical_uri) }
+    .filter { |link| feed_entry_curis_set.include?(link.curi) }
   unique_links_matching_feed_count = links_matching_feed
-    .map(&:canonical_uri)
-    .to_canonical_uri_set(canonical_equality_cfg)
+    .map(&:curi)
+    .to_canonical_uri_set(curi_eq_cfg)
     .length
-  threshold_to_have_some_dates = [almost_match_threshold, feed_entry_canonical_uris.length - 1].min
+  threshold_to_have_some_dates = [almost_match_threshold, feed_entry_curis.length - 1].min
 
   if unique_links_matching_feed_count >= threshold_to_have_some_dates
     last_star_index = masked_xpath.rindex("*")
@@ -256,7 +254,7 @@ def get_masked_xpath_extraction(
           matching_are_reverse_sorted = nil
         end
 
-        if unique_links_matching_feed_count == feed_entry_canonical_uris.length
+        if unique_links_matching_feed_count == feed_entry_curis.length
           markup_dates_extraction = DatesExtraction.new(
             matching_markup_dates, matching_are_sorted, matching_are_reverse_sorted
           )
@@ -268,7 +266,7 @@ def get_masked_xpath_extraction(
       end
     end
 
-    if unique_links_matching_feed_count == feed_entry_canonical_uris.length - 1
+    if unique_links_matching_feed_count == feed_entry_curis.length - 1
       maybe_medium_markup_dates = extract_maybe_markup_dates(
         collapsed_links, links_matching_feed, distance_to_top_parent, relative_xpath_to_top_parent,
         true, logger
@@ -280,15 +278,15 @@ def get_masked_xpath_extraction(
     end
   end
 
-  canonical_uris = filtered_links.map(&:canonical_uri)
-  canonical_uris_set = canonical_uris.to_canonical_uri_set(canonical_equality_cfg)
-  has_duplicates = canonical_uris.length != canonical_uris_set.length
-  links_extraction = LinksExtraction.new(filtered_links, canonical_uris, canonical_uris_set, has_duplicates)
+  curis = filtered_links.map(&:curi)
+  curis_set = curis.to_canonical_uri_set(curi_eq_cfg)
+  has_duplicates = curis.length != curis_set.length
+  links_extraction = LinksExtraction.new(filtered_links, curis, curis_set, has_duplicates)
 
   maybe_url_dates = filtered_links.map do |link|
-    next unless link.canonical_uri.path
+    next unless link.curi.path
 
-    date_match = link.canonical_uri.path.match(/\/(\d{4})\/(\d{2})\/(\d{2})/)
+    date_match = link.curi.path.match(/\/(\d{4})\/(\d{2})\/(\d{2})/)
     next unless date_match
 
     begin
@@ -370,8 +368,8 @@ end
 SortedResult = Struct.new(:pattern, :links, :count, :has_dates, :extra, keyword_init: true)
 
 def try_extract_sorted(
-  extractions_by_masked_xpath, feed_entry_canonical_uris, canonical_equality_cfg, almost_match_threshold,
-  star_count, fewer_stars_canonical_uris, fewer_stars_have_dates, min_links_count, logger
+  extractions_by_masked_xpath, feed_entry_curis, curi_eq_cfg, almost_match_threshold, star_count,
+  fewer_stars_curis, fewer_stars_have_dates, min_links_count, logger
 )
   is_almost = !!almost_match_threshold
   almost_suffix = is_almost ? "_almost" : ""
@@ -384,38 +382,39 @@ def try_extract_sorted(
   extractions_by_masked_xpath.each do |masked_xpath, extraction|
     links_extraction = extraction.links_extraction
     links = links_extraction.links
-    canonical_uris = links_extraction.canonical_uris
-    canonical_uris_set = links_extraction.canonical_uris_set
+    curis = links_extraction.curis
+    curis_set = links_extraction.curis_set
     dates = extraction.markup_dates_extraction.dates
 
     next if best_links && best_links.length >= links.length
     next if fewer_stars_have_dates && !dates
-    next unless links.length >= feed_entry_canonical_uris.length
+    next unless links.length >= feed_entry_curis.length
     next unless links.length >= min_links_count
 
     log_lines = extraction.log_lines.clone
     if is_almost
-      target_feed_entry_canonical_uris = feed_entry_canonical_uris
-        .filter { |entry_uri| canonical_uris_set.include?(entry_uri) }
-      next unless target_feed_entry_canonical_uris.length < feed_entry_canonical_uris.length
-      next unless target_feed_entry_canonical_uris.length >= almost_match_threshold
-      log_lines << "almost feed match #{target_feed_entry_canonical_uris.length}/#{feed_entry_canonical_uris.length}"
+      target_feed_entry_curis = feed_entry_curis.filter { |entry_curi| curis_set.include?(entry_curi) }
+      next unless target_feed_entry_curis.length < feed_entry_curis.length
+      next unless target_feed_entry_curis.length >= almost_match_threshold
+      log_lines << "almost feed match #{target_feed_entry_curis.length}/#{feed_entry_curis.length}"
     else
-      next unless feed_entry_canonical_uris.all? { |entry_uri| canonical_uris_set.include?(entry_uri) }
-      target_feed_entry_canonical_uris = feed_entry_canonical_uris
+      next unless feed_entry_curis.all? { |entry_curi| curis_set.include?(entry_curi) }
+      target_feed_entry_curis = feed_entry_curis
     end
 
-    is_matching_feed = target_feed_entry_canonical_uris
-      .zip(canonical_uris[...target_feed_entry_canonical_uris.length])
-      .all? { |uri, entry_uri| canonical_uri_equal?(uri, entry_uri, canonical_equality_cfg) }
-    is_matching_fewer_stars_links = fewer_stars_canonical_uris &&
-      canonical_uris[...fewer_stars_canonical_uris.length]
-        .zip(fewer_stars_canonical_uris)
-        .all? { |uri, fewer_stars_uri| canonical_uri_equal?(uri, fewer_stars_uri, canonical_equality_cfg) }
+    is_matching_feed = target_feed_entry_curis
+      .zip(curis[...target_feed_entry_curis.length])
+      .all? { |xpath_curi, entry_curi| canonical_uri_equal?(xpath_curi, entry_curi, curi_eq_cfg) }
+    is_matching_fewer_stars_links = fewer_stars_curis &&
+      curis[...fewer_stars_curis.length]
+        .zip(fewer_stars_curis)
+        .all? do |xpath_curi, fewer_stars_curi|
+        canonical_uri_equal?(xpath_curi, fewer_stars_curi, curi_eq_cfg)
+      end
     if extraction.markup_dates_extraction.are_sorted != false &&
       is_matching_feed &&
       !links_extraction.has_duplicates &&
-      (!fewer_stars_canonical_uris || is_matching_fewer_stars_links)
+      (!fewer_stars_curis || is_matching_fewer_stars_links)
 
       best_xpath = masked_xpath
       best_links = links
@@ -427,26 +426,26 @@ def try_extract_sorted(
     end
 
     reversed_links = links.reverse
-    reversed_canonical_uris = canonical_uris.reverse
-    is_reversed_matching_feed = target_feed_entry_canonical_uris
-      .zip(reversed_canonical_uris[...target_feed_entry_canonical_uris.length])
-      .all? { |uri, entry_uri| canonical_uri_equal?(uri, entry_uri, canonical_equality_cfg) }
-    is_reversed_matching_fewer_stars_links_prefix = fewer_stars_canonical_uris &&
-      reversed_canonical_uris[...fewer_stars_canonical_uris.length]
-        .zip(fewer_stars_canonical_uris)
-        .all? do |uri, fewer_stars_uri|
-        canonical_uri_equal?(uri, fewer_stars_uri, canonical_equality_cfg)
+    reversed_curis = curis.reverse
+    is_reversed_matching_feed = target_feed_entry_curis
+      .zip(reversed_curis[...target_feed_entry_curis.length])
+      .all? { |xpath_curi, entry_curi| canonical_uri_equal?(xpath_curi, entry_curi, curi_eq_cfg) }
+    is_reversed_matching_fewer_stars_links_prefix = fewer_stars_curis &&
+      reversed_curis[...fewer_stars_curis.length]
+        .zip(fewer_stars_curis)
+        .all? do |xpath_curi, fewer_stars_curi|
+        canonical_uri_equal?(xpath_curi, fewer_stars_curi, curi_eq_cfg)
       end
-    is_reversed_matching_fewer_stars_links_suffix = fewer_stars_canonical_uris &&
-      reversed_canonical_uris[-fewer_stars_canonical_uris.length..]
-        .zip(fewer_stars_canonical_uris)
-        .all? do |uri, fewer_stars_uri|
-        canonical_uri_equal?(uri, fewer_stars_uri, canonical_equality_cfg)
+    is_reversed_matching_fewer_stars_links_suffix = fewer_stars_curis &&
+      reversed_curis[-fewer_stars_curis.length..]
+        .zip(fewer_stars_curis)
+        .all? do |xpath_curi, fewer_stars_curi|
+        canonical_uri_equal?(xpath_curi, fewer_stars_curi, curi_eq_cfg)
       end
     if extraction.markup_dates_extraction.are_reverse_sorted != false &&
       is_reversed_matching_feed &&
       !links_extraction.has_duplicates &&
-      (!fewer_stars_canonical_uris ||
+      (!fewer_stars_curis ||
         is_reversed_matching_fewer_stars_links_prefix ||
         is_reversed_matching_fewer_stars_links_suffix)
 
@@ -461,38 +460,38 @@ def try_extract_sorted(
 
     if dates
       unique_links_dates = []
-      canonical_uris_set_by_date = {}
+      curis_set_by_date = {}
       links.zip(dates).each do |link, date|
-        unless canonical_uris_set_by_date.key?(date)
-          canonical_uris_set_by_date[date] = CanonicalUriSet.new([], canonical_equality_cfg)
+        unless curis_set_by_date.key?(date)
+          curis_set_by_date[date] = CanonicalUriSet.new([], curi_eq_cfg)
         end
 
-        unless canonical_uris_set_by_date[date].include?(link.canonical_uri)
+        unless curis_set_by_date[date].include?(link.curi)
           unique_links_dates << [link, date]
-          canonical_uris_set_by_date[date] << link.canonical_uri
+          curis_set_by_date[date] << link.curi
         end
       end
 
-      if unique_links_dates.length != canonical_uris_set.length
-        canonical_urls_dates = canonical_uris
+      if unique_links_dates.length != curis_set.length
+        canonical_urls_dates = curis
           .zip(dates)
-          .map { |canonical_uri, date| [canonical_uri.to_s, date.strftime("%Y-%m-%d")] }
+          .map { |curi, date| [curi.to_s, date.strftime("%Y-%m-%d")] }
         logger.log("Masked xpath #{masked_xpath} has all links with dates but also duplicates with conflicting dates: #{canonical_urls_dates}")
         next
       end
 
       sorted_links_dates = sort_links_dates(unique_links_dates)
       sorted_links = sorted_links_dates.map { |link_date| link_date[0] }
-      sorted_canonical_uris = sorted_links.map(&:canonical_uri)
-      is_sorted_matching_feed = target_feed_entry_canonical_uris
-        .zip(sorted_canonical_uris[...target_feed_entry_canonical_uris.length])
-        .all? { |uri, entry_uri| canonical_uri_equal?(uri, entry_uri, canonical_equality_cfg) }
+      sorted_curis = sorted_links.map(&:curi)
+      is_sorted_matching_feed = target_feed_entry_curis
+        .zip(sorted_curis[...target_feed_entry_curis.length])
+        .all? { |xpath_curi, entry_curi| canonical_uri_equal?(xpath_curi, entry_curi, curi_eq_cfg) }
       unless is_sorted_matching_feed
         logger.log("Masked xpath #{masked_xpath} has all links with dates but doesn't match feed after sorting")
         sorted_masked_xpath_links_dates_log = sorted_links_dates
-          .map { |link_date| [link_date[0].canonical_uri.to_s, link_date[1].strftime("%Y-%m-%d")] }
+          .map { |link_date| [link_date[0].curi.to_s, link_date[1].strftime("%Y-%m-%d")] }
         logger.log("Masked xpath links with dates: #{sorted_masked_xpath_links_dates_log}")
-        logger.log("Feed links: #{target_feed_entry_canonical_uris.map(&:to_s)}")
+        logger.log("Feed links: #{target_feed_entry_curis.map(&:to_s)}")
         next
       end
 
@@ -535,13 +534,13 @@ def join_log_lines(log_lines)
 end
 
 def try_extract_sorted_highlight_first_link(
-  extractions_by_masked_xpath, feed_entry_canonical_uris, canonical_equality_cfg, page_links, star_count,
-  fewer_stars_canonical_uris, min_links_count, logger
+  extractions_by_masked_xpath, feed_entry_curis, curi_eq_cfg, page_links, star_count, fewer_stars_curis,
+  min_links_count, logger
 )
   logger.log("Trying sorted match with highlighted first link and #{star_count} stars")
 
   first_link = page_links.find do |page_link|
-    canonical_uri_equal?(page_link.canonical_uri, feed_entry_canonical_uris.first, canonical_equality_cfg)
+    canonical_uri_equal?(page_link.curi, feed_entry_curis.first, curi_eq_cfg)
   end
   return nil unless first_link
 
@@ -550,22 +549,22 @@ def try_extract_sorted_highlight_first_link(
   extractions_by_masked_xpath.each do |masked_xpath, extraction|
     links_extraction = extraction.links_extraction
     links = links_extraction.links
-    canonical_uris = links_extraction.canonical_uris
+    curis = links_extraction.curis
 
     next if best_links && best_links.length >= links.length
-    next unless links.length >= feed_entry_canonical_uris.length - 1
+    next unless links.length >= feed_entry_curis.length - 1
     next unless links.length >= min_links_count - 1
 
-    is_matching_feed = feed_entry_canonical_uris[1..]
-      .zip(canonical_uris[...feed_entry_canonical_uris.length - 1])
-      .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
-    is_matching_fewer_stars_links = fewer_stars_canonical_uris &&
-      fewer_stars_canonical_uris[1..]
-        .zip(canonical_uris[...fewer_stars_canonical_uris.length - 1])
+    is_matching_feed = feed_entry_curis[1..]
+      .zip(curis[...feed_entry_curis.length - 1])
+      .all? { |xpath_curi, entry_curi| canonical_uri_equal?(xpath_curi, entry_curi, curi_eq_cfg) }
+    is_matching_fewer_stars_links = fewer_stars_curis &&
+      fewer_stars_curis[1..]
+        .zip(curis[...fewer_stars_curis.length - 1])
         .all? do |xpath_uri, fewer_stars_uri|
-        canonical_uri_equal?(xpath_uri, fewer_stars_uri, canonical_equality_cfg)
+        canonical_uri_equal?(xpath_uri, fewer_stars_uri, curi_eq_cfg)
       end
-    if is_matching_feed && (is_matching_fewer_stars_links || !fewer_stars_canonical_uris)
+    if is_matching_feed && (is_matching_fewer_stars_links || !fewer_stars_curis)
       best_xpath = masked_xpath
       best_links = links
       logger.log("Masked xpath is good: #{masked_xpath}#{join_log_lines(extraction.log_lines)} (1 + #{links.length} links)")
@@ -592,8 +591,8 @@ MediumWithPinnedEntryResult = Struct.new(
 )
 
 def try_extract_medium_with_pinned_entry(
-  extractions_by_masked_xpath, feed_entry_canonical_uris, canonical_equality_cfg, feed_generator, page_links,
-  min_links_count, logger
+  extractions_by_masked_xpath, feed_entry_curis, curi_eq_cfg, feed_generator, page_links, min_links_count,
+  logger
 )
   logger.log("Trying medium match with pinned entry")
 
@@ -606,19 +605,19 @@ def try_extract_medium_with_pinned_entry(
 
     links_extraction = extraction.links_extraction
     links = links_extraction.links
-    canonical_uris_set = links_extraction.canonical_uris_set
+    canonical_uris_set = links_extraction.curis_set
     medium_markup_dates = extraction.medium_markup_dates
 
-    next unless links.length >= feed_entry_canonical_uris.length - 1
+    next unless links.length >= feed_entry_curis.length - 1
     next unless links.length >= min_links_count - 1
     next unless medium_markup_dates
 
-    feed_uris_not_matching = feed_entry_canonical_uris
-      .filter { |entry_uri| !canonical_uris_set.include?(entry_uri) }
+    feed_uris_not_matching = feed_entry_curis
+      .filter { |entry_curi| !canonical_uris_set.include?(entry_curi) }
     next unless feed_uris_not_matching.length == 1
 
     pinned_entry_link = page_links.find do |page_link|
-      canonical_uri_equal?(page_link.canonical_uri, feed_uris_not_matching.first, canonical_equality_cfg)
+      canonical_uri_equal?(page_link.curi, feed_uris_not_matching.first, curi_eq_cfg)
     end
     next unless pinned_entry_link
 
@@ -639,18 +638,18 @@ def try_extract_medium_with_pinned_entry(
 end
 
 def try_extract_sorted_2xpaths(
-  prefix_extractions_by_masked_xpath, suffix_extractions_by_masked_xpath, feed_entry_canonical_uris,
-  canonical_equality_cfg, star_count, fewer_stars_canonical_uris, min_links_count, logger
+  prefix_extractions_by_masked_xpath, suffix_extractions_by_masked_xpath, feed_entry_curis, curi_eq_cfg,
+  star_count, fewer_stars_curis, min_links_count, logger
 )
   logger.log("Trying sorted match with 1+#{star_count} stars")
 
   feed_prefix_xpaths_by_length = {}
   prefix_extractions_by_masked_xpath.each do |masked_xpath, extraction|
     links = extraction.links_extraction.links
-    next if links.length >= feed_entry_canonical_uris.length
+    next if links.length >= feed_entry_curis.length
 
-    feed_entry_canonical_uris.zip(links).each_with_index do |pair, index|
-      feed_entry_canonical_uri, masked_xpath_link = pair
+    feed_entry_curis.zip(links).each_with_index do |pair, index|
+      feed_entry_curi, masked_xpath_link = pair
       if index > 0 && masked_xpath_link.nil?
         prefix_length = index
         unless feed_prefix_xpaths_by_length.key?(prefix_length)
@@ -658,9 +657,7 @@ def try_extract_sorted_2xpaths(
         end
         feed_prefix_xpaths_by_length[prefix_length] << masked_xpath
         break
-      elsif !canonical_uri_equal?(
-        feed_entry_canonical_uri, masked_xpath_link.canonical_uri, canonical_equality_cfg
-      )
+      elsif !canonical_uri_equal?(feed_entry_curi, masked_xpath_link.curi, curi_eq_cfg)
         break # Not a prefix
       end
     end
@@ -675,24 +672,22 @@ def try_extract_sorted_2xpaths(
   suffix_extractions_by_masked_xpath.each do |masked_suffix_xpath, suffix_extraction|
     suffix_links_extraction = suffix_extraction.links_extraction
     suffix_links = suffix_links_extraction.links
-    feed_suffix_start_index = feed_entry_canonical_uris.index do |entry_uri|
-      canonical_uri_equal?(entry_uri, suffix_links[0].canonical_uri, canonical_equality_cfg)
+    feed_suffix_start_index = feed_entry_curis.index do |entry_uri|
+      canonical_uri_equal?(entry_uri, suffix_links[0].curi, curi_eq_cfg)
     end
     next unless feed_suffix_start_index
 
     is_suffix = true
-    feed_entry_canonical_uris[feed_suffix_start_index..]
+    feed_entry_curis[feed_suffix_start_index..]
       .zip(suffix_links)
-      .each do |feed_entry_canonical_uri, masked_xpath_link|
+      .each do |feed_entry_curi, masked_xpath_link|
 
-      if feed_entry_canonical_uri.nil?
+      if feed_entry_curi.nil?
         break # suffix found
       elsif masked_xpath_link.nil?
         is_suffix = false
         break
-      elsif !canonical_uri_equal?(
-        feed_entry_canonical_uri, masked_xpath_link.canonical_uri, canonical_equality_cfg
-      )
+      elsif !canonical_uri_equal?(feed_entry_curi, masked_xpath_link.curi, curi_eq_cfg)
         is_suffix = false
         break
       end
@@ -752,18 +747,18 @@ def try_extract_sorted_2xpaths(
     logger.log("Suffix xpath: #{masked_suffix_xpath}#{join_log_lines(suffix_extraction.log_lines)}")
 
     combined_links = prefix_links + suffix_links
-    combined_canonical_uris = combined_links.map(&:canonical_uri)
-    combined_canonical_uris_set = combined_canonical_uris.to_canonical_uri_set(canonical_equality_cfg)
-    if combined_canonical_uris.length != combined_canonical_uris_set.length
-      logger.log("Combination has all feed links but also duplicates: #{combined_canonical_uris.map(&:to_s)}")
+    combined_curis = combined_links.map(&:curi)
+    combined_curis_set = combined_curis.to_canonical_uri_set(curi_eq_cfg)
+    if combined_curis.length != combined_curis_set.length
+      logger.log("Combination has all feed links but also duplicates: #{combined_curis.map(&:to_s)}")
       next
     end
 
-    is_matching_prev_archives_links = !fewer_stars_canonical_uris ||
-      fewer_stars_canonical_uris
-        .zip(combined_canonical_uris[...fewer_stars_canonical_uris.length])
-        .all? do |xpath_uri, fewer_stars_uri|
-        canonical_uri_equal?(xpath_uri, fewer_stars_uri, canonical_equality_cfg)
+    is_matching_prev_archives_links = !fewer_stars_curis ||
+      fewer_stars_curis
+        .zip(combined_curis[...fewer_stars_curis.length])
+        .all? do |xpath_curi, fewer_stars_curi|
+        canonical_uri_equal?(xpath_curi, fewer_stars_curi, curi_eq_cfg)
       end
     unless is_matching_prev_archives_links
       logger.log("Combination doesn't match previous archives links")
@@ -792,9 +787,8 @@ def try_extract_sorted_2xpaths(
 end
 
 def try_extract_almost_matching_feed(
-  extractions_by_masked_xpath, feed_entry_links, feed_entry_canonical_uris_set,
-  canonical_equality_cfg, almost_match_threshold, star_count, fewer_stars_canonical_uris, min_links_count,
-  logger
+  extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_set, curi_eq_cfg,
+  almost_match_threshold, star_count, fewer_stars_curis, min_links_count, logger
 )
   logger.log("Trying almost feed match with #{star_count} stars")
 
@@ -804,22 +798,24 @@ def try_extract_almost_matching_feed(
   extractions_by_masked_xpath.each do |masked_xpath, extraction|
     links_extraction = extraction.links_extraction
     links = links_extraction.links
-    canonical_uris = links_extraction.canonical_uris
-    canonical_uris_set = links_extraction.canonical_uris_set
+    curis = links_extraction.curis
+    curis_set = links_extraction.curis_set
 
     next if best_links && best_links.length >= links.length
     next unless links.length >= min_links_count
     next unless links.length < feed_entry_links.length
     next unless links.length >= almost_match_threshold
     next unless feed_entry_links
-      .count { |entry_link| canonical_uris_set.include?(entry_link.canonical_uri) } >= almost_match_threshold
-    next unless canonical_uris.all? { |uri| feed_entry_canonical_uris_set.include?(uri) }
+      .count { |entry_link| curis_set.include?(entry_link.curi) } >= almost_match_threshold
+    next unless curis.all? { |curi| feed_entry_curis_set.include?(curi) }
 
-    is_matching_fewer_stars_links = fewer_stars_canonical_uris &&
-      canonical_uris[...fewer_stars_canonical_uris.length]
-        .zip(fewer_stars_canonical_uris)
-        .all? { |uri, fewer_stars_uri| canonical_uri_equal?(uri, fewer_stars_uri, canonical_equality_cfg) }
-    next unless !fewer_stars_canonical_uris || is_matching_fewer_stars_links
+    is_matching_fewer_stars_links = fewer_stars_curis &&
+      curis[...fewer_stars_curis.length]
+        .zip(fewer_stars_curis)
+        .all? do |xpath_curi, fewer_stars_curi|
+        canonical_uri_equal?(xpath_curi, fewer_stars_curi, curi_eq_cfg)
+      end
+    next unless !fewer_stars_curis || is_matching_fewer_stars_links
 
     best_links = links
     best_xpath = masked_xpath
@@ -842,8 +838,8 @@ end
 ShuffledResult = Struct.new(:pattern, :links_maybe_dates, :count, :extra, keyword_init: true)
 
 def try_extract_shuffled(
-  extractions_by_masked_xpath, feed_entry_canonical_uris, canonical_equality_cfg, almost_match_threshold,
-  star_count, min_links_count, logger
+  extractions_by_masked_xpath, feed_entry_curis, curi_eq_cfg, almost_match_threshold, star_count,
+  min_links_count, logger
 )
   is_almost = !!almost_match_threshold
   almost_suffix = is_almost ? "_almost" : ""
@@ -855,34 +851,33 @@ def try_extract_shuffled(
   extractions_by_masked_xpath.each do |masked_xpath, extraction|
     links_extraction = extraction.links_extraction
     links = links_extraction.links
-    canonical_uris = links_extraction.canonical_uris
-    canonical_uris_set = links_extraction.canonical_uris_set
+    curis = links_extraction.curis
+    curis_set = links_extraction.curis_set
     maybe_url_dates = extraction.maybe_url_dates
 
     next if best_links_maybe_dates && best_links_maybe_dates.length >= links.length
-    next unless links.length >= feed_entry_canonical_uris.length
+    next unless links.length >= feed_entry_curis.length
     next unless links.length >= min_links_count
 
     log_lines = extraction.log_lines.clone
     if is_almost
-      target_feed_entry_canonical_uris = feed_entry_canonical_uris
-        .filter { |entry_uri| canonical_uris_set.include?(entry_uri) }
-      next unless target_feed_entry_canonical_uris.length < feed_entry_canonical_uris.length
-      next unless target_feed_entry_canonical_uris.length >= almost_match_threshold
-      log_lines << "almost feed match #{target_feed_entry_canonical_uris.length}/#{feed_entry_canonical_uris.length}"
+      target_feed_entry_curis = feed_entry_curis.filter { |entry_curi| curis_set.include?(entry_curi) }
+      next unless target_feed_entry_curis.length < feed_entry_curis.length
+      next unless target_feed_entry_curis.length >= almost_match_threshold
+      log_lines << "almost feed match #{target_feed_entry_curis.length}/#{feed_entry_curis.length}"
     else
-      next unless feed_entry_canonical_uris.all? { |entry_uri| canonical_uris_set.include?(entry_uri) }
+      next unless feed_entry_curis.all? { |entry_curi| curis_set.include?(entry_curi) }
     end
 
     links_maybe_url_dates = links.zip(maybe_url_dates)
-    if canonical_uris.length != canonical_uris_set.length
+    if curis.length != curis_set.length
       dedup_links_maybe_dates = []
-      dedup_canonical_uri_set = CanonicalUriSet.new([], canonical_equality_cfg)
+      dedup_curis_set = CanonicalUriSet.new([], curi_eq_cfg)
       links_maybe_url_dates.each do |link, maybe_url_date|
-        next if dedup_canonical_uri_set.include?(link.canonical_uri)
+        next if dedup_curis_set.include?(link.curi)
 
         dedup_links_maybe_dates << [link, maybe_url_date]
-        dedup_canonical_uri_set << link.canonical_uri
+        dedup_curis_set << link.curi
       end
     else
       dedup_links_maybe_dates = links_maybe_url_dates
@@ -912,12 +907,12 @@ end
 
 LongFeedResult = Struct.new(:pattern, :links, :count, :extra, keyword_init: true)
 
-def try_extract_long_feed(feed_entry_links, page_canonical_uris_set, min_links_count, logger)
+def try_extract_long_feed(feed_entry_links, page_curis_set, min_links_count, logger)
   logger.log("Trying long feed match")
 
   if feed_entry_links.length >= 31 &&
     feed_entry_links.length > min_links_count &&
-    feed_entry_links.all? { |entry_link| page_canonical_uris_set.include?(entry_link.canonical_uri) }
+    feed_entry_links.all? { |entry_link| page_curis_set.include?(entry_link.curi) }
 
     logger.log("Long feed is matching (#{feed_entry_links.length} links)")
     LongFeedResult.new(

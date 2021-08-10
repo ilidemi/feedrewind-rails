@@ -21,18 +21,18 @@ start_link_ids.each do |start_link_id|
   fetch_uri = URI(row["fetch_url"])
   pattern = row["pattern"]
   feed_links = extract_feed_links(content, fetch_uri, logger)
-  feed_uris = feed_links.entry_links.map(&:canonical_uri)
+  feed_uris = feed_links.entry_links.map(&:curi)
   feed_urls = feed_uris.map(&:to_s)
-  path_prefix, feed_filtered_uris = try_filter_non_posts_from_feed(feed_uris, Set.new)
-  if feed_filtered_uris
-    feed_filtered_uris_set = feed_filtered_uris.to_canonical_uri_set(CanonicalEqualityConfig.new(Set.new, false))
+  path_prefix, feed_filtered_curis = try_filter_non_posts_from_feed(feed_uris, Set.new)
+  if feed_filtered_curis
+    feed_filtered_curis_set = feed_filtered_curis.to_canonical_uri_set(CanonicalEqualityConfig.new(Set.new, false))
     feed_non_post_paths = feed_uris
-      .filter { |uri| !feed_filtered_uris_set.include?(uri) }
+      .filter { |uri| !feed_filtered_curis_set.include?(uri) }
       .map { |uri| uri.path + uri.query }
     results << {
       urls: feed_urls,
       count: feed_links.entry_links.length,
-      removed_count: feed_filtered_uris.length - feed_links.entry_links.length,
+      removed_count: feed_filtered_curis.length - feed_links.entry_links.length,
       post_prefix: "/" + path_prefix.join("/") + "/*",
       non_post_paths: feed_non_post_paths,
       id: start_link_id,

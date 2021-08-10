@@ -1,6 +1,6 @@
 XpathTreeNode = Struct.new(:xpath_segments, :children, :parent, :is_link, :is_feed_link)
 
-def group_links_by_masked_xpath(page_links, feed_entry_canonical_uris_set, xpath_name, star_count)
+def group_links_by_masked_xpath(page_links, feed_entry_curis_set, xpath_name, star_count)
   def xpath_to_segments(xpath)
     xpath.split("/")[1..].map do |token|
       match = token.match(/^([^\[]+)\[(\d+)\]$/)
@@ -12,7 +12,7 @@ def group_links_by_masked_xpath(page_links, feed_entry_canonical_uris_set, xpath
   page_link_xpaths_segments_is_feed_link = page_links.map do |page_link|
     [
       xpath_to_segments(page_link[xpath_name]),
-      feed_entry_canonical_uris_set.include?(page_link.canonical_uri)
+      feed_entry_curis_set.include?(page_link.curi)
     ]
   end
 

@@ -70,7 +70,7 @@ def crawl_link_with_puppeteer(link, content, document, puppeteer_client, ctx, lo
           .first
       end
       is_puppeteer_used = true
-    elsif link.canonical_uri.path.match?(ARCHIVES_REGEX) &&
+    elsif link.curi.path.match?(ARCHIVES_REGEX) &&
       document.at_css(SUBSTACK_FOOTER_SELECTOR)
 
       logger.log("Spotted Substack archives, rerunning with puppeteer")

@@ -54,8 +54,8 @@ end
 class CrawlContext
   def initialize
     @seen_fetch_urls = Set.new
-    @fetched_canonical_uris = CanonicalUriSet.new([], CanonicalEqualityConfig.new(Set.new, false))
-    @pptr_fetched_canonical_uris = CanonicalUriSet.new([], CanonicalEqualityConfig.new(Set.new, false))
+    @fetched_curis = CanonicalUriSet.new([], CanonicalEqualityConfig.new(Set.new, false))
+    @pptr_fetched_curis = CanonicalUriSet.new([], CanonicalEqualityConfig.new(Set.new, false))
     @redirects = {}
     @requests_made = 0
     @puppeteer_requests_made = 0
@@ -64,7 +64,7 @@ class CrawlContext
     @allowed_hosts = Set.new
   end
 
-  attr_reader :seen_fetch_urls, :fetched_canonical_uris, :pptr_fetched_canonical_uris, :redirects, :allowed_hosts
+  attr_reader :seen_fetch_urls, :fetched_curis, :pptr_fetched_curis, :redirects, :allowed_hosts
   attr_accessor :requests_made, :puppeteer_requests_made, :duplicate_fetches, :main_feed_fetched
 end
 
@@ -159,10 +159,10 @@ def guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
 
     feed_page = feed_result
     ctx.seen_fetch_urls << feed_page.fetch_uri.to_s
-    db_storage.save_feed(start_link_id, feed_page.canonical_uri.to_s)
+    db_storage.save_feed(start_link_id, feed_page.curi.to_s)
     result.feed_requests_made = ctx.requests_made
     result.feed_time = (monotonic_now - feed_start_time).to_i
-    logger.log("Feed url: #{feed_page.canonical_uri}")
+    logger.log("Feed url: #{feed_page.curi}")
 
     feed_links = extract_feed_links(feed_page.content, feed_page.fetch_uri, logger)
     result.feed_links = feed_links.entry_links.length
@@ -181,22 +181,22 @@ def guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     same_hosts = Set.new
     [[start_link, start_page], [feed_link, feed_page]].each do |link, page|
       if link.uri.host != page.fetch_uri.host &&
-        canonical_uri_same_path?(link.canonical_uri, page.canonical_uri) &&
+        canonical_uri_same_path?(link.curi, page.curi) &&
         (feed_entry_hosts.include?(link.uri.host) || feed_entry_hosts.include?(page.fetch_uri.host))
 
         same_hosts << link.uri.host << page.fetch_uri.host
       end
     end
 
-    canonical_equality_cfg = CanonicalEqualityConfig.new(same_hosts, feed_links.generator == :tumblr)
-    ctx.fetched_canonical_uris.update_equality_config(canonical_equality_cfg)
-    ctx.pptr_fetched_canonical_uris.update_equality_config(canonical_equality_cfg)
-    gt_main_page_canonical_uri = CanonicalUri.from_db_string(
+    curi_eq_cfg = CanonicalEqualityConfig.new(same_hosts, feed_links.generator == :tumblr)
+    ctx.fetched_curis.update_equality_config(curi_eq_cfg)
+    ctx.pptr_fetched_curis.update_equality_config(curi_eq_cfg)
+    gt_main_page_curi = CanonicalUri.from_db_string(
       gt_row ? gt_row["main_page_canonical_url"] : "no-ground-truth.com"
     )
     historical_result_combo = guided_crawl_loop(
-      start_link_id, start_page, feed_links.entry_links, feed_links.generator, ctx, canonical_equality_cfg,
-      mock_http_client, puppeteer_client, db_storage, gt_main_page_canonical_uri, logger
+      start_link_id, start_page, feed_links.entry_links, feed_links.generator, ctx, curi_eq_cfg,
+      mock_http_client, puppeteer_client, db_storage, gt_main_page_curi, logger
     )
     historical_result = historical_result_combo[:best_result]
     result.historical_links_found = !!historical_result
@@ -248,7 +248,7 @@ def guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       "($1, $2, $3, $4, $5)",
       [
         start_link_id, historical_result.pattern, entries_count, historical_result.main_canonical_url,
-        oldest_link.canonical_uri.to_s
+        oldest_link.curi.to_s
       ]
     )
 
@@ -282,14 +282,14 @@ def guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
         result.main_url = "<a href=\"#{historical_result.main_fetch_url}\">#{historical_result.main_canonical_url}</a><br>(#{gt_row["main_page_canonical_url"]})"
       end
 
-      gt_oldest_canonical_uri = CanonicalUri.from_db_string(gt_row["oldest_entry_canonical_url"])
-      if !canonical_uri_equal?(gt_oldest_canonical_uri, oldest_link.canonical_uri, canonical_equality_cfg)
+      gt_oldest_curi = CanonicalUri.from_db_string(gt_row["oldest_entry_canonical_url"])
+      if !canonical_uri_equal?(gt_oldest_curi, oldest_link.curi, curi_eq_cfg)
         historical_links_matching = false
         result.oldest_link_status = :failure
-        result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.canonical_uri}</a><br>(#{gt_oldest_canonical_uri})"
+        result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.curi}</a><br>(#{gt_oldest_curi})"
       else
         result.oldest_link_status = :success
-        result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.canonical_uri}</a>"
+        result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.curi}</a>"
       end
 
       result.historical_links_matching = historical_links_matching
@@ -315,7 +315,7 @@ def guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       result.historical_links_pattern = historical_result.pattern
       result.historical_links_count = entries_count
       result.main_url = "<a href=\"#{historical_result.main_fetch_url}\">#{historical_result.main_canonical_url}</a>"
-      result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.canonical_uri}</a>"
+      result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.curi}</a>"
     end
 
     result.extra = historical_result.extra
@@ -326,7 +326,7 @@ def guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
   ensure
     result.duplicate_fetches = ctx.duplicate_fetches
     result.total_requests = ctx.requests_made + ctx.puppeteer_requests_made
-    result.total_pages = ctx.fetched_canonical_uris.length
+    result.total_pages = ctx.fetched_curis.length
     result.total_network_requests =
       ((defined?(mock_http_client) && mock_http_client && mock_http_client.network_requests_made) || 0) +
         ctx.puppeteer_requests_made
@@ -347,7 +347,7 @@ def crawl_request(
   link = follow_cached_redirects(link, ctx.redirects, seen_urls)
   if !link.equal?(initial_link) &&
     (ctx.seen_fetch_urls.include?(link.url) ||
-      ctx.fetched_canonical_uris.include?(link.canonical_uri))
+      ctx.fetched_curis.include?(link.curi))
 
     logger.log("Cached redirect #{initial_link.url} -> #{link.url} (already seen)")
     return AlreadySeenLink.new(link)
@@ -380,7 +380,7 @@ def crawl_request(
     redirection_link = follow_cached_redirects(redirection_link, ctx.redirects, seen_urls)
 
     if ctx.seen_fetch_urls.include?(redirection_link.url) ||
-      ctx.fetched_canonical_uris.include?(redirection_link.canonical_uri)
+      ctx.fetched_curis.include?(redirection_link.curi)
 
       logger.log("#{resp.code} #{request_ms}ms #{link.url} -> #{redirection_link.url} (already seen)")
       return AlreadySeenLink.new(link)
@@ -407,10 +407,10 @@ def crawl_request(
       document = nil
     end
 
-    if !ctx.fetched_canonical_uris.include?(link.canonical_uri)
-      ctx.fetched_canonical_uris << link.canonical_uri
+    if !ctx.fetched_curis.include?(link.curi)
+      ctx.fetched_curis << link.curi
       storage.save_page(
-        link.canonical_uri.to_s, link.url, content_type, start_link_id, content, false
+        link.curi.to_s, link.url, content_type, start_link_id, content, false
       )
       logger.log("#{resp.code} #{content_type} #{request_ms}ms #{link.url}")
     else
@@ -422,10 +422,10 @@ def crawl_request(
       link, content, document, puppeteer_client, ctx, logger
     )
     if is_puppeteer_used
-      if !ctx.pptr_fetched_canonical_uris.include?(link.canonical_uri)
-        ctx.pptr_fetched_canonical_uris << link.canonical_uri
+      if !ctx.pptr_fetched_curis.include?(link.curi)
+        ctx.pptr_fetched_curis << link.curi
         storage.save_page(
-          link.canonical_uri.to_s, link.url, content_type, start_link_id, content, true
+          link.curi.to_s, link.url, content_type, start_link_id, content, true
         )
         logger.log("Puppeteer page saved")
       else
@@ -433,14 +433,14 @@ def crawl_request(
       end
     end
 
-    Page.new(link.canonical_uri, link.uri, start_link_id, content_type, content, document, is_puppeteer_used)
+    Page.new(link.curi, link.uri, start_link_id, content_type, content, document, is_puppeteer_used)
   elsif PERMANENT_ERROR_CODES.include?(resp.code)
-    ctx.fetched_canonical_uris << link.canonical_uri
+    ctx.fetched_curis << link.curi
     storage.save_permanent_error(
-      link.canonical_uri.to_s, link.url, start_link_id, resp.code
+      link.curi.to_s, link.url, start_link_id, resp.code
     )
     logger.log("#{resp.code} #{request_ms}ms #{link.url}")
-    PermanentError.new(link.canonical_uri, link.url, start_link_id, resp.code)
+    PermanentError.new(link.curi, link.url, start_link_id, resp.code)
   else
     raise "HTTP #{resp.code}" # TODO more cases here
   end
@@ -574,25 +574,25 @@ ARCHIVES_REGEX = "/(?:archives?|posts?|all)(?:\\.[a-z]+)?/*$"
 MAIN_PAGE_REGEX = "/(?:blog|articles|writing|journal)(?:\\.[a-z]+)?/*$"
 
 def guided_crawl_loop(
-  start_link_id, start_page, feed_entry_links, feed_generator, ctx, canonical_equality_cfg, mock_http_client,
-  puppeteer_client, db_storage, gt_main_page_canonical_uri, logger
+  start_link_id, start_page, feed_entry_links, feed_generator, ctx, curi_eq_cfg, mock_http_client,
+  puppeteer_client, db_storage, gt_main_page_curi, logger
 )
   start_page_links = extract_links(
     start_page, nil, ctx.redirects, logger, true, true
   )
-  start_page_canonical_uris_set = start_page_links
-    .map(&:canonical_uri)
-    .to_canonical_uri_set(canonical_equality_cfg)
-  feed_entry_canonical_uris = feed_entry_links.map(&:canonical_uri)
-  feed_entry_canonical_uris_set = feed_entry_canonical_uris.to_canonical_uri_set(canonical_equality_cfg)
+  start_page_curis_set = start_page_links
+    .map(&:curi)
+    .to_canonical_uri_set(curi_eq_cfg)
+  feed_entry_curis = feed_entry_links.map(&:curi)
+  feed_entry_curis_set = feed_entry_curis.to_canonical_uri_set(curi_eq_cfg)
   pages_without_puppeteer = []
 
-  does_start_page_path_match_archives = start_page.canonical_uri.path.match?(ARCHIVES_REGEX)
+  does_start_page_path_match_archives = start_page.curi.path.match?(ARCHIVES_REGEX)
   if does_start_page_path_match_archives
     result = try_extract_historical(
-      start_page, start_page_links, start_page_canonical_uris_set, feed_entry_links,
-      feed_entry_canonical_uris, feed_entry_canonical_uris_set, feed_generator, canonical_equality_cfg,
-      start_link_id, ctx, mock_http_client, db_storage, logger
+      start_page, start_page_links, start_page_curis_set, feed_entry_links, feed_entry_curis,
+      feed_entry_curis_set, feed_generator, curi_eq_cfg, start_link_id, ctx, mock_http_client, db_storage,
+      logger
     )
     return result if result
 
@@ -604,18 +604,17 @@ def guided_crawl_loop(
 
   logger.log("Trying select links from start page")
 
-  allowed_hosts = canonical_equality_cfg.same_hosts.empty? ?
-    [start_page.canonical_uri.host] :
-    canonical_equality_cfg.same_hosts
+  allowed_hosts = curi_eq_cfg.same_hosts.empty? ?
+    [start_page.curi.host] :
+    curi_eq_cfg.same_hosts
 
   start_page_archives_links = start_page_links
-    .filter { |link| allowed_hosts.include?(link.uri.host) && link.canonical_uri.path.match?(ARCHIVES_REGEX) }
+    .filter { |link| allowed_hosts.include?(link.uri.host) && link.curi.path.match?(ARCHIVES_REGEX) }
   unless start_page_archives_links.empty?
     logger.log("Checking #{start_page_archives_links.length} archives links")
     result, start_page_archives_pages_without_puppeteer = crawl_historical(
-      start_page_archives_links, feed_entry_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set,
-      feed_generator, canonical_equality_cfg, start_link_id, ctx, mock_http_client, puppeteer_client,
-      db_storage, logger
+      start_page_archives_links, feed_entry_links, feed_entry_curis, feed_entry_curis_set, feed_generator,
+      curi_eq_cfg, start_link_id, ctx, mock_http_client, puppeteer_client, db_storage, logger
     )
     return result if result
 
@@ -625,9 +624,9 @@ def guided_crawl_loop(
 
   unless does_start_page_path_match_archives
     result = try_extract_historical(
-      start_page, start_page_links, start_page_canonical_uris_set, feed_entry_links,
-      feed_entry_canonical_uris, feed_entry_canonical_uris_set, feed_generator, canonical_equality_cfg,
-      start_link_id, ctx, mock_http_client, db_storage, logger
+      start_page, start_page_links, start_page_curis_set, feed_entry_links, feed_entry_curis,
+      feed_entry_curis_set, feed_generator, curi_eq_cfg, start_link_id, ctx, mock_http_client, db_storage,
+      logger
     )
     return result if result
 
@@ -636,14 +635,13 @@ def guided_crawl_loop(
   end
 
   start_page_main_page_links = start_page_links.filter do |link|
-    allowed_hosts.include?(link.uri.host) && link.canonical_uri.path.match?(MAIN_PAGE_REGEX)
+    allowed_hosts.include?(link.uri.host) && link.curi.path.match?(MAIN_PAGE_REGEX)
   end
   unless start_page_main_page_links.empty?
     logger.log("Checking #{start_page_main_page_links.length} main page links")
     result, start_page_main_pages_without_puppeteer = crawl_historical(
-      start_page_main_page_links, feed_entry_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set,
-      feed_generator, canonical_equality_cfg, start_link_id, ctx, mock_http_client, puppeteer_client,
-      db_storage, logger
+      start_page_main_page_links, feed_entry_links, feed_entry_curis, feed_entry_curis_set, feed_generator,
+      curi_eq_cfg, start_link_id, ctx, mock_http_client, puppeteer_client, db_storage, logger
     )
     return result if result
 
@@ -671,30 +669,29 @@ def guided_crawl_loop(
   entry2_links = extract_links(
     entry2_page, allowed_hosts, ctx.redirects, logger, true, true
   )
-  entry1_canonical_uris_set = entry1_links
-    .map(&:canonical_uri)
-    .to_canonical_uri_set(canonical_equality_cfg)
-  entry2_canonical_uris_set = entry2_links
-    .map(&:canonical_uri)
-    .to_canonical_uri_set(canonical_equality_cfg)
+  entry1_curis_set = entry1_links
+    .map(&:curi)
+    .to_canonical_uri_set(curi_eq_cfg)
+  entry2_curis_set = entry2_links
+    .map(&:curi)
+    .to_canonical_uri_set(curi_eq_cfg)
 
   links_from_both_entries = []
-  entry1_canonical_uris_set2 = CanonicalUriSet.new([], canonical_equality_cfg)
+  entry1_curis_set2 = CanonicalUriSet.new([], curi_eq_cfg)
   entry1_links.each do |entry1_link|
-    next if entry1_canonical_uris_set2.include?(entry1_link.canonical_uri)
+    next if entry1_curis_set2.include?(entry1_link.curi)
 
-    entry1_canonical_uris_set2 << entry1_link.canonical_uri
-    links_from_both_entries << entry1_link if entry2_canonical_uris_set.include?(entry1_link.canonical_uri)
+    entry1_curis_set2 << entry1_link.curi
+    links_from_both_entries << entry1_link if entry2_curis_set.include?(entry1_link.curi)
   end
 
   archives_links_from_both_entries, non_archives_links_from_both_entries = links_from_both_entries
-    .partition { |link| link.canonical_uri.path.match?(ARCHIVES_REGEX) }
+    .partition { |link| link.curi.path.match?(ARCHIVES_REGEX) }
   unless archives_links_from_both_entries.empty?
     logger.log("Checking #{archives_links_from_both_entries.length} archives links")
     result, archives_pages_without_puppeteer_from_both_entries = crawl_historical(
-      archives_links_from_both_entries, feed_entry_links, feed_entry_canonical_uris,
-      feed_entry_canonical_uris_set, feed_generator, canonical_equality_cfg, start_link_id, ctx,
-      mock_http_client, puppeteer_client, db_storage, logger
+      archives_links_from_both_entries, feed_entry_links, feed_entry_curis, feed_entry_curis_set,
+      feed_generator, curi_eq_cfg, start_link_id, ctx, mock_http_client, puppeteer_client, db_storage, logger
     )
     return result if result
 
@@ -703,13 +700,12 @@ def guided_crawl_loop(
   logger.log("First two entries don't link to archives")
 
   main_page_links_from_both_entries, other_links_from_both_entries = non_archives_links_from_both_entries
-    .partition { |link| link.canonical_uri.path.match?(MAIN_PAGE_REGEX) }
+    .partition { |link| link.curi.path.match?(MAIN_PAGE_REGEX) }
   unless main_page_links_from_both_entries.empty?
     logger.log("Checking #{main_page_links_from_both_entries.length} main page links")
     result, main_pages_without_puppeteer_from_both_entries = crawl_historical(
-      main_page_links_from_both_entries, feed_entry_links, feed_entry_canonical_uris,
-      feed_entry_canonical_uris_set, feed_generator, canonical_equality_cfg, start_link_id, ctx,
-      mock_http_client, puppeteer_client, db_storage, logger
+      main_page_links_from_both_entries, feed_entry_links, feed_entry_curis, feed_entry_curis_set,
+      feed_generator, curi_eq_cfg, start_link_id, ctx, mock_http_client, puppeteer_client, db_storage, logger
     )
     return result if result
 
@@ -721,9 +717,8 @@ def guided_crawl_loop(
     logger.log("Checking #{other_links_from_both_entries.length} other links")
     # Don't put other pages in Puppeteer queue
     result, _ = crawl_historical(
-      other_links_from_both_entries, feed_entry_links, feed_entry_canonical_uris,
-      feed_entry_canonical_uris_set, feed_generator, canonical_equality_cfg, start_link_id, ctx,
-      mock_http_client, puppeteer_client, db_storage, logger
+      other_links_from_both_entries, feed_entry_links, feed_entry_curis, feed_entry_curis_set, feed_generator,
+      curi_eq_cfg, start_link_id, ctx, mock_http_client, puppeteer_client, db_storage, logger
     )
     return result if result
   end
@@ -732,16 +727,16 @@ def guided_crawl_loop(
 
   logger.log("Retrying #{pages_without_puppeteer.length} pages with Puppeteer")
   pages_without_puppeteer.each_with_index do |page, index|
-    logger.log("#{index + 1}/#{pages_without_puppeteer.length} #{page.canonical_uri}")
+    logger.log("#{index + 1}/#{pages_without_puppeteer.length} #{page.curi}")
     content, document = puppeteer_client.fetch(page.fetch_uri.to_s, ctx, logger)
     page_from_puppeteer = Page.new(
-      page.canonical_uri, page.fetch_uri, page.start_link_id, page.content_type, content, document, true
+      page.curi, page.fetch_uri, page.start_link_id, page.content_type, content, document, true
     )
 
-    if !ctx.pptr_fetched_canonical_uris.include?(page.canonical_uri)
-      ctx.pptr_fetched_canonical_uris << page.canonical_uri
+    if !ctx.pptr_fetched_curis.include?(page.curi)
+      ctx.pptr_fetched_curis << page.curi
       db_storage.save_page(
-        page.canonical_uri.to_s, page.fetch_uri.to_s, page.content_type, start_link_id, content, true
+        page.curi.to_s, page.fetch_uri.to_s, page.content_type, start_link_id, content, true
       )
       logger.log("Puppeteer page saved")
     else
@@ -751,13 +746,13 @@ def guided_crawl_loop(
     page_from_puppeteer_links = extract_links(
       page_from_puppeteer, nil, ctx.redirects, logger, true, true
     )
-    page_from_puppeteer_canonical_uris_set = page_from_puppeteer_links
-      .map(&:canonical_uri)
-      .to_canonical_uri_set(canonical_equality_cfg)
+    page_from_puppeteer_curis_set = page_from_puppeteer_links
+      .map(&:curi)
+      .to_canonical_uri_set(curi_eq_cfg)
     result = try_extract_historical(
-      page_from_puppeteer, page_from_puppeteer_links, page_from_puppeteer_canonical_uris_set,
-      feed_entry_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set, feed_generator,
-      canonical_equality_cfg, start_link_id, ctx, mock_http_client, db_storage, logger
+      page_from_puppeteer, page_from_puppeteer_links, page_from_puppeteer_curis_set, feed_entry_links,
+      feed_entry_curis, feed_entry_curis_set, feed_generator, curi_eq_cfg, start_link_id, ctx,
+      mock_http_client, db_storage, logger
     )
     return result if result
   end
@@ -765,18 +760,16 @@ def guided_crawl_loop(
   logger.log("Pattern not detected")
 
   # STATS
-  is_start_page_main_page = canonical_uri_equal?(
-    start_page.canonical_uri, gt_main_page_canonical_uri, canonical_equality_cfg
-  )
-  does_start_page_link_to_main_page = start_page_canonical_uris_set.include?(gt_main_page_canonical_uri)
+  is_start_page_main_page = canonical_uri_equal?(start_page.curi, gt_main_page_curi, curi_eq_cfg)
+  does_start_page_link_to_main_page = start_page_curis_set.include?(gt_main_page_curi)
   is_main_page_linked_from_both_entries =
-    entry1_canonical_uris_set.include?(gt_main_page_canonical_uri) &&
-      entry2_canonical_uris_set.include?(gt_main_page_canonical_uri)
+    entry1_curis_set.include?(gt_main_page_curi) &&
+      entry2_curis_set.include?(gt_main_page_curi)
 
   unless is_start_page_main_page || does_start_page_link_to_main_page
     logger.log("Would need to crawl #{links_from_both_entries.length} links common for two entries:")
     links_from_both_entries.each do |link|
-      logger.log(link.canonical_uri.to_s)
+      logger.log(link.curi.to_s)
     end
   end
   # STATS END
@@ -791,12 +784,12 @@ def guided_crawl_loop(
 end
 
 def crawl_historical(
-  links, feed_entry_links, feed_entry_canonical_uris, feed_entry_canonical_uris_set, feed_generator,
-  canonical_equality_cfg, start_link_id, ctx, mock_http_client, puppeteer_client, db_storage, logger
+  links, feed_entry_links, feed_entry_curis, feed_entry_curis_set, feed_generator, curi_eq_cfg,
+  start_link_id, ctx, mock_http_client, puppeteer_client, db_storage, logger
 )
   pages_without_puppeteer = []
   links.each do |link|
-    next if ctx.fetched_canonical_uris.include?(link.canonical_uri)
+    next if ctx.fetched_curis.include?(link.curi)
 
     link_page = crawl_request(
       link, ctx, mock_http_client, puppeteer_client, false, start_link_id, db_storage, logger
@@ -810,13 +803,13 @@ def crawl_historical(
     link_page_links = extract_links(
       link_page, nil, ctx.redirects, logger, true, true
     )
-    link_page_canonical_uris_set = link_page_links
-      .map(&:canonical_uri)
-      .to_canonical_uri_set(canonical_equality_cfg)
+    link_page_curis_set = link_page_links
+      .map(&:curi)
+      .to_canonical_uri_set(curi_eq_cfg)
     link_result = try_extract_historical(
-      link_page, link_page_links, link_page_canonical_uris_set, feed_entry_links, feed_entry_canonical_uris,
-      feed_entry_canonical_uris_set, feed_generator, canonical_equality_cfg, start_link_id, ctx,
-      mock_http_client, db_storage, logger
+      link_page, link_page_links, link_page_curis_set, feed_entry_links, feed_entry_curis,
+      feed_entry_curis_set, feed_generator, curi_eq_cfg, start_link_id, ctx, mock_http_client, db_storage,
+      logger
     )
 
     return [link_result, []] if link_result
@@ -830,18 +823,17 @@ HistoricalResult = Struct.new(
 )
 
 def try_extract_historical(
-  page, page_links, page_canonical_uris_set, feed_entry_links, feed_entry_canonical_uris,
-  feed_entry_canonical_uris_set, feed_generator, canonical_equality_cfg, start_link_id, ctx, mock_http_client,
-  db_storage, logger
+  page, page_links, page_curis_set, feed_entry_links, feed_entry_curis, feed_entry_curis_set, feed_generator,
+  curi_eq_cfg, start_link_id, ctx, mock_http_client, db_storage, logger
 )
   paged_result = try_extract_paged(
-    page, page_links, page_canonical_uris_set, feed_entry_canonical_uris, feed_entry_canonical_uris_set,
-    feed_generator, canonical_equality_cfg, 1, start_link_id, ctx, mock_http_client, db_storage, logger
+    page, page_links, page_curis_set, feed_entry_curis, feed_entry_curis_set, feed_generator, curi_eq_cfg, 1,
+    start_link_id, ctx, mock_http_client, db_storage, logger
   )
 
   archives_result = try_extract_archives(
-    page, page_links, page_canonical_uris_set, feed_entry_links, feed_entry_canonical_uris,
-    feed_entry_canonical_uris_set, feed_generator, canonical_equality_cfg, 1, logger
+    page, page_links, page_curis_set, feed_entry_links, feed_entry_curis, feed_entry_curis_set,
+    feed_generator, curi_eq_cfg, 1, logger
   )
 
   if paged_result && archives_result&.main_result
@@ -859,14 +851,13 @@ def try_extract_historical(
   end
 
   postprocessed_result = postprocess_result(
-    result, feed_entry_canonical_uris, canonical_equality_cfg, ctx, mock_http_client, start_link_id,
-    db_storage, logger
+    result, feed_entry_curis, curi_eq_cfg, ctx, mock_http_client, start_link_id, db_storage, logger
   )
   return nil unless postprocessed_result
 
   {
     best_result: HistoricalResult.new(
-      main_canonical_url: page.canonical_uri.to_s,
+      main_canonical_url: page.curi.to_s,
       main_fetch_url: page.fetch_uri.to_s,
       pattern: postprocessed_result.pattern,
       links: postprocessed_result.links,
@@ -878,8 +869,7 @@ end
 PostprocessedResult = Struct.new(:pattern, :links, :extra, keyword_init: true)
 
 def postprocess_result(
-  result, feed_entry_canonical_uris, canonical_equality_cfg, ctx, mock_http_client, start_link_id, db_storage,
-  logger
+  result, feed_entry_curis, curi_eq_cfg, ctx, mock_http_client, start_link_id, db_storage, logger
 )
   return result unless result.is_a?(ArchivesResult)
 
@@ -899,26 +889,25 @@ def postprocess_result(
     )
 
     sorted_links = historical_archives_medium_sort_finish(
-      medium_result.pinned_entry_link, pinned_entry_page_links, medium_result.other_links_dates,
-      canonical_equality_cfg
+      medium_result.pinned_entry_link, pinned_entry_page_links, medium_result.other_links_dates, curi_eq_cfg
     )
     unless sorted_links
       logger.log("Couldn't sort links during result postprocess")
       return nil
     end
 
-    sorted_canonical_uris = sorted_links.map(&:canonical_uri)
-    canonical_uris_set = sorted_canonical_uris.to_canonical_uri_set(canonical_equality_cfg)
-    present_feed_entry_canonical_uris = feed_entry_canonical_uris
-      .filter { |entry_uri| canonical_uris_set.include?(entry_uri) }
-    is_matching_feed = present_feed_entry_canonical_uris
-      .zip(sorted_canonical_uris[...present_feed_entry_canonical_uris.length])
-      .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
+    sorted_curis = sorted_links.map(&:curi)
+    curis_set = sorted_curis.to_canonical_uri_set(curi_eq_cfg)
+    present_feed_entry_curis = feed_entry_curis
+      .filter { |entry_uri| curis_set.include?(entry_uri) }
+    is_matching_feed = present_feed_entry_curis
+      .zip(sorted_curis[...present_feed_entry_curis.length])
+      .all? { |xpath_curi, entry_curi| canonical_uri_equal?(xpath_curi, entry_curi, curi_eq_cfg) }
     unless is_matching_feed
       logger.log("Sorted links")
-      logger.log("#{sorted_canonical_uris.map(&:to_s)}")
+      logger.log("#{sorted_curis.map(&:to_s)}")
       logger.log("are not matching feed:")
-      logger.log("#{feed_entry_canonical_uris.map(&:to_s)}")
+      logger.log("#{feed_entry_curis.map(&:to_s)}")
       return nil
     end
 
@@ -943,8 +932,8 @@ def postprocess_result(
         .links_maybe_dates.partition { |_, maybe_date| maybe_date }
       links_without_dates = links_without_dates.map(&:first)
       links_without_dates.each do |link|
-        if pages_by_canonical_url.key?(link.canonical_uri.to_s)
-          page = pages_by_canonical_url[link.canonical_uri.to_s]
+        if pages_by_canonical_url.key?(link.curi.to_s)
+          page = pages_by_canonical_url[link.curi.to_s]
         else
           page = crawl_request(
             link, ctx, mock_http_client, nil, false, start_link_id, db_storage,
@@ -960,7 +949,7 @@ def postprocess_result(
         return best_result unless sort_state
 
         result_pages << page
-        pages_by_canonical_url[page.canonical_uri.to_s] = page
+        pages_by_canonical_url[page.curi.to_s] = page
       end
 
       sorted_links = historical_archives_sort_finish(
@@ -968,18 +957,20 @@ def postprocess_result(
       )
       return best_result unless sorted_links
 
-      sorted_canonical_uris = sorted_links.map(&:canonical_uri)
-      canonical_uris_set = sorted_canonical_uris.to_canonical_uri_set(canonical_equality_cfg)
-      present_feed_entry_canonical_uris = feed_entry_canonical_uris
-        .filter { |entry_uri| canonical_uris_set.include?(entry_uri) }
-      is_matching_feed = present_feed_entry_canonical_uris
-        .zip(sorted_canonical_uris[...present_feed_entry_canonical_uris.length])
-        .all? { |xpath_uri, entry_uri| canonical_uri_equal?(xpath_uri, entry_uri, canonical_equality_cfg) }
+      sorted_curis = sorted_links.map(&:curi)
+      curis_set = sorted_curis.to_canonical_uri_set(curi_eq_cfg)
+      present_feed_entry_curis = feed_entry_curis
+        .filter { |entry_uri| curis_set.include?(entry_uri) }
+      is_matching_feed = present_feed_entry_curis
+        .zip(sorted_curis[...present_feed_entry_curis.length])
+        .all? do |xpath_curi, entry_curi|
+        canonical_uri_equal?(xpath_curi, entry_curi, curi_eq_cfg)
+      end
       unless is_matching_feed
         logger.log("Sorted links")
-        logger.log("#{sorted_canonical_uris.map(&:to_s)}")
+        logger.log("#{sorted_curis.map(&:to_s)}")
         logger.log("are not matching feed:")
-        logger.log("#{feed_entry_canonical_uris.map(&:to_s)}")
+        logger.log("#{feed_entry_curis.map(&:to_s)}")
         return best_result
       end
 

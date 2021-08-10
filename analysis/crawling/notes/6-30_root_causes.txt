@@ -22,7 +22,7 @@ V     1 Archives categories parse post date: 456
 
       4 Chained: 108 127 244 122
 
-    v 2 Hidden post in RSS: 43 292
+    v 1 Hidden post in RSS: 43
       4 Post not in RSS: 198 355 381 486
     v 1 Mistaken link in RSS: 50
       5 RSS dates are bogus: 157 183 371 393 114

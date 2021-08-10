@@ -30,7 +30,7 @@ def historical_archives_sort_add(page, sort_state, logger)
   end
 
   if new_sort_state.empty?
-    logger.log("Pages don't have a common date path after #{page.canonical_uri.to_s}: #{sort_state} -> #{new_sort_state}")
+    logger.log("Pages don't have a common date path after #{page.curi.to_s}: #{sort_state} -> #{new_sort_state}")
     return nil
   end
   new_sort_state
@@ -59,13 +59,11 @@ def historical_archives_sort_finish(links_with_known_dates, links, sort_state, l
 end
 
 def historical_archives_medium_sort_finish(
-  pinned_entry_link, pinned_entry_page_links, other_links_dates, canonical_equality_cfg
+  pinned_entry_link, pinned_entry_page_links, other_links_dates, curi_eq_cfg
 )
   pinned_entry_date = nil
   pinned_entry_page_links.each do |link|
-    next unless canonical_uri_equal?(
-      pinned_entry_link.canonical_uri, link.canonical_uri, canonical_equality_cfg
-    )
+    next unless canonical_uri_equal?(pinned_entry_link.curi, link.curi, curi_eq_cfg)
 
     link.element.traverse do |child_element|
       next unless child_element.text?
