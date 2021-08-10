@@ -57,7 +57,9 @@ def try_extract_archives(
     end
   end
 
-  if feed_entry_canonical_uris.length >= 3
+  if feed_entry_canonical_uris.length < 3
+    logger.log("Skipping sorted match with highlighted first link because the feed is small (#{feed_entry_canonical_uris.length})")
+  else
     sorted1_fewer_stars_canonical_uris = nil
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       sorted1_result = try_extract_sorted_highlight_first_link(
@@ -110,7 +112,9 @@ def try_extract_archives(
 
   tentative_better_results = []
 
-  unless main_result.is_a?(SortedResult) && main_result.has_dates
+  if main_result.is_a?(SortedResult) && main_result.has_dates
+    logger.log("Skipping shuffled match because there's already a sorted result with dates")
+  else
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       shuffled_result = try_extract_shuffled(
         extractions_by_masked_xpath, feed_entry_canonical_uris, canonical_equality_cfg,
@@ -139,15 +143,27 @@ def try_extract_archives(
     end
   end
 
-  extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
-    shuffled_almost_result = try_extract_shuffled(
-      extractions_by_masked_xpath, feed_entry_canonical_uris, canonical_equality_cfg, almost_match_threshold,
-      star_count, min_links_count, logger
-    )
-    if shuffled_almost_result
-      tentative_better_results << shuffled_almost_result
-      min_links_count = shuffled_almost_result.count + 1
+  if main_result.is_a?(SortedResult) && main_result.has_dates
+    logger.log("Skipping shuffled_almost match because there's already a sorted result with dates")
+  else
+    extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
+      shuffled_almost_result = try_extract_shuffled(
+        extractions_by_masked_xpath, feed_entry_canonical_uris, canonical_equality_cfg, almost_match_threshold,
+        star_count, min_links_count, logger
+      )
+      if shuffled_almost_result
+        tentative_better_results << shuffled_almost_result
+        min_links_count = shuffled_almost_result.count + 1
+      end
     end
+  end
+
+  long_feed_result = try_extract_long_feed(
+    feed_entry_links, page_canonical_uris_set, min_links_count, logger
+  )
+  if long_feed_result
+    main_result = long_feed_result
+    min_links_count = long_feed_result.count + 1
   end
 
   ArchivesResult.new(main_result, tentative_better_results)
@@ -890,6 +906,28 @@ def try_extract_shuffled(
     )
   else
     logger.log("No shuffled match with #{star_count} stars")
+    nil
+  end
+end
+
+LongFeedResult = Struct.new(:pattern, :links, :count, :extra, keyword_init: true)
+
+def try_extract_long_feed(feed_entry_links, page_canonical_uris_set, min_links_count, logger)
+  logger.log("Trying long feed match")
+
+  if feed_entry_links.length >= 31 &&
+    feed_entry_links.length > min_links_count &&
+    feed_entry_links.all? { |entry_link| page_canonical_uris_set.include?(entry_link.canonical_uri) }
+
+    logger.log("Long feed is matching (#{feed_entry_links.length} links)")
+    LongFeedResult.new(
+      pattern: "long_feed",
+      links: feed_entry_links,
+      count: feed_entry_links.length,
+      extra: ""
+    )
+  else
+    logger.log("No long feed match")
     nil
   end
 end

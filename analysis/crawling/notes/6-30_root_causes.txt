@@ -5,7 +5,7 @@ VIP Recurse
     vip mine
 VISGv
       1 Archives parse post date: 337
-V     6 Archives scoped by path: 71 176 237 101 314 478
+    v 1 Archives scoped by path: 101
       1 Archives almost match feed with more links: 217
 
   S   1 Paged with two stars: 361
@@ -31,7 +31,6 @@ VI    5 RSS same timestamp reordered: 332 362 442 457 546
  IS v 2 RSS post has redirect: 81 306
  ISG  1 Old domain link in RSS: 418
 
-V S   1 html canonical matters: 237
   S   1 Redirect through meta http-equiv="refresh": 12
   S   2 Xpath needs [last()]: 263 318
       1 Feed links need comparison by unique prefix: 469
@@ -48,4 +47,4 @@ V S   1 html canonical matters: 237
 
  I    0 Integrate crawling properly
 
-      14 Fail for now: 192 346 428 470 504 394 295 535 329 509 501 247 131 180
+      15 Fail for now: 192 346 428 470 504 394 295 535 329 509 501 247 131 180 71 176

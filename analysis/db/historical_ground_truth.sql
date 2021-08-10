@@ -20,7 +20,8 @@ create type pattern as enum (
     'archives_shuffled_scoped',
     'archives_categories_shuffled',
     'paged_next_scoped',
-    'feed'
+    'feed',
+    'long_feed'
     );
 
 create table historical_ground_truth
