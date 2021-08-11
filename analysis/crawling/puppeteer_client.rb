@@ -25,7 +25,14 @@ class Puppeteer::Page
   def wait_and_scroll(logger)
     start_time = monotonic_now
 
-    yield if block_given?
+    begin
+      yield if block_given?
+    rescue
+      logger.log("Got exception while clicking")
+      logger.log("Page content:")
+      logger.log(content)
+      raise
+    end
 
     while (monotonic_now - start_time) < 1.0 || # always wait for 1 second
       ((@ongoing_requests > 0 || (monotonic_now - @last_event_time) < 1.0) && # wait if a request is in flight and 1 second after it's finished
@@ -49,6 +56,7 @@ end
 LOAD_MORE_SELECTOR = "a[class*=load-more], button[class*=load-more]"
 MEDIUM_FEED_LINK_SELECTOR = "link[rel=alternate][type='application/rss+xml'][href^='https://medium.']"
 SUBSTACK_FOOTER_SELECTOR = "[class*=footer-substack]"
+BUTTONDOWN_TWITTER_XPATH = "/html/head/meta[@name='twitter:site'][@content='@buttondown']"
 
 def crawl_link_with_puppeteer(link, content, document, puppeteer_client, ctx, logger)
   is_puppeteer_used = false
@@ -74,6 +82,10 @@ def crawl_link_with_puppeteer(link, content, document, puppeteer_client, ctx, lo
       document.at_css(SUBSTACK_FOOTER_SELECTOR)
 
       logger.log("Spotted Substack archives, rerunning with puppeteer")
+      content, document = puppeteer_client.fetch(link.url, ctx, logger)
+      is_puppeteer_used = true
+    elsif document.at_xpath(BUTTONDOWN_TWITTER_XPATH)
+      logger.log("Spotted Buttondown page, rerunning with puppeteer")
       content, document = puppeteer_client.fetch(link.url, ctx, logger)
       is_puppeteer_used = true
     end

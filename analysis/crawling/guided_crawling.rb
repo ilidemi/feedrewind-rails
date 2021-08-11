@@ -340,7 +340,7 @@ AlreadySeenLink = Struct.new(:link)
 BadRedirection = Struct.new(:url)
 
 def crawl_request(
-  initial_link, ctx, http_client, puppeteer_client, is_feed_expected, start_link_id, storage, logger
+  initial_link, ctx, http_client, puppeteer_client, is_feed_expected, start_link_id, db_storage, logger
 )
   link = initial_link
   seen_urls = [link.url]
@@ -376,7 +376,7 @@ def crawl_request(
     end
     seen_urls << redirection_link.url
     ctx.redirects[link.url] = redirection_link
-    storage.save_redirect(link.url, redirection_link.url, start_link_id)
+    db_storage.save_redirect(link.url, redirection_link.url, start_link_id)
     redirection_link = follow_cached_redirects(redirection_link, ctx.redirects, seen_urls)
 
     if ctx.seen_fetch_urls.include?(redirection_link.url) ||
@@ -409,7 +409,7 @@ def crawl_request(
 
     if !ctx.fetched_curis.include?(link.curi)
       ctx.fetched_curis << link.curi
-      storage.save_page(
+      db_storage.save_page(
         link.curi.to_s, link.url, content_type, start_link_id, content, false
       )
       logger.log("#{resp.code} #{content_type} #{request_ms}ms #{link.url}")
@@ -424,7 +424,7 @@ def crawl_request(
     if is_puppeteer_used
       if !ctx.pptr_fetched_curis.include?(link.curi)
         ctx.pptr_fetched_curis << link.curi
-        storage.save_page(
+        db_storage.save_page(
           link.curi.to_s, link.url, content_type, start_link_id, content, true
         )
         logger.log("Puppeteer page saved")
@@ -436,7 +436,7 @@ def crawl_request(
     Page.new(link.curi, link.uri, start_link_id, content_type, content, document, is_puppeteer_used)
   elsif PERMANENT_ERROR_CODES.include?(resp.code)
     ctx.fetched_curis << link.curi
-    storage.save_permanent_error(
+    db_storage.save_permanent_error(
       link.curi.to_s, link.url, start_link_id, resp.code
     )
     logger.log("#{resp.code} #{request_ms}ms #{link.url}")
@@ -765,8 +765,7 @@ def guided_crawl_loop(
   is_start_page_main_page = canonical_uri_equal?(start_page.curi, gt_main_page_curi, curi_eq_cfg)
   does_start_page_link_to_main_page = start_page_curis_set.include?(gt_main_page_curi)
   is_main_page_linked_from_both_entries =
-    entry1_curis_set.include?(gt_main_page_curi) &&
-      entry2_curis_set.include?(gt_main_page_curi)
+    entry1_curis_set.include?(gt_main_page_curi) && entry2_curis_set.include?(gt_main_page_curi)
 
   unless is_start_page_main_page || does_start_page_link_to_main_page
     logger.log("Would need to crawl #{links_from_both_entries.length} links common for two entries:")

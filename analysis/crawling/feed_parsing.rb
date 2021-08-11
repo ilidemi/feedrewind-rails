@@ -40,7 +40,7 @@ def extract_feed_links(feed_content, fetch_uri, logger)
       pub_dates = item.xpath("pubDate")
       if pub_dates.length == 1
         begin
-          pub_date = DateTime.rfc822(pub_dates[0].inner_text)
+          pub_date = DateTime.rfc822(pub_dates[0].inner_text).to_date
         rescue Date::Error
           logger.log("Invalid pubDate: #{pub_dates[0].inner_text}")
           pub_date = nil
@@ -101,7 +101,7 @@ def extract_feed_links(feed_content, fetch_uri, logger)
 
       if published_dates.length == 1
         begin
-          published_date = DateTime.iso8601(published_dates[0].inner_text)
+          published_date = DateTime.iso8601(published_dates[0].inner_text).to_date
         rescue Date::Error
           logger.log("Invalid published: #{published_dates[0].inner_text}")
           published_date = nil

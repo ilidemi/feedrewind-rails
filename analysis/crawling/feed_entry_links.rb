@@ -161,7 +161,7 @@ class FeedEntryLinks
   end
 
   def to_s
-    '"' + to_a.map(&:curi).map(&:to_s).join('", "') + '"'
+    '["' + to_a.map(&:curi).map(&:to_s).join('", "') + '"]'
   end
 
   attr_reader :length
