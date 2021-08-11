@@ -8,24 +8,16 @@ PagedResult = Struct.new(:pattern, :links, :count, :extra, keyword_init: true)
 BLOGSPOT_POSTS_BY_DATE_REGEX = /(\(date-outer\)\[)\d+(.+\(post-outer\)\[)\d+/
 
 def try_extract_paged(
-  page1, page1_links, page_curis_set, feed_entry_curis, feed_entry_curis_set, feed_generator,
+  page1, page1_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator,
   curi_eq_cfg, min_links_count, start_link_id, ctx, mock_http_client, db_storage, logger
 )
-  page_overlapping_links_count = nil
-  feed_entry_curis.each_with_index do |feed_entry_curi, index|
-    if index == feed_entry_curis.length - 1 && page_curis_set.include?(feed_entry_curi)
-      page_overlapping_links_count = feed_entry_curis.length
-    elsif !page_curis_set.include?(feed_entry_curi)
-      page_overlapping_links_count = index
-    end
-  end
-
   link_pattern_to_page2 = find_link_to_second_page(page1_links, page1, feed_generator, curi_eq_cfg, logger)
   return nil unless link_pattern_to_page2
   link_to_page2 = link_pattern_to_page2[:link]
   paging_pattern = link_pattern_to_page2[:paging_pattern]
   paging_pattern_extra = paging_pattern.is_a?(Hash) ? '' : "<br>paging_pattern: #{paging_pattern}"
 
+  page_overlapping_links_count = feed_entry_links.included_prefix_length(page_curis_set)
   logger.log("Possible page 1: #{page1.curi} (#{page_overlapping_links_count} overlaps)")
 
   links_by_masked_xpath = nil
@@ -62,23 +54,16 @@ def try_extract_paged(
   end
 
   page_size_masked_xpaths = []
-  page1_link_to_newest_post = page1_links
-    .filter { |page_link| canonical_uri_equal?(page_link.curi, feed_entry_curis.first, curi_eq_cfg) }
-    .first
   links_by_masked_xpath.each do |masked_xpath, masked_xpath_links|
     masked_xpath_curis = masked_xpath_links.map(&:curi)
-    feed_overlap_length = [masked_xpath_curis.length, feed_entry_curis.length].min
-    is_overlap_matching = masked_xpath_curis[...feed_overlap_length]
-      .zip(feed_entry_curis[...feed_overlap_length])
-      .all? { |xpath_curi, entry_curi| canonical_uri_equal?(xpath_curi, entry_curi, curi_eq_cfg) }
+    is_overlap_matching = feed_entry_links.sequence_match?(masked_xpath_curis, curi_eq_cfg)
     if is_overlap_matching
       includes_newest_post = true
+      extra_link_to_newest_post = nil
     else
-      feed_minus_one_overlap_length = [masked_xpath_curis.length, feed_entry_curis.length - 1].min
-      is_overlap_minus_one_matching = masked_xpath_curis[...feed_minus_one_overlap_length]
-        .zip(feed_entry_curis[1..feed_minus_one_overlap_length])
-        .all? { |xpath_curi, entry_curi| canonical_uri_equal?(xpath_curi, entry_curi, curi_eq_cfg) }
-      if page1_link_to_newest_post && is_overlap_minus_one_matching
+      is_overlap_minus_one_matching, extra_link_to_newest_post =
+        feed_entry_links.sequence_match_except_first?(masked_xpath_curis, curi_eq_cfg)
+      if extra_link_to_newest_post && is_overlap_minus_one_matching
         includes_newest_post = false
       else
         next
@@ -92,7 +77,8 @@ def try_extract_paged(
     end
 
     xpath_page_size = masked_xpath_curis.length + (includes_newest_post ? 0 : 1)
-    page_size_masked_xpaths << [xpath_page_size, masked_xpath, includes_newest_post]
+    page_size_masked_xpaths <<
+      [xpath_page_size, masked_xpath, includes_newest_post, extra_link_to_newest_post]
   end
 
   if page_size_masked_xpaths.empty?
@@ -123,9 +109,11 @@ def try_extract_paged(
   page2_entry_links = nil
   good_masked_xpath = nil
   page_sizes = []
-  remaining_feed_entry_curis = nil
+  feed_entry_links_offset = 0
 
-  page_size_masked_xpaths_sorted.each do |xpath_page_size, masked_xpath, includes_first_post|
+  page_size_masked_xpaths_sorted.each do
+  |xpath_page_size, masked_xpath, includes_first_post, extra_link_to_newest_post|
+
     page2_xpath_link_elements = page2_doc.xpath(masked_xpath)
     page2_xpath_links = page2_xpath_link_elements.filter_map do |element|
       html_element_to_link(
@@ -143,11 +131,7 @@ def try_extract_paged(
     end
 
     page2_xpath_curis = page2_xpath_links.map(&:curi)
-    page2_feed_entry_curis = feed_entry_curis[xpath_page_size..] || []
-    feed_overlap_length = [page2_xpath_curis.length, page2_feed_entry_curis.length].min
-    is_overlap_matching = page2_xpath_curis[...feed_overlap_length]
-      .zip(page2_feed_entry_curis[...feed_overlap_length])
-      .all? { |xpath_curi, feed_curi| canonical_uri_equal?(xpath_curi, feed_curi, curi_eq_cfg) }
+    is_overlap_matching = feed_entry_links.subsequence_match?(page2_xpath_curis, xpath_page_size, curi_eq_cfg)
     next unless is_overlap_matching
 
     if includes_first_post
@@ -155,7 +139,7 @@ def try_extract_paged(
       possible_page1_entry_links = page1_xpath_links
     else
       decorated_first_post_log = ", assuming the first post is decorated"
-      possible_page1_entry_links = [page1_link_to_newest_post] + page1_xpath_links
+      possible_page1_entry_links = [extra_link_to_newest_post] + page1_xpath_links
     end
     next if page1_entry_links && page2_entry_links &&
       (possible_page1_entry_links + page2_xpath_links).length <= (page1_entry_links + page2_entry_links).length
@@ -164,7 +148,7 @@ def try_extract_paged(
     page2_entry_links = page2_xpath_links
     good_masked_xpath = masked_xpath
     page_sizes << xpath_page_size << page2_xpath_links.length
-    remaining_feed_entry_curis = page2_feed_entry_curis[page2_entry_links.length...-1] || []
+    feed_entry_links_offset = xpath_page_size + page2_entry_links.length
     logger.log("XPath looks good for page 2: #{masked_xpath} (#{page1_entry_links.length} + #{page2_entry_links.length} links#{decorated_first_post_log})")
   end
 
@@ -203,18 +187,16 @@ def try_extract_paged(
       end
 
       page2_xpath_curis = page2_xpath_links.map(&:curi)
-      page2_feed_entry_curis = feed_entry_curis[xpath_page_size..] || []
-      feed_overlap_length = [page2_xpath_curis.length, page2_feed_entry_curis.length].min
-      is_overlap_matching = page2_xpath_curis[...feed_overlap_length]
-        .zip(page2_feed_entry_curis[...feed_overlap_length])
-        .all? { |xpath_curi, entry_curi| canonical_uri_equal?(xpath_curi, entry_curi, curi_eq_cfg) }
+      is_overlap_matching = feed_entry_links.subsequence_match?(
+        page2_xpath_curis, xpath_page_size, curi_eq_cfg
+      )
       next unless is_overlap_matching
 
       page1_entry_links = page1_xpath_links
       page2_entry_links = page2_xpath_links
       good_masked_xpath = page2_masked_xpath
       page_sizes << xpath_page_size << page2_xpath_links.length
-      remaining_feed_entry_curis = page2_feed_entry_curis[page2_entry_links.length...-1] || []
+      feed_entry_links_offset = xpath_page_size + page2_entry_links.length
       logger.log("Possible page 2: #{link_to_page2.curi}")
       logger.log("XPath looks good for page 1: #{masked_xpath} (#{page1_entry_links.length} links)")
       logger.log("XPath looks good for page 2: #{page2_masked_xpath} (#{page2_entry_links.length} links)")
@@ -259,8 +241,9 @@ def try_extract_paged(
   while link_to_next_page
     link_to_last_page = link_to_next_page
     loop_page_result = extract_page_entry_links(
-      link_to_next_page, next_page_number, paging_pattern, good_masked_xpath, remaining_feed_entry_curis,
-      start_link_id, known_entry_curis_set, curi_eq_cfg, ctx, mock_http_client, db_storage, logger
+      link_to_next_page, next_page_number, paging_pattern, good_masked_xpath, feed_entry_links,
+      feed_entry_links_offset, start_link_id, known_entry_curis_set, curi_eq_cfg, ctx, mock_http_client,
+      db_storage, logger
     )
 
     if loop_page_result.nil?
@@ -274,7 +257,7 @@ def try_extract_paged(
     link_to_next_page = loop_page_result[:link_to_next_page]
     page_sizes << loop_page_result[:page_entry_links].length
     next_page_number += 1
-    remaining_feed_entry_curis = remaining_feed_entry_curis[loop_page_result[:page_entry_links].length...-1] || []
+    feed_entry_links_offset += loop_page_result[:page_entry_links].length
   end
 
   if entry_links.length < min_links_count
@@ -301,8 +284,8 @@ def try_extract_paged(
 end
 
 def extract_page_entry_links(
-  link_to_page, page_number, paging_pattern, masked_xpath, remaining_feed_entry_curis, start_link_id,
-  known_entry_curis_set, curi_eq_cfg, ctx, mock_http_client, db_storage, logger
+  link_to_page, page_number, paging_pattern, masked_xpath, feed_entry_links, feed_entry_links_offset,
+  start_link_id, known_entry_curis_set, curi_eq_cfg, ctx, mock_http_client, db_storage, logger
 )
   logger.log("Possible page #{page_number}: #{link_to_page.curi}")
   page = crawl_request(link_to_page, ctx, mock_http_client, nil, false, start_link_id, db_storage, logger)
@@ -315,7 +298,7 @@ def extract_page_entry_links(
   page_entry_link_elements = page.document.xpath(masked_xpath)
   page_entry_links = page_entry_link_elements.filter_map.with_index do |element, index|
     # Redirects don't matter after we're out of feed
-    link_redirects = index < remaining_feed_entry_curis.length ? ctx.redirects : {}
+    link_redirects = index < (feed_entry_links.length - feed_entry_links_offset) ? ctx.redirects : {}
     html_element_to_link(
       element, page.fetch_uri, page.document, page_classes_by_xpath, link_redirects, logger, true, false
     )
@@ -335,14 +318,13 @@ def extract_page_entry_links(
   end
 
   page_entry_curis = page_entry_links.map(&:curi)
-  feed_overlap_length = [page_entry_curis.length, remaining_feed_entry_curis.length].min
-  is_overlap_matching = page_entry_curis[...feed_overlap_length]
-    .zip(remaining_feed_entry_curis[...feed_overlap_length])
-    .all? { |xpath_curi, entry_curi| canonical_uri_equal?(xpath_curi, entry_curi, curi_eq_cfg) }
+  is_overlap_matching = feed_entry_links.subsequence_match?(
+    page_entry_curis, feed_entry_links_offset, curi_eq_cfg
+  )
   unless is_overlap_matching
     logger.log("Page #{page_number} doesn't overlap with feed")
-    logger.log("Page urls: #{page_entry_curis[...feed_overlap_length]}")
-    logger.log("Feed urls: #{remaining_feed_entry_curis[...feed_overlap_length]}")
+    logger.log("Page urls: #{page_entry_curis.map(&:to_s)}")
+    logger.log("Feed urls (offset #{feed_entry_links_offset}): #{feed_entry_links}")
     return nil
   end
 
