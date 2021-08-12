@@ -17,16 +17,13 @@ VISGv
       1 Paged with 1 post overlap: 40
 
  I  v 4 Archives 2 level: 465 495 6 155
-    v 4 Archives categories parse list date: 194 401 210 43
-V     1 Archives categories parse post date: 456
 
       4 Chained: 108 127 244 122
 
-    v 1 Hidden post in RSS: 43
       4 Post not in RSS: 198 355 381 486
     v 1 Mistaken link in RSS: 50
       5 RSS dates are bogus: 157 183 371 393 114
-    v 2 RSS is complete with 31+ all on the same page or 101+: 302 37
+    v 1 RSS is complete with 101+: 37
  IS v 2 RSS post has redirect: 81 306
  ISG  1 Old domain link in RSS: 418
 
@@ -40,10 +37,9 @@ V     1 Archives categories parse post date: 456
    G  3 Paged instead of archives: 118 445 442
    G  1 Paged instead of feed: 473 546
 
-V  G  2 Buttondown sitemap: 80 175
       2 YouTube: 438 441
    G  2 Medium to /latest: 341 516
 
  I    0 Integrate crawling properly
 
-      15 Fail for now: 192 346 428 470 504 394 295 535 329 509 501 247 131 180 71 176
+      17 Fail for now: 192 346 428 470 504 394 295 535 329 509 501 247 131 180 71 176 210

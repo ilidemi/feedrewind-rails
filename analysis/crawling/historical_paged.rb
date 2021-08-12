@@ -8,8 +8,8 @@ PagedResult = Struct.new(:pattern, :links, :count, :extra, keyword_init: true)
 BLOGSPOT_POSTS_BY_DATE_REGEX = /(\(date-outer\)\[)\d+(.+\(post-outer\)\[)\d+/
 
 def try_extract_paged(
-  page1, page1_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator,
-  curi_eq_cfg, min_links_count, start_link_id, ctx, mock_http_client, db_storage, logger
+  page1, page1_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator, curi_eq_cfg,
+  start_link_id, crawl_ctx, mock_http_client, db_storage, logger
 )
   link_pattern_to_page2 = find_link_to_second_page(page1_links, page1, feed_generator, curi_eq_cfg, logger)
   return nil unless link_pattern_to_page2
@@ -22,7 +22,9 @@ def try_extract_paged(
 
   links_by_masked_xpath = nil
   if paging_pattern == :blogger
-    page1_class_xpath_links = extract_links(page1, [page1.fetch_uri.host], ctx.redirects, logger, true, true)
+    page1_class_xpath_links = extract_links(
+      page1, [page1.fetch_uri.host], crawl_ctx.redirects, logger, true, true
+    )
     page1_links_grouped_by_date = page1_class_xpath_links.filter do |page_link|
       BLOGSPOT_POSTS_BY_DATE_REGEX.match(page_link.class_xpath)
     end
@@ -96,7 +98,9 @@ def try_extract_paged(
   end
   logger.log("Max prefix: #{page_size_masked_xpaths.first[0]}")
 
-  page2 = crawl_request(link_to_page2, ctx, mock_http_client, nil, false, start_link_id, db_storage, logger)
+  page2 = crawl_request(
+    link_to_page2, crawl_ctx, mock_http_client, nil, false, start_link_id, db_storage, logger
+  )
   unless page2 && page2.is_a?(Page) && page2.content
     logger.log("Page 2 is not a page: #{page2}")
     return nil
@@ -117,7 +121,7 @@ def try_extract_paged(
     page2_xpath_link_elements = page2_doc.xpath(masked_xpath)
     page2_xpath_links = page2_xpath_link_elements.filter_map do |element|
       html_element_to_link(
-        element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, ctx.redirects, logger, true, false
+        element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, crawl_ctx.redirects, logger, true, false
       )
     end
     next if page2_xpath_links.empty?
@@ -161,7 +165,8 @@ def try_extract_paged(
       page2_xpath_suffix_link_elements = page2_doc.xpath(page2_xpath_suffix)
       page2_xpath_suffix_links = page2_xpath_suffix_link_elements.filter_map do |element|
         html_element_to_link(
-          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, ctx.redirects, logger, true, false
+          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, crawl_ctx.redirects, logger, true,
+          false
         )
       end
       next if page2_xpath_suffix_links.length != 1
@@ -174,7 +179,8 @@ def try_extract_paged(
       page2_xpath_link_elements = page2_doc.xpath(page2_masked_xpath)
       page2_xpath_links = page2_xpath_link_elements.filter_map do |element|
         html_element_to_link(
-          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, ctx.redirects, logger, true, false
+          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, crawl_ctx.redirects, logger, true,
+          false
         )
       end
 
@@ -209,7 +215,7 @@ def try_extract_paged(
     return nil
   end
 
-  page2_links = extract_links(page2, [page2.fetch_uri.host], ctx.redirects, logger, true, false)
+  page2_links = extract_links(page2, [page2.fetch_uri.host], crawl_ctx.redirects, logger, true, false)
   link_to_page3 = find_link_to_next_page(
     page2_links, page2, curi_eq_cfg, 3, paging_pattern, logger
   )
@@ -217,16 +223,12 @@ def try_extract_paged(
 
   entry_links = page1_entry_links + page2_entry_links
   unless link_to_page3
-    if entry_links.length < min_links_count
-      logger.log("Min links count #{min_links_count} not reached (#{entry_links.length})")
-      return nil
-    end
-
     logger.log("Best count: #{entry_links.length} with 2 pages of #{page_sizes}")
     page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
     return PagedResult.new(
       pattern: "paged_last",
       links: entry_links,
+      count: entry_links.count,
       extra: "page_count: 2<br>page_sizes: #{page_size_counts}<br>last_page:<a href=\"#{page2.fetch_uri}\">#{page2.curi}</a>#{paging_pattern_extra}"
     )
   end
@@ -242,7 +244,7 @@ def try_extract_paged(
     link_to_last_page = link_to_next_page
     loop_page_result = extract_page_entry_links(
       link_to_next_page, next_page_number, paging_pattern, good_masked_xpath, feed_entry_links,
-      feed_entry_links_offset, start_link_id, known_entry_curis_set, curi_eq_cfg, ctx, mock_http_client,
+      feed_entry_links_offset, start_link_id, known_entry_curis_set, curi_eq_cfg, crawl_ctx, mock_http_client,
       db_storage, logger
     )
 
@@ -260,11 +262,6 @@ def try_extract_paged(
     feed_entry_links_offset += loop_page_result[:page_entry_links].length
   end
 
-  if entry_links.length < min_links_count
-    logger.log("Min links count #{min_links_count} not reached (#{entry_links.length})")
-    return nil
-  end
-
   page_count = next_page_number - 1
 
   if paging_pattern == :blogger
@@ -279,16 +276,19 @@ def try_extract_paged(
   PagedResult.new(
     pattern: first_page_links_to_last_page ? "paged_last" : "paged_next",
     links: entry_links,
+    count: entry_links.count,
     extra: "page_count: #{page_count}<br>page_sizes: #{page_size_counts}<br><a href=\"#{link_to_last_page.url}\">#{link_to_last_page.curi}</a>#{paging_pattern_extra}"
   )
 end
 
 def extract_page_entry_links(
   link_to_page, page_number, paging_pattern, masked_xpath, feed_entry_links, feed_entry_links_offset,
-  start_link_id, known_entry_curis_set, curi_eq_cfg, ctx, mock_http_client, db_storage, logger
+  start_link_id, known_entry_curis_set, curi_eq_cfg, crawl_ctx, mock_http_client, db_storage, logger
 )
   logger.log("Possible page #{page_number}: #{link_to_page.curi}")
-  page = crawl_request(link_to_page, ctx, mock_http_client, nil, false, start_link_id, db_storage, logger)
+  page = crawl_request(
+    link_to_page, crawl_ctx, mock_http_client, nil, false, start_link_id, db_storage, logger
+  )
   unless page && page.is_a?(Page) && page.document
     logger.log("Page #{page_number} is not a page: #{page}")
     return nil
@@ -298,7 +298,7 @@ def extract_page_entry_links(
   page_entry_link_elements = page.document.xpath(masked_xpath)
   page_entry_links = page_entry_link_elements.filter_map.with_index do |element, index|
     # Redirects don't matter after we're out of feed
-    link_redirects = index < (feed_entry_links.length - feed_entry_links_offset) ? ctx.redirects : {}
+    link_redirects = index < (feed_entry_links.length - feed_entry_links_offset) ? crawl_ctx.redirects : {}
     html_element_to_link(
       element, page.fetch_uri, page.document, page_classes_by_xpath, link_redirects, logger, true, false
     )
@@ -328,7 +328,7 @@ def extract_page_entry_links(
     return nil
   end
 
-  page_links = extract_links(page, [page.fetch_uri.host], ctx.redirects, logger, true, false)
+  page_links = extract_links(page, [page.fetch_uri.host], crawl_ctx.redirects, logger, true, false)
   next_page_number = page_number + 1
   link_to_next_page = find_link_to_next_page(
     page_links, page, curi_eq_cfg, next_page_number, paging_pattern, logger

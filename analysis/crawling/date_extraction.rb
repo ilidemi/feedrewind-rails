@@ -1,7 +1,5 @@
 require 'time'
 
-PUBLISHED_TIME_XPATH = "/html/head/meta[@property='article:published_time']/@content"
-
 def try_extract_element_date(element, guess_year)
   if element.name == "time"
     if element.attributes.key?("datetime")
@@ -30,6 +28,16 @@ def try_extract_text_date(text, guess_year)
 
   return nil if text.match?(/\d\/\d/) # Can't distinguish between MM/DD/YY and DD/MM/YY
   return nil unless text.match?(/\d/) # Dates must have numbers
+
+  yyyy_mm_dd_match = text.match(/(?:[^\d]|^)(\d\d\d\d)-(\d\d)-(\d\d)(?:[^\d]|$)/)
+
+  if yyyy_mm_dd_match
+    begin
+      date = Date.new(yyyy_mm_dd_match[1].to_i, yyyy_mm_dd_match[2].to_i, yyyy_mm_dd_match[3].to_i)
+      return date
+    rescue
+    end
+  end
 
   begin
     date_hash = Date._parse(text)

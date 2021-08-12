@@ -3,12 +3,13 @@ require_relative 'guided_crawling'
 
 def historical_archives_sort_add(page, sort_state, logger)
   page_dates_xpaths_sources = []
+
   page.document.traverse do |element|
     date_source = try_extract_element_date(element, false)
     next unless date_source
 
     page_dates_xpaths_sources << {
-      xpath: element.path,
+      xpath: to_canonical_xpath(element.path),
       date: date_source[:date],
       source: date_source[:source]
     }
@@ -30,7 +31,14 @@ def historical_archives_sort_add(page, sort_state, logger)
   end
 
   if new_sort_state.empty?
-    logger.log("Pages don't have a common date path after #{page.curi.to_s}: #{sort_state} -> #{new_sort_state}")
+    logger.log("Pages don't have a common date path after #{page.curi.to_s}:")
+    if sort_state
+      sort_state.each do |xpath_source, dates|
+        logger.log("#{xpath_source} -> #{dates.map { |date| date.strftime("%Y-%m-%d") }}")
+      end
+    else
+      logger.log("(no prior sort state)")
+    end
     return nil
   end
   new_sort_state
@@ -39,7 +47,8 @@ end
 def historical_archives_sort_finish(links_with_known_dates, links, sort_state, logger)
   sort_state ||= {}
   dates_by_xpath_from_time = sort_state
-    .filter_map { |xpath_source, dates| xpath_source[1] == :time ? [xpath_source[0], dates] : nil }
+    .filter { |xpath_source, _| xpath_source[1] == :time }
+    .map { |xpath_source, dates| [xpath_source[0], dates] }
     .to_h
   if sort_state.length == 1
     xpath, dates = sort_state.first

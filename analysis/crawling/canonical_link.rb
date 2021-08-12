@@ -223,7 +223,16 @@ class CanonicalUriSet
     merge!(curis)
   end
 
-  attr_reader :length
+  def hash
+    @paths_queries_by_server.hash
+  end
+
+  def eql?(other)
+    other.is_a?(CanonicalUriSet) &&
+      @paths_queries_by_server.eql?(other.instance_variable_get(:@paths_queries_by_server))
+  end
+
+  attr_reader :length, :curis
 
   private
 
