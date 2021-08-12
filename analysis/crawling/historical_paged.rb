@@ -4,6 +4,7 @@ require_relative 'historical_common'
 require_relative 'structs'
 
 PagedResult = Struct.new(:pattern, :links, :count, :extra, keyword_init: true)
+PagedExtraction = Struct.new(:links, :xpath_name, :classless_masked_xpath)
 
 BLOGSPOT_POSTS_BY_DATE_REGEX = /(\(date-outer\)\[)\d+(.+\(post-outer\)\[)\d+/
 
@@ -20,7 +21,9 @@ def try_extract_paged(
   page_overlapping_links_count = feed_entry_links.included_prefix_length(page_curis_set)
   logger.log("Possible page 1: #{page1.curi} (#{page_overlapping_links_count} overlaps)")
 
-  links_by_masked_xpath = nil
+  page1_extractions_by_masked_xpath = nil
+
+  # Blogger has a known pattern with posts grouped by date
   if paging_pattern == :blogger
     page1_class_xpath_links = extract_links(
       page1, [page1.fetch_uri.host], crawl_ctx.redirects, logger, true, true
@@ -32,63 +35,83 @@ def try_extract_paged(
       feed_entry_curis_set.include?(page_link.curi)
     end
     unless page1_feed_links_grouped_by_date.empty?
-      links_by_masked_xpath = {}
+      page1_extractions_by_masked_xpath = {}
       page1_feed_links_grouped_by_date.each do |page_feed_link|
-        masked_xpath = page_feed_link
+        masked_class_xpath = page_feed_link
           .class_xpath
           .sub(BLOGSPOT_POSTS_BY_DATE_REGEX, '\1*\2*')
-          .gsub(/\([^)]*\)/, '')
-        links_by_masked_xpath[masked_xpath] = []
+        masked_xpath = class_xpath_remove_classes(masked_class_xpath)
+        page1_extractions_by_masked_xpath[masked_class_xpath] =
+          PagedExtraction.new([], :class_xpath, masked_xpath)
       end
       page1_links_grouped_by_date.each do |page_link|
-        masked_xpath = page_link
+        masked_class_xpath = page_link
           .class_xpath
           .sub(BLOGSPOT_POSTS_BY_DATE_REGEX, '\1*\2*')
-          .gsub(/\([^)]*\)/, '')
-        next unless links_by_masked_xpath.key?(masked_xpath)
-        links_by_masked_xpath[masked_xpath] << page_link
+        next unless page1_extractions_by_masked_xpath.key?(masked_class_xpath)
+        page1_extractions_by_masked_xpath[masked_class_xpath].links << page_link
       end
     end
   end
 
-  if links_by_masked_xpath.nil?
-    links_by_masked_xpath = group_links_by_masked_xpath(page1_links, feed_entry_curis_set, :xpath, 1)
+  # For all others, just extract all masked xpaths
+  if page1_extractions_by_masked_xpath.nil?
+    page1_links_by_masked_xpath_one_star =
+      group_links_by_masked_xpath(page1_links, feed_entry_curis_set, :xpath, 1)
+    page1_extractions_by_masked_xpath_one_star = page1_links_by_masked_xpath_one_star
+      .to_h do |masked_xpath, masked_xpath_links|
+      [masked_xpath, PagedExtraction.new(masked_xpath_links, :xpath, masked_xpath)]
+    end
+
+    page1_links_by_masked_xpath_two_stars =
+      group_links_by_masked_xpath(page1_links, feed_entry_curis_set, :class_xpath, 2)
+    page1_extractions_by_masked_xpath_two_stars = page1_links_by_masked_xpath_two_stars
+      .to_h do |masked_class_xpath, masked_xpath_links|
+      [
+        masked_class_xpath,
+        PagedExtraction.new(masked_xpath_links, :class_xpath, class_xpath_remove_classes(masked_class_xpath))
+      ]
+    end
+    page1_extractions_by_masked_xpath = page1_extractions_by_masked_xpath_one_star
+      .merge(page1_extractions_by_masked_xpath_two_stars)
   end
 
-  page_size_masked_xpaths = []
-  links_by_masked_xpath.each do |masked_xpath, masked_xpath_links|
-    masked_xpath_curis = masked_xpath_links.map(&:curi)
-    is_overlap_matching = feed_entry_links.sequence_match?(masked_xpath_curis, curi_eq_cfg)
+  # Filter masked xpaths to only ones that prefix feed
+  page1_size_masked_xpaths = []
+  page1_extractions_by_masked_xpath.each do |masked_xpath, page1_extraction|
+    page1_xpath_links = page1_extraction.links
+    page1_xpath_curis = page1_xpath_links.map(&:curi)
+    is_overlap_matching = feed_entry_links.sequence_match?(page1_xpath_curis, curi_eq_cfg)
     if is_overlap_matching
       includes_newest_post = true
-      extra_link_to_newest_post = nil
+      extra_first_link = nil
     else
-      is_overlap_minus_one_matching, extra_link_to_newest_post =
-        feed_entry_links.sequence_match_except_first?(masked_xpath_curis, curi_eq_cfg)
-      if extra_link_to_newest_post && is_overlap_minus_one_matching
+      is_overlap_minus_one_matching, extra_first_link =
+        feed_entry_links.sequence_match_except_first?(page1_xpath_curis, curi_eq_cfg)
+      if is_overlap_minus_one_matching && extra_first_link
         includes_newest_post = false
       else
         next
       end
     end
 
-    masked_xpath_curis_set = masked_xpath_curis.to_canonical_uri_set(curi_eq_cfg)
-    if masked_xpath_curis_set.length != masked_xpath_curis.length
-      logger.log("Masked xpath #{masked_xpath} has duplicates: #{masked_xpath_curis}")
+    masked_xpath_curis_set = page1_xpath_curis.to_canonical_uri_set(curi_eq_cfg)
+    if masked_xpath_curis_set.length != page1_xpath_curis.length
+      logger.log("Masked xpath #{masked_xpath} has duplicates: #{page1_xpath_curis}")
       next
     end
 
-    xpath_page_size = masked_xpath_curis.length + (includes_newest_post ? 0 : 1)
-    page_size_masked_xpaths <<
-      [xpath_page_size, masked_xpath, includes_newest_post, extra_link_to_newest_post]
+    xpath_page_size = page1_xpath_curis.length + (includes_newest_post ? 0 : 1)
+    page1_size_masked_xpaths <<
+      [xpath_page_size, masked_xpath, includes_newest_post, extra_first_link]
   end
 
-  if page_size_masked_xpaths.empty?
+  if page1_size_masked_xpaths.empty?
     logger.log("No good overlap with feed prefix")
     return nil
   end
 
-  page_size_masked_xpaths_sorted = page_size_masked_xpaths
+  page1_size_masked_xpaths_sorted = page1_size_masked_xpaths
     .sort_by
     .with_index do |page_size_masked_xpath, index|
     [
@@ -96,7 +119,7 @@ def try_extract_paged(
       index # for stable sort, which should put header before footer
     ]
   end
-  logger.log("Max prefix: #{page_size_masked_xpaths.first[0]}")
+  logger.log("Max prefix: #{page1_size_masked_xpaths.first[0]}")
 
   page2 = crawl_request(
     link_to_page2, crawl_ctx, mock_http_client, nil, false, start_link_id, db_storage, logger
@@ -111,80 +134,110 @@ def try_extract_paged(
   page2_classes_by_xpath = {}
   page1_entry_links = nil
   page2_entry_links = nil
-  good_masked_xpath = nil
+  good_classless_masked_xpath = nil
   page_sizes = []
   feed_entry_links_offset = 0
 
-  page_size_masked_xpaths_sorted.each do
-  |xpath_page_size, masked_xpath, includes_first_post, extra_link_to_newest_post|
+  # Look for matches on page 2 that overlap with feed
+  page1_size_masked_xpaths_sorted.each do
+  |xpath_page1_size, page1_masked_xpath, page1_includes_first_post, extra_first_link|
 
-    page2_xpath_link_elements = page2_doc.xpath(masked_xpath)
-    page2_xpath_links = page2_xpath_link_elements.filter_map do |element|
+    page1_extraction = page1_extractions_by_masked_xpath[page1_masked_xpath]
+    page1_xpath_links = page1_extraction.links
+    page1_classless_masked_xpath = page1_extraction.classless_masked_xpath
+
+    page2_classless_xpath_link_elements = page2_doc.xpath(page1_classless_masked_xpath)
+    page2_classless_xpath_links = page2_classless_xpath_link_elements.filter_map do |element|
       html_element_to_link(
-        element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, crawl_ctx.redirects, logger, true, false
+        element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, crawl_ctx.redirects, logger, true, true
       )
     end
+    page2_xpath_links = page2_classless_xpath_links
+      .filter { |link| class_xpath_match?(link.class_xpath, page1_masked_xpath) }
     next if page2_xpath_links.empty?
 
-    page1_xpath_links = links_by_masked_xpath[masked_xpath]
     page1_xpath_curis_set = page1_xpath_links
       .map(&:curi)
       .to_canonical_uri_set(curi_eq_cfg)
-    next if page2_xpath_links.any? do |page2_xpath_link|
-      page1_xpath_curis_set.include?(page2_xpath_link.curi)
-    end
+    next if page2_xpath_links
+      .any? { |page2_xpath_link| page1_xpath_curis_set.include?(page2_xpath_link.curi) }
 
     page2_xpath_curis = page2_xpath_links.map(&:curi)
-    is_overlap_matching = feed_entry_links.subsequence_match?(page2_xpath_curis, xpath_page_size, curi_eq_cfg)
+    is_overlap_matching = feed_entry_links.subsequence_match?(
+      page2_xpath_curis, xpath_page1_size, curi_eq_cfg
+    )
     next unless is_overlap_matching
 
-    if includes_first_post
+    if page1_includes_first_post
       decorated_first_post_log = ''
       possible_page1_entry_links = page1_xpath_links
     else
       decorated_first_post_log = ", assuming the first post is decorated"
-      possible_page1_entry_links = [extra_link_to_newest_post] + page1_xpath_links
+      possible_page1_entry_links = [extra_first_link] + page1_xpath_links
     end
     next if page1_entry_links && page2_entry_links &&
-      (possible_page1_entry_links + page2_xpath_links).length <= (page1_entry_links + page2_entry_links).length
+      (possible_page1_entry_links + page2_xpath_links).length <=
+        (page1_entry_links + page2_entry_links).length
 
     page1_entry_links = possible_page1_entry_links
     page2_entry_links = page2_xpath_links
-    good_masked_xpath = masked_xpath
-    page_sizes << xpath_page_size << page2_xpath_links.length
-    feed_entry_links_offset = xpath_page_size + page2_entry_links.length
-    logger.log("XPath looks good for page 2: #{masked_xpath} (#{page1_entry_links.length} + #{page2_entry_links.length} links#{decorated_first_post_log})")
+    good_classless_masked_xpath = page1_classless_masked_xpath
+    page_sizes << xpath_page1_size << page2_xpath_links.length
+    feed_entry_links_offset = xpath_page1_size + page2_entry_links.length
+    logger.log("XPath looks good for page 2: #{page1_masked_xpath} (#{page1_entry_links.length} + #{page2_entry_links.length} links#{decorated_first_post_log})")
   end
 
+  # See if the first page had some sort of decoration, and links on the second page moved under another
+  # parent but retained the inner structure
   if page2_entry_links.nil? && paging_pattern != :blogger
-    page_size_masked_xpaths_sorted.each do |xpath_page_size, masked_xpath|
-      masked_xpath_star_index = masked_xpath.index("*")
-      masked_xpath_suffix_start = masked_xpath[...masked_xpath_star_index].rindex("/")
-      masked_xpath_suffix = masked_xpath[masked_xpath_suffix_start..-1]
-      page2_xpath_suffix = "/" + masked_xpath_suffix.gsub("*", "1")
-      page2_xpath_suffix_link_elements = page2_doc.xpath(page2_xpath_suffix)
-      page2_xpath_suffix_links = page2_xpath_suffix_link_elements.filter_map do |element|
+    page1_size_masked_xpaths_sorted.each do |page1_size, page1_masked_xpath|
+      page1_extraction = page1_extractions_by_masked_xpath[page1_masked_xpath]
+      page1_xpath_links = page1_extraction.links
+      page1_xpath_name = page1_extraction.xpath_name
+
+      masked_xpath_star_index = page1_masked_xpath.index("*")
+      masked_xpath_suffix_start = page1_masked_xpath[...masked_xpath_star_index].rindex("/")
+      masked_xpath_suffix = page1_masked_xpath[masked_xpath_suffix_start..]
+      page2_classless_xpath_suffix_elements = page2_doc.xpath(
+        "/" + class_xpath_remove_classes(masked_xpath_suffix)
+      )
+      page2_classless_xpath_suffix_links = page2_classless_xpath_suffix_elements
+        .filter_map do |element|
         html_element_to_link(
           element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, crawl_ctx.redirects, logger, true,
-          false
+          true
         )
       end
-      next if page2_xpath_suffix_links.length != 1
+      page2_classless_xpath_suffix_first_links_by_xpath_prefix = page2_classless_xpath_suffix_links
+        .each_with_object({}) do |link, first_links_by_xpath_prefix|
 
-      page2_xpath_suffix_link = page2_xpath_suffix_links.first
-      page2_xpath_prefix_length = page2_xpath_suffix_link.xpath.length - masked_xpath_suffix.length
-      page2_xpath_prefix = page2_xpath_suffix_link.xpath[...page2_xpath_prefix_length]
+        xpath = link[page1_xpath_name]
+        xpath_prefix = get_xpath_prefix(xpath, masked_xpath_suffix)
+        next unless xpath_prefix
+
+        first_links_by_xpath_prefix[xpath_prefix] = link unless first_links_by_xpath_prefix.key?(xpath_prefix)
+      end
+      page2_xpath_suffix_first_links = page2_classless_xpath_suffix_first_links_by_xpath_prefix
+        .filter do |xpath_prefix, link|
+        class_xpath_match?(link.class_xpath, xpath_prefix + masked_xpath_suffix)
+      end
+      next if page2_xpath_suffix_first_links.length != 1
+
+      page2_xpath_prefix = page2_xpath_suffix_first_links.first.first
       page2_masked_xpath = page2_xpath_prefix + masked_xpath_suffix
 
-      page2_xpath_link_elements = page2_doc.xpath(page2_masked_xpath)
-      page2_xpath_links = page2_xpath_link_elements.filter_map do |element|
+      page2_xpath_classless_link_elements = page2_doc.xpath(
+        class_xpath_remove_classes(page2_masked_xpath)
+      )
+      page2_xpath_classless_links = page2_xpath_classless_link_elements.filter_map do |element|
         html_element_to_link(
           element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, crawl_ctx.redirects, logger, true,
-          false
+          true
         )
       end
+      page2_xpath_links = page2_xpath_classless_links
+        .filter { |link| class_xpath_match?(link.class_xpath, page2_masked_xpath) }
 
-      page1_xpath_links = links_by_masked_xpath[masked_xpath]
       page1_xpath_curis_set = page1_xpath_links
         .map(&:curi)
         .to_canonical_uri_set(curi_eq_cfg)
@@ -194,17 +247,17 @@ def try_extract_paged(
 
       page2_xpath_curis = page2_xpath_links.map(&:curi)
       is_overlap_matching = feed_entry_links.subsequence_match?(
-        page2_xpath_curis, xpath_page_size, curi_eq_cfg
+        page2_xpath_curis, page1_size, curi_eq_cfg
       )
       next unless is_overlap_matching
 
       page1_entry_links = page1_xpath_links
       page2_entry_links = page2_xpath_links
-      good_masked_xpath = page2_masked_xpath
-      page_sizes << xpath_page_size << page2_xpath_links.length
-      feed_entry_links_offset = xpath_page_size + page2_entry_links.length
+      good_classless_masked_xpath = class_xpath_remove_classes(page2_masked_xpath)
+      page_sizes << page1_size << page2_xpath_links.length
+      feed_entry_links_offset = page1_size + page2_entry_links.length
       logger.log("Possible page 2: #{link_to_page2.curi}")
-      logger.log("XPath looks good for page 1: #{masked_xpath} (#{page1_entry_links.length} links)")
+      logger.log("XPath looks good for page 1: #{page1_masked_xpath} (#{page1_entry_links.length} links)")
       logger.log("XPath looks good for page 2: #{page2_masked_xpath} (#{page2_entry_links.length} links)")
       break
     end
@@ -229,21 +282,22 @@ def try_extract_paged(
       pattern: "paged_last",
       links: entry_links,
       count: entry_links.count,
-      extra: "page_count: 2<br>page_sizes: #{page_size_counts}<br>last_page:<a href=\"#{page2.fetch_uri}\">#{page2.curi}</a>#{paging_pattern_extra}"
+      extra: "page_count: 2<br>page_sizes: #{page_size_counts}<br>xpath: #{good_classless_masked_xpath}<br>last_page:<a href=\"#{page2.fetch_uri}\">#{page2.curi}</a>#{paging_pattern_extra}"
     )
   end
 
   known_entry_curis_set = entry_links
     .map(&:curi)
     .to_canonical_uri_set(curi_eq_cfg)
-  link_to_next_page = link_to_page3
-  link_to_last_page = nil
+  link_to_last_page = link_to_next_page = link_to_page3
   next_page_number = 3
 
+  # Iterate over the remaining pages
+  # Use classless masked xpath just in case the parent changes classes
   while link_to_next_page
     link_to_last_page = link_to_next_page
     loop_page_result = extract_page_entry_links(
-      link_to_next_page, next_page_number, paging_pattern, good_masked_xpath, feed_entry_links,
+      link_to_next_page, next_page_number, paging_pattern, good_classless_masked_xpath, feed_entry_links,
       feed_entry_links_offset, start_link_id, known_entry_curis_set, curi_eq_cfg, crawl_ctx, mock_http_client,
       db_storage, logger
     )
@@ -277,13 +331,14 @@ def try_extract_paged(
     pattern: first_page_links_to_last_page ? "paged_last" : "paged_next",
     links: entry_links,
     count: entry_links.count,
-    extra: "page_count: #{page_count}<br>page_sizes: #{page_size_counts}<br><a href=\"#{link_to_last_page.url}\">#{link_to_last_page.curi}</a>#{paging_pattern_extra}"
+    extra: "page_count: #{page_count}<br>page_sizes: #{page_size_counts}<br>xpath: #{good_classless_masked_xpath}<br>last_page: <a href=\"#{link_to_last_page.url}\">#{link_to_last_page.curi}</a>#{paging_pattern_extra}"
   )
 end
 
 def extract_page_entry_links(
-  link_to_page, page_number, paging_pattern, masked_xpath, feed_entry_links, feed_entry_links_offset,
-  start_link_id, known_entry_curis_set, curi_eq_cfg, crawl_ctx, mock_http_client, db_storage, logger
+  link_to_page, page_number, paging_pattern, classless_masked_xpath, feed_entry_links,
+  feed_entry_links_offset, start_link_id, known_entry_curis_set, curi_eq_cfg, crawl_ctx, mock_http_client,
+  db_storage, logger
 )
   logger.log("Possible page #{page_number}: #{link_to_page.curi}")
   page = crawl_request(
@@ -295,21 +350,21 @@ def extract_page_entry_links(
   end
 
   page_classes_by_xpath = {}
-  page_entry_link_elements = page.document.xpath(masked_xpath)
-  page_entry_links = page_entry_link_elements.filter_map.with_index do |element, index|
+  page_xpath_link_elements = page.document.xpath(classless_masked_xpath)
+  page_xpath_links = page_xpath_link_elements.filter_map.with_index do |element, index|
     # Redirects don't matter after we're out of feed
     link_redirects = index < (feed_entry_links.length - feed_entry_links_offset) ? crawl_ctx.redirects : {}
     html_element_to_link(
-      element, page.fetch_uri, page.document, page_classes_by_xpath, link_redirects, logger, true, false
+      element, page.fetch_uri, page.document, page_classes_by_xpath, link_redirects, logger, true, true
     )
   end
 
-  if page_entry_links.empty?
-    logger.log("XPath doesn't work for page #{page_number}: #{masked_xpath}")
+  if page_xpath_links.empty?
+    logger.log("XPath doesn't work for page #{page_number}: #{classless_masked_xpath}")
     return nil
   end
 
-  page_known_curis = page_entry_links
+  page_known_curis = page_xpath_links
     .map(&:curi)
     .filter { |page_uri| known_entry_curis_set.include?(page_uri) }
   unless page_known_curis.empty?
@@ -317,7 +372,7 @@ def extract_page_entry_links(
     return nil
   end
 
-  page_entry_curis = page_entry_links.map(&:curi)
+  page_entry_curis = page_xpath_links.map(&:curi)
   is_overlap_matching = feed_entry_links.subsequence_match?(
     page_entry_curis, feed_entry_links_offset, curi_eq_cfg
   )
@@ -335,7 +390,7 @@ def extract_page_entry_links(
   )
   return nil if link_to_next_page == :multiple
 
-  { page_entry_links: page_entry_links, link_to_next_page: link_to_next_page }
+  { page_entry_links: page_xpath_links, link_to_next_page: link_to_next_page }
 end
 
 BLOGSPOT_QUERY_REGEX = /updated-max=([^&]+)/
@@ -447,3 +502,46 @@ def find_link_to_next_page(
   links_to_next_page.first
 end
 
+def get_xpath_prefix(xpath, masked_xpath_suffix)
+  xpath_prefix_length = xpath.length
+  xpath_suffix = masked_xpath_suffix
+
+  # Replace stars with the actual numbers right to left
+  loop do
+    suffix_prefix, star, suffix_suffix = xpath_suffix.rpartition("*")
+    break if star.empty?
+    return nil unless xpath.end_with?(suffix_suffix)
+
+    xpath_prefix_length = xpath.length - suffix_suffix.length
+    number_index = xpath[...xpath_prefix_length].rindex("[") + 1
+    xpath_suffix = suffix_prefix + xpath[number_index...xpath_prefix_length] + suffix_suffix
+    xpath_prefix_length = number_index
+  end
+  xpath_prefix_length = xpath[...xpath_prefix_length].rindex("/")
+
+  xpath[...xpath_prefix_length]
+end
+
+def class_xpath_remove_classes(class_xpath)
+  class_xpath.gsub(/\([^)]*\)/, '')
+end
+
+def class_xpath_match?(class_xpath, masked_xpath)
+  return true unless masked_xpath.include?("(")
+
+  xpath_remaining = class_xpath
+  masked_xpath_remaining = masked_xpath
+
+  loop do
+    star_index = masked_xpath_remaining.index("*")
+    if star_index
+      return false unless xpath_remaining[...star_index] == masked_xpath_remaining[...star_index]
+
+      xpath_remaining = xpath_remaining[star_index..]
+      xpath_remaining = xpath_remaining[xpath_remaining.index("]")..]
+      masked_xpath_remaining = masked_xpath_remaining[(star_index + 1)..]
+    else
+      return xpath_remaining == masked_xpath_remaining
+    end
+  end
+end

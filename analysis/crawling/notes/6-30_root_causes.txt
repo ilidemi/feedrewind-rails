@@ -8,7 +8,6 @@ VISGv
     v 1 Archives scoped by path: 101
       1 Archives almost match feed with more links: 217
 
-  S   1 Paged with two stars: 361
  I    1 Xpath is not the best after page 2: 227
       2 Paged scoped by path: 499 99
       1 First post decorated on every page: 86
@@ -23,8 +22,7 @@ VISGv
       4 Post not in RSS: 198 355 381 486
     v 1 Mistaken link in RSS: 50
       5 RSS dates are bogus: 157 183 371 393 114
-    v 1 RSS is complete with 101+: 37
- IS v 2 RSS post has redirect: 81 306
+   Gv 1 RSS is complete with 101+: 37
  ISG  1 Old domain link in RSS: 418
 
   S   1 Redirect through meta http-equiv="refresh": 12
@@ -38,6 +36,7 @@ VISGv
    G  1 Paged instead of feed: 473 546
 
       2 YouTube: 438 441
+    v 2 Medium RSS post has redirect: 81 306
    G  2 Medium to /latest: 341 516
 
  I    0 Integrate crawling properly
