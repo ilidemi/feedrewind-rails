@@ -134,7 +134,7 @@ def group_links_by_masked_xpath(page_links, feed_entry_curis_set, xpath_name, st
   end
 
   masked_xpath_tree = build_xpath_tree(
-    page_feed_masked_xpaths_segments.map{ |xpath_segments| [xpath_segments, false] }
+    page_feed_masked_xpaths_segments.map { |xpath_segments| [xpath_segments, false] }
   )
 
   def masked_xpath_from_segments(xpath_segments)
@@ -166,12 +166,11 @@ def group_links_by_masked_xpath(page_links, feed_entry_curis_set, xpath_name, st
   links_by_masked_xpath
 end
 
-
 LinksExtraction = Struct.new(:links, :curis, :curis_set, :has_duplicates)
 DatesExtraction = Struct.new(:dates, :are_sorted, :are_reverse_sorted)
 MaskedXpathExtraction = Struct.new(
   :links_extraction, :log_lines, :markup_dates_extraction, :medium_markup_dates,
-  :almost_markup_dates_extraction, :maybe_url_dates
+  :almost_markup_dates_extraction, :some_markup_dates, :maybe_url_dates
 )
 
 def get_masked_xpath_extraction(
@@ -196,6 +195,7 @@ def get_masked_xpath_extraction(
   markup_dates_extraction = DatesExtraction.new(nil, nil, nil)
   medium_markup_dates = nil
   almost_markup_dates_extraction = DatesExtraction.new(nil, nil, nil)
+  some_markup_dates = nil
 
   links_matching_feed = collapsed_links
     .filter { |link| feed_entry_curis_set.include?(link.curi) }
@@ -203,62 +203,67 @@ def get_masked_xpath_extraction(
     .map(&:curi)
     .to_canonical_uri_set(curi_eq_cfg)
     .length
-  threshold_to_have_some_dates = [almost_match_threshold, feed_entry_links.length - 1].min
 
-  if unique_links_matching_feed_count >= threshold_to_have_some_dates
-    last_star_index = masked_xpath.rindex("*")
-    distance_to_top_parent = masked_xpath[last_star_index..].count("/")
-    relative_xpath_to_top_parent = "/.." * distance_to_top_parent
+  last_star_index = masked_xpath.rindex("*")
+  distance_to_top_parent = masked_xpath[last_star_index..].count("/")
+  relative_xpath_to_top_parent = "/.." * distance_to_top_parent
 
+  matching_maybe_markup_dates = extract_maybe_markup_dates(
+    collapsed_links, links_matching_feed, distance_to_top_parent, relative_xpath_to_top_parent,
+    false, logger
+  )
+
+  if matching_maybe_markup_dates
     if unique_links_matching_feed_count >= almost_match_threshold
-      matching_maybe_markup_dates = extract_maybe_markup_dates(
-        collapsed_links, links_matching_feed, distance_to_top_parent, relative_xpath_to_top_parent,
-        false, logger
-      )
-
-      if matching_maybe_markup_dates
-        filtered_links, matching_markup_dates = collapsed_links
-          .zip(matching_maybe_markup_dates)
-          .filter { |_, date| date != nil }
-          .transpose
-        if filtered_links.length != links.length
-          log_lines << "filtered by dates #{collapsed_links.length} -> #{filtered_links.length}"
-        end
-
-        if star_count >= 2
-          matching_are_sorted = matching_markup_dates
-            .each_cons(2)
-            .all? { |date1, date2| date1 >= date2 }
-          matching_are_reverse_sorted = matching_markup_dates
-            .each_cons(2)
-            .all? { |date1, date2| date1 <= date2 }
-        else
-          # Trust the ordering of links more than dates
-          matching_are_sorted = nil
-          matching_are_reverse_sorted = nil
-        end
-
-        if unique_links_matching_feed_count == feed_entry_links.length
-          markup_dates_extraction = DatesExtraction.new(
-            matching_markup_dates, matching_are_sorted, matching_are_reverse_sorted
-          )
-        else
-          almost_markup_dates_extraction = DatesExtraction.new(
-            matching_markup_dates, matching_are_sorted, matching_are_reverse_sorted
-          )
-        end
+      filtered_links, matching_markup_dates = collapsed_links
+        .zip(matching_maybe_markup_dates)
+        .filter { |_, maybe_date| maybe_date != nil }
+        .transpose
+      if filtered_links.length != links.length
+        log_lines << "filtered by dates #{collapsed_links.length} -> #{filtered_links.length}"
       end
+    elsif matching_maybe_markup_dates.all? { |maybe_date| maybe_date != nil }
+      matching_markup_dates = matching_maybe_markup_dates
+    else
+      matching_markup_dates = nil
     end
 
-    if unique_links_matching_feed_count == feed_entry_links.length - 1
-      maybe_medium_markup_dates = extract_maybe_markup_dates(
-        collapsed_links, links_matching_feed, distance_to_top_parent, relative_xpath_to_top_parent,
-        true, logger
-      )
-
-      if maybe_medium_markup_dates && maybe_medium_markup_dates.all? { |date| date != nil }
-        medium_markup_dates = maybe_medium_markup_dates
+    if matching_markup_dates
+      if star_count >= 2
+        matching_are_sorted = matching_markup_dates
+          .each_cons(2)
+          .all? { |date1, date2| date1 >= date2 }
+        matching_are_reverse_sorted = matching_markup_dates
+          .each_cons(2)
+          .all? { |date1, date2| date1 <= date2 }
+      else
+        # Trust the ordering of links more than dates
+        matching_are_sorted = nil
+        matching_are_reverse_sorted = nil
       end
+
+      if unique_links_matching_feed_count == feed_entry_links.length
+        markup_dates_extraction = DatesExtraction.new(
+          matching_markup_dates, matching_are_sorted, matching_are_reverse_sorted
+        )
+      elsif unique_links_matching_feed_count >= almost_match_threshold
+        almost_markup_dates_extraction = DatesExtraction.new(
+          matching_markup_dates, matching_are_sorted, matching_are_reverse_sorted
+        )
+      end
+
+      some_markup_dates = matching_markup_dates
+    end
+  end
+
+  if unique_links_matching_feed_count == feed_entry_links.length - 1
+    maybe_medium_markup_dates = extract_maybe_markup_dates(
+      collapsed_links, links_matching_feed, distance_to_top_parent, relative_xpath_to_top_parent,
+      true, logger
+    )
+
+    if maybe_medium_markup_dates && maybe_medium_markup_dates.all? { |date| date != nil }
+      medium_markup_dates = maybe_medium_markup_dates
     end
   end
 
@@ -285,7 +290,7 @@ def get_masked_xpath_extraction(
 
   MaskedXpathExtraction.new(
     links_extraction, log_lines, markup_dates_extraction, medium_markup_dates, almost_markup_dates_extraction,
-    maybe_url_dates
+    some_markup_dates, maybe_url_dates
   )
 end
 

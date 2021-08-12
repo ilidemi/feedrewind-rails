@@ -43,20 +43,24 @@ def try_extract_archives_categories(
         .to_canonical_uri_set(curi_eq_cfg)
       next unless feed_matching_curis_set.length >= 2
 
-      links_maybe_url_dates = links.zip(extraction.maybe_url_dates)
+      maybe_dates = extraction
+        .maybe_url_dates
+        .zip(extraction.some_markup_dates || [])
+        .map { |maybe_url_date, maybe_markup_date| maybe_url_date || maybe_markup_date }
+      links_maybe_dates = links.zip(maybe_dates)
       log_lines = extraction.log_lines.clone
       if links_extraction.curis.length != links_extraction.curis_set.length
         dedup_links_maybe_dates = []
         dedup_curis_set = CanonicalUriSet.new([], curi_eq_cfg)
-        links_maybe_url_dates.each do |link, maybe_url_date|
+        links_maybe_dates.each do |link, maybe_date|
           next if dedup_curis_set.include?(link.curi)
 
-          dedup_links_maybe_dates << [link, maybe_url_date]
+          dedup_links_maybe_dates << [link, maybe_date]
           dedup_curis_set << link.curi
         end
         log_lines << "dedup #{links.length} -> #{dedup_links_maybe_dates.length}"
       else
-        dedup_links_maybe_dates = links_maybe_url_dates
+        dedup_links_maybe_dates = links_maybe_dates
       end
 
       best_links_maybe_dates = dedup_links_maybe_dates
@@ -172,18 +176,18 @@ def try_combination(
   extra_lines = []
   feed_matching_curis_sets_categories.each_with_index do |feed_matching_curis_set_category, index|
     feed_matching_curis_set, category = feed_matching_curis_set_category
-    extra_lines << "<br>cat#{index + 1}_url: <a href=\"#{category.fetch_uri}\">#{category.curi}</a>"
-    extra_lines << "<br>cat#{index + 1}_xpath: #{category.xpath}"
-    extra_lines << "<br>cat#{index + 1}_feed_count: #{feed_matching_curis_set.length}"
-    extra_lines << "<br>cat#{index + 1}_total_count: #{category.links_maybe_dates.length}"
+    extra_lines << "cat#{index + 1}_url: <a href=\"#{category.fetch_uri}\">#{category.curi}</a>"
+    extra_lines << "cat#{index + 1}_xpath: #{category.xpath}"
+    extra_lines << "cat#{index + 1}_feed_count: #{feed_matching_curis_set.length}"
+    extra_lines << "cat#{index + 1}_total_count: #{category.links_maybe_dates.length}"
 
   end
-  extra_lines << "<br>missing_count: #{missing_links_maybe_dates.length}"
+  extra_lines << "missing_count: #{missing_links_maybe_dates.length}"
 
   ArchivesCategoriesResult.new(
     pattern: "archives_categories#{almost_suffix}",
     links_maybe_dates: unique_links_maybe_dates,
     count: unique_links_maybe_dates.length,
-    extra: extra_lines.join("")
+    extra: extra_lines.join("<br>")
   )
 end

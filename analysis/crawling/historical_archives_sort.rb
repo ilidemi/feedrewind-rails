@@ -45,23 +45,28 @@ def historical_archives_sort_add(page, sort_state, logger)
 end
 
 def historical_archives_sort_finish(links_with_known_dates, links, sort_state, logger)
-  sort_state ||= {}
-  dates_by_xpath_from_time = sort_state
-    .filter { |xpath_source, _| xpath_source[1] == :time }
-    .map { |xpath_source, dates| [xpath_source[0], dates] }
-    .to_h
-  if sort_state.length == 1
-    xpath, dates = sort_state.first
-    logger.log("Good shuffled date xpath: #{xpath}")
-  elsif dates_by_xpath_from_time.length == 1
-    xpath, dates = dates_by_xpath_from_time.first
-    logger.log("Good shuffled date xpath from time: #{xpath}")
+  if sort_state
+    sort_state ||= {}
+    dates_by_xpath_from_time = sort_state
+      .filter { |xpath_source, _| xpath_source[1] == :time }
+      .map { |xpath_source, dates| [xpath_source[0], dates] }
+      .to_h
+    if sort_state.length == 1
+      xpath, dates = sort_state.first
+      logger.log("Good shuffled date xpath: #{xpath}")
+    elsif dates_by_xpath_from_time.length == 1
+      xpath, dates = dates_by_xpath_from_time.first
+      logger.log("Good shuffled date xpath from time: #{xpath}")
+    else
+      logger.log("Couldn't sort links: #{sort_state}")
+      return nil
+    end
+
+    links_dates = links_with_known_dates + links.zip(dates)
   else
-    logger.log("Couldn't sort links: #{sort_state}")
-    return nil
+    links_dates = links_with_known_dates
   end
 
-  links_dates = links_with_known_dates + links.zip(dates)
   sorted_links_dates = sort_links_dates(links_dates)
   sorted_links = sorted_links_dates.map { |link, _| link }
   sorted_links

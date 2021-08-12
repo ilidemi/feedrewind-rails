@@ -168,6 +168,7 @@ def try_extract_sorted(
 )
   is_almost = !!almost_match_threshold
   almost_suffix = is_almost ? "_almost" : ""
+  markup_dates_extraction_key = is_almost ? :almost_markup_dates_extraction : :markup_dates_extraction
   logger.log("Trying sorted#{almost_suffix} match with #{star_count} stars")
 
   best_xpath = nil
@@ -179,7 +180,7 @@ def try_extract_sorted(
     links = links_extraction.links
     curis = links_extraction.curis
     curis_set = links_extraction.curis_set
-    dates = extraction.markup_dates_extraction.dates
+    dates = extraction[markup_dates_extraction_key].dates
 
     next if best_links && best_links.length >= links.length
     next if fewer_stars_have_dates && !dates
@@ -204,7 +205,7 @@ def try_extract_sorted(
         .all? do |xpath_curi, fewer_stars_curi|
         canonical_uri_equal?(xpath_curi, fewer_stars_curi, curi_eq_cfg)
       end
-    if extraction.markup_dates_extraction.are_sorted != false &&
+    if extraction[markup_dates_extraction_key].are_sorted != false &&
       is_matching_feed &&
       !links_extraction.has_duplicates &&
       (!fewer_stars_curis || is_matching_fewer_stars_links)
@@ -233,7 +234,7 @@ def try_extract_sorted(
         .all? do |xpath_curi, fewer_stars_curi|
         canonical_uri_equal?(xpath_curi, fewer_stars_curi, curi_eq_cfg)
       end
-    if extraction.markup_dates_extraction.are_reverse_sorted != false &&
+    if extraction[markup_dates_extraction_key].are_reverse_sorted != false &&
       is_reversed_matching_feed &&
       !links_extraction.has_duplicates &&
       (!fewer_stars_curis ||
@@ -306,7 +307,7 @@ def try_extract_sorted(
       links: best_links,
       count: best_links.length,
       has_dates: best_has_dates,
-      extra: "<br>xpath: #{best_xpath}"
+      extra: "xpath: #{best_xpath}"
     )
   else
     logger.log("No sorted match with #{star_count} stars")
@@ -365,7 +366,7 @@ def try_extract_sorted_highlight_first_link(
       links: [best_first_link] + best_links,
       count: 1 + best_links.length,
       has_dates: nil,
-      extra: "<br>counts: 1 + #{best_links.length}<br>prefix_xpath: #{best_first_link.xpath}<br>suffix_xpath: #{best_xpath}",
+      extra: "counts: 1 + #{best_links.length}<br>prefix_xpath: #{best_first_link.xpath}<br>suffix_xpath: #{best_xpath}",
     )
   else
     logger.log("No sorted match with highlighted first link and #{star_count} stars")
@@ -417,7 +418,7 @@ def try_extract_medium_with_pinned_entry(
       pinned_entry_link: pinned_entry_link,
       other_links_dates: other_links_dates,
       count: 1 + other_links_dates.length,
-      extra: "<br>counts: 1 + #{links.length}<br>prefix_xpath: #{pinned_entry_link.xpath}<br>suffix_xpath: #{masked_xpath}",
+      extra: "counts: 1 + #{links.length}<br>prefix_xpath: #{pinned_entry_link.xpath}<br>suffix_xpath: #{masked_xpath}",
     )
   end
 
@@ -544,7 +545,7 @@ def try_extract_sorted_2xpaths(
       pattern: "archives_2xpaths",
       links: best_links,
       count: best_links.length,
-      extra: "<br>star_count: 1 + #{star_count}<br>counts: #{best_prefix_count} + #{best_suffix_count}<br>prefix_xpath: #{best_prefix_xpath}<br>suffix_xpath: #{best_suffix_xpath}"
+      extra: "star_count: 1 + #{star_count}<br>counts: #{best_prefix_count} + #{best_suffix_count}<br>prefix_xpath: #{best_prefix_xpath}<br>suffix_xpath: #{best_suffix_xpath}"
     )
   else
     logger.log("No sorted match with 1+#{star_count} stars")
@@ -591,7 +592,7 @@ def try_extract_almost_matching_feed(
       pattern: "feed",
       links: feed_entry_links.to_a,
       count: feed_entry_links.length,
-      extra: "<br>almost_match: #{best_links.length}/#{feed_entry_links.length}<br>xpath:#{best_xpath}"
+      extra: "almost_match: #{best_links.length}/#{feed_entry_links.length}<br>xpath:#{best_xpath}"
     )
   else
     logger.log("No almost feed match with #{star_count} stars")
@@ -661,7 +662,7 @@ def try_extract_shuffled(
       pattern: "archives_shuffled#{almost_suffix}",
       links_maybe_dates: best_links_maybe_dates,
       count: best_links_maybe_dates.count,
-      extra: "<br>xpath: #{best_xpath}<br>dates_present:#{dates_present}/#{best_links_maybe_dates.length}"
+      extra: "xpath: #{best_xpath}<br>dates_present:#{dates_present}/#{best_links_maybe_dates.length}"
     )
   else
     logger.log("No shuffled match with #{star_count} stars")
