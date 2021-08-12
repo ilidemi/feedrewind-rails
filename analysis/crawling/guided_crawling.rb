@@ -729,29 +729,38 @@ def guided_crawl_loop(
   end
   logger.log("First two entries don't link to the main page")
 
-  unless other_links_from_both_entries.empty?
-    logger.log("Checking #{other_links_from_both_entries.length} other links")
+  other_non_entry_links_from_both_entries = other_links_from_both_entries
+    .filter { |link| !feed_entry_curis_set.include?(link.curi) }
+  if other_non_entry_links_from_both_entries.length > 10
+    filtered_other_non_entry_links_from_both_entries =
+      filter_top_level_non_year_links(other_non_entry_links_from_both_entries)
+    logger.log("Filtering #{other_non_entry_links_from_both_entries.length} other non-entry links to #{filtered_other_non_entry_links_from_both_entries.length}")
+  else
+    filtered_other_non_entry_links_from_both_entries = other_non_entry_links_from_both_entries
+  end
+
+  unless filtered_other_non_entry_links_from_both_entries.empty?
+    logger.log("Checking #{filtered_other_non_entry_links_from_both_entries.length} other non-entry links")
     # Don't use puppeteer for these links
     result, _ = crawl_historical(
-      other_links_from_both_entries, feed_entry_links, feed_entry_curis_set, feed_generator, curi_eq_cfg,
-      start_link_id, crawl_ctx, mock_http_client, nil, db_storage, archives_categories_state,
-      logger
+      filtered_other_non_entry_links_from_both_entries, feed_entry_links, feed_entry_curis_set,
+      feed_generator, curi_eq_cfg, start_link_id, crawl_ctx, mock_http_client, nil, db_storage,
+      archives_categories_state, logger
     )
     return result if result
   end
 
   logger.log("First two entries don't link to something with a pattern")
 
-  logger.log("Trying other top level links from the start page")
-  start_page_other_top_level_links = start_page_other_page_links
-    .filter { |link| link.curi.trimmed_path&.count("/") == 1 }
+  logger.log("Trying filtered other links from the start page")
+  start_page_filtered_other_links = filter_top_level_non_year_links(start_page_other_page_links)
   are_any_feed_entries_top_level = feed_entry_links
     .to_a
     .any? { |entry_link| [nil, 1].include?(entry_link.curi.trimmed_path&.count("/")) }
-  if !start_page_other_top_level_links.empty? && !are_any_feed_entries_top_level
+  if !start_page_filtered_other_links.empty? && !are_any_feed_entries_top_level
     # Don't use puppeteer for these links
     result, _ = crawl_historical(
-      start_page_other_top_level_links, feed_entry_links, feed_entry_curis_set, feed_generator, curi_eq_cfg,
+      start_page_filtered_other_links, feed_entry_links, feed_entry_curis_set, feed_generator, curi_eq_cfg,
       start_link_id, crawl_ctx, mock_http_client, nil, db_storage, archives_categories_state,
       logger
     )
@@ -1047,4 +1056,11 @@ def postprocess_sort_links_maybe_dates(
   end
 
   sorted_links
+end
+
+def filter_top_level_non_year_links(links)
+  links.filter do |link|
+    level = link.curi.trimmed_path&.count("/")
+    [nil, 1].include?(level) && !link.curi.trimmed_path&.match?(/\/\d+/)
+  end
 end
