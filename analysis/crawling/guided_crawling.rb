@@ -385,89 +385,125 @@ def crawl_request(
     request_ms = ((monotonic_now - request_start) * 1000).to_i
     crawl_ctx.requests_made += 1
 
-    break unless resp.code.start_with?('3')
-
-    redirection_url = resp.location
-    redirection_link = to_canonical_link(redirection_url, logger, link.uri)
-
-    if redirection_link.nil?
-      logger.log("Bad redirection link")
-      return BadRedirection.new(redirection_url)
-    end
-
-    if seen_urls.include?(redirection_link.url)
-      raise "Circular redirect for #{initial_link.url}: #{seen_urls} -> #{redirection_link.url}"
-    end
-    seen_urls << redirection_link.url
-    crawl_ctx.redirects[link.url] = redirection_link
-    db_storage.save_redirect(link.url, redirection_link.url, start_link_id)
-    redirection_link = follow_cached_redirects(redirection_link, crawl_ctx.redirects, seen_urls)
-
-    if crawl_ctx.seen_fetch_urls.include?(redirection_link.url) ||
-      crawl_ctx.fetched_curis.include?(redirection_link.curi)
-
-      logger.log("#{resp.code} #{request_ms}ms #{link.url} -> #{redirection_link.url} (already seen)")
-      return AlreadySeenLink.new(link)
-    end
-
-    logger.log("#{resp.code} #{request_ms}ms #{link.url} -> #{redirection_link.url}")
-    # Not marking canonical url as seen because redirect key is a fetch url which may be different for the
-    # same canonical url
-    crawl_ctx.seen_fetch_urls << redirection_link.url
-    crawl_ctx.allowed_hosts << redirection_link.uri.host
-    link = redirection_link
-  end
-
-  if resp.code == "200"
-    content_type = resp.content_type ? resp.content_type.split(';')[0] : nil
-    if content_type == "text/html"
-      content = resp.body
-      document = nokogiri_html5(content)
-    elsif is_feed_expected && is_feed(resp.body, logger)
-      content = resp.body
-      document = nil
-    else
-      content = nil
-      document = nil
-    end
-
-    if !crawl_ctx.fetched_curis.include?(link.curi)
-      crawl_ctx.fetched_curis << link.curi
-      db_storage.save_page(
-        link.curi.to_s, link.url, content_type, start_link_id, content, false
+    if resp.code.start_with?('3')
+      redirection_url = resp.location
+      redirection_link_or_result = process_redirect(
+        redirection_url, initial_link, link, resp.code, request_ms, seen_urls, start_link_id, crawl_ctx,
+        db_storage, logger
       )
-      logger.log("#{resp.code} #{content_type} #{request_ms}ms #{link.url}")
-    else
-      logger.log("#{resp.code} #{content_type} #{request_ms}ms #{link.url} - canonical uri already seen")
-    end
 
-    # TODO: puppeteer will be executed twice for duplicate fetches
-    content, document, is_puppeteer_used = crawl_link_with_puppeteer(
-      link, content, document, puppeteer_client, crawl_ctx, logger
-    )
-    if is_puppeteer_used
-      if !crawl_ctx.pptr_fetched_curis.include?(link.curi)
-        crawl_ctx.pptr_fetched_curis << link.curi
-        db_storage.save_page(
-          link.curi.to_s, link.url, content_type, start_link_id, content, true
-        )
-        logger.log("Puppeteer page saved")
+      if redirection_link_or_result.is_a?(Link)
+        link = redirection_link_or_result
       else
-        logger.log("Puppeteer page saved - canonical uri already seen")
+        return redirection_link_or_result
       end
-    end
+    elsif resp.code == "200"
+      content_type = resp.content_type ? resp.content_type.split(';')[0] : nil
+      if content_type == "text/html"
+        content = resp.body
+        document = nokogiri_html5(content)
+      elsif is_feed_expected && is_feed(resp.body, logger)
+        content = resp.body
+        document = nil
+      else
+        content = nil
+        document = nil
+      end
 
-    Page.new(link.curi, link.uri, start_link_id, content_type, content, document, is_puppeteer_used)
-  elsif PERMANENT_ERROR_CODES.include?(resp.code)
-    crawl_ctx.fetched_curis << link.curi
-    db_storage.save_permanent_error(
-      link.curi.to_s, link.url, start_link_id, resp.code
-    )
-    logger.log("#{resp.code} #{request_ms}ms #{link.url}")
-    PermanentError.new(link.curi, link.url, start_link_id, resp.code)
-  else
-    raise "HTTP #{resp.code}" # TODO more cases here
+      meta_refresh_content = document&.at_xpath("/html/head/meta[@http-equiv='refresh']/@content")&.value
+      if meta_refresh_content
+        meta_refresh_match = meta_refresh_content.match(/(\d+); *(?:URL|url)=(.+)/)
+        if meta_refresh_match
+          interval_str = meta_refresh_match[1]
+          redirection_url = meta_refresh_match[2]
+          log_code = "#{resp.code}_meta_refresh_#{interval_str}"
+
+          redirection_link_or_result = process_redirect(
+            redirection_url, initial_link, link, log_code, request_ms, seen_urls, start_link_id, crawl_ctx,
+            db_storage, logger
+          )
+
+          if redirection_link_or_result.is_a?(Link)
+            link = redirection_link_or_result
+            next
+          else
+            return redirection_link_or_result
+          end
+        end
+      end
+
+      if !crawl_ctx.fetched_curis.include?(link.curi)
+        crawl_ctx.fetched_curis << link.curi
+        db_storage.save_page(
+          link.curi.to_s, link.url, content_type, start_link_id, content, false
+        )
+        logger.log("#{resp.code} #{content_type} #{request_ms}ms #{link.url}")
+      else
+        logger.log("#{resp.code} #{content_type} #{request_ms}ms #{link.url} - canonical uri already seen")
+      end
+
+      # TODO: puppeteer will be executed twice for duplicate fetches
+      content, document, is_puppeteer_used = crawl_link_with_puppeteer(
+        link, content, document, puppeteer_client, crawl_ctx, logger
+      )
+      if is_puppeteer_used
+        if !crawl_ctx.pptr_fetched_curis.include?(link.curi)
+          crawl_ctx.pptr_fetched_curis << link.curi
+          db_storage.save_page(
+            link.curi.to_s, link.url, content_type, start_link_id, content, true
+          )
+          logger.log("Puppeteer page saved")
+        else
+          logger.log("Puppeteer page saved - canonical uri already seen")
+        end
+      end
+
+      return Page.new(link.curi, link.uri, start_link_id, content_type, content, document, is_puppeteer_used)
+    elsif PERMANENT_ERROR_CODES.include?(resp.code)
+      crawl_ctx.fetched_curis << link.curi
+      db_storage.save_permanent_error(
+        link.curi.to_s, link.url, start_link_id, resp.code
+      )
+      logger.log("#{resp.code} #{request_ms}ms #{link.url}")
+      return PermanentError.new(link.curi, link.url, start_link_id, resp.code)
+    else
+      raise "HTTP #{resp.code}" # TODO more cases here
+    end
   end
+end
+
+def process_redirect(
+  redirection_url, initial_link, request_link, code, request_ms, seen_urls, start_link_id, crawl_ctx,
+  db_storage, logger
+)
+  redirection_link = to_canonical_link(redirection_url, logger, request_link.uri)
+
+  if redirection_link.nil?
+    logger.log("#{code} #{request_ms}ms #{request_link.url} -> bad redirection link")
+    return BadRedirection.new(redirection_url)
+  end
+
+  if seen_urls.include?(redirection_link.url)
+    raise "Circular redirect for #{initial_link.url}: #{seen_urls} -> #{redirection_link.url}"
+  end
+  seen_urls << redirection_link.url
+  crawl_ctx.redirects[request_link.url] = redirection_link
+  db_storage.save_redirect(request_link.url, redirection_link.url, start_link_id)
+  redirection_link = follow_cached_redirects(redirection_link, crawl_ctx.redirects, seen_urls)
+
+  if crawl_ctx.seen_fetch_urls.include?(redirection_link.url) ||
+    crawl_ctx.fetched_curis.include?(redirection_link.curi)
+
+    logger.log("#{code} #{request_ms}ms #{request_link.url} -> #{redirection_link.url} (already seen)")
+    return AlreadySeenLink.new(request_link)
+  end
+
+  logger.log("#{code} #{request_ms}ms #{request_link.url} -> #{redirection_link.url}")
+  # Not marking canonical url as seen because redirect key is a fetch url which may be different for the
+  # same canonical url
+  crawl_ctx.seen_fetch_urls << redirection_link.url
+  crawl_ctx.allowed_hosts << redirection_link.uri.host
+  redirection_link
 end
 
 CLASS_SUBSTITUTIONS = {
@@ -546,7 +582,13 @@ def to_class_xpath(xpath, document, fetch_uri, classes_by_xpath, logger)
   xpath_tokens = xpath.split('/')[1..]
   prefix_xpath = ""
   class_xpath_tokens = xpath_tokens.map do |token|
-    prefix_xpath += "/#{token}"
+    bracket_index = token.index("[")
+    if bracket_index
+      prefix_xpath += "/#{token}"
+    else
+      prefix_xpath += "/#{token}[1]"
+    end
+
     if classes_by_xpath.key?(prefix_xpath)
       classes = classes_by_xpath[prefix_xpath]
     else
@@ -570,7 +612,6 @@ def to_class_xpath(xpath, document, fetch_uri, classes_by_xpath, logger)
       end
     end
 
-    bracket_index = token.index("[")
     if bracket_index
       "/#{token[...bracket_index]}(#{classes})#{token[bracket_index..]}"
     else
@@ -586,7 +627,7 @@ def follow_cached_redirects(initial_link, redirects, seen_urls = nil)
   if seen_urls.nil?
     seen_urls = [link.url]
   end
-  while redirects.key?(link.url) && link.url != redirects[link.url].url
+  while redirects && redirects.key?(link.url) && link.url != redirects[link.url].url
     redirection_link = redirects[link.url]
     if seen_urls.include?(redirection_link.url)
       raise "Circular redirect for #{initial_link.url}: #{seen_urls} -> #{redirection_link.url}"
@@ -908,13 +949,27 @@ def try_extract_historical(
     archives_categories_state, curi_eq_cfg, logger
   )
 
-  paged_result = try_extract_paged(
+  page1_result = try_extract_page1(
     page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator, curi_eq_cfg,
-    start_link_id, crawl_ctx, mock_http_client, db_storage, logger
+    logger
   )
 
+  paged_result = nil
+  if page1_result
+    page2 = crawl_request(
+      page1_result.link_to_page2, crawl_ctx, mock_http_client, nil, false, start_link_id, db_storage, logger
+    )
+    if page2 && page2.is_a?(Page) && page2.document
+      paged_result = try_extract_page2(
+        page2, page1_result.paged_state, feed_entry_links, curi_eq_cfg, logger
+      )
+    else
+      logger.log("Page 2 is not a page: #{page2}")
+    end
+  end
+
   result = nil
-  if archives_result && (archives_result.main_result || !archives_result.tentative_better_results.empty?)
+  if archives_result
     result = archives_result
   end
   if archives_categories_result &&
@@ -923,16 +978,33 @@ def try_extract_historical(
     result = archives_categories_result
   end
   if paged_result &&
-    (!result || !result.count || paged_result.count > result.count)
-
+    (
+      !result ||
+        !result.count ||
+        paged_result.count > result.count ||
+        (paged_result.is_a?(PartialPagedResult) && paged_result.count == result.count)
+    )
     result = paged_result
   end
 
   return nil unless result
 
-  postprocessed_result = postprocess_result(
-    result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage, logger
-  )
+  if result.is_a?(ArchivesResult)
+    postprocessed_result = postprocess_archives_result(
+      result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage, logger
+    )
+  elsif result.is_a?(ArchivesCategoriesResult)
+    postprocessed_result = postprocess_archives_categories_result(
+      result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage, logger
+    )
+  elsif result.is_a?(PagedResult) || result.is_a?(PartialPagedResult)
+    postprocessed_result = postprocess_paged_result(
+      result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage, logger
+    )
+  else
+    raise "Unknown result type: #{result}"
+  end
+
   unless postprocessed_result
     logger.log("Postprocessing failed for this page")
     return nil
@@ -951,27 +1023,11 @@ end
 
 PostprocessedResult = Struct.new(:pattern, :links, :extra, keyword_init: true)
 
-def postprocess_result(
-  result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage, logger
+def postprocess_archives_result(
+  archives_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage, logger
 )
-  if result.is_a?(ArchivesCategoriesResult)
-    sorted_links = postprocess_sort_links_maybe_dates(
-      result.links_maybe_dates, feed_entry_links, curi_eq_cfg, {}, crawl_ctx,
-      mock_http_client, start_link_id, db_storage, logger
-    )
-    return nil unless sorted_links
-
-    return PostprocessedResult.new(
-      pattern: result.pattern,
-      links: sorted_links,
-      extra: result.extra
-    )
-  end
-
-  return result unless result.is_a?(ArchivesResult)
-
-  if result.main_result.is_a?(MediumWithPinnedEntryResult)
-    medium_result = result.main_result
+  if archives_result.main_result.is_a?(MediumWithPinnedEntryResult)
+    medium_result = archives_result.main_result
     pinned_entry_page = crawl_request(
       medium_result.pinned_entry_link, crawl_ctx, mock_http_client, nil, false,
       start_link_id, db_storage, logger
@@ -1012,11 +1068,11 @@ def postprocess_result(
     )
   end
 
-  best_result = result.main_result
+  best_result = archives_result.main_result
 
-  if result.tentative_better_results
+  if archives_result.tentative_better_results
     pages_by_canonical_url = {}
-    sorted_tentative_results = result
+    sorted_tentative_results = archives_result
       .tentative_better_results.sort_by { |tentative_result| tentative_result.count }
 
     sorted_tentative_results.each do |tentative_result|
@@ -1035,6 +1091,44 @@ def postprocess_result(
   end
 
   best_result
+end
+
+def postprocess_archives_categories_result(
+  archives_categories_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id,
+  db_storage, logger
+)
+  sorted_links = postprocess_sort_links_maybe_dates(
+    archives_categories_result.links_maybe_dates, feed_entry_links, curi_eq_cfg, {}, crawl_ctx,
+    mock_http_client, start_link_id, db_storage, logger
+  )
+  return nil unless sorted_links
+
+  PostprocessedResult.new(
+    pattern: archives_categories_result.pattern,
+    links: sorted_links,
+    extra: archives_categories_result.extra
+  )
+end
+
+def postprocess_paged_result(
+  paged_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage, logger
+)
+  while paged_result.is_a?(PartialPagedResult)
+    page = crawl_request(
+      paged_result.link_to_next_page, crawl_ctx, mock_http_client, nil, false, start_link_id, db_storage,
+      logger
+    )
+    unless page && page.is_a?(Page) && page.document
+      logger.log("Page #{paged_result.page_number} is not a page: #{page}")
+      return nil
+    end
+
+    paged_result = try_extract_next_page(
+      page, paged_result.paged_state, feed_entry_links, curi_eq_cfg, logger
+    )
+  end
+
+  paged_result
 end
 
 def postprocess_sort_links_maybe_dates(

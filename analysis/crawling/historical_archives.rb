@@ -157,6 +157,8 @@ def try_extract_archives(
     min_links_count = long_feed_result.count + 1
   end
 
+  return nil if !main_result && tentative_better_results.empty?
+
   ArchivesResult.new(main_result, main_result&.count, tentative_better_results)
 end
 
@@ -336,6 +338,7 @@ def try_extract_sorted_highlight_first_link(
     links_extraction = extraction.links_extraction
     links = links_extraction.links
     curis = links_extraction.curis
+    curis_set = links_extraction.curis_set
 
     next if best_links && best_links.length >= links.length
     next unless links.length >= feed_entry_links.length - 1
@@ -350,6 +353,7 @@ def try_extract_sorted_highlight_first_link(
       end
     if is_matching_feed &&
       page_curis_set.include?(first_link.curi) &&
+      !curis_set.include?(first_link.curi)
       (is_matching_fewer_stars_links || !fewer_stars_curis)
 
       best_xpath = masked_xpath

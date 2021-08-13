@@ -1,9 +1,9 @@
 VIP Recurse
  Interesting
   Small but general
-   Guilty
+   Embarrassing
     vip mine
-VISGv
+VISEGv
       1 Archives parse post date: 337
     v 1 Archives scoped by path: 101
       1 Archives almost match feed with more links: 217
@@ -22,23 +22,19 @@ VISGv
       4 Post not in RSS: 198 355 381 486
     v 1 Mistaken link in RSS: 50
       5 RSS dates are bogus: 157 183 371 393 114
-   Gv 1 RSS is complete with 101+: 37
- ISG  1 Old domain link in RSS: 418
+   Ev 1 RSS is complete with 101+: 37
 
-  S   1 Redirect through meta http-equiv="refresh": 12
-  S   2 Xpath needs [last()]: 263 318
+      2 Xpath needs [last()]: 263 318
       1 Feed links need comparison by unique prefix: 469
 
-   G  2 Resilient crawl: 122 230
-   G  1 Connection error just from Ruby: 527
-   G  2 Wrong archives: 378 33 48
-   G  3 Paged instead of archives: 118 445 442
-   G  1 Paged instead of feed: 473 546
+   E  2 Resilient crawl: 122 230
+   E  1 Connection error just from Ruby: 527
+   E  2 Wrong archives: 378 33 48
+   E  4 Paged instead of archives: 118 445 442 182
+   E  1 Paged instead of feed: 473 546
 
       2 YouTube: 438 441
     v 2 Medium RSS post has redirect: 81 306
-   G  2 Medium to /latest: 341 516
-
- I    0 Integrate crawling properly
+   E  2 Medium to /latest: 341 516
 
       17 Fail for now: 192 346 428 470 504 394 295 535 329 509 501 247 131 180 71 176 210

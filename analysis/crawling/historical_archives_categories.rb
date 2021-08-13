@@ -42,6 +42,7 @@ def try_extract_archives_categories(
         .map(&:curi)
         .to_canonical_uri_set(curi_eq_cfg)
       next unless feed_matching_curis_set.length >= 2
+      next unless feed_matching_curis_set.length <= feed_entry_links.length - 2
 
       maybe_dates = extraction
         .maybe_url_dates

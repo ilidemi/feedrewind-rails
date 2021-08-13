@@ -176,7 +176,7 @@ class CanonicalUriSet
   end
 
   def add(curi)
-    server = curi.host + curi.port
+    server = (curi.host || "") + (curi.port || "")
     server_key = @curi_eq_cfg.same_hosts.include?(server) ? :same_hosts : server
     unless @paths_queries_by_server.key?(server_key)
       @paths_queries_by_server[server_key] = {}

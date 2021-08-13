@@ -4,15 +4,27 @@ require_relative 'historical_common'
 require_relative 'structs'
 
 PagedResult = Struct.new(:pattern, :links, :count, :extra, keyword_init: true)
+Page1Result = Struct.new(:link_to_page2, :paged_state)
+PartialPagedResult = Struct.new(:link_to_next_page, :next_page_number, :count, :paged_state)
+
+Page2State = Struct.new(
+  :paging_pattern, :paging_pattern_extra, :page1, :page1_links, :page1_extractions_by_masked_xpath,
+  :page1_size_masked_xpaths_sorted
+)
+NextPageState = Struct.new(
+  :paging_pattern, :paging_pattern_extra, :page_number, :entry_links, :known_entry_curis_set,
+  :classless_masked_xpath, :page_sizes, :page1, :page1_links
+)
+
 PagedExtraction = Struct.new(:links, :xpath_name, :classless_masked_xpath)
 
 BLOGSPOT_POSTS_BY_DATE_REGEX = /(\(date-outer\)\[)\d+(.+\(post-outer\)\[)\d+/
 
-def try_extract_paged(
+def try_extract_page1(
   page1, page1_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator, curi_eq_cfg,
-  start_link_id, crawl_ctx, mock_http_client, db_storage, logger
+  logger
 )
-  link_pattern_to_page2 = find_link_to_second_page(page1_links, page1, feed_generator, curi_eq_cfg, logger)
+  link_pattern_to_page2 = find_link_to_page2(page1_links, page1, feed_generator, curi_eq_cfg, logger)
   return nil unless link_pattern_to_page2
   link_to_page2 = link_pattern_to_page2[:link]
   paging_pattern = link_pattern_to_page2[:paging_pattern]
@@ -25,9 +37,7 @@ def try_extract_paged(
 
   # Blogger has a known pattern with posts grouped by date
   if paging_pattern == :blogger
-    page1_class_xpath_links = extract_links(
-      page1, [page1.fetch_uri.host], crawl_ctx.redirects, logger, true, true
-    )
+    page1_class_xpath_links = extract_links(page1, [page1.fetch_uri.host], nil, logger, true, true)
     page1_links_grouped_by_date = page1_class_xpath_links.filter do |page_link|
       BLOGSPOT_POSTS_BY_DATE_REGEX.match(page_link.class_xpath)
     end
@@ -97,7 +107,7 @@ def try_extract_paged(
 
     masked_xpath_curis_set = page1_xpath_curis.to_canonical_uri_set(curi_eq_cfg)
     if masked_xpath_curis_set.length != page1_xpath_curis.length
-      logger.log("Masked xpath #{masked_xpath} has duplicates: #{page1_xpath_curis}")
+      logger.log("Masked xpath #{masked_xpath} has duplicates: #{page1_xpath_curis.map(&:to_s)}")
       next
     end
 
@@ -121,14 +131,20 @@ def try_extract_paged(
   end
   logger.log("Max prefix: #{page1_size_masked_xpaths.first[0]}")
 
-  page2 = crawl_request(
-    link_to_page2, crawl_ctx, mock_http_client, nil, false, start_link_id, db_storage, logger
+  Page1Result.new(
+    link_to_page2,
+    Page2State.new(
+      paging_pattern, paging_pattern_extra, page1, page1_links, page1_extractions_by_masked_xpath,
+      page1_size_masked_xpaths_sorted
+    )
   )
-  unless page2 && page2.is_a?(Page) && page2.content
-    logger.log("Page 2 is not a page: #{page2}")
-    return nil
-  end
-  logger.log("Possible page 2: #{link_to_page2.curi}")
+end
+
+def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
+  paging_pattern = page2_state.paging_pattern
+  paging_pattern_extra = page2_state.paging_pattern_extra
+
+  logger.log("Possible page 2: #{page2.curi}")
   page2_doc = Nokogiri::HTML5(page2.content)
 
   page2_classes_by_xpath = {}
@@ -136,20 +152,19 @@ def try_extract_paged(
   page2_entry_links = nil
   good_classless_masked_xpath = nil
   page_sizes = []
-  feed_entry_links_offset = 0
 
   # Look for matches on page 2 that overlap with feed
-  page1_size_masked_xpaths_sorted.each do
+  page2_state.page1_size_masked_xpaths_sorted.each do
   |xpath_page1_size, page1_masked_xpath, page1_includes_first_post, extra_first_link|
 
-    page1_extraction = page1_extractions_by_masked_xpath[page1_masked_xpath]
+    page1_extraction = page2_state.page1_extractions_by_masked_xpath[page1_masked_xpath]
     page1_xpath_links = page1_extraction.links
     page1_classless_masked_xpath = page1_extraction.classless_masked_xpath
 
     page2_classless_xpath_link_elements = page2_doc.xpath(page1_classless_masked_xpath)
     page2_classless_xpath_links = page2_classless_xpath_link_elements.filter_map do |element|
       html_element_to_link(
-        element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, crawl_ctx.redirects, logger, true, true
+        element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, nil, logger, true, true
       )
     end
     page2_xpath_links = page2_classless_xpath_links
@@ -183,15 +198,14 @@ def try_extract_paged(
     page2_entry_links = page2_xpath_links
     good_classless_masked_xpath = page1_classless_masked_xpath
     page_sizes << xpath_page1_size << page2_xpath_links.length
-    feed_entry_links_offset = xpath_page1_size + page2_entry_links.length
     logger.log("XPath looks good for page 2: #{page1_masked_xpath} (#{page1_entry_links.length} + #{page2_entry_links.length} links#{decorated_first_post_log})")
   end
 
   # See if the first page had some sort of decoration, and links on the second page moved under another
   # parent but retained the inner structure
   if page2_entry_links.nil? && paging_pattern != :blogger
-    page1_size_masked_xpaths_sorted.each do |page1_size, page1_masked_xpath|
-      page1_extraction = page1_extractions_by_masked_xpath[page1_masked_xpath]
+    page2_state.page1_size_masked_xpaths_sorted.each do |page1_size, page1_masked_xpath|
+      page1_extraction = page2_state.page1_extractions_by_masked_xpath[page1_masked_xpath]
       page1_xpath_links = page1_extraction.links
       page1_xpath_name = page1_extraction.xpath_name
 
@@ -204,7 +218,7 @@ def try_extract_paged(
       page2_classless_xpath_suffix_links = page2_classless_xpath_suffix_elements
         .filter_map do |element|
         html_element_to_link(
-          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, crawl_ctx.redirects, logger, true,
+          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, nil, logger, true,
           true
         )
       end
@@ -231,7 +245,7 @@ def try_extract_paged(
       )
       page2_xpath_classless_links = page2_xpath_classless_link_elements.filter_map do |element|
         html_element_to_link(
-          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, crawl_ctx.redirects, logger, true,
+          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, nil, logger, true,
           true
         )
       end
@@ -255,8 +269,7 @@ def try_extract_paged(
       page2_entry_links = page2_xpath_links
       good_classless_masked_xpath = class_xpath_remove_classes(page2_masked_xpath)
       page_sizes << page1_size << page2_xpath_links.length
-      feed_entry_links_offset = page1_size + page2_entry_links.length
-      logger.log("Possible page 2: #{link_to_page2.curi}")
+      logger.log("Possible page 2: #{page2.curi}")
       logger.log("XPath looks good for page 1: #{page1_masked_xpath} (#{page1_entry_links.length} links)")
       logger.log("XPath looks good for page 2: #{page2_masked_xpath} (#{page2_entry_links.length} links)")
       break
@@ -268,7 +281,7 @@ def try_extract_paged(
     return nil
   end
 
-  page2_links = extract_links(page2, [page2.fetch_uri.host], crawl_ctx.redirects, logger, true, false)
+  page2_links = extract_links(page2, [page2.fetch_uri.host], nil, logger, true, false)
   link_to_page3 = find_link_to_next_page(
     page2_links, page2, curi_eq_cfg, 3, paging_pattern, logger
   )
@@ -289,73 +302,33 @@ def try_extract_paged(
   known_entry_curis_set = entry_links
     .map(&:curi)
     .to_canonical_uri_set(curi_eq_cfg)
-  link_to_last_page = link_to_next_page = link_to_page3
-  next_page_number = 3
 
-  # Iterate over the remaining pages
-  # Use classless masked xpath just in case the parent changes classes
-  while link_to_next_page
-    link_to_last_page = link_to_next_page
-    loop_page_result = extract_page_entry_links(
-      link_to_next_page, next_page_number, paging_pattern, good_classless_masked_xpath, feed_entry_links,
-      feed_entry_links_offset, start_link_id, known_entry_curis_set, curi_eq_cfg, crawl_ctx, mock_http_client,
-      db_storage, logger
+  PartialPagedResult.new(
+    link_to_page3,
+    3,
+    entry_links.count,
+    NextPageState.new(
+      paging_pattern, paging_pattern_extra, 3, entry_links, known_entry_curis_set,
+      good_classless_masked_xpath, page_sizes, page2_state.page1, page2_state.page1_links
     )
-
-    if loop_page_result.nil?
-      return nil
-    end
-
-    entry_links += loop_page_result[:page_entry_links]
-    known_entry_curis_set.merge!(
-      loop_page_result[:page_entry_links].map(&:curi)
-    )
-    link_to_next_page = loop_page_result[:link_to_next_page]
-    page_sizes << loop_page_result[:page_entry_links].length
-    next_page_number += 1
-    feed_entry_links_offset += loop_page_result[:page_entry_links].length
-  end
-
-  page_count = next_page_number - 1
-
-  if paging_pattern == :blogger
-    first_page_links_to_last_page = false
-  else
-    first_page_links_to_last_page = !!find_link_to_next_page(
-      page1_links, page1, curi_eq_cfg, page_count, paging_pattern, logger
-    )
-  end
-  logger.log("Best count: #{entry_links.length} with #{page_count} pages of #{page_sizes}")
-  page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
-  PagedResult.new(
-    pattern: first_page_links_to_last_page ? "paged_last" : "paged_next",
-    links: entry_links,
-    count: entry_links.count,
-    extra: "page_count: #{page_count}<br>page_sizes: #{page_size_counts}<br>xpath: #{good_classless_masked_xpath}<br>last_page: <a href=\"#{link_to_last_page.url}\">#{link_to_last_page.curi}</a>#{paging_pattern_extra}"
   )
 end
 
-def extract_page_entry_links(
-  link_to_page, page_number, paging_pattern, classless_masked_xpath, feed_entry_links,
-  feed_entry_links_offset, start_link_id, known_entry_curis_set, curi_eq_cfg, crawl_ctx, mock_http_client,
-  db_storage, logger
-)
-  logger.log("Possible page #{page_number}: #{link_to_page.curi}")
-  page = crawl_request(
-    link_to_page, crawl_ctx, mock_http_client, nil, false, start_link_id, db_storage, logger
-  )
-  unless page && page.is_a?(Page) && page.document
-    logger.log("Page #{page_number} is not a page: #{page}")
-    return nil
-  end
+def try_extract_next_page(page, page_state, feed_entry_links, curi_eq_cfg, logger)
+  paging_pattern = page_state.paging_pattern
+  paging_pattern_extra = page_state.paging_pattern_extra
+  page_number = page_state.page_number
+  entry_links = page_state.entry_links
+  known_entry_curis_set = page_state.known_entry_curis_set
+  classless_masked_xpath = page_state.classless_masked_xpath
+
+  logger.log("Possible page #{page_number}: #{page.curi}")
 
   page_classes_by_xpath = {}
   page_xpath_link_elements = page.document.xpath(classless_masked_xpath)
-  page_xpath_links = page_xpath_link_elements.filter_map.with_index do |element, index|
-    # Redirects don't matter after we're out of feed
-    link_redirects = index < (feed_entry_links.length - feed_entry_links_offset) ? crawl_ctx.redirects : {}
+  page_xpath_links = page_xpath_link_elements.filter_map do |element|
     html_element_to_link(
-      element, page.fetch_uri, page.document, page_classes_by_xpath, link_redirects, logger, true, true
+      element, page.fetch_uri, page.document, page_classes_by_xpath, nil, logger, true, true
     )
   end
 
@@ -374,28 +347,62 @@ def extract_page_entry_links(
 
   page_entry_curis = page_xpath_links.map(&:curi)
   is_overlap_matching = feed_entry_links.subsequence_match?(
-    page_entry_curis, feed_entry_links_offset, curi_eq_cfg
+    page_entry_curis, entry_links.length, curi_eq_cfg
   )
   unless is_overlap_matching
     logger.log("Page #{page_number} doesn't overlap with feed")
     logger.log("Page urls: #{page_entry_curis.map(&:to_s)}")
-    logger.log("Feed urls (offset #{feed_entry_links_offset}): #{feed_entry_links}")
+    logger.log("Feed urls (offset #{entry_links.length}): #{feed_entry_links}")
     return nil
   end
 
-  page_links = extract_links(page, [page.fetch_uri.host], crawl_ctx.redirects, logger, true, false)
+  page_links = extract_links(page, [page.fetch_uri.host], nil, logger, true, false)
   next_page_number = page_number + 1
   link_to_next_page = find_link_to_next_page(
     page_links, page, curi_eq_cfg, next_page_number, paging_pattern, logger
   )
   return nil if link_to_next_page == :multiple
 
-  { page_entry_links: page_xpath_links, link_to_next_page: link_to_next_page }
+  next_entry_links = entry_links + page_xpath_links
+  next_known_entry_curis_set = (known_entry_curis_set.curis + page_xpath_links.map(&:curi))
+    .to_canonical_uri_set(curi_eq_cfg)
+  page_sizes = page_state.page_sizes + [page_xpath_links.length]
+
+  if link_to_next_page
+    PartialPagedResult.new(
+      link_to_next_page,
+      next_page_number,
+      next_entry_links.count,
+      NextPageState.new(
+        paging_pattern, paging_pattern_extra, next_page_number, next_entry_links, next_known_entry_curis_set,
+        classless_masked_xpath, page_sizes, page_state.page1, page_state.page1_links
+      )
+    )
+  else
+    page_count = page_number
+    if paging_pattern == :blogger
+      first_page_links_to_last_page = false
+    else
+      first_page_links_to_last_page = !!find_link_to_next_page(
+        page_state.page1_links, page_state.page1, curi_eq_cfg, page_count, paging_pattern, logger
+      )
+    end
+
+    logger.log("Best count: #{next_entry_links.length} with #{page_count} pages of #{page_sizes}")
+    page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
+
+    PagedResult.new(
+      pattern: first_page_links_to_last_page ? "paged_last" : "paged_next",
+      links: next_entry_links,
+      count: next_entry_links.count,
+      extra: "page_count: #{page_count}<br>page_sizes: #{page_size_counts}<br>xpath: #{classless_masked_xpath}<br>last_page: <a href=\"#{page.fetch_uri}\">#{page.curi}</a>#{paging_pattern_extra}"
+    )
+  end
 end
 
 BLOGSPOT_QUERY_REGEX = /updated-max=([^&]+)/
 
-def find_link_to_second_page(current_page_links, current_page, feed_generator, curi_eq_cfg, logger)
+def find_link_to_page2(current_page_links, current_page, feed_generator, curi_eq_cfg, logger)
   blogspot_next_page_links = current_page_links.filter do |link|
     link.uri.path == "/search" &&
       link.uri.query &&
