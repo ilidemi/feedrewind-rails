@@ -171,22 +171,44 @@ def guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     logger.log("Root url: #{feed_links.root_link}")
     logger.log("Entries in feed: #{feed_links.entry_links.length}")
 
-    feed_entry_hosts = Set.new
+    feed_entry_links_by_host = {}
     if feed_links.root_link
       crawl_ctx.allowed_hosts << feed_links.root_link.uri.host
     end
     feed_links.entry_links.to_a.each do |entry_link|
       crawl_ctx.allowed_hosts << entry_link.uri.host
-      feed_entry_hosts << entry_link.uri.host
+
+      unless feed_entry_links_by_host.key?(entry_link.uri.host)
+        feed_entry_links_by_host[entry_link.uri.host] = []
+      end
+      feed_entry_links_by_host[entry_link.uri.host] << entry_link
     end
 
     same_hosts = Set.new
     [[start_link, start_page], [feed_link, feed_page]].each do |link, page|
-      if link.uri.host != page.fetch_uri.host &&
-        canonical_uri_same_path?(link.curi, page.curi) &&
-        (feed_entry_hosts.include?(link.uri.host) || feed_entry_hosts.include?(page.fetch_uri.host))
+      if canonical_uri_same_path?(link.curi, page.curi) &&
+        (feed_entry_links_by_host.key?(link.uri.host) || feed_entry_links_by_host.key?(page.fetch_uri.host))
 
         same_hosts << link.uri.host << page.fetch_uri.host
+      end
+    end
+
+    unless feed_entry_links_by_host.keys.any? { |entry_host| same_hosts.include?(entry_host) }
+      entry_link_from_popular_host = feed_entry_links_by_host
+        .max { |host_links1, host_links2| host_links2[1].length <=> host_links1[1].length }
+        .last
+        .first
+      entry_result = crawl_request(
+        entry_link_from_popular_host, crawl_ctx, mock_http_client, puppeteer_client, false,
+        start_link_id, db_storage, logger
+      )
+
+      unless entry_result.is_a?(Page) && entry_result.content
+        raise "Unexpected entry result: #{entry_result}"
+      end
+
+      if canonical_uri_same_path?(entry_link_from_popular_host.curi, entry_result.curi)
+        same_hosts << entry_link_from_popular_host.uri.host << entry_result.fetch_uri.host
       end
     end
 
@@ -891,7 +913,10 @@ def try_extract_historical(
     start_link_id, crawl_ctx, mock_http_client, db_storage, logger
   )
 
-  result = archives_result
+  result = nil
+  if archives_result && (archives_result.main_result || !archives_result.tentative_better_results.empty?)
+    result = archives_result
+  end
   if archives_categories_result &&
     (!result || !result.count || archives_categories_result.count > result.count)
 
@@ -908,7 +933,10 @@ def try_extract_historical(
   postprocessed_result = postprocess_result(
     result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage, logger
   )
-  return nil unless postprocessed_result
+  unless postprocessed_result
+    logger.log("Postprocessing failed for this page")
+    return nil
+  end
 
   {
     best_result: HistoricalResult.new(
