@@ -70,6 +70,10 @@ class CrawlContext
   attr_accessor :requests_made, :puppeteer_requests_made, :duplicate_fetches, :main_feed_fetched
 end
 
+HistoricalResult = Struct.new(
+  :main_canonical_url, :main_fetch_url, :pattern, :links, :extra, keyword_init: true
+)
+
 def guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
   start_link_row = db.exec_params('select url, rss_url from start_links where id = $1', [start_link_id])[0]
   start_link_url = start_link_row["url"]
@@ -218,10 +222,25 @@ def guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     gt_main_page_curi = CanonicalUri.from_db_string(
       gt_row ? gt_row["main_page_canonical_url"] : "no-ground-truth.com"
     )
-    historical_result_combo = guided_crawl_loop(
-      start_link_id, start_page, feed_links.entry_links, feed_links.generator, crawl_ctx, curi_eq_cfg,
-      mock_http_client, puppeteer_client, db_storage, gt_main_page_curi, logger
-    )
+
+    if feed_links.entry_links.length >= 51
+      logger.log("Feed is long with #{feed_links.entry_links.length} entries")
+      historical_result_combo = {
+        best_result: HistoricalResult.new(
+          main_canonical_url: feed_page.curi.to_s,
+          main_fetch_url: feed_page.fetch_uri.to_s,
+          pattern: "long_feed",
+          links: feed_links.entry_links.to_a,
+          extra: ""
+        )
+      }
+    else
+      historical_result_combo = guided_crawl_loop(
+        start_link_id, start_page, feed_links.entry_links, feed_links.generator, crawl_ctx, curi_eq_cfg,
+        mock_http_client, puppeteer_client, db_storage, gt_main_page_curi, logger
+      )
+    end
+
     historical_result = historical_result_combo[:best_result]
     result.historical_links_found = !!historical_result
     result.is_start_page_main_page = historical_result_combo[:is_start_page_main_page]
@@ -924,10 +943,6 @@ def crawl_historical(
   [nil, pages_without_puppeteer]
 end
 
-HistoricalResult = Struct.new(
-  :main_canonical_url, :main_fetch_url, :pattern, :links, :extra, keyword_init: true
-)
-
 def try_extract_historical(
   page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator, curi_eq_cfg,
   start_link_id, crawl_ctx, mock_http_client, db_storage, archives_categories_state, logger
@@ -979,9 +994,7 @@ def try_extract_historical(
   end
   if paged_result &&
     (
-      !result ||
-        !result.count ||
-        paged_result.count > result.count ||
+      !result || !result.count || paged_result.count > result.count ||
         (paged_result.is_a?(PartialPagedResult) && paged_result.count == result.count)
     )
     result = paged_result

@@ -1,7 +1,10 @@
+require 'date'
 require 'gnuplot'
 
 data = {}
 max = nil
+max_date = Date.new
+year = Date.today.year
 File.open("../notes/progress.txt") do |progress_f|
   current_symbol = nil
   current_data = []
@@ -12,21 +15,28 @@ File.open("../notes/progress.txt") do |progress_f|
       current_data = []
     end
 
-    date, count_s = line.split(": ")
+    date_s, count_s = line.split(": ")
     count = count_s.to_i
-    max = count if date == 'max'
-    next unless date.include?("/")
+    max = count if date_s == 'max'
+    next unless date_s.include?("/")
 
-    current_data << [date, count]
+    month, day = date_s.split("/").map(&:to_i)
+    date = Date.new(year, month, day)
+    max_date = [date, max_date].max
+
+    current_data << [date_s, count]
   end
   data[current_symbol] = current_data.transpose
 end
+
+max_date += 1
 
 result = Gnuplot.open do |gp|
   Gnuplot::Plot.new(gp) do |plot|
     plot.settings << [:set, 'terminal', 'dumb']
     plot.settings << [:set, 'xdata', 'time']
     plot.settings << [:set, 'timefmt', "'%m/%d'"]
+    plot.settings << [:set, 'xrange', "[:'#{max_date.month}/#{max_date.day}']"]
     plot.settings << [:set, 'yrange', "[0:#{max}]"]
     data.each do |symbol, symbol_data|
       dataset = Gnuplot::DataSet.new(symbol_data)

@@ -2,10 +2,10 @@ create type pattern as enum (
     'archives',
     'paged',
     'archives2level',
-    'archives4level',
+    'archives4level', -- deprecated
     'paged_next',
     'paged_last',
-    'paged_second_last',
+    'paged_second_last', -- deprecated
     'paged_month',
     'archives_almost',
     'archives_shuffled_2xpaths',
@@ -16,12 +16,17 @@ create type pattern as enum (
     'archives_categories',
     'chained',
     'paged_last_reversed',
-    'archives2level_shuffled_almost',
+    'archives2level_shuffled_almost', -- deprecated
     'archives_shuffled_scoped',
-    'archives_categories_shuffled',
+    'archives_categories_shuffled', -- deprecated
     'paged_next_scoped',
-    'feed',
-    'long_feed'
+    'feed', -- deprecated
+    'archives_categories_almost',
+    'archives_shuffled_almost',
+    'long_feed',
+    'archives_almost_feed', -- deprecated
+    'archives_feed_almost',
+    'archives_long_feed'
     );
 
 create table historical_ground_truth

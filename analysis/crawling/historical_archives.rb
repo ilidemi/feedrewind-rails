@@ -593,7 +593,7 @@ def try_extract_almost_matching_feed(
 
   if best_links
     SortedResult.new(
-      pattern: "feed",
+      pattern: "archives_feed_almost",
       links: feed_entry_links.to_a,
       count: feed_entry_links.length,
       extra: "almost_match: #{best_links.length}/#{feed_entry_links.length}<br>xpath:#{best_xpath}"
@@ -685,7 +685,7 @@ def try_extract_long_feed(feed_entry_links, page_curis_set, min_links_count, log
 
     logger.log("Long feed is matching (#{feed_entry_links.length} links)")
     LongFeedResult.new(
-      pattern: "long_feed",
+      pattern: "archives_long_feed",
       links: feed_entry_links.to_a,
       count: feed_entry_links.length,
       extra: ""

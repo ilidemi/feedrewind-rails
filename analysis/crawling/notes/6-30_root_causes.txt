@@ -12,26 +12,24 @@ VISEGv
       2 Paged scoped by path: 499 99
       1 First post decorated on every page: 86
  I    2 Custom next page link: 2 534
-      4 Paged from feed if almost match: 324 225 410 440
+      2 Paged from feed if almost match: 324 410
       1 Paged with 1 post overlap: 40
 
  I  v 4 Archives 2 level: 465 495 6 155
 
-      4 Chained: 108 127 244 122
+      3 Chained: 127 244 122
 
       4 Post not in RSS: 198 355 381 486
-    v 1 Mistaken link in RSS: 50
       5 RSS dates are bogus: 157 183 371 393 114
-   Ev 1 RSS is complete with 101+: 37
 
       2 Xpath needs [last()]: 263 318
       1 Feed links need comparison by unique prefix: 469
 
    E  2 Resilient crawl: 122 230
    E  1 Connection error just from Ruby: 527
-   E  2 Wrong archives: 378 33 48
+   E  3 Wrong archives: 378 33 48
    E  4 Paged instead of archives: 118 445 442 182
-   E  1 Paged instead of feed: 473 546
+   E  1 Paged instead of feed: 473
 
       2 YouTube: 438 441
     v 2 Medium RSS post has redirect: 81 306
