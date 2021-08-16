@@ -1,5 +1,5 @@
-require 'nokogumbo'
 require_relative 'canonical_link'
+require_relative 'crawling'
 require_relative 'crawling_storage'
 require_relative 'feed_parsing'
 require_relative 'historical_archives'
@@ -8,6 +8,7 @@ require_relative 'historical_archives_sort'
 require_relative 'historical_common'
 require_relative 'historical_paged'
 require_relative 'http_client'
+require_relative 'page_parsing'
 require_relative 'puppeteer_client'
 require_relative 'run_common'
 require_relative 'structs'
@@ -51,23 +52,6 @@ class GuidedCrawlRunnable
   end
 
   attr_reader :result_column_names
-end
-
-class CrawlContext
-  def initialize
-    @seen_fetch_urls = Set.new
-    @fetched_curis = CanonicalUriSet.new([], CanonicalEqualityConfig.new(Set.new, false))
-    @pptr_fetched_curis = CanonicalUriSet.new([], CanonicalEqualityConfig.new(Set.new, false))
-    @redirects = {}
-    @requests_made = 0
-    @puppeteer_requests_made = 0
-    @duplicate_fetches = 0
-    @main_feed_fetched = false
-    @allowed_hosts = Set.new
-  end
-
-  attr_reader :seen_fetch_urls, :fetched_curis, :pptr_fetched_curis, :redirects, :allowed_hosts
-  attr_accessor :requests_made, :puppeteer_requests_made, :duplicate_fetches, :main_feed_fetched
 end
 
 HistoricalResult = Struct.new(
@@ -174,6 +158,7 @@ def guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     result.feed_links = feed_links.entry_links.length
     logger.log("Root url: #{feed_links.root_link}")
     logger.log("Entries in feed: #{feed_links.entry_links.length}")
+    logger.log("Feed order is certain: #{feed_links.entry_links.is_order_certain}")
 
     feed_entry_links_by_host = {}
     if feed_links.root_link
@@ -375,286 +360,6 @@ def guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
         crawl_ctx.puppeteer_requests_made
     result.total_time = (monotonic_now - start_time).to_i
   end
-end
-
-PERMANENT_ERROR_CODES = %w[400 401 402 403 404 405 406 407 410 411 412 413 414 415 416 417 418 451]
-
-AlreadySeenLink = Struct.new(:link)
-BadRedirection = Struct.new(:url)
-
-def crawl_request(
-  initial_link, crawl_ctx, http_client, puppeteer_client, is_feed_expected, start_link_id, db_storage, logger
-)
-  link = initial_link
-  seen_urls = [link.url]
-  link = follow_cached_redirects(link, crawl_ctx.redirects, seen_urls)
-  if !link.equal?(initial_link) &&
-    (crawl_ctx.seen_fetch_urls.include?(link.url) ||
-      crawl_ctx.fetched_curis.include?(link.curi))
-
-    logger.log("Cached redirect #{initial_link.url} -> #{link.url} (already seen)")
-    return AlreadySeenLink.new(link)
-  end
-  resp = nil
-  request_ms = nil
-
-  loop do
-    request_start = monotonic_now
-    resp = http_client.request(link.uri, logger)
-    request_ms = ((monotonic_now - request_start) * 1000).to_i
-    crawl_ctx.requests_made += 1
-
-    if resp.code.start_with?('3')
-      redirection_url = resp.location
-      redirection_link_or_result = process_redirect(
-        redirection_url, initial_link, link, resp.code, request_ms, seen_urls, start_link_id, crawl_ctx,
-        db_storage, logger
-      )
-
-      if redirection_link_or_result.is_a?(Link)
-        link = redirection_link_or_result
-      else
-        return redirection_link_or_result
-      end
-    elsif resp.code == "200"
-      content_type = resp.content_type ? resp.content_type.split(';')[0] : nil
-      if content_type == "text/html"
-        content = resp.body
-        document = nokogiri_html5(content)
-      elsif is_feed_expected && is_feed(resp.body, logger)
-        content = resp.body
-        document = nil
-      else
-        content = nil
-        document = nil
-      end
-
-      meta_refresh_content = document&.at_xpath("/html/head/meta[@http-equiv='refresh']/@content")&.value
-      if meta_refresh_content
-        meta_refresh_match = meta_refresh_content.match(/(\d+); *(?:URL|url)=(.+)/)
-        if meta_refresh_match
-          interval_str = meta_refresh_match[1]
-          redirection_url = meta_refresh_match[2]
-          log_code = "#{resp.code}_meta_refresh_#{interval_str}"
-
-          redirection_link_or_result = process_redirect(
-            redirection_url, initial_link, link, log_code, request_ms, seen_urls, start_link_id, crawl_ctx,
-            db_storage, logger
-          )
-
-          if redirection_link_or_result.is_a?(Link)
-            link = redirection_link_or_result
-            next
-          else
-            return redirection_link_or_result
-          end
-        end
-      end
-
-      if !crawl_ctx.fetched_curis.include?(link.curi)
-        crawl_ctx.fetched_curis << link.curi
-        db_storage.save_page(
-          link.curi.to_s, link.url, content_type, start_link_id, content, false
-        )
-        logger.log("#{resp.code} #{content_type} #{request_ms}ms #{link.url}")
-      else
-        logger.log("#{resp.code} #{content_type} #{request_ms}ms #{link.url} - canonical uri already seen")
-      end
-
-      # TODO: puppeteer will be executed twice for duplicate fetches
-      content, document, is_puppeteer_used = crawl_link_with_puppeteer(
-        link, content, document, puppeteer_client, crawl_ctx, logger
-      )
-      if is_puppeteer_used
-        if !crawl_ctx.pptr_fetched_curis.include?(link.curi)
-          crawl_ctx.pptr_fetched_curis << link.curi
-          db_storage.save_page(
-            link.curi.to_s, link.url, content_type, start_link_id, content, true
-          )
-          logger.log("Puppeteer page saved")
-        else
-          logger.log("Puppeteer page saved - canonical uri already seen")
-        end
-      end
-
-      return Page.new(link.curi, link.uri, start_link_id, content_type, content, document, is_puppeteer_used)
-    elsif PERMANENT_ERROR_CODES.include?(resp.code)
-      crawl_ctx.fetched_curis << link.curi
-      db_storage.save_permanent_error(
-        link.curi.to_s, link.url, start_link_id, resp.code
-      )
-      logger.log("#{resp.code} #{request_ms}ms #{link.url}")
-      return PermanentError.new(link.curi, link.url, start_link_id, resp.code)
-    else
-      raise "HTTP #{resp.code}" # TODO more cases here
-    end
-  end
-end
-
-def process_redirect(
-  redirection_url, initial_link, request_link, code, request_ms, seen_urls, start_link_id, crawl_ctx,
-  db_storage, logger
-)
-  redirection_link = to_canonical_link(redirection_url, logger, request_link.uri)
-
-  if redirection_link.nil?
-    logger.log("#{code} #{request_ms}ms #{request_link.url} -> bad redirection link")
-    return BadRedirection.new(redirection_url)
-  end
-
-  if seen_urls.include?(redirection_link.url)
-    raise "Circular redirect for #{initial_link.url}: #{seen_urls} -> #{redirection_link.url}"
-  end
-  seen_urls << redirection_link.url
-  crawl_ctx.redirects[request_link.url] = redirection_link
-  db_storage.save_redirect(request_link.url, redirection_link.url, start_link_id)
-  redirection_link = follow_cached_redirects(redirection_link, crawl_ctx.redirects, seen_urls)
-
-  if crawl_ctx.seen_fetch_urls.include?(redirection_link.url) ||
-    crawl_ctx.fetched_curis.include?(redirection_link.curi)
-
-    logger.log("#{code} #{request_ms}ms #{request_link.url} -> #{redirection_link.url} (already seen)")
-    return AlreadySeenLink.new(request_link)
-  end
-
-  logger.log("#{code} #{request_ms}ms #{request_link.url} -> #{redirection_link.url}")
-  # Not marking canonical url as seen because redirect key is a fetch url which may be different for the
-  # same canonical url
-  crawl_ctx.seen_fetch_urls << redirection_link.url
-  crawl_ctx.allowed_hosts << redirection_link.uri.host
-  redirection_link
-end
-
-CLASS_SUBSTITUTIONS = {
-  '/' => '%2F',
-  '[' => '%5B',
-  ']' => '%5D',
-  '(' => '%28',
-  ')' => '%29'
-}
-
-def extract_links(
-  page, allowed_hosts, redirects, logger, include_xpath = false, include_class_xpath = false
-)
-  return [] unless page.document
-
-  link_elements = page.document.xpath('//a').to_a +
-    page.document.xpath('//link[@rel="next"]').to_a +
-    page.document.xpath('//link[@rel="prev"]').to_a +
-    page.document.xpath('//area').to_a
-  links = []
-  classes_by_xpath = {}
-  link_elements.each do |element|
-    link = html_element_to_link(
-      element, page.fetch_uri, page.document, classes_by_xpath, redirects, logger, include_xpath,
-      include_class_xpath
-    )
-    next if link.nil?
-    if allowed_hosts.nil? || allowed_hosts.include?(link.uri.host)
-      links << link
-    end
-  end
-
-  links
-end
-
-def nokogiri_html5(content)
-  html = Nokogiri::HTML5(content, max_attributes: -1, max_tree_depth: -1)
-  #noinspection RubyResolve
-  html.remove_namespaces!
-  html
-end
-
-def html_element_to_link(
-  element, fetch_uri, document, classes_by_xpath, redirects, logger, include_xpath = false,
-  include_class_xpath = false
-)
-  return nil unless element.attributes.key?('href')
-
-  url_attribute = element.attributes['href']
-  link = to_canonical_link(url_attribute.to_s, logger, fetch_uri)
-  return nil if link.nil?
-
-  link = follow_cached_redirects(link, redirects).clone
-  link.element = element
-
-  if include_xpath
-    link.xpath = to_canonical_xpath(element.path)
-  end
-
-  if include_class_xpath
-    link.class_xpath = to_class_xpath(element.path, document, fetch_uri, classes_by_xpath, logger)
-    return nil unless link.class_xpath
-  end
-
-  link
-end
-
-def to_canonical_xpath(xpath)
-  xpath
-    .split('/')[1..]
-    .map { |token| token.index("[") ? "/#{token}" : "/#{token}[1]" }
-    .join('')
-end
-
-def to_class_xpath(xpath, document, fetch_uri, classes_by_xpath, logger)
-  xpath_tokens = xpath.split('/')[1..]
-  prefix_xpath = ""
-  class_xpath_tokens = xpath_tokens.map do |token|
-    bracket_index = token.index("[")
-    if bracket_index
-      prefix_xpath += "/#{token}"
-    else
-      prefix_xpath += "/#{token}[1]"
-    end
-
-    if classes_by_xpath.key?(prefix_xpath)
-      classes = classes_by_xpath[prefix_xpath]
-    else
-      begin
-        ancestor = document.at_xpath(prefix_xpath)
-      rescue Nokogiri::XML::XPath::SyntaxError, NoMethodError => e
-        logger.log("Invalid XPath on page #{fetch_uri}: #{prefix_xpath} has #{e}, skipping this link")
-        return nil
-      end
-
-      ancestor_classes = ancestor.attributes['class']
-      if ancestor_classes
-        classes = classes_by_xpath[prefix_xpath] = ancestor_classes
-          .value
-          .split(' ')
-          .map { |klass| klass.gsub(/[\/\[\]()]/, CLASS_SUBSTITUTIONS) }
-          .sort
-          .join(',')
-      else
-        classes = classes_by_xpath[prefix_xpath] = ''
-      end
-    end
-
-    if bracket_index
-      "/#{token[...bracket_index]}(#{classes})#{token[bracket_index..]}"
-    else
-      "/#{token}(#{classes})[1]"
-    end
-  end
-
-  class_xpath_tokens.join("")
-end
-
-def follow_cached_redirects(initial_link, redirects, seen_urls = nil)
-  link = initial_link
-  if seen_urls.nil?
-    seen_urls = [link.url]
-  end
-  while redirects && redirects.key?(link.url) && link.url != redirects[link.url].url
-    redirection_link = redirects[link.url]
-    if seen_urls.include?(redirection_link.url)
-      raise "Circular redirect for #{initial_link.url}: #{seen_urls} -> #{redirection_link.url}"
-    end
-    seen_urls << redirection_link.url
-    link = redirection_link
-  end
-  link
 end
 
 ARCHIVES_REGEX = "/(?:archives?|posts?|all)(?:\\.[a-z]+)?/*$"
@@ -1062,17 +767,7 @@ def postprocess_archives_result(
       return nil
     end
 
-    sorted_curis = sorted_links.map(&:curi)
-    curis_set = sorted_curis.to_canonical_uri_set(curi_eq_cfg)
-    present_feed_entry_links = feed_entry_links.filter_included(curis_set)
-    is_matching_feed = present_feed_entry_links.sequence_match?(sorted_curis, curi_eq_cfg)
-    unless is_matching_feed
-      logger.log("Sorted links")
-      logger.log("#{sorted_curis.map(&:to_s)}")
-      logger.log("are not matching filtered feed:")
-      logger.log(present_feed_entry_links)
-      return nil
-    end
+    return nil unless compare_with_feed(sorted_links, feed_entry_links, curi_eq_cfg, logger)
 
     return PostprocessedResult.new(
       pattern: medium_result.pattern,
@@ -1178,17 +873,7 @@ def postprocess_sort_links_maybe_dates(
   )
   return nil unless sorted_links
 
-  sorted_curis = sorted_links.map(&:curi)
-  curis_set = sorted_curis.to_canonical_uri_set(curi_eq_cfg)
-  present_feed_entry_links = feed_entry_links.filter_included(curis_set)
-  is_matching_feed = present_feed_entry_links.sequence_match?(sorted_curis, curi_eq_cfg)
-  unless is_matching_feed
-    logger.log("Sorted links")
-    logger.log("#{sorted_curis.map(&:to_s)}")
-    logger.log("are not matching filtered feed:")
-    logger.log(present_feed_entry_links)
-    return nil
-  end
+  return nil unless compare_with_feed(sorted_links, feed_entry_links, curi_eq_cfg, logger)
 
   sorted_links
 end
@@ -1198,4 +883,22 @@ def filter_top_level_non_year_links(links)
     level = link.curi.trimmed_path&.count("/")
     [nil, 1].include?(level) && !link.curi.trimmed_path&.match?(/\/\d+/)
   end
+end
+
+def compare_with_feed(sorted_links, feed_entry_links, curi_eq_cfg, logger)
+  if feed_entry_links.is_order_certain
+    sorted_curis = sorted_links.map(&:curi)
+    curis_set = sorted_curis.to_canonical_uri_set(curi_eq_cfg)
+    present_feed_entry_links = feed_entry_links.filter_included(curis_set)
+    is_matching_feed = present_feed_entry_links.sequence_match?(sorted_curis, curi_eq_cfg)
+    unless is_matching_feed
+      logger.log("Sorted links")
+      logger.log("#{sorted_curis.map(&:to_s)}")
+      logger.log("are not matching filtered feed:")
+      logger.log(present_feed_entry_links)
+      return false
+    end
+  end
+
+  true
 end

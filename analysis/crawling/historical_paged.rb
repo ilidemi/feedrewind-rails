@@ -1,6 +1,6 @@
 require 'set'
-require_relative 'guided_crawling'
 require_relative 'historical_common'
+require_relative 'page_parsing'
 require_relative 'structs'
 
 PagedResult = Struct.new(:pattern, :links, :count, :extra, keyword_init: true)

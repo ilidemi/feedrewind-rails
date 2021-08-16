@@ -1,13 +1,17 @@
 require_relative 'canonical_link'
 
 class FeedEntryLinks
-  def initialize(link_buckets)
+  def initialize(link_buckets, is_order_certain)
     @link_buckets = link_buckets
     @length = link_buckets.map(&:length).sum
+    @is_order_certain = is_order_certain
   end
+
+  attr_reader :length, :is_order_certain
 
   def self.from_links_dates(links, dates)
     if dates
+      is_order_certain = true
       link_buckets = []
       last_date = nil
       links.zip(dates).each do |link, date|
@@ -19,10 +23,11 @@ class FeedEntryLinks
         last_date = date
       end
     else
+      is_order_certain = false
       link_buckets = links.map { |link| [link] }
     end
 
-    FeedEntryLinks.new(link_buckets)
+    FeedEntryLinks.new(link_buckets, is_order_certain)
   end
 
   def filter_included(curis_set)
@@ -32,7 +37,7 @@ class FeedEntryLinks
       new_link_buckets << new_link_set unless new_link_set.empty?
     end
 
-    FeedEntryLinks.new(new_link_buckets)
+    FeedEntryLinks.new(new_link_buckets, @is_order_certain)
   end
 
   def count_included(curis_set)
@@ -163,6 +168,4 @@ class FeedEntryLinks
   def to_s
     '["' + to_a.map(&:curi).map(&:to_s).join('", "') + '"]'
   end
-
-  attr_reader :length
 end

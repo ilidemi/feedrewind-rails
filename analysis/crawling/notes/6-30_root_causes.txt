@@ -25,9 +25,7 @@ VISEGv
       2 Xpath needs [last()]: 263 318
       1 Feed links need comparison by unique prefix: 469
 
-   E  2 Resilient crawl: 122 230
-   E  1 Connection error just from Ruby: 527
-   E  3 Wrong archives: 378 33 48
+   E  2 Wrong archives: 378 48
    E  4 Paged instead of archives: 118 445 442 182
    E  1 Paged instead of feed: 473
 
@@ -35,4 +33,4 @@ VISEGv
     v 2 Medium RSS post has redirect: 81 306
    E  2 Medium to /latest: 341 516
 
-      17 Fail for now: 192 346 428 470 504 394 295 535 329 509 501 247 131 180 71 176 210
+      18 Fail for now: 192 346 428 470 504 394 295 535 329 509 501 247 131 180 71 176 210 33

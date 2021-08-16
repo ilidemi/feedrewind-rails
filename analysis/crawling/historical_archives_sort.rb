@@ -1,5 +1,5 @@
 require_relative 'date_extraction'
-require_relative 'guided_crawling'
+require_relative 'page_parsing'
 
 def historical_archives_sort_add(page, sort_state, logger)
   page_dates_xpaths_sources = []

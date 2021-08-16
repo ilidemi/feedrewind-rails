@@ -14,8 +14,12 @@ class HttpClient
     throttle
 
     req = Net::HTTP::Get.new(uri, initheader = { 'User-Agent' => 'rss-catchup/0.1' })
-    resp = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
-      http.request(req)
+    begin
+      resp = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
+        http.request(req)
+      end
+    rescue OpenSSL::SSL::SSLError
+      return HttpResponse.new("SSLError", nil, nil, nil)
     end
 
     HttpResponse.new(
@@ -24,6 +28,10 @@ class HttpClient
       resp.header["location"],
       resp.body
     )
+  end
+
+  def get_retry_delay(attempt)
+    [1, 5, 15][attempt]
   end
 
   private
@@ -82,6 +90,10 @@ class MockJitHttpClient
     logger.log("URI not in mock tables, falling back on http client: #{uri}")
     @network_requests_made += 1
     @http_client.request(uri, logger)
+  end
+
+  def get_retry_delay(attempt)
+    [0.01, 0.05, 0.15][attempt]
   end
 
   attr_reader :network_requests_made
