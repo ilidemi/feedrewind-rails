@@ -68,7 +68,7 @@ def historical_archives_sort_finish(links_with_known_dates, links, sort_state, l
   end
 
   sorted_links_dates = sort_links_dates(links_dates)
-  sorted_links = sorted_links_dates.map { |link, _| link }
+  sorted_links = sorted_links_dates.map(&:first)
   sorted_links
 end
 

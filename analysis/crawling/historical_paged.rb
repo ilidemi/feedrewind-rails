@@ -3,17 +3,23 @@ require_relative 'historical_common'
 require_relative 'page_parsing'
 require_relative 'structs'
 
-PagedResult = Struct.new(:pattern, :links, :count, :extra, keyword_init: true)
-Page1Result = Struct.new(:link_to_page2, :paged_state)
-PartialPagedResult = Struct.new(:link_to_next_page, :next_page_number, :count, :paged_state)
+Page1Result = Struct.new(
+  :main_link, :link_to_page2, :speculative_count, :count, :paged_state, keyword_init: true
+)
+PagedResult = Struct.new(
+  :main_link, :pattern, :links, :speculative_count, :count, :extra, keyword_init: true
+)
+PartialPagedResult = Struct.new(
+  :link_to_next_page, :next_page_number, :speculative_count, :count, :paged_state, keyword_init: true
+)
 
 Page2State = Struct.new(
   :is_certain, :paging_pattern, :paging_pattern_extra, :page1, :page1_links,
-  :page1_extractions_by_masked_xpath, :page1_size_masked_xpaths_sorted
+  :page1_extractions_by_masked_xpath, :page1_size_masked_xpaths_sorted, :main_link
 )
 NextPageState = Struct.new(
   :paging_pattern, :paging_pattern_extra, :page_number, :entry_links, :known_entry_curis_set,
-  :classless_masked_xpath, :page_sizes, :page1, :page1_links
+  :classless_masked_xpath, :page_sizes, :page1, :page1_links, :main_link
 )
 
 PagedExtraction = Struct.new(:links, :xpath_name, :classless_masked_xpath)
@@ -21,8 +27,8 @@ PagedExtraction = Struct.new(:links, :xpath_name, :classless_masked_xpath)
 BLOGSPOT_POSTS_BY_DATE_REGEX = /(\(date-outer\)\[)\d+(.+\(post-outer\)\[)\d+/
 
 def try_extract_page1(
-  page1, page1_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator, curi_eq_cfg,
-  logger
+  page1_link, page1, page1_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator,
+  curi_eq_cfg, logger
 )
   link_pattern_to_page2 = find_link_to_page2(page1_links, page1, feed_generator, curi_eq_cfg, logger)
   return nil unless link_pattern_to_page2
@@ -130,13 +136,17 @@ def try_extract_page1(
       index # for stable sort, which should put header before footer
     ]
   end
-  logger.log("Max prefix: #{page1_size_masked_xpaths.first[0]}")
+  max_page1_size = page1_size_masked_xpaths_sorted.first[0]
+  logger.log("Max prefix: #{max_page1_size}")
 
   Page1Result.new(
-    link_to_page2,
-    Page2State.new(
+    main_link: page1_link,
+    link_to_page2: link_to_page2,
+    speculative_count: 2 * max_page1_size + 1,
+    count: nil,
+    paged_state: Page2State.new(
       is_page2_certain, paging_pattern, paging_pattern_extra, page1, page1_links,
-      page1_extractions_by_masked_xpath, page1_size_masked_xpaths_sorted
+      page1_extractions_by_masked_xpath, page1_size_masked_xpaths_sorted, page1_link
     )
   )
 end
@@ -293,8 +303,10 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
     logger.log("Best count: #{entry_links.length} with 2 pages of #{page_sizes}")
     page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
     return PagedResult.new(
+      main_link: page2_state.main_link,
       pattern: "paged_last",
       links: entry_links,
+      speculative_count: entry_links.count,
       count: entry_links.count,
       extra: "page_count: 2<br>page_sizes: #{page_size_counts}<br>xpath: #{good_classless_masked_xpath}<br>last_page:<a href=\"#{page2.fetch_uri}\">#{page2.curi}</a>#{paging_pattern_extra}"
     )
@@ -305,12 +317,14 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
     .to_canonical_uri_set(curi_eq_cfg)
 
   PartialPagedResult.new(
-    link_to_page3,
-    3,
-    entry_links.count,
-    NextPageState.new(
+    link_to_next_page: link_to_page3,
+    next_page_number: 3,
+    speculative_count: entry_links.count + 1,
+    count: nil,
+    paged_state: NextPageState.new(
       paging_pattern, paging_pattern_extra, 3, entry_links, known_entry_curis_set,
-      good_classless_masked_xpath, page_sizes, page2_state.page1, page2_state.page1_links
+      good_classless_masked_xpath, page_sizes, page2_state.page1, page2_state.page1_links,
+      page2_state.main_link
     )
   )
 end
@@ -371,12 +385,13 @@ def try_extract_next_page(page, page_state, feed_entry_links, curi_eq_cfg, logge
 
   if link_to_next_page
     PartialPagedResult.new(
-      link_to_next_page,
-      next_page_number,
-      next_entry_links.count,
-      NextPageState.new(
+      link_to_next_page: link_to_next_page,
+      next_page_number: next_page_number,
+      speculative_count: next_entry_links.count + 1,
+      count: nil,
+      paged_state: NextPageState.new(
         paging_pattern, paging_pattern_extra, next_page_number, next_entry_links, next_known_entry_curis_set,
-        classless_masked_xpath, page_sizes, page_state.page1, page_state.page1_links
+        classless_masked_xpath, page_sizes, page_state.page1, page_state.page1_links, page_state.main_link
       )
     )
   else
@@ -393,8 +408,10 @@ def try_extract_next_page(page, page_state, feed_entry_links, curi_eq_cfg, logge
     page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
 
     PagedResult.new(
+      main_link: page_state.main_link,
       pattern: first_page_links_to_last_page ? "paged_last" : "paged_next",
       links: next_entry_links,
+      speculative_count: next_entry_links.count,
       count: next_entry_links.count,
       extra: "page_count: #{page_count}<br>page_sizes: #{page_size_counts}<br>xpath: #{classless_masked_xpath}<br>last_page: <a href=\"#{page.fetch_uri}\">#{page.curi}</a>#{paging_pattern_extra}"
     )

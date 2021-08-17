@@ -200,8 +200,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     if feed_links.entry_links.length >= 51
       logger.log("Feed is long with #{feed_links.entry_links.length} entries")
       historical_result = HistoricalResult.new(
-        main_canonical_url: feed_page.curi.to_s,
-        main_fetch_url: feed_page.fetch_uri.to_s,
+        main_link: feed_link,
         pattern: "long_feed",
         links: feed_links.entry_links.to_a,
         count: feed_links.entry_links.length,
@@ -258,7 +257,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       "values "\
       "($1, $2, $3, $4, $5)",
       [
-        start_link_id, historical_result.pattern, entries_count, historical_result.main_canonical_url,
+        start_link_id, historical_result.pattern, entries_count, historical_result.main_link.curi.to_s,
         oldest_link.curi.to_s
       ]
     )
@@ -287,10 +286,10 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
 
       # TODO: Skipping the check for the main page url for now
       gt_main_url = gt_row["main_page_canonical_url"]
-      if gt_main_url == historical_result.main_canonical_url
-        result.main_url = "<a href=\"#{historical_result.main_fetch_url}\">#{historical_result.main_canonical_url}</a>"
+      if gt_main_url == historical_result.main_link.curi.to_s
+        result.main_url = "<a href=\"#{historical_result.main_link.url}\">#{historical_result.main_link.curi.to_s}</a>"
       else
-        result.main_url = "<a href=\"#{historical_result.main_fetch_url}\">#{historical_result.main_canonical_url}</a><br>(#{gt_row["main_page_canonical_url"]})"
+        result.main_url = "<a href=\"#{historical_result.main_link.url}\">#{historical_result.main_link.curi.to_s}</a><br>(#{gt_row["main_page_canonical_url"]})"
       end
 
       gt_oldest_curi = CanonicalUri.from_db_string(gt_row["oldest_entry_canonical_url"])
@@ -325,7 +324,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       result.no_guided_regression_status = :neutral
       result.historical_links_pattern = historical_result.pattern
       result.historical_links_count = entries_count
-      result.main_url = "<a href=\"#{historical_result.main_fetch_url}\">#{historical_result.main_canonical_url}</a>"
+      result.main_url = "<a href=\"#{historical_result.main_link.url}\">#{historical_result.main_link.curi.to_s}</a>"
       result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.curi}</a>"
     end
 
@@ -348,9 +347,7 @@ end
 ARCHIVES_REGEX = "/(?:(?:[a-z]+-)?archives?|posts?|all(?:-[a-z]+)?)(?:\\.[a-z]+)?$"
 MAIN_PAGE_REGEX = "/(?:blog|articles|writing|journal)(?:\\.[a-z]+)?$"
 
-HistoricalResult = Struct.new(
-  :main_canonical_url, :main_fetch_url, :pattern, :links, :count, :extra, keyword_init: true
-)
+HistoricalResult = Struct.new(:main_link, :pattern, :links, :count, :extra, keyword_init: true)
 
 def guided_crawl(
   start_link_id, start_page, feed_entry_links, feed_generator, crawl_ctx, curi_eq_cfg, mock_http_client,
@@ -532,8 +529,9 @@ def guided_crawl_loop(
 )
   logger.log("Guided crawl loop started")
 
-  best_result = nil
+  sorted_results = []
   archives_queue, main_page_queue = queues
+  had_archives = !archives_queue.empty?
   loop do
     active_queue_index = queues.index { |queue| !queue.empty? }
     break unless active_queue_index
@@ -554,27 +552,13 @@ def guided_crawl_loop(
       end
     elsif link_or_page.is_a?(Page)
       page = link_or_page
+      link = to_canonical_link(page.fetch_uri.to_s, logger)
     else
       raise "Neither link nor page in the queue: #{link_or_page}"
     end
 
-    active_pptr_retry_queue << page unless page.is_puppeteer_used
+    active_pptr_retry_queue << [link, page] unless page.is_puppeteer_used
     page_all_links = extract_links(page, nil, crawl_ctx.redirects, logger, true, true)
-    page_curis_set = page_all_links
-      .map(&:curi)
-      .to_canonical_uri_set(curi_eq_cfg)
-    page_result = try_extract_historical(
-      page, page_all_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator,
-      curi_eq_cfg, start_link_id, crawl_ctx, mock_http_client, db_storage, archives_categories_state, logger
-    )
-    if page_result
-      if !best_result || page_result.count > best_result.count
-        logger.log("Result found: #{page_result.count} links (new best)")
-        best_result = page_result
-      else
-        logger.log("Result found: #{page_result.count} links")
-      end
-    end
 
     page_allowed_hosts_links = page_all_links
       .filter { |page_link| allowed_hosts.include?(page_link.uri.host) }
@@ -585,6 +569,7 @@ def guided_crawl_loop(
       if page_link.curi.trimmed_path&.match?(ARCHIVES_REGEX)
         guided_seen_queryless_curis_set << queryless_curi
         archives_queue << page_link
+        had_archives = true
         logger.log("Enqueueing archives link: #{page_link.curi}")
       elsif page_link.curi.trimmed_path&.match?(MAIN_PAGE_REGEX)
         guided_seen_queryless_curis_set << queryless_curi
@@ -592,15 +577,106 @@ def guided_crawl_loop(
         logger.log("Enqueueing main page link: #{page_link.curi}")
       end
     end
+
+    page_curis_set = page_all_links
+      .map(&:curi)
+      .to_canonical_uri_set(curi_eq_cfg)
+    page_results = try_extract_historical(
+      link, page, page_all_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator,
+      curi_eq_cfg, archives_categories_state, logger
+    )
+    page_results.each do |page_result|
+      insert_sorted_result(page_result, sorted_results)
+    end
+
+    if had_archives && archives_queue.empty? && !sorted_results.empty?
+      postprocessed_result = postprocess_results(
+        sorted_results, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage,
+        logger
+      )
+      if postprocessed_result
+        logger.log("Guided crawl loop finished with best result of #{postprocessed_result.count} links")
+        return postprocessed_result
+      end
+    end
   end
 
-  if best_result
-    logger.log("Guided crawl loop finished with best result of #{best_result.count} links")
-    best_result
-  else
-    logger.log("Guided crawl loop finished, no result")
-    nil
+  postprocessed_result = postprocess_results(
+    sorted_results, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage,
+    logger
+  )
+  if postprocessed_result
+    logger.log("Guided crawl loop finished with best result of #{postprocessed_result.count} links")
+    return postprocessed_result
   end
+
+  logger.log("Guided crawl loop finished, no result")
+  nil
+end
+
+def insert_sorted_result(new_result, sorted_results)
+  insert_after_index = sorted_results
+    .find_index { |result| new_result.speculative_count < result.speculative_count }
+  if insert_after_index
+    sorted_results.insert(insert_after_index + 1, new_result)
+  else
+    sorted_results.prepend(new_result)
+  end
+end
+
+def postprocess_results(
+  sorted_results, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage,
+  logger
+)
+  logger.log("Postprocessing #{sorted_results.length} results: #{sorted_results.map(&:speculative_count)}")
+
+  until sorted_results.empty?
+    result = sorted_results.shift
+    if result.count
+      pp_result = result
+    else
+      if result.is_a?(ArchivesMediumPinnedEntryResult)
+        pp_result = postprocess_archives_medium_pinned_entry_result(
+          result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage,
+          logger
+        )
+      elsif result.is_a?(ArchivesShuffledResults)
+        pp_result = postprocess_archives_shuffled_results(
+          result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage,
+          logger
+        )
+      elsif result.is_a?(ArchivesCategoriesResult)
+        pp_result = postprocess_archives_categories_result(
+          result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage,
+          logger
+        )
+      elsif result.is_a?(Page1Result)
+        # If page 1 result looks the best, check just page 2 in case it was a scam
+        pp_result = postprocess_page1_result(
+          result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage,
+          logger
+        )
+      else
+        raise "Unknown result type: #{result}"
+      end
+    end
+    next unless pp_result
+
+    if sorted_results.empty? || pp_result.speculative_count >= sorted_results.first.speculative_count
+      if pp_result.is_a?(PartialPagedResult)
+        pp_result = postprocess_paged_result(
+          pp_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage,
+          logger
+        )
+      end
+
+      return pp_result
+    end
+
+    insert_sorted_result(pp_result, sorted_results)
+  end
+
+  nil
 end
 
 def puppeteer_retry_loop(
@@ -609,11 +685,14 @@ def puppeteer_retry_loop(
 )
   logger.log("Puppeteer retry loop start")
 
+  sorted_results = []
+  archives_queue = queues.first
+  had_archives = !archives_queue.empty?
   loop do
     active_queue = queues.find { |queue| !queue.empty? }
     break unless active_queue
 
-    page = active_queue.shift
+    link, page = active_queue.shift
     content, document = puppeteer_client.fetch(page.fetch_uri.to_s, crawl_ctx, logger)
     puppeteer_page = Page.new(
       page.curi, page.fetch_uri, page.start_link_id, page.content_type, content, document, true
@@ -633,15 +712,33 @@ def puppeteer_retry_loop(
     puppeteer_page_curis_set = puppeteer_page_links
       .map(&:curi)
       .to_canonical_uri_set(curi_eq_cfg)
-    result = try_extract_historical(
-      puppeteer_page, puppeteer_page_links, puppeteer_page_curis_set, feed_entry_links,
-      feed_entry_curis_set, feed_generator, curi_eq_cfg, start_link_id, crawl_ctx, mock_http_client,
-      db_storage, archives_categories_state, logger
+    page_results = try_extract_historical(
+      link, puppeteer_page, puppeteer_page_links, puppeteer_page_curis_set, feed_entry_links,
+      feed_entry_curis_set, feed_generator, curi_eq_cfg, archives_categories_state, logger
     )
-    if result
-      logger.log("Puppeteer retry loop finished, result found")
-      return result
+    page_results.each do |page_result|
+      insert_sorted_result(page_result, sorted_results)
     end
+
+    if !had_archives && archives_queue.empty? && !sorted_results.empty?
+      postprocessed_result = postprocess_results(
+        sorted_results, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage,
+        logger
+      )
+      if postprocessed_result
+        logger.log("Puppeteer retry loop finished with best result of #{postprocessed_result.count} links")
+        return postprocessed_result
+      end
+    end
+  end
+
+  postprocessed_result = postprocess_results(
+    sorted_results, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage,
+    logger
+  )
+  if postprocessed_result
+    logger.log("Puppeteer retry loop finished with best result of #{postprocessed_result.count} links")
+    return postprocessed_result
   end
 
   logger.log("Puppeteer retry loop finished, no result")
@@ -649,154 +746,102 @@ def puppeteer_retry_loop(
 end
 
 def try_extract_historical(
-  page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator, curi_eq_cfg,
-  start_link_id, crawl_ctx, mock_http_client, db_storage, archives_categories_state, logger
+  page_link, page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator,
+  curi_eq_cfg, archives_categories_state, logger
 )
   logger.log("Trying to extract historical from #{page.fetch_uri}")
+  results = []
 
   archives_almost_match_threshold = get_archives_almost_match_threshold(feed_entry_links.length)
   extractions_by_masked_xpath_by_star_count = get_extractions_by_masked_xpath_by_star_count(
     page_links, feed_entry_links, feed_entry_curis_set, curi_eq_cfg, archives_almost_match_threshold, logger
   )
 
-  archives_result = try_extract_archives(
-    page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator,
+  archives_results = try_extract_archives(
+    page_link, page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator,
     extractions_by_masked_xpath_by_star_count, archives_almost_match_threshold, curi_eq_cfg, logger
   )
+  results.push(*archives_results)
 
   archives_categories_result = try_extract_archives_categories(
-    page, page_curis_set, feed_entry_links, feed_entry_curis_set, extractions_by_masked_xpath_by_star_count,
-    archives_categories_state, curi_eq_cfg, logger
+    page_link, page, page_curis_set, feed_entry_links, feed_entry_curis_set,
+    extractions_by_masked_xpath_by_star_count, archives_categories_state, curi_eq_cfg, logger
   )
+  results << archives_categories_result if archives_categories_result
 
   page1_result = try_extract_page1(
-    page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator, curi_eq_cfg,
-    logger
+    page_link, page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator,
+    curi_eq_cfg, logger
   )
+  results << page1_result if page1_result
 
-  paged_result = nil
-  if page1_result
-    page2 = crawl_request(
-      page1_result.link_to_page2, crawl_ctx, mock_http_client, nil, false, start_link_id, db_storage, logger
-    )
-    if page2 && page2.is_a?(Page) && page2.document
-      paged_result = try_extract_page2(
-        page2, page1_result.paged_state, feed_entry_links, curi_eq_cfg, logger
-      )
-    else
-      logger.log("Page 2 is not a page: #{page2}")
-    end
-  end
+  results
+end
 
-  result = nil
-  if archives_result
-    result = archives_result
-  end
-  if archives_categories_result &&
-    (!result || !result.count || archives_categories_result.count > result.count)
+PostprocessedResult = Struct.new(
+  :main_link, :pattern, :links, :speculative_count, :count, :extra, keyword_init: true
+)
 
-    result = archives_categories_result
-  end
-  if paged_result &&
-    (
-      !result || !result.count || paged_result.count > result.count ||
-        (paged_result.is_a?(PartialPagedResult) && paged_result.count == result.count)
-    )
-    result = paged_result
-  end
-
-  return nil unless result
-
-  if result.is_a?(ArchivesResult)
-    postprocessed_result = postprocess_archives_result(
-      result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage, logger
-    )
-  elsif result.is_a?(ArchivesCategoriesResult)
-    postprocessed_result = postprocess_archives_categories_result(
-      result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage, logger
-    )
-  elsif result.is_a?(PagedResult) || result.is_a?(PartialPagedResult)
-    postprocessed_result = postprocess_paged_result(
-      result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage, logger
-    )
-  else
-    raise "Unknown result type: #{result}"
-  end
-
-  unless postprocessed_result
-    logger.log("Postprocessing failed for this page")
+def postprocess_archives_medium_pinned_entry_result(
+  medium_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage,
+  logger
+)
+  pinned_entry_page = crawl_request(
+    medium_result.pinned_entry_link, crawl_ctx, mock_http_client, nil, false,
+    start_link_id, db_storage, logger
+  )
+  unless pinned_entry_page.is_a?(Page) && pinned_entry_page.document
+    logger.log("Couldn't fetch first Medium link during result postprocess: #{pinned_entry_page}")
     return nil
   end
 
-  HistoricalResult.new(
-    main_canonical_url: page.curi.to_s,
-    main_fetch_url: page.fetch_uri.to_s,
-    pattern: postprocessed_result.pattern,
-    links: postprocessed_result.links,
-    count: postprocessed_result.count,
-    extra: postprocessed_result.extra
+  pinned_entry_page_links = extract_links(
+    pinned_entry_page, [pinned_entry_page.fetch_uri.host], crawl_ctx.redirects, logger
+  )
+
+  sorted_links = historical_archives_medium_sort_finish(
+    medium_result.pinned_entry_link, pinned_entry_page_links, medium_result.other_links_dates, curi_eq_cfg
+  )
+  unless sorted_links
+    logger.log("Couldn't sort links during result postprocess")
+    return nil
+  end
+
+  return nil unless compare_with_feed(sorted_links, feed_entry_links, curi_eq_cfg, logger)
+
+  PostprocessedResult.new(
+    main_link: medium_result.main_link,
+    pattern: medium_result.pattern,
+    links: sorted_links,
+    speculative_count: sorted_links.length,
+    count: sorted_links.length,
+    extra: medium_result.extra
   )
 end
 
-PostprocessedResult = Struct.new(:pattern, :links, :count, :extra, keyword_init: true)
-
-def postprocess_archives_result(
-  archives_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage, logger
+def postprocess_archives_shuffled_results(
+  shuffled_results, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage,
+  logger
 )
-  if archives_result.main_result.is_a?(MediumWithPinnedEntryResult)
-    medium_result = archives_result.main_result
-    pinned_entry_page = crawl_request(
-      medium_result.pinned_entry_link, crawl_ctx, mock_http_client, nil, false,
-      start_link_id, db_storage, logger
+  pages_by_canonical_url = {}
+  sorted_tentative_results = shuffled_results.results.sort_by { |tentative_result| tentative_result.count }
+
+  best_result = nil
+  sorted_tentative_results.each do |tentative_result|
+    sorted_links = postprocess_sort_links_maybe_dates(
+      tentative_result.links_maybe_dates, feed_entry_links, curi_eq_cfg, pages_by_canonical_url, crawl_ctx,
+      mock_http_client, start_link_id, db_storage, logger
     )
-    unless pinned_entry_page.is_a?(Page) && pinned_entry_page.document
-      logger.log("Couldn't fetch first Medium link during result postprocess: #{pinned_entry_page}")
-      return nil
-    end
+    return best_result unless sorted_links
 
-    pinned_entry_page_links = extract_links(
-      pinned_entry_page, [pinned_entry_page.fetch_uri.host], crawl_ctx.redirects, logger
-    )
-
-    sorted_links = historical_archives_medium_sort_finish(
-      medium_result.pinned_entry_link, pinned_entry_page_links, medium_result.other_links_dates, curi_eq_cfg
-    )
-    unless sorted_links
-      logger.log("Couldn't sort links during result postprocess")
-      return nil
-    end
-
-    return nil unless compare_with_feed(sorted_links, feed_entry_links, curi_eq_cfg, logger)
-
-    return PostprocessedResult.new(
-      pattern: medium_result.pattern,
+    best_result = PostprocessedResult.new(
+      main_link: shuffled_results.main_link,
+      pattern: tentative_result.pattern,
       links: sorted_links,
+      speculative_count: sorted_links.length,
       count: sorted_links.length,
-      extra: medium_result.extra
+      extra: tentative_result.extra
     )
-  end
-
-  best_result = archives_result.main_result
-
-  if archives_result.tentative_better_results
-    pages_by_canonical_url = {}
-    sorted_tentative_results = archives_result
-      .tentative_better_results.sort_by { |tentative_result| tentative_result.count }
-
-    sorted_tentative_results.each do |tentative_result|
-      sorted_links = postprocess_sort_links_maybe_dates(
-        tentative_result.links_maybe_dates, feed_entry_links, curi_eq_cfg, pages_by_canonical_url, crawl_ctx,
-        mock_http_client, start_link_id, db_storage, logger
-      )
-      return best_result unless sorted_links
-
-      best_result = PostprocessedResult.new(
-        pattern: tentative_result.pattern,
-        links: sorted_links,
-        count: sorted_links.length,
-        extra: tentative_result.extra
-      )
-    end
   end
 
   best_result
@@ -813,11 +858,29 @@ def postprocess_archives_categories_result(
   return nil unless sorted_links
 
   PostprocessedResult.new(
+    main_link: archives_categories_result.main_link,
     pattern: archives_categories_result.pattern,
     links: sorted_links,
+    speculative_count: sorted_links.length,
     count: sorted_links.length,
     extra: archives_categories_result.extra
   )
+end
+
+def postprocess_page1_result(
+  page1_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id, db_storage, logger
+)
+  page2 = crawl_request(
+    page1_result.link_to_page2, crawl_ctx, mock_http_client, nil, false, start_link_id, db_storage,
+    logger
+  )
+  unless page2 && page2.is_a?(Page) && page2.document
+    logger.log("Page 2 is not a page: #{page2}")
+    return nil
+  end
+
+  paged_result = try_extract_page2(page2, page1_result.paged_state, feed_entry_links, curi_eq_cfg, logger)
+  paged_result
 end
 
 def postprocess_paged_result(
@@ -887,7 +950,7 @@ end
 def filter_top_level_non_year_links(links)
   links.filter do |link|
     level = link.curi.trimmed_path&.count("/")
-    [nil, 1].include?(level) && !link.curi.trimmed_path&.match?(/\/\d+/)
+    [nil, 1].include?(level) && !link.curi.trimmed_path&.match?(/\/\d\d\d\d$/)
   end
 end
 

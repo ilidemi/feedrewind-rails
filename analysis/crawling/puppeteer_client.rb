@@ -98,31 +98,40 @@ class PuppeteerClient
   def fetch(url, crawl_ctx, logger, &find_load_more_button)
     logger.log("Puppeteer start: #{url}")
     puppeteer_start = monotonic_now
-    Puppeteer.launch do |browser|
-      pptr_page = browser.new_page
-      pptr_page.request_interception = true
-      pptr_page.on("request") do |request|
-        %w[image font].include?(request.resource_type) ? request.abort : request.continue
-      end
-      pptr_page.enable_request_tracking
-      pptr_page.goto(url, wait_until: "networkidle0")
-      if find_load_more_button
-        load_more_button = find_load_more_button.call(pptr_page)
-        while load_more_button do
-          logger.log("Clicking load more button")
-          pptr_page.wait_and_scroll(logger) { load_more_button.click }
-          load_more_button = find_load_more_button.call(pptr_page)
+
+    timeout_errors_count = 0
+    loop do
+      begin
+        Puppeteer.launch do |browser|
+          pptr_page = browser.new_page
+          pptr_page.request_interception = true
+          pptr_page.on("request") do |request|
+            %w[image font].include?(request.resource_type) ? request.abort : request.continue
+          end
+          pptr_page.enable_request_tracking
+          pptr_page.goto(url, wait_until: "networkidle0")
+          if find_load_more_button
+            load_more_button = find_load_more_button.call(pptr_page)
+            while load_more_button do
+              logger.log("Clicking load more button")
+              pptr_page.wait_and_scroll(logger) { load_more_button.click }
+              load_more_button = find_load_more_button.call(pptr_page)
+            end
+          else
+            logger.log("Scrolling")
+            pptr_page.wait_and_scroll(logger)
+          end
+          content = pptr_page.content
+          document = nokogiri_html5(content)
+          pptr_page.close
+          crawl_ctx.puppeteer_requests_made += pptr_page.finished_requests
+          logger.log("Puppeteer done (#{monotonic_now - puppeteer_start}s, #{pptr_page.finished_requests} req)")
+          return [content, document]
         end
-      else
-        logger.log("Scrolling")
-        pptr_page.wait_and_scroll(logger)
+      rescue Puppeteer::FrameManager::NavigationError
+        timeout_errors_count += 1
+        raise if timeout_errors_count >= 3
       end
-      content = pptr_page.content
-      document = nokogiri_html5(content)
-      pptr_page.close
-      crawl_ctx.puppeteer_requests_made += pptr_page.finished_requests
-      logger.log("Puppeteer done (#{monotonic_now - puppeteer_start}s, #{pptr_page.finished_requests} req)")
-      return [content, document]
     end
   end
 end

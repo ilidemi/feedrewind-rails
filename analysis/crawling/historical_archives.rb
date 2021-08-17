@@ -3,7 +3,17 @@ require_relative 'date_extraction'
 require_relative 'historical_archives_sort'
 require_relative 'historical_common'
 
-ArchivesResult = Struct.new(:main_result, :count, :tentative_better_results)
+ArchivesSortedResult = Struct.new(
+  :main_link, :pattern, :links, :speculative_count, :count, :has_dates, :extra, keyword_init: true
+)
+ArchivesMediumPinnedEntryResult = Struct.new(
+  :main_link, :pattern, :pinned_entry_link, :other_links_dates, :speculative_count, :count, :extra,
+  keyword_init: true
+)
+LongFeedResult = Struct.new(
+  :main_link, :pattern, :links, :speculative_count, :count, :extra, keyword_init: true
+)
+ArchivesShuffledResults = Struct.new(:main_link, :results, :speculative_count, :count, keyword_init: true)
 
 def get_archives_almost_match_threshold(feed_length)
   if feed_length <= 3
@@ -20,10 +30,10 @@ def get_archives_almost_match_threshold(feed_length)
 end
 
 def try_extract_archives(
-  page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator,
+  page_link, page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator,
   extractions_by_masked_xpath_by_star_count, almost_match_threshold, curi_eq_cfg, logger
 )
-  return nil unless feed_entry_links.count_included(page_curis_set) >= almost_match_threshold
+  return [] unless feed_entry_links.count_included(page_curis_set) >= almost_match_threshold
 
   logger.log("Possible archives page: #{page.curi}")
 
@@ -34,12 +44,12 @@ def try_extract_archives(
   sorted_fewer_stars_have_dates = nil
   extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
     sorted_result = try_extract_sorted(
-      extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, nil, star_count,
-      sorted_fewer_stars_curis, sorted_fewer_stars_have_dates, min_links_count, logger
+      extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, nil, star_count, sorted_fewer_stars_curis,
+      sorted_fewer_stars_have_dates, min_links_count, page_link, logger
     )
     if sorted_result
       main_result = sorted_result
-      min_links_count = sorted_result.count + 1
+      min_links_count = sorted_result.speculative_count + 1
       sorted_fewer_stars_curis = sorted_result.links.map(&:curi)
       sorted_fewer_stars_have_dates = sorted_result.has_dates
     end
@@ -52,34 +62,34 @@ def try_extract_archives(
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       sorted1_result = try_extract_sorted_highlight_first_link(
         extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, page_curis_set, star_count,
-        sorted1_fewer_stars_curis, min_links_count, logger
+        sorted1_fewer_stars_curis, min_links_count, page_link, logger
       )
       if sorted1_result
         main_result = sorted1_result
-        min_links_count = sorted1_result.count + 1
+        min_links_count = sorted1_result.speculative_count + 1
         sorted1_fewer_stars_curis = sorted1_result.links.map(&:curi)
       end
     end
   end
 
-  medium_pinned_entry_result = try_extract_medium_with_pinned_entry(
+  medium_pinned_entry_result = try_extract_medium_pinned_entry(
     extractions_by_masked_xpath_by_star_count[1], feed_entry_links, curi_eq_cfg, feed_generator, page_links,
-    min_links_count, logger
+    min_links_count, page_link, logger
   )
   if medium_pinned_entry_result
-    main_result = medium_pinned_entry_result
-    min_links_count = medium_pinned_entry_result.count + 1
+    # Medium with pinned entry is a very specific match
+    return [medium_pinned_entry_result]
   end
 
   sorted_2xpaths_fewer_stars_curis = nil
   extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
     sorted_2xpaths_result = try_extract_sorted_2xpaths(
       extractions_by_masked_xpath_by_star_count[1], extractions_by_masked_xpath, feed_entry_links,
-      curi_eq_cfg, star_count, sorted_2xpaths_fewer_stars_curis, min_links_count, logger
+      curi_eq_cfg, star_count, sorted_2xpaths_fewer_stars_curis, min_links_count, page_link, logger
     )
     if sorted_2xpaths_result
       main_result = sorted_2xpaths_result
-      min_links_count = sorted_2xpaths_result.count + 1
+      min_links_count = sorted_2xpaths_result.speculative_count + 1
       sorted_2xpaths_fewer_stars_curis = sorted_2xpaths_result.links.map(&:curi)
     end
   end
@@ -91,11 +101,11 @@ def try_extract_archives(
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       almost_feed_result = try_extract_almost_matching_feed(
         extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_set, curi_eq_cfg,
-        almost_match_threshold, star_count, almost_feed_fewer_stars_curis, logger
+        almost_match_threshold, star_count, almost_feed_fewer_stars_curis, page_link, logger
       )
       if almost_feed_result
         main_result = almost_feed_result
-        min_links_count = almost_feed_result.count + 1
+        min_links_count = almost_feed_result.speculative_count + 1
         almost_feed_fewer_stars_curis = almost_feed_result.links.map(&:curi)
       end
     end
@@ -103,17 +113,21 @@ def try_extract_archives(
 
   tentative_better_results = []
 
-  if main_result.is_a?(SortedResult) && main_result.has_dates
+  if main_result.is_a?(ArchivesSortedResult) && main_result.has_dates
     logger.log("Skipping shuffled match because there's already a sorted result with dates")
   else
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       shuffled_result = try_extract_shuffled(
-        extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, nil, star_count,
-        min_links_count, logger
+        extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, nil, star_count, min_links_count,
+        page_link, logger
       )
       if shuffled_result
-        tentative_better_results << shuffled_result
-        min_links_count = shuffled_result.count + 1
+        if shuffled_result.is_a?(ArchivesSortedResult)
+          main_result = shuffled_result
+        else
+          tentative_better_results << shuffled_result
+        end
+        min_links_count = shuffled_result.speculative_count + 1
       end
     end
   end
@@ -124,49 +138,60 @@ def try_extract_archives(
     sorted_almost_result = try_extract_sorted(
       extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, almost_match_threshold, star_count,
       sorted_almost_fewer_stars_curis, sorted_almost_fewer_stars_have_dates,
-      min_links_count, logger
+      min_links_count, page_link, logger
     )
     if sorted_almost_result
       main_result = sorted_almost_result
-      min_links_count = sorted_almost_result.count + 1
+      min_links_count = sorted_almost_result.speculative_count + 1
       sorted_almost_fewer_stars_curis = sorted_almost_result.links.map(&:curi)
       sorted_almost_fewer_stars_have_dates = sorted_almost_result.has_dates
     end
   end
 
-  if main_result.is_a?(SortedResult) && main_result.has_dates
+  if main_result.is_a?(ArchivesSortedResult) && main_result.has_dates
     logger.log("Skipping shuffled_almost match because there's already a sorted result with dates")
   else
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       shuffled_almost_result = try_extract_shuffled(
         extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, almost_match_threshold, star_count,
-        min_links_count, logger
+        min_links_count, page_link, logger
       )
       if shuffled_almost_result
-        tentative_better_results << shuffled_almost_result
-        min_links_count = shuffled_almost_result.count + 1
+        if shuffled_almost_result.is_a?(ArchivesSortedResult)
+          main_result = shuffled_almost_result
+        else
+          tentative_better_results << shuffled_almost_result
+        end
+        min_links_count = shuffled_almost_result.speculative_count + 1
       end
     end
   end
 
   long_feed_result = try_extract_long_feed(
-    feed_entry_links, page_curis_set, min_links_count, logger
+    feed_entry_links, page_curis_set, min_links_count, page_link, logger
   )
   if long_feed_result
     main_result = long_feed_result
-    min_links_count = long_feed_result.count + 1
+    min_links_count = long_feed_result.speculative_count + 1
   end
 
-  return nil if !main_result && tentative_better_results.empty?
-
-  ArchivesResult.new(main_result, main_result&.count, tentative_better_results)
+  results = []
+  results << main_result if main_result
+  unless tentative_better_results.empty?
+    speculative_count = tentative_better_results.map(&:speculative_count).max
+    results << ArchivesShuffledResults.new(
+      main_link: page_link,
+      results: tentative_better_results,
+      speculative_count: speculative_count,
+      count: nil
+    )
+  end
+  results
 end
-
-SortedResult = Struct.new(:pattern, :links, :count, :has_dates, :extra, keyword_init: true)
 
 def try_extract_sorted(
   extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, almost_match_threshold, star_count,
-  fewer_stars_curis, fewer_stars_have_dates, min_links_count, logger
+  fewer_stars_curis, fewer_stars_have_dates, min_links_count, main_link, logger
 )
   is_almost = !!almost_match_threshold
   almost_suffix = is_almost ? "_almost" : ""
@@ -304,9 +329,11 @@ def try_extract_sorted(
   end
 
   if best_links
-    SortedResult.new(
+    ArchivesSortedResult.new(
+      main_link: main_link,
       pattern: best_pattern,
       links: best_links,
+      speculative_count: best_links.length,
       count: best_links.length,
       has_dates: best_has_dates,
       extra: "xpath: #{best_xpath}"
@@ -327,7 +354,7 @@ end
 
 def try_extract_sorted_highlight_first_link(
   extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, page_curis_set, star_count, fewer_stars_curis,
-  min_links_count, logger
+  min_links_count, main_link, logger
 )
   logger.log("Trying sorted match with highlighted first link and #{star_count} stars")
 
@@ -365,9 +392,11 @@ def try_extract_sorted_highlight_first_link(
   end
 
   if best_links && best_first_link
-    SortedResult.new(
+    ArchivesSortedResult.new(
+      main_link: main_link,
       pattern: "archives_2xpaths",
       links: [best_first_link] + best_links,
+      speculative_count: 1 + best_links.length,
       count: 1 + best_links.length,
       has_dates: nil,
       extra: "counts: 1 + #{best_links.length}<br>prefix_xpath: #{best_first_link.xpath}<br>suffix_xpath: #{best_xpath}",
@@ -378,13 +407,9 @@ def try_extract_sorted_highlight_first_link(
   end
 end
 
-MediumWithPinnedEntryResult = Struct.new(
-  :pattern, :pinned_entry_link, :other_links_dates, :count, :extra, keyword_init: true
-)
-
-def try_extract_medium_with_pinned_entry(
+def try_extract_medium_pinned_entry(
   extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, feed_generator, page_links, min_links_count,
-  logger
+  main_link, logger
 )
   logger.log("Trying medium match with pinned entry")
 
@@ -417,11 +442,13 @@ def try_extract_medium_with_pinned_entry(
     other_links_dates = links.zip(medium_markup_dates)
 
     logger.log("Masked xpath is good with medium pinned entry: #{masked_xpath}#{join_log_lines(extraction.log_lines)} (1 + #{other_links_dates.length} links)")
-    return MediumWithPinnedEntryResult.new(
+    return ArchivesMediumPinnedEntryResult.new(
+      main_link: main_link,
       pattern: "archives_shuffled_2xpaths",
       pinned_entry_link: pinned_entry_link,
       other_links_dates: other_links_dates,
-      count: 1 + other_links_dates.length,
+      speculative_count: 1 + other_links_dates.length,
+      count: nil,
       extra: "counts: 1 + #{links.length}<br>prefix_xpath: #{pinned_entry_link.xpath}<br>suffix_xpath: #{masked_xpath}",
     )
   end
@@ -432,7 +459,7 @@ end
 
 def try_extract_sorted_2xpaths(
   prefix_extractions_by_masked_xpath, suffix_extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg,
-  star_count, fewer_stars_curis, min_links_count, logger
+  star_count, fewer_stars_curis, min_links_count, main_link, logger
 )
   logger.log("Trying sorted match with 1+#{star_count} stars")
 
@@ -545,9 +572,11 @@ def try_extract_sorted_2xpaths(
   end
 
   if best_links
-    SortedResult.new(
+    ArchivesSortedResult.new(
+      main_link: main_link,
       pattern: "archives_2xpaths",
       links: best_links,
+      speculative_count: best_links.length,
       count: best_links.length,
       extra: "star_count: 1 + #{star_count}<br>counts: #{best_prefix_count} + #{best_suffix_count}<br>prefix_xpath: #{best_prefix_xpath}<br>suffix_xpath: #{best_suffix_xpath}"
     )
@@ -559,7 +588,7 @@ end
 
 def try_extract_almost_matching_feed(
   extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_set, curi_eq_cfg, almost_match_threshold,
-  star_count, fewer_stars_curis, logger
+  star_count, fewer_stars_curis, main_link, logger
 )
   logger.log("Trying almost feed match with #{star_count} stars")
 
@@ -592,9 +621,11 @@ def try_extract_almost_matching_feed(
   end
 
   if best_links
-    SortedResult.new(
+    ArchivesSortedResult.new(
+      main_link: main_link,
       pattern: "archives_feed_almost",
       links: feed_entry_links.to_a,
+      speculative_count: feed_entry_links.length,
       count: feed_entry_links.length,
       extra: "almost_match: #{best_links.length}/#{feed_entry_links.length}<br>xpath:#{best_xpath}"
     )
@@ -604,11 +635,13 @@ def try_extract_almost_matching_feed(
   end
 end
 
-ShuffledResult = Struct.new(:pattern, :links_maybe_dates, :count, :extra, keyword_init: true)
+ArchivesShuffledResult = Struct.new(
+  :pattern, :links_maybe_dates, :speculative_count, :extra, keyword_init: true
+)
 
 def try_extract_shuffled(
   extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, almost_match_threshold, star_count,
-  min_links_count, logger
+  min_links_count, main_link, logger
 )
   is_almost = !!almost_match_threshold
   almost_suffix = is_almost ? "_almost" : ""
@@ -662,21 +695,32 @@ def try_extract_shuffled(
 
   if best_links_maybe_dates
     dates_present = best_links_maybe_dates.count { |_, date| date }
-    ShuffledResult.new(
-      pattern: "archives_shuffled#{almost_suffix}",
-      links_maybe_dates: best_links_maybe_dates,
-      count: best_links_maybe_dates.count,
-      extra: "xpath: #{best_xpath}<br>dates_present:#{dates_present}/#{best_links_maybe_dates.length}"
-    )
+    if dates_present == best_links_maybe_dates.length
+      sorted_links_dates = sort_links_dates(best_links_maybe_dates)
+      sorted_links = sorted_links_dates.map(&:first)
+      ArchivesSortedResult.new(
+        main_link: main_link,
+        pattern: "archives_shuffled#{almost_suffix}",
+        links: sorted_links,
+        speculative_count: sorted_links.count,
+        count: sorted_links.count,
+        extra: "xpath: #{best_xpath}<br>dates_present:#{dates_present}/#{sorted_links.length}"
+      )
+    else
+      ArchivesShuffledResult.new(
+        pattern: "archives_shuffled#{almost_suffix}",
+        links_maybe_dates: best_links_maybe_dates,
+        speculative_count: best_links_maybe_dates.count,
+        extra: "xpath: #{best_xpath}<br>dates_present:#{dates_present}/#{best_links_maybe_dates.length}"
+      )
+    end
   else
     logger.log("No shuffled match with #{star_count} stars")
     nil
   end
 end
 
-LongFeedResult = Struct.new(:pattern, :links, :count, :extra, keyword_init: true)
-
-def try_extract_long_feed(feed_entry_links, page_curis_set, min_links_count, logger)
+def try_extract_long_feed(feed_entry_links, page_curis_set, min_links_count, main_link, logger)
   logger.log("Trying long feed match")
 
   if feed_entry_links.length >= 31 &&
@@ -685,8 +729,10 @@ def try_extract_long_feed(feed_entry_links, page_curis_set, min_links_count, log
 
     logger.log("Long feed is matching (#{feed_entry_links.length} links)")
     LongFeedResult.new(
+      main_link: main_link,
       pattern: "archives_long_feed",
       links: feed_entry_links.to_a,
+      speculative_count: feed_entry_links.length,
       count: feed_entry_links.length,
       extra: ""
     )

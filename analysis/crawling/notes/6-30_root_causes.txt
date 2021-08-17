@@ -6,7 +6,6 @@ VIP Recurse
 VISEGv
       1 Archives parse post date: 337
     v 1 Archives scoped by path: 101
-      1 Archives almost match feed with more links: 217
 
  I    1 Xpath is not the best after page 2: 227
       2 Paged scoped by path: 499 99
@@ -20,13 +19,10 @@ VISEGv
       3 Chained: 127 244 122
 
       4 Post not in RSS: 198 355 381 486
-      5 RSS dates are bogus: 157 183 371 393 114
+      4 RSS dates are bogus: 157 371 393 114
 
       2 Xpath needs [last()]: 263 318
       1 Feed links need comparison by unique prefix: 469
-
-   E  2 Paged instead of archives: 182 395
-   E  1 Paged instead of feed: 473
 
       2 YouTube: 438 441
     v 2 Medium RSS post has redirect: 81 306

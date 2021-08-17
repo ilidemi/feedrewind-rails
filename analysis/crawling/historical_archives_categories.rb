@@ -8,12 +8,15 @@ class ArchivesCategoriesState
   attr_reader :links_maybe_dates_by_feed_matching_curis_set
 end
 
-ArchivesCategoriesResult = Struct.new(:pattern, :links_maybe_dates, :count, :extra, keyword_init: true)
+ArchivesCategoriesResult = Struct.new(
+  :main_link, :pattern, :links_maybe_dates, :speculative_count, :count, :extra,
+  keyword_init: true
+)
 CategoryResult = Struct.new(:links_maybe_dates, :xpath, :level, :curi, :fetch_uri, keyword_init: true)
 
 def try_extract_archives_categories(
-  page, page_curis_set, feed_entry_links, feed_entry_curis_set, extractions_by_masked_xpath_by_star_count,
-  state, curi_eq_cfg, logger
+  page_link, page, page_curis_set, feed_entry_links, feed_entry_curis_set,
+  extractions_by_masked_xpath_by_star_count, state, curi_eq_cfg, logger
 )
   return nil unless feed_entry_links.count_included(page_curis_set) >= 2
 
@@ -71,7 +74,10 @@ def try_extract_archives_categories(
     end
   end
 
-  return nil unless best_links_maybe_dates
+  unless best_links_maybe_dates
+    logger.log("No archives categories match")
+    return nil
+  end
 
   state_hash = state.links_maybe_dates_by_feed_matching_curis_set
   if !state_hash.key?(best_feed_matching_curis_set) ||
@@ -94,7 +100,7 @@ def try_extract_archives_categories(
     combinations_count += 1
     result = try_combination(
       feed_matching_curis_sets_categories, feed_entry_links, curi_eq_cfg, almost_match_threshold,
-      combinations_count, logger
+      combinations_count, page_link, logger
     )
     return result if result
   end
@@ -103,7 +109,7 @@ def try_extract_archives_categories(
     combinations_count += 1
     result = try_combination(
       feed_matching_curis_sets_categories, feed_entry_links, curi_eq_cfg, almost_match_threshold,
-      combinations_count, logger
+      combinations_count, page_link, logger
     )
     return result if result
   end
@@ -125,7 +131,7 @@ end
 
 def try_combination(
   feed_matching_curis_sets_categories, feed_entry_links, curi_eq_cfg, almost_match_threshold,
-  combinations_count, logger
+  combinations_count, main_link, logger
 )
   feed_matching_curis_sets = feed_matching_curis_sets_categories.map(&:first)
   categories = feed_matching_curis_sets_categories.map(&:last)
@@ -186,9 +192,11 @@ def try_combination(
   extra_lines << "missing_count: #{missing_links_maybe_dates.length}"
 
   ArchivesCategoriesResult.new(
+    main_link: main_link,
     pattern: "archives_categories#{almost_suffix}",
     links_maybe_dates: unique_links_maybe_dates,
-    count: unique_links_maybe_dates.length,
+    speculative_count: unique_links_maybe_dates.length,
+    count: nil,
     extra: extra_lines.join("<br>")
   )
 end
