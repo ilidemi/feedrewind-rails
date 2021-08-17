@@ -200,7 +200,7 @@ class CanonicalUriSet
   end
 
   def include?(curi)
-    server = curi.host + curi.port
+    server = (curi.host || "") + (curi.port || "")
     server_key = @curi_eq_cfg.same_hosts.include?(server) ? :same_hosts : server
     trimmed_path = trim_path(curi)
     @paths_queries_by_server.key?(server_key) &&

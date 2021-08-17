@@ -269,7 +269,6 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
       page2_entry_links = page2_xpath_links
       good_classless_masked_xpath = class_xpath_remove_classes(page2_masked_xpath)
       page_sizes << page1_size << page2_xpath_links.length
-      logger.log("Possible page 2: #{page2.curi}")
       logger.log("XPath looks good for page 1: #{page1_masked_xpath} (#{page1_entry_links.length} links)")
       logger.log("XPath looks good for page 2: #{page2_masked_xpath} (#{page2_entry_links.length} links)")
       break

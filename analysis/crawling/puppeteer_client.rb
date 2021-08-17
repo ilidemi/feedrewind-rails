@@ -78,7 +78,7 @@ def crawl_link_with_puppeteer(link, content, document, puppeteer_client, crawl_c
           .first
       end
       is_puppeteer_used = true
-    elsif link.curi.path.match?(ARCHIVES_REGEX) &&
+    elsif link.curi.trimmed_path&.match?("/archive/*$") &&
       document.at_css(SUBSTACK_FOOTER_SELECTOR)
 
       logger.log("Spotted Substack archives, rerunning with puppeteer")
@@ -96,6 +96,7 @@ end
 
 class PuppeteerClient
   def fetch(url, crawl_ctx, logger, &find_load_more_button)
+    logger.log("Puppeteer start: #{url}")
     puppeteer_start = monotonic_now
     Puppeteer.launch do |browser|
       pptr_page = browser.new_page
