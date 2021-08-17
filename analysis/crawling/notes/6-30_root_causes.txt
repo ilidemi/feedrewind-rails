@@ -25,8 +25,7 @@ VISEGv
       2 Xpath needs [last()]: 263 318
       1 Feed links need comparison by unique prefix: 469
 
-   E  2 Wrong archives: 378 48
-   E  4 Paged instead of archives: 118 445 442 182
+   E  2 Paged instead of archives: 182 395
    E  1 Paged instead of feed: 473
 
       2 YouTube: 438 441

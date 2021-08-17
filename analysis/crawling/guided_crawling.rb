@@ -569,12 +569,11 @@ def guided_crawl_loop(
     )
     if page_result
       if !best_result || page_result.count > best_result.count
-        best_log = " (new best)"
+        logger.log("Result found: #{page_result.count} links (new best)")
         best_result = page_result
       else
-        best_log = ""
+        logger.log("Result found: #{page_result.count} links")
       end
-      logger.log("Result found: #{page_result.count} links#{best_log}")
     end
 
     page_allowed_hosts_links = page_all_links

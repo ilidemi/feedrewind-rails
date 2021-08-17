@@ -8,8 +8,8 @@ Page1Result = Struct.new(:link_to_page2, :paged_state)
 PartialPagedResult = Struct.new(:link_to_next_page, :next_page_number, :count, :paged_state)
 
 Page2State = Struct.new(
-  :paging_pattern, :paging_pattern_extra, :page1, :page1_links, :page1_extractions_by_masked_xpath,
-  :page1_size_masked_xpaths_sorted
+  :is_certain, :paging_pattern, :paging_pattern_extra, :page1, :page1_links,
+  :page1_extractions_by_masked_xpath, :page1_size_masked_xpaths_sorted
 )
 NextPageState = Struct.new(
   :paging_pattern, :paging_pattern_extra, :page_number, :entry_links, :known_entry_curis_set,
@@ -27,6 +27,7 @@ def try_extract_page1(
   link_pattern_to_page2 = find_link_to_page2(page1_links, page1, feed_generator, curi_eq_cfg, logger)
   return nil unless link_pattern_to_page2
   link_to_page2 = link_pattern_to_page2[:link]
+  is_page2_certain = link_pattern_to_page2[:is_certain]
   paging_pattern = link_pattern_to_page2[:paging_pattern]
   paging_pattern_extra = paging_pattern.is_a?(Hash) ? '' : "<br>paging_pattern: #{paging_pattern}"
 
@@ -134,13 +135,14 @@ def try_extract_page1(
   Page1Result.new(
     link_to_page2,
     Page2State.new(
-      paging_pattern, paging_pattern_extra, page1, page1_links, page1_extractions_by_masked_xpath,
-      page1_size_masked_xpaths_sorted
+      is_page2_certain, paging_pattern, paging_pattern_extra, page1, page1_links,
+      page1_extractions_by_masked_xpath, page1_size_masked_xpaths_sorted
     )
   )
 end
 
 def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
+  is_page2_certain = page2_state.is_certain
   paging_pattern = page2_state.paging_pattern
   paging_pattern_extra = page2_state.paging_pattern_extra
 
@@ -203,7 +205,7 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
 
   # See if the first page had some sort of decoration, and links on the second page moved under another
   # parent but retained the inner structure
-  if page2_entry_links.nil? && paging_pattern != :blogger
+  if page2_entry_links.nil? && is_page2_certain && paging_pattern != :blogger
     page2_state.page1_size_masked_xpaths_sorted.each do |page1_size, page1_masked_xpath|
       page1_extraction = page2_state.page1_extractions_by_masked_xpath[page1_masked_xpath]
       page1_xpath_links = page1_extraction.links
@@ -403,7 +405,7 @@ BLOGSPOT_QUERY_REGEX = /updated-max=([^&]+)/
 
 def find_link_to_page2(current_page_links, current_page, feed_generator, curi_eq_cfg, logger)
   blogspot_next_page_links = current_page_links.filter do |link|
-    link.uri.path == "/search" &&
+    link.curi.trimmed_path == "/search" &&
       link.uri.query &&
       BLOGSPOT_QUERY_REGEX.match(link.uri.query)
   end
@@ -421,18 +423,38 @@ def find_link_to_page2(current_page_links, current_page, feed_generator, curi_eq
 
     return {
       link: links_to_page2.first,
+      is_certain: true,
       paging_pattern: :blogger
     }
   end
 
-  link_to_page2_path_regex = Regexp.new("/(:?index-?2[^/^\\d]*|(:?page)?2)/?$")
-  link_to_page2_query_regex = /([^?^&]*page=)2(:?&|$)/
+  link_to_page2_path_regex = Regexp.new("/(?:index-?2[^/^\\d]*|page/?2)$")
+  is_certain = true
+  is_path_match = true
   links_to_page2 = current_page_links.filter do |link|
-    link.uri.host == current_page.fetch_uri.host && (
-      link_to_page2_path_regex.match?(link.uri.path) || link_to_page2_query_regex.match?(link.uri.query)
-    )
+    link.curi.host == current_page.curi.host && link_to_page2_path_regex.match?(link.curi.trimmed_path)
   end
-  return nil if links_to_page2.empty?
+
+  link_to_page2_query_regex = /([^?^&]*page=)2(?:&|$)/
+  if links_to_page2.empty?
+    is_path_match = false
+    links_to_page2 = current_page_links.filter do |link|
+      link.curi.host == current_page.curi.host && link_to_page2_query_regex.match?(link.curi.query)
+    end
+  end
+
+  probable_link_to_page2_path_regex = Regexp.new("/2$")
+  if links_to_page2.empty?
+    is_certain = false
+    is_path_match = true
+    links_to_page2 = current_page_links.filter do |link|
+      link.curi.host == current_page.curi.host &&
+        probable_link_to_page2_path_regex.match?(link.curi.trimmed_path)
+    end
+    return nil if links_to_page2.empty?
+
+    logger.log("Did not find certain links to page to but found some probable ones: #{links_to_page2.map(&:curi).map(&:to_s)}")
+  end
 
   if links_to_page2
     .map(&:curi)
@@ -444,23 +466,29 @@ def find_link_to_page2(current_page_links, current_page, feed_generator, curi_eq
   end
 
   link = links_to_page2.first
-  if link_to_page2_path_regex.match?(link.uri.path)
-    page_number_index = link.uri.path.rindex('2')
-    path_template = link.uri.path[...page_number_index] + '%d' + link.uri.path[(page_number_index + 1)..]
+  if is_path_match
+    page_number_index = link.curi.trimmed_path.rindex('2')
+    path_template = link.curi.trimmed_path[...page_number_index] +
+      '%d' +
+      link.curi.trimmed_path[(page_number_index + 1)..]
+
     {
       link: link,
+      is_certain: is_certain,
       paging_pattern: {
-        host: link.uri.host,
+        host: link.curi.host,
         path_template: path_template
       },
     }
   else
-    query_template = link_to_page2_query_regex.match(link.uri.query)[1] + '%d'
+    query_template = link_to_page2_query_regex.match(link.curi.query)[1] + '%d'
+
     {
       link: link,
+      is_certain: is_certain,
       paging_pattern: {
-        host: link.uri.host,
-        path: link.uri.path,
+        host: link.curi.host,
+        path: link.curi.trimmed_path,
         query_template: query_template
       },
     }
@@ -477,7 +505,7 @@ def find_link_to_next_page(
 
     links_to_next_page = current_page_links.filter do |link|
       !link.xpath.start_with?("/html[1]/head[1]") &&
-        link.uri.path == "/search" &&
+        link.curi.trimmed_path == "/search" &&
         link.uri.query &&
         (next_date_match = BLOGSPOT_QUERY_REGEX.match(link.uri.query)) &&
         next_date_match[1] < current_date_match[1]
@@ -486,12 +514,12 @@ def find_link_to_next_page(
     if paging_pattern[:path_template]
       expected_path = paging_pattern[:path_template] % next_page_number
       links_to_next_page = current_page_links.filter do |link|
-        link.uri.host == paging_pattern[:host] && link.uri.path == expected_path
+        link.curi.host == paging_pattern[:host] && link.curi.trimmed_path == expected_path
       end
     else
       expected_query_substring = paging_pattern[:query_template] % next_page_number
       links_to_next_page = current_page_links.filter do |link|
-        link.uri.host == paging_pattern[:host] && link.uri.query&.include?(expected_query_substring)
+        link.curi.host == paging_pattern[:host] && link.curi.query&.include?(expected_query_substring)
       end
     end
   end
