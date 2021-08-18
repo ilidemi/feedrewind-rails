@@ -55,7 +55,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
   start_link_url = start_link_row["url"]
   start_link_feed_url = start_link_row["rss_url"]
   result = RunResult.new(GUIDED_CRAWLING_RESULT_COLUMNS)
-  result.start_url = "<a href=\"#{start_link_url}\">#{start_link_url}</a>"
+  result.start_url = "<a href=\"#{start_link_url}\">#{start_link_url}</a>" if start_link_url
   crawl_ctx = CrawlContext.new
   start_time = monotonic_now
 
@@ -100,64 +100,118 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     db.exec_params('delete from historical where start_link_id = $1', [start_link_id])
     db_storage = CrawlDbStorage.new(db, mock_db_storage)
 
-    start_link = to_canonical_link(start_link_url, logger)
-    raise "Bad start link: #{start_link_url}" if start_link.nil?
+    if start_link_url
+      start_link = to_canonical_link(start_link_url, logger)
+      raise "Bad start link: #{start_link_url}" if start_link.nil?
 
-    crawl_ctx.allowed_hosts << start_link.uri.host
-    start_result = crawl_request(
-      start_link, false, nil, crawl_ctx, mock_http_client, puppeteer_client, start_link_id,
-      db_storage, logger
-    )
-    raise "Unexpected start result: #{start_result}" unless start_result.is_a?(Page) && start_result.content
-    start_page = start_result
+      start_result = crawl_request(
+        start_link, false, nil, crawl_ctx, mock_http_client, puppeteer_client, start_link_id,
+        db_storage, logger
+      )
+      raise "Unexpected start result: #{start_result}" unless start_result.is_a?(Page) && start_result.content
+      start_page = start_result
 
-    feed_start_time = monotonic_now
-    if start_link_feed_url
+      feed_start_time = monotonic_now
+      if start_link_feed_url
+        feed_link = to_canonical_link(start_link_feed_url, logger)
+        raise "Bad feed link: #{start_link_feed_url}" if feed_link.nil?
+      else
+        crawl_ctx.seen_fetch_urls << start_result.fetch_uri.to_s
+        feed_links = start_page
+          .document
+          .xpath("/html/head/link[@rel='alternate']")
+          .to_a
+          .filter { |link| %w[application/rss+xml application/atom+xml].include?(link.attributes["type"]&.value) }
+          .map { |link| link.attributes["href"]&.value }
+          .map { |url| to_canonical_link(url, logger, start_link.uri) }
+          .filter { |link| !link.url.end_with?("?alt=rss") }
+          .filter { |link| !link.url.end_with?("/comments/feed/") }
+        raise "No feed links for id #{start_link_id} (#{start_page.fetch_uri})" if feed_links.empty?
+        raise "Multiple feed links for id #{start_link_id} (#{start_page.fetch_uri})" if feed_links.length > 1
+
+        feed_link = feed_links.first
+      end
+
+      result.feed_url = "<a href=\"#{feed_link.url}\">feed</a>"
+      feed_result = crawl_request(
+        feed_link, true, nil, crawl_ctx, mock_http_client, nil, start_link_id, db_storage, logger
+      )
+      raise "Unexpected feed result: #{feed_result}" unless feed_result.is_a?(Page) && feed_result.content
+
+      feed_page = feed_result
+      crawl_ctx.seen_fetch_urls << feed_page.fetch_uri.to_s
+      db_storage.save_feed(start_link_id, feed_page.curi.to_s)
+      result.feed_requests_made = crawl_ctx.requests_made
+      result.feed_time = (monotonic_now - feed_start_time).to_i
+      logger.log("Feed url: #{feed_page.curi}")
+
+      feed_links = extract_feed_links(feed_page.content, feed_page.fetch_uri, logger)
+    elsif start_link_feed_url
+      feed_start_time = monotonic_now
       feed_link = to_canonical_link(start_link_feed_url, logger)
       raise "Bad feed link: #{start_link_feed_url}" if feed_link.nil?
+
+      result.feed_url = "<a href=\"#{feed_link.url}\">feed</a>"
+      feed_result = crawl_request(
+        feed_link, true, nil, crawl_ctx, mock_http_client, nil, start_link_id, db_storage, logger
+      )
+      raise "Unexpected feed result: #{feed_result}" unless feed_result.is_a?(Page) && feed_result.content
+
+      feed_page = feed_result
+      crawl_ctx.seen_fetch_urls << feed_page.fetch_uri.to_s
+      db_storage.save_feed(start_link_id, feed_page.curi.to_s)
+      result.feed_requests_made = crawl_ctx.requests_made
+      result.feed_time = (monotonic_now - feed_start_time).to_i
+      logger.log("Feed url: #{feed_page.curi}")
+
+      feed_links = extract_feed_links(feed_page.content, feed_page.fetch_uri, logger)
+
+      if feed_links.root_link
+        start_link = feed_links.root_link
+
+        result.start_url = "<a href=\"#{start_link.url}\">#{start_link.url}</a>"
+        start_result = crawl_request(
+          start_link, false, nil, crawl_ctx, mock_http_client, puppeteer_client, start_link_id,
+          db_storage, logger
+        )
+        unless start_result.is_a?(Page) && start_result.content
+          raise "Unexpected start result: #{start_result}"
+        end
+        start_page = start_result
+      else
+        logger.log("There is no start link or feed root link, trying to discover")
+        start_link = start_page = nil
+        possible_start_uri = feed_link.uri
+        loop do
+          raise "Couldn't discover start link" if !possible_start_uri.path || possible_start_uri.path.empty?
+
+          possible_start_uri.path = possible_start_uri.path.rpartition("/").first
+          possible_start_link = to_canonical_link(possible_start_uri.to_s, logger)
+          logger.log("Possible start link: #{possible_start_uri.to_s}")
+          possible_start_result = crawl_request(
+            possible_start_link, false, nil, crawl_ctx, mock_http_client, puppeteer_client, start_link_id,
+            db_storage, logger
+          )
+          next unless possible_start_result.is_a?(Page) && possible_start_result.content
+
+          start_link = possible_start_link
+          start_page = possible_start_result
+          break
+        end
+      end
     else
-      crawl_ctx.seen_fetch_urls << start_result.fetch_uri.to_s
-      feed_links = start_page
-        .document
-        .xpath("/html/head/link[@rel='alternate']")
-        .to_a
-        .filter { |link| %w[application/rss+xml application/atom+xml].include?(link.attributes["type"]&.value) }
-        .map { |link| link.attributes["href"]&.value }
-        .map { |url| to_canonical_link(url, logger, start_link.uri) }
-        .filter { |link| !link.url.end_with?("?alt=rss") }
-        .filter { |link| !link.url.end_with?("/comments/feed/") }
-      raise "No feed links for id #{start_link_id} (#{start_page.fetch_uri})" if feed_links.empty?
-      raise "Multiple feed links for id #{start_link_id} (#{start_page.fetch_uri})" if feed_links.length > 1
-
-      feed_link = feed_links.first
+      raise "Both url or feed url are not present"
     end
-    result.feed_url = "<a href=\"#{feed_link.url}\">feed</a>"
-    crawl_ctx.allowed_hosts << feed_link.uri.host
-    feed_result = crawl_request(
-      feed_link, true, nil, crawl_ctx, mock_http_client, nil, start_link_id, db_storage, logger
-    )
-    raise "Unexpected feed result: #{feed_result}" unless feed_result.is_a?(Page) && feed_result.content
 
-    feed_page = feed_result
-    crawl_ctx.seen_fetch_urls << feed_page.fetch_uri.to_s
-    db_storage.save_feed(start_link_id, feed_page.curi.to_s)
-    result.feed_requests_made = crawl_ctx.requests_made
-    result.feed_time = (monotonic_now - feed_start_time).to_i
-    logger.log("Feed url: #{feed_page.curi}")
-
-    feed_links = extract_feed_links(feed_page.content, feed_page.fetch_uri, logger)
     result.feed_links = feed_links.entry_links.length
     logger.log("Root url: #{feed_links.root_link&.url}")
     logger.log("Entries in feed: #{feed_links.entry_links.length}")
     logger.log("Feed order is certain: #{feed_links.entry_links.is_order_certain}")
 
-    feed_entry_links_by_host = {}
-    if feed_links.root_link
-      crawl_ctx.allowed_hosts << feed_links.root_link.uri.host
-    end
-    feed_links.entry_links.to_a.each do |entry_link|
-      crawl_ctx.allowed_hosts << entry_link.uri.host
+    raise "Feed only has 1 item" if feed_links.entry_links.length == 1
 
+    feed_entry_links_by_host = {}
+    feed_links.entry_links.to_a.each do |entry_link|
       unless feed_entry_links_by_host.key?(entry_link.uri.host)
         feed_entry_links_by_host[entry_link.uri.host] = []
       end

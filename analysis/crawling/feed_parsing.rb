@@ -33,7 +33,6 @@ def extract_feed_links(feed_content, fetch_uri, logger)
   rss_channel = xml.at_xpath("/rss/channel")
   if rss_channel
     root_url = rss_channel.at_xpath("link")&.inner_text
-    raise "Couldn't extract root url from RSS" if root_url.nil?
 
     item_nodes = rss_channel.xpath("item")
     items = item_nodes.map do |item|

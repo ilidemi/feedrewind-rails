@@ -168,10 +168,10 @@ class MockPuppeteerClient
     @start_link_id = start_link_id
   end
 
-  def fetch(url, _, _)
+  def fetch(link, _, _, _)
     row = @db.exec_params(
       "select content from mock_pages where start_link_id = $1 and fetch_url = $2 and is_from_puppeteer",
-      [@start_link_id, url]
+      [@start_link_id, link.url]
     ).first
 
     if row
@@ -179,6 +179,6 @@ class MockPuppeteerClient
       document = nokogiri_html5(content)
       return [content, document]
     end
-    raise "Couldn't find puppeteer mock page: #{url}"
+    raise "Couldn't find puppeteer mock page: #{link.url}"
   end
 end

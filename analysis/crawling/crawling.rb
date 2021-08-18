@@ -14,10 +14,9 @@ class CrawlContext
     @puppeteer_requests_made = 0
     @duplicate_fetches = 0
     @main_feed_fetched = false
-    @allowed_hosts = Set.new
   end
 
-  attr_reader :seen_fetch_urls, :fetched_curis, :pptr_fetched_curis, :redirects, :allowed_hosts
+  attr_reader :seen_fetch_urls, :fetched_curis, :pptr_fetched_curis, :redirects
   attr_accessor :requests_made, :puppeteer_requests_made, :duplicate_fetches, :main_feed_fetched
 end
 
@@ -182,6 +181,5 @@ def process_redirect(
   # Not marking canonical url as seen because redirect key is a fetch url which may be different for the
   # same canonical url
   crawl_ctx.seen_fetch_urls << redirection_link.url
-  crawl_ctx.allowed_hosts << redirection_link.uri.host
   redirection_link
 end
