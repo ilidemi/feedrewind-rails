@@ -34,12 +34,16 @@ class Puppeteer::Page
       raise
     end
 
-    while (monotonic_now - start_time) < 1.0 || # always wait for 1 second
-      ((@ongoing_requests > 0 || (monotonic_now - @last_event_time) < 1.0) && # wait if a request is in flight and 1 second after it's finished
-        (monotonic_now - @last_event_time) < 10.0) do
-      # but time out if something is stuck in flight for 10 seconds
+    loop do
+      now = monotonic_now
+      break if (now - start_time) >= 30.0
 
-      logger.log("Wait and scroll - finished: #{@finished_requests} ongoing: #{@ongoing_requests} time: #{monotonic_now - start_time}")
+      under_second_passed = (now - start_time) < 1.0
+      request_recently_in_flight = @ongoing_requests > 0 || (monotonic_now - @last_event_time) < 1.0
+      request_stuck_in_flight = (monotonic_now - @last_event_time) >= 10.0
+      break unless under_second_passed || (request_recently_in_flight && !request_stuck_in_flight)
+
+      logger.log("Wait and scroll - finished: #{@finished_requests} ongoing: #{@ongoing_requests} time: #{now - start_time}")
       evaluate("window.scrollBy(0, document.body.scrollHeight);")
       sleep(0.1)
     end
@@ -58,12 +62,14 @@ MEDIUM_FEED_LINK_SELECTOR = "link[rel=alternate][type='application/rss+xml'][hre
 SUBSTACK_FOOTER_SELECTOR = "[class*=footer-substack]"
 BUTTONDOWN_TWITTER_XPATH = "/html/head/meta[@name='twitter:site'][@content='@buttondown']"
 
-def crawl_link_with_puppeteer(link, content, document, puppeteer_client, crawl_ctx, logger)
+def crawl_link_with_puppeteer(
+  link, content, document, match_curis_set, puppeteer_client, crawl_ctx, logger
+)
   is_puppeteer_used = false
   if puppeteer_client && document
     if document.at_css(LOAD_MORE_SELECTOR)
       logger.log("Found load more button, rerunning with puppeteer")
-      content, document = puppeteer_client.fetch(link.url, crawl_ctx, logger) do |pptr_page|
+      content, document = puppeteer_client.fetch(link, match_curis_set, crawl_ctx, logger) do |pptr_page|
         pptr_page.query_visible_selector(LOAD_MORE_SELECTOR)
       end
       is_puppeteer_used = true
@@ -71,7 +77,7 @@ def crawl_link_with_puppeteer(link, content, document, puppeteer_client, crawl_c
       document.css("button").any? { |button| button.text.downcase == "show more" }
 
       logger.log("Spotted Medium page, rerunning with puppeteer")
-      content, document = puppeteer_client.fetch(link.url, crawl_ctx, logger) do |pptr_page|
+      content, document = puppeteer_client.fetch(link, match_curis_set, crawl_ctx, logger) do |pptr_page|
         pptr_page
           .query_selector_all("button")
           .filter { |button| button.evaluate("b => b.textContent").downcase == "show more" }
@@ -82,11 +88,11 @@ def crawl_link_with_puppeteer(link, content, document, puppeteer_client, crawl_c
       document.at_css(SUBSTACK_FOOTER_SELECTOR)
 
       logger.log("Spotted Substack archives, rerunning with puppeteer")
-      content, document = puppeteer_client.fetch(link.url, crawl_ctx, logger)
+      content, document = puppeteer_client.fetch(link, match_curis_set, crawl_ctx, logger)
       is_puppeteer_used = true
     elsif document.at_xpath(BUTTONDOWN_TWITTER_XPATH)
       logger.log("Spotted Buttondown page, rerunning with puppeteer")
-      content, document = puppeteer_client.fetch(link.url, crawl_ctx, logger)
+      content, document = puppeteer_client.fetch(link, match_curis_set, crawl_ctx, logger)
       is_puppeteer_used = true
     end
   end
@@ -95,8 +101,8 @@ def crawl_link_with_puppeteer(link, content, document, puppeteer_client, crawl_c
 end
 
 class PuppeteerClient
-  def fetch(url, crawl_ctx, logger, &find_load_more_button)
-    logger.log("Puppeteer start: #{url}")
+  def fetch(link, match_curis_set, crawl_ctx, logger, &find_load_more_button)
+    logger.log("Puppeteer start: #{link.url}")
     puppeteer_start = monotonic_now
 
     timeout_errors_count = 0
@@ -109,20 +115,39 @@ class PuppeteerClient
             %w[image font].include?(request.resource_type) ? request.abort : request.continue
           end
           pptr_page.enable_request_tracking
-          pptr_page.goto(url, wait_until: "networkidle0")
-          if find_load_more_button
-            load_more_button = find_load_more_button.call(pptr_page)
-            while load_more_button do
-              logger.log("Clicking load more button")
-              pptr_page.wait_and_scroll(logger) { load_more_button.click }
-              load_more_button = find_load_more_button.call(pptr_page)
-            end
+          pptr_page.goto(link.url, wait_until: "networkidle0")
+
+          if match_curis_set
+            initial_content = pptr_page.content
+            initial_document = nokogiri_html5(initial_content)
+            initial_links = extract_links(initial_document, link.uri, nil, nil, logger, false, false)
+            is_scrolling_allowed = initial_links.any? { |page_link| match_curis_set.include?(page_link.curi) }
           else
-            logger.log("Scrolling")
-            pptr_page.wait_and_scroll(logger)
+            is_scrolling_allowed = true
           end
-          content = pptr_page.content
-          document = nokogiri_html5(content)
+
+          if is_scrolling_allowed
+            if find_load_more_button
+              load_more_button = find_load_more_button.call(pptr_page)
+              while load_more_button do
+                logger.log("Clicking load more button")
+                pptr_page.wait_and_scroll(logger) { load_more_button.click }
+                load_more_button = find_load_more_button.call(pptr_page)
+              end
+            else
+              logger.log("Scrolling")
+              pptr_page.wait_and_scroll(logger)
+            end
+            content = pptr_page.content
+            document = nokogiri_html5(content)
+          else
+            logger.log("Puppeteer didn't find any matching links on initial load")
+            #noinspection RubyScope
+            content = initial_content
+            #noinspection RubyScope
+            document = initial_document
+          end
+
           pptr_page.close
           crawl_ctx.puppeteer_requests_made += pptr_page.finished_requests
           logger.log("Puppeteer done (#{monotonic_now - puppeteer_start}s, #{pptr_page.finished_requests} req)")
@@ -130,6 +155,7 @@ class PuppeteerClient
         end
       rescue Puppeteer::FrameManager::NavigationError
         timeout_errors_count += 1
+        logger.log("Recovered Puppeteer timeout (#{timeout_errors_count})")
         raise if timeout_errors_count >= 3
       end
     end

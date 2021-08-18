@@ -44,7 +44,9 @@ def try_extract_page1(
 
   # Blogger has a known pattern with posts grouped by date
   if paging_pattern == :blogger
-    page1_class_xpath_links = extract_links(page1, [page1.fetch_uri.host], nil, logger, true, true)
+    page1_class_xpath_links = extract_links(
+      page1.document, page1.fetch_uri, [page1.fetch_uri.host], nil, logger, true, true
+    )
     page1_links_grouped_by_date = page1_class_xpath_links.filter do |page_link|
       BLOGSPOT_POSTS_BY_DATE_REGEX.match(page_link.class_xpath)
     end
@@ -292,7 +294,9 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
     return nil
   end
 
-  page2_links = extract_links(page2, [page2.fetch_uri.host], nil, logger, true, false)
+  page2_links = extract_links(
+    page2.document, page2.fetch_uri, [page2.fetch_uri.host], nil, logger, true, false
+  )
   link_to_page3 = find_link_to_next_page(
     page2_links, page2, curi_eq_cfg, 3, paging_pattern, logger
   )
@@ -371,7 +375,9 @@ def try_extract_next_page(page, page_state, feed_entry_links, curi_eq_cfg, logge
     return nil
   end
 
-  page_links = extract_links(page, [page.fetch_uri.host], nil, logger, true, false)
+  page_links = extract_links(
+    page.document, page.fetch_uri, [page.fetch_uri.host], nil, logger, true, false
+  )
   next_page_number = page_number + 1
   link_to_next_page = find_link_to_next_page(
     page_links, page, curi_eq_cfg, next_page_number, paging_pattern, logger

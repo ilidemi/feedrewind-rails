@@ -27,7 +27,8 @@ AlreadySeenLink = Struct.new(:link)
 BadRedirection = Struct.new(:url)
 
 def crawl_request(
-  initial_link, crawl_ctx, http_client, puppeteer_client, is_feed_expected, start_link_id, db_storage, logger
+  initial_link, is_feed_expected, feed_entry_curis_set, crawl_ctx, http_client, puppeteer_client,
+  start_link_id, db_storage, logger
 )
   link = initial_link
   seen_urls = [link.url]
@@ -107,7 +108,7 @@ def crawl_request(
 
       # TODO: puppeteer will be executed twice for duplicate fetches
       content, document, is_puppeteer_used = crawl_link_with_puppeteer(
-        link, content, document, puppeteer_client, crawl_ctx, logger
+        link, content, document, feed_entry_curis_set, puppeteer_client, crawl_ctx, logger
       )
       if is_puppeteer_used
         if !crawl_ctx.pptr_fetched_curis.include?(link.curi)

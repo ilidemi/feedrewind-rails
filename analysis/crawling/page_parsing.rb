@@ -10,19 +10,19 @@ CLASS_SUBSTITUTIONS = {
 }
 
 def extract_links(
-  page, allowed_hosts, redirects, logger, include_xpath = false, include_class_xpath = false
+  document, fetch_uri, allowed_hosts, redirects, logger, include_xpath = false, include_class_xpath = false
 )
-  return [] unless page.document
+  return [] unless document
 
-  link_elements = page.document.xpath('//a').to_a +
-    page.document.xpath('//link[@rel="next"]').to_a +
-    page.document.xpath('//link[@rel="prev"]').to_a +
-    page.document.xpath('//area').to_a
+  link_elements = document.xpath('//a').to_a +
+    document.xpath('//link[@rel="next"]').to_a +
+    document.xpath('//link[@rel="prev"]').to_a +
+    document.xpath('//area').to_a
   links = []
   classes_by_xpath = {}
   link_elements.each do |element|
     link = html_element_to_link(
-      element, page.fetch_uri, page.document, classes_by_xpath, redirects, logger, include_xpath,
+      element, fetch_uri, document, classes_by_xpath, redirects, logger, include_xpath,
       include_class_xpath
     )
     next if link.nil?
