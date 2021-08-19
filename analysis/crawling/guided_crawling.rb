@@ -16,6 +16,7 @@ require_relative 'util'
 
 GUIDED_CRAWLING_RESULT_COLUMNS = [
   [:start_url, :neutral],
+  [:source, :neutral],
   [:comment, :neutral],
   [:gt_pattern, :neutral],
   [:feed_requests_made, :neutral],
@@ -51,11 +52,12 @@ class GuidedCrawlRunnable
 end
 
 def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
-  start_link_row = db.exec_params('select url, rss_url from start_links where id = $1', [start_link_id])[0]
+  start_link_row = db.exec_params('select source, url, rss_url from start_links where id = $1', [start_link_id])[0]
   start_link_url = start_link_row["url"]
   start_link_feed_url = start_link_row["rss_url"]
   result = RunResult.new(GUIDED_CRAWLING_RESULT_COLUMNS)
   result.start_url = "<a href=\"#{start_link_url}\">#{start_link_url}</a>" if start_link_url
+  result.source = start_link_row["source"]
   crawl_ctx = CrawlContext.new
   start_time = monotonic_now
 
@@ -126,6 +128,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
           .map { |url| to_canonical_link(url, logger, start_link.uri) }
           .filter { |link| !link.url.end_with?("?alt=rss") }
           .filter { |link| !link.url.end_with?("/comments/feed/") }
+          .filter { |link| !link.url.end_with?("/comments/feed") }
         raise "No feed links for id #{start_link_id} (#{start_page.fetch_uri})" if feed_links.empty?
         raise "Multiple feed links for id #{start_link_id} (#{start_page.fetch_uri})" if feed_links.length > 1
 
@@ -198,6 +201,8 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
           start_page = possible_start_result
           break
         end
+
+        result.start_url = "<a href=\"#{start_link.url}\">#{start_link.url}</a>"
       end
     else
       raise "Both url or feed url are not present"

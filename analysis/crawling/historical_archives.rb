@@ -655,7 +655,6 @@ def try_extract_shuffled(
     links = links_extraction.links
     curis = links_extraction.curis
     curis_set = links_extraction.curis_set
-    maybe_url_dates = extraction.maybe_url_dates
 
     next if best_links_maybe_dates && best_links_maybe_dates.length >= links.length
     next unless links.length >= feed_entry_links.length
@@ -671,18 +670,23 @@ def try_extract_shuffled(
       next unless feed_entry_links.all_included?(curis_set)
     end
 
-    links_maybe_url_dates = links.zip(maybe_url_dates)
+    maybe_dates = extraction
+      .maybe_url_dates
+      .zip(extraction.some_markup_dates || [])
+      .map { |maybe_url_date, maybe_markup_date| maybe_url_date || maybe_markup_date }
+
+    links_maybe_dates = links.zip(maybe_dates)
     if curis.length != curis_set.length
       dedup_links_maybe_dates = []
       dedup_curis_set = CanonicalUriSet.new([], curi_eq_cfg)
-      links_maybe_url_dates.each do |link, maybe_url_date|
+      links_maybe_dates.each do |link, maybe_date|
         next if dedup_curis_set.include?(link.curi)
 
-        dedup_links_maybe_dates << [link, maybe_url_date]
+        dedup_links_maybe_dates << [link, maybe_date]
         dedup_curis_set << link.curi
       end
     else
-      dedup_links_maybe_dates = links_maybe_url_dates
+      dedup_links_maybe_dates = links_maybe_dates
     end
 
     best_links_maybe_dates = dedup_links_maybe_dates
