@@ -725,7 +725,7 @@ def try_extract_shuffled(
 end
 
 def try_extract_long_feed(feed_entry_links, page_curis_set, min_links_count, main_link, logger)
-  logger.log("Trying long feed match")
+  logger.log("Trying archives long feed match")
 
   if feed_entry_links.length >= 31 &&
     feed_entry_links.length > min_links_count &&
@@ -741,7 +741,7 @@ def try_extract_long_feed(feed_entry_links, page_curis_set, min_links_count, mai
       extra: ""
     )
   else
-    logger.log("No long feed match")
+    logger.log("No archives long feed match")
     nil
   end
 end

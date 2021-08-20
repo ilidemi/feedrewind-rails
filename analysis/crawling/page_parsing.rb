@@ -1,14 +1,6 @@
 require 'nokogumbo'
 require_relative 'canonical_link'
 
-CLASS_SUBSTITUTIONS = {
-  '/' => '%2F',
-  '[' => '%5B',
-  ']' => '%5D',
-  '(' => '%28',
-  ')' => '%29'
-}
-
 def extract_links(
   document, fetch_uri, allowed_hosts, redirects, logger, include_xpath = false, include_class_xpath = false
 )
@@ -73,6 +65,16 @@ def to_canonical_xpath(xpath)
     .join('')
 end
 
+CLASS_BLACKLIST_REGEX = /^post-\d+$/
+
+CLASS_SUBSTITUTIONS = {
+  '/' => '%2F',
+  '[' => '%5B',
+  ']' => '%5D',
+  '(' => '%28',
+  ')' => '%29'
+}
+
 def to_class_xpath(xpath, document, fetch_uri, classes_by_xpath, logger)
   xpath_tokens = xpath.split('/')[1..]
   prefix_xpath = ""
@@ -99,6 +101,7 @@ def to_class_xpath(xpath, document, fetch_uri, classes_by_xpath, logger)
         classes = classes_by_xpath[prefix_xpath] = ancestor_classes
           .value
           .split(' ')
+          .filter { |klass| !klass.match?(CLASS_BLACKLIST_REGEX) }
           .map { |klass| klass.gsub(/[\/\[\]()]/, CLASS_SUBSTITUTIONS) }
           .sort
           .join(',')

@@ -11,7 +11,7 @@ VISEGv
       2 Paged scoped by path: 499 99
       1 First post decorated on every page: 86
  I    2 Custom next page link: 2 534
-      2 Paged from feed if almost match: 324 410
+      3 Paged from feed if almost match: 324 410 440
       1 Paged with 1 post overlap: 40
 
  I  v 4 Archives 2 level: 465 495 6 155

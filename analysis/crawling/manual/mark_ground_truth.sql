@@ -1,3 +1,6 @@
+-- delete
+delete from historical_ground_truth where start_link_id = 0;
+
 -- copy
 insert into historical_ground_truth select * from historical where start_link_id = 0;
 

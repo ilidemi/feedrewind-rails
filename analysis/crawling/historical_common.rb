@@ -275,7 +275,7 @@ def get_masked_xpath_extraction(
   maybe_url_dates = filtered_links.map do |link|
     next unless link.curi.path
 
-    date_match = link.curi.path.match(/\/(\d{4})\/(\d{2})\/(\d{2})/)
+    date_match = link.curi.path.match(/\/(\d{4})\/(\d{2})\/(\d{2})\//)
     next unless date_match
 
     begin
