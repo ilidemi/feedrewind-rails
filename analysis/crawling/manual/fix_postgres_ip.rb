@@ -31,6 +31,12 @@ data_sources_replaced_ip1 = /rss_catchup_analysis@(\d+\.\d+\.\d+\.\d+)/.match(da
 data_sources_replaced_ip2 = /(\d+\.\d+\.\d+\.\d+):5432\/rss_catchup_analysis/.match(data_sources_output)[1]
 puts "Data Sources IPs: #{data_sources_replaced_ip1} #{data_sources_replaced_ip2}"
 
+database_yml_path = "../../config/database.yml"
+%x[wsl sudo sed -i "s/host: [0-9]\\+\\\\.[0-9]\\+\\\\.[0-9]\\+\\\\.[0-9]\\+/host: #{ip}/g" #{database_yml_path}]
+database_yml_output = %x[wsl cat #{database_yml_path}]
+database_yml_replaced_ip = /host: (\d+\.\d+\.\d+\.\d+)/.match(database_yml_output)[1]
+puts "database.yml IP: #{database_yml_replaced_ip}"
+
 if conf_replaced_ip == ip
   puts %x[wsl sudo service postgresql start]
 end
