@@ -132,6 +132,25 @@ def try_extract_archives(
     end
   end
 
+  if main_result.is_a?(ArchivesSortedResult) && main_result.has_dates
+    logger.log("Skipping shuffled 2xpaths match because there's already a sorted result with dates")
+  else
+    extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
+      shuffled_2xpaths_result = try_extract_shuffled_2xpaths(
+        extractions_by_masked_xpath_by_star_count[1], extractions_by_masked_xpath, feed_entry_links,
+        curi_eq_cfg, star_count, min_links_count, page_link, logger
+      )
+      if shuffled_2xpaths_result
+        if shuffled_2xpaths_result.is_a?(ArchivesSortedResult)
+          main_result = shuffled_2xpaths_result
+        else
+          tentative_better_results << shuffled_2xpaths_result
+        end
+        min_links_count = shuffled_2xpaths_result.speculative_count + 1
+      end
+    end
+  end
+
   sorted_almost_fewer_stars_curis = nil
   sorted_almost_fewer_stars_have_dates = nil
   extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
@@ -464,9 +483,9 @@ def try_extract_sorted_2xpaths(
   logger.log("Trying sorted match with 1+#{star_count} stars")
 
   feed_prefix_xpaths_by_length = {}
-  prefix_extractions_by_masked_xpath.each do |masked_xpath, extraction|
-    links = extraction.links_extraction.links
-    curis = extraction.links_extraction.curis
+  prefix_extractions_by_masked_xpath.each do |masked_prefix_xpath, prefix_extraction|
+    links = prefix_extraction.links_extraction.links
+    curis = prefix_extraction.links_extraction.curis
     next if links.length >= feed_entry_links.length
 
     is_matching_feed = feed_entry_links.sequence_match?(curis, curi_eq_cfg)
@@ -475,7 +494,7 @@ def try_extract_sorted_2xpaths(
     unless feed_prefix_xpaths_by_length.key?(links.length)
       feed_prefix_xpaths_by_length[links.length] = []
     end
-    feed_prefix_xpaths_by_length[links.length] << masked_xpath
+    feed_prefix_xpaths_by_length[links.length] << masked_prefix_xpath
   end
 
   best_links = nil
@@ -708,18 +727,127 @@ def try_extract_shuffled(
         links: sorted_links,
         speculative_count: sorted_links.count,
         count: sorted_links.count,
-        extra: "xpath: #{best_xpath}<br>dates_present:#{dates_present}/#{sorted_links.length}"
+        extra: "xpath: #{best_xpath}<br>dates_present: #{dates_present}/#{sorted_links.length}"
       )
     else
       ArchivesShuffledResult.new(
         pattern: "archives_shuffled#{almost_suffix}",
         links_maybe_dates: best_links_maybe_dates,
         speculative_count: best_links_maybe_dates.count,
-        extra: "xpath: #{best_xpath}<br>dates_present:#{dates_present}/#{best_links_maybe_dates.length}"
+        extra: "xpath: #{best_xpath}<br>dates_present: #{dates_present}/#{best_links_maybe_dates.length}"
       )
     end
   else
     logger.log("No shuffled match with #{star_count} stars")
+    nil
+  end
+end
+
+def try_extract_shuffled_2xpaths(
+  prefix_extractions_by_masked_xpath, suffix_extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg,
+  star_count, min_links_count, main_link, logger
+)
+  logger.log("Trying shuffled match with 1+#{star_count} stars")
+
+  best_prefix_links_maybe_dates = nil
+  best_prefix_xpath = nil
+  best_prefix_curis = nil
+  best_prefix_log_lines = nil
+  prefix_extractions_by_masked_xpath.each do |masked_prefix_xpath, prefix_extraction|
+    prefix_links = prefix_extraction.links_extraction.links
+    prefix_curis = prefix_extraction.links_extraction.curis
+    next if prefix_links.length >= feed_entry_links.length
+    next if best_prefix_links_maybe_dates && prefix_links.length <= best_prefix_links_maybe_dates.length
+    next unless feed_entry_links.sequence_match?(prefix_curis, curi_eq_cfg)
+
+    prefix_maybe_dates = prefix_extraction
+      .maybe_url_dates
+      .zip(prefix_extraction.some_markup_dates || [])
+      .map { |maybe_url_date, maybe_markup_date| maybe_url_date || maybe_markup_date }
+
+    best_prefix_links_maybe_dates = prefix_links.zip(prefix_maybe_dates)
+    best_prefix_xpath = masked_prefix_xpath
+    best_prefix_curis = prefix_curis
+    best_prefix_log_lines = prefix_extraction.log_lines
+  end
+
+  unless best_prefix_links_maybe_dates
+    logger.log("No shuffled match with 1+#{star_count} stars")
+    return nil
+  end
+
+  best_links_maybe_dates = nil
+  best_suffix_links_maybe_dates = nil
+  best_suffix_xpath = nil
+  suffix_extractions_by_masked_xpath.each do |masked_suffix_xpath, suffix_extraction|
+    suffix_links_extraction = suffix_extraction.links_extraction
+    suffix_links = suffix_links_extraction.links
+    suffix_curis = suffix_links_extraction.curis
+
+    next if best_suffix_links_maybe_dates && best_suffix_links_maybe_dates.length >= suffix_links.length
+    next unless suffix_links.length >= feed_entry_links.length
+    next unless suffix_links.length >= min_links_count
+
+    curis = best_prefix_curis + suffix_curis
+    curis_set = CanonicalUriSet.new(curis, curi_eq_cfg)
+    next unless feed_entry_links.all_included?(curis_set)
+
+    suffix_maybe_dates = suffix_extraction
+      .maybe_url_dates
+      .zip(suffix_extraction.some_markup_dates || [])
+      .map { |maybe_url_date, maybe_markup_date| maybe_url_date || maybe_markup_date }
+
+    suffix_links_maybe_dates = suffix_links.zip(suffix_maybe_dates)
+    links_maybe_dates = best_prefix_links_maybe_dates + suffix_links_maybe_dates
+    if curis.length != curis_set.length
+      dedup_links_maybe_dates = []
+      dedup_curis_set = CanonicalUriSet.new([], curi_eq_cfg)
+      links_maybe_dates.each do |link, maybe_date|
+        next if dedup_curis_set.include?(link.curi)
+
+        dedup_links_maybe_dates << [link, maybe_date]
+        dedup_curis_set << link.curi
+      end
+    else
+      dedup_links_maybe_dates = links_maybe_dates
+    end
+
+    best_links_maybe_dates = dedup_links_maybe_dates
+    best_suffix_links_maybe_dates = suffix_links_maybe_dates
+    best_suffix_xpath = masked_suffix_xpath
+    log_lines = []
+    if links_maybe_dates.length > dedup_links_maybe_dates.length
+      log_lines << "dedup #{links_maybe_dates.length} -> #{dedup_links_maybe_dates.length}"
+    end
+
+    logger.log("Found partition with two xpaths: #{best_prefix_links_maybe_dates.length} + #{suffix_links.length}#{join_log_lines(log_lines)}")
+    logger.log("Prefix xpath: #{best_prefix_xpath}#{join_log_lines(best_prefix_log_lines)}")
+    logger.log("Suffix xpath: #{masked_suffix_xpath}#{join_log_lines(suffix_extraction.log_lines)}")
+  end
+
+  if best_links_maybe_dates
+    dates_present = best_links_maybe_dates.count { |_, date| date }
+    if dates_present == best_links_maybe_dates.length
+      sorted_links_dates = sort_links_dates(best_links_maybe_dates)
+      sorted_links = sorted_links_dates.map(&:first)
+      ArchivesSortedResult.new(
+        main_link: main_link,
+        pattern: "archives_shuffled_2xpaths",
+        links: sorted_links,
+        speculative_count: sorted_links.count,
+        count: sorted_links.count,
+        extra: "star_count: 1 + #{star_count}<br>counts: #{best_prefix_links_maybe_dates.length} + #{best_suffix_links_maybe_dates.length}<br>prefix_xpath: #{best_prefix_xpath}<br>suffix_xpath: #{best_suffix_xpath}<br>dates_present: #{dates_present}/#{sorted_links.length}"
+      )
+    else
+      ArchivesShuffledResult.new(
+        pattern: "archives_shuffled_2xpaths",
+        links_maybe_dates: best_links_maybe_dates,
+        speculative_count: best_links_maybe_dates.count,
+        extra: "star_count: 1 + #{star_count}<br>counts: #{best_prefix_links_maybe_dates.length} + #{best_suffix_links_maybe_dates.length}<br>prefix_xpath: #{best_prefix_xpath}<br>suffix_xpath: #{best_suffix_xpath}<br>dates_present: #{dates_present}/#{best_links_maybe_dates.length}"
+      )
+    end
+  else
+    logger.log("No shuffled match with 1+#{star_count} stars")
     nil
   end
 end

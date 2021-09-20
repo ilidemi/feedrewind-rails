@@ -101,6 +101,11 @@ def crawl_link_with_puppeteer(
 end
 
 class PuppeteerClient
+  def initialize(db, start_link_id)
+    @db = db
+    @start_link_id = start_link_id
+  end
+
   def fetch(link, match_curis_set, crawl_ctx, logger, &find_load_more_button)
     logger.log("Puppeteer start: #{link.url}")
     puppeteer_start = monotonic_now
@@ -151,6 +156,12 @@ class PuppeteerClient
           pptr_page.close
           crawl_ctx.puppeteer_requests_made += pptr_page.finished_requests
           logger.log("Puppeteer done (#{monotonic_now - puppeteer_start}s, #{pptr_page.finished_requests} req)")
+
+          @db.exec_params(
+            "insert into mock_puppeteer_pages (start_link_id, fetch_url, body) values ($1, $2, $3)",
+            [@start_link_id, link.url, { value: content, format: 1 }]
+          )
+
           return [content, document]
         end
       rescue Puppeteer::FrameManager::NavigationError
@@ -163,22 +174,26 @@ class PuppeteerClient
 end
 
 class MockPuppeteerClient
-  def initialize(db, start_link_id)
+  def initialize(db, start_link_id, puppeteer_client)
     @db = db
     @start_link_id = start_link_id
+    @puppeteer_client = puppeteer_client
   end
 
-  def fetch(link, _, _, _)
+  def fetch(link, match_curis_set, crawl_ctx, logger, &find_load_more_button)
     row = @db.exec_params(
-      "select content from mock_pages where start_link_id = $1 and fetch_url = $2 and is_from_puppeteer",
+      "select body from mock_puppeteer_pages where start_link_id = $1 and fetch_url = $2",
       [@start_link_id, link.url]
     ).first
 
     if row
-      content = unescape_bytea(row["content"])
+      content = unescape_bytea(row["body"])
       document = nokogiri_html5(content)
       return [content, document]
     end
-    raise "Couldn't find puppeteer mock page: #{link.url}"
+
+    @puppeteer_client.fetch(
+      link, match_curis_set, crawl_ctx, logger, &find_load_more_button
+    )
   end
 end

@@ -13,11 +13,10 @@ class CrawlContext
     @requests_made = 0
     @puppeteer_requests_made = 0
     @duplicate_fetches = 0
-    @main_feed_fetched = false
   end
 
   attr_reader :seen_fetch_urls, :fetched_curis, :pptr_fetched_curis, :redirects
-  attr_accessor :requests_made, :puppeteer_requests_made, :duplicate_fetches, :main_feed_fetched
+  attr_accessor :requests_made, :puppeteer_requests_made, :duplicate_fetches
 end
 
 PERMANENT_ERROR_CODES = %w[400 401 402 403 404 405 406 407 410 411 412 413 414 415 416 417 418 451]
@@ -27,7 +26,7 @@ BadRedirection = Struct.new(:url)
 
 def crawl_request(
   initial_link, is_feed_expected, feed_entry_curis_set, crawl_ctx, http_client, puppeteer_client,
-  start_link_id, db_storage, logger
+  start_link_id, logger
 )
   link = initial_link
   seen_urls = [link.url]
@@ -51,8 +50,7 @@ def crawl_request(
     if resp.code.start_with?('3')
       redirection_url = resp.location
       redirection_link_or_result = process_redirect(
-        redirection_url, initial_link, link, resp.code, request_ms, seen_urls, start_link_id, crawl_ctx,
-        db_storage, logger
+        redirection_url, initial_link, link, resp.code, request_ms, seen_urls, crawl_ctx, logger
       )
 
       if redirection_link_or_result.is_a?(Link)
@@ -82,8 +80,7 @@ def crawl_request(
           log_code = "#{resp.code}_meta_refresh_#{interval_str}"
 
           redirection_link_or_result = process_redirect(
-            redirection_url, initial_link, link, log_code, request_ms, seen_urls, start_link_id, crawl_ctx,
-            db_storage, logger
+            redirection_url, initial_link, link, log_code, request_ms, seen_urls, crawl_ctx, logger
           )
 
           if redirection_link_or_result.is_a?(Link)
@@ -97,9 +94,6 @@ def crawl_request(
 
       if !crawl_ctx.fetched_curis.include?(link.curi)
         crawl_ctx.fetched_curis << link.curi
-        db_storage.save_page(
-          link.curi.to_s, link.url, content_type, start_link_id, content, false
-        )
         logger.log("#{resp.code} #{content_type} #{request_ms}ms #{link.url}")
       else
         logger.log("#{resp.code} #{content_type} #{request_ms}ms #{link.url} - canonical uri already seen")
@@ -112,9 +106,6 @@ def crawl_request(
       if is_puppeteer_used
         if !crawl_ctx.pptr_fetched_curis.include?(link.curi)
           crawl_ctx.pptr_fetched_curis << link.curi
-          db_storage.save_page(
-            link.curi.to_s, link.url, content_type, start_link_id, content, true
-          )
           logger.log("Puppeteer page saved")
         else
           logger.log("Puppeteer page saved - canonical uri already seen")
@@ -136,7 +127,6 @@ def crawl_request(
       end
     elsif PERMANENT_ERROR_CODES.include?(resp.code) || http_errors_count >= 3
       crawl_ctx.fetched_curis << link.curi
-      db_storage.save_permanent_error(link.curi.to_s, link.url, start_link_id, resp.code)
       logger.log("#{resp.code} #{request_ms}ms #{link.url} - permanent error")
       return PermanentError.new(link.curi, link.url, start_link_id, resp.code)
     elsif http_errors_count < 3
@@ -152,8 +142,7 @@ def crawl_request(
 end
 
 def process_redirect(
-  redirection_url, initial_link, request_link, code, request_ms, seen_urls, start_link_id, crawl_ctx,
-  db_storage, logger
+  redirection_url, initial_link, request_link, code, request_ms, seen_urls, crawl_ctx, logger
 )
   redirection_link = to_canonical_link(redirection_url, logger, request_link.uri)
 
@@ -167,7 +156,6 @@ def process_redirect(
   end
   seen_urls << redirection_link.url
   crawl_ctx.redirects[request_link.url] = redirection_link
-  db_storage.save_redirect(request_link.url, redirection_link.url, start_link_id)
   redirection_link = follow_cached_redirects(redirection_link, crawl_ctx.redirects, seen_urls)
 
   if crawl_ctx.seen_fetch_urls.include?(redirection_link.url) ||
