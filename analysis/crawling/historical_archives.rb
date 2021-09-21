@@ -746,26 +746,12 @@ def try_extract_shuffled(
 
   if best_links_maybe_dates
     dates_present = best_links_maybe_dates.count { |_, date| date }
-    if dates_present == best_links_maybe_dates.length
-      sorted_links_dates = sort_links_dates(best_links_maybe_dates)
-      sorted_links = sorted_links_dates.map(&:first)
-      ArchivesSortedResult.new(
-        main_link: main_link,
-        pattern: "archives_shuffled#{almost_suffix}",
-        links: sorted_links,
-        speculative_count: sorted_links.count,
-        count: sorted_links.count,
-        has_dates: nil,
-        extra: "xpath: #{best_xpath}<br>dates_present: #{dates_present}/#{sorted_links.length}"
-      )
-    else
-      ArchivesShuffledResult.new(
-        pattern: "archives_shuffled#{almost_suffix}",
-        links_maybe_dates: best_links_maybe_dates,
-        speculative_count: best_links_maybe_dates.count,
-        extra: "xpath: #{best_xpath}<br>dates_present: #{dates_present}/#{best_links_maybe_dates.length}"
-      )
-    end
+    ArchivesShuffledResult.new(
+      pattern: "archives_shuffled#{almost_suffix}",
+      links_maybe_dates: best_links_maybe_dates,
+      speculative_count: best_links_maybe_dates.count,
+      extra: "xpath: #{best_xpath}<br>dates_present: #{dates_present}/#{best_links_maybe_dates.length}"
+    )
   else
     logger.log("No shuffled match with #{star_count} stars")
     nil

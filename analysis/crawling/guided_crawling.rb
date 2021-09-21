@@ -273,13 +273,19 @@ def guided_crawl_historical(
 
   logger.log("Start page and links: #{archives_queue.length} archives, #{main_page_queue.length} main page")
 
-  result = guided_crawl_loop(
-    [archives_queue, main_page_queue], [archives_pptr_retry_queue, main_page_pptr_retry_queue],
+  result = guided_crawl_fetch_loop(
+    [archives_queue, main_page_queue], [archives_pptr_retry_queue, main_page_pptr_retry_queue], nil,
     guided_seen_queryless_curis_set, archives_categories_state, feed_entry_links, feed_entry_curis_set,
     feed_generator, curi_eq_cfg, allowed_hosts, crawl_ctx, mock_http_client, puppeteer_client, start_link_id,
     logger
   )
-  return result if result
+  if result
+    if result.count >= 11
+      return result
+    else
+      logger.log("Got a result with #{result.count} historical links but it looks too small. Continuing just in case")
+    end
+  end
 
   raise "Too few entries in feed: #{feed_entry_links.length}" if feed_entry_links.length < 2
   feed_entry_links_arr = feed_entry_links.to_a
@@ -331,19 +337,26 @@ def guided_crawl_historical(
 
   logger.log("Two entries links: #{archives_queue.length} archives, #{main_page_queue.length} main page")
 
-  result = guided_crawl_loop(
-    [archives_queue, main_page_queue], [archives_pptr_retry_queue, main_page_pptr_retry_queue],
+  result = guided_crawl_fetch_loop(
+    [archives_queue, main_page_queue], [archives_pptr_retry_queue, main_page_pptr_retry_queue], result,
     guided_seen_queryless_curis_set, archives_categories_state, feed_entry_links, feed_entry_curis_set,
     feed_generator, curi_eq_cfg, allowed_hosts, crawl_ctx, mock_http_client, puppeteer_client, start_link_id,
     logger
   )
-  return result if result
+  if result
+    if result.count >= 11
+      return result
+    else
+      logger.log("Got a result with #{result.count} historical links but it looks too small. Continuing just in case")
+    end
+  end
 
   others_queue = []
   others_pptr_retry_queue = []
 
   if feed_generator == :medium
     logger.log("Skipping other links because Medium")
+    return result if result
   else
     filtered_two_entries_other_links = two_entries_other_links
       .filter { |link| !feed_entry_curis_set.include?(link.curi) }
@@ -383,9 +396,9 @@ def guided_crawl_historical(
       end
     end
 
-    result = guided_crawl_loop(
+    result = guided_crawl_fetch_loop(
       [archives_queue, main_page_queue, others_queue],
-      [archives_pptr_retry_queue, main_page_pptr_retry_queue, others_pptr_retry_queue],
+      [archives_pptr_retry_queue, main_page_pptr_retry_queue, others_pptr_retry_queue], result,
       guided_seen_queryless_curis_set, archives_categories_state, feed_entry_links, feed_entry_curis_set,
       feed_generator, curi_eq_cfg, allowed_hosts, crawl_ctx, mock_http_client, puppeteer_client,
       start_link_id, logger
@@ -406,14 +419,14 @@ def guided_crawl_historical(
   nil
 end
 
-def guided_crawl_loop(
-  queues, pptr_retry_queues, guided_seen_queryless_curis_set, archives_categories_state, feed_entry_links,
-  feed_entry_curis_set, feed_generator, curi_eq_cfg, allowed_hosts, crawl_ctx, mock_http_client,
-  puppeteer_client, start_link_id, logger
+def guided_crawl_fetch_loop(
+  queues, pptr_retry_queues, initial_result, guided_seen_queryless_curis_set, archives_categories_state,
+  feed_entry_links, feed_entry_curis_set, feed_generator, curi_eq_cfg, allowed_hosts, crawl_ctx,
+  mock_http_client, puppeteer_client, start_link_id, logger
 )
   logger.log("Guided crawl loop started")
 
-  sorted_results = []
+  sorted_results = initial_result ? [initial_result] : []
   archives_queue, main_page_queue = queues
   had_archives = !archives_queue.empty?
   loop do
@@ -506,7 +519,7 @@ end
 
 def insert_sorted_result(new_result, sorted_results)
   insert_index = sorted_results
-    .find_index { |result| result.speculative_count < new_result.speculative_count }
+    .find_index { |result| speculative_count_better_than(new_result, result) }
   if insert_index
     sorted_results.insert(insert_index, new_result)
   else
@@ -514,11 +527,29 @@ def insert_sorted_result(new_result, sorted_results)
   end
 end
 
+def speculative_count_better_than(result1, result2)
+  result1_matching_feed = !(result1.is_a?(PostprocessedResult) && !result1.is_matching_feed)
+  result2_matching_feed = !(result2.is_a?(PostprocessedResult) && !result2.is_matching_feed)
+
+  (result1_matching_feed && !result2_matching_feed) ||
+    (!(!result1_matching_feed && result2_matching_feed) &&
+      result1.speculative_count > result2.speculative_count)
+end
+
+def speculative_count_equal(result1, result2)
+  result1_matching_feed = !(result1.is_a?(PostprocessedResult) && !result1.is_matching_feed)
+  result2_matching_feed = !(result2.is_a?(PostprocessedResult) && !result2.is_matching_feed)
+
+  result1_matching_feed == result2_matching_feed && result1.speculative_count == result2.speculative_count
+end
+
 def postprocess_results(
   sorted_results, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id,
   logger
 )
-  sorted_results_log = sorted_results.map { |result| [result.class.name, result.main_link.url, result.speculative_count] }
+  sorted_results_log = sorted_results.map do |result|
+    [result.class.name, result.main_link.url, result.speculative_count]
+  end
   logger.log("Postprocessing #{sorted_results.length} results: #{sorted_results_log}")
 
   until sorted_results.empty?
@@ -554,9 +585,8 @@ def postprocess_results(
     next unless pp_result
 
     if sorted_results.empty? ||
-      pp_result.speculative_count > sorted_results.first.speculative_count ||
-      (!pp_result.is_a?(PartialPagedResult) &&
-        pp_result.speculative_count == sorted_results.first.speculative_count)
+      speculative_count_better_than(pp_result, sorted_results.first) ||
+      (!pp_result.is_a?(PartialPagedResult) && speculative_count_equal(pp_result, sorted_results.first))
 
       if pp_result.is_a?(PartialPagedResult)
         pp_result = postprocess_paged_result(
@@ -567,6 +597,9 @@ def postprocess_results(
       return pp_result
     end
 
+    pp_log = [result.class.name, result.main_link.url, result.speculative_count]
+    pp_log << :not_matching_feed if pp_result.is_a?(PostprocessedResult) && !pp_result.is_matching_feed
+    logger.log("Inserting back postprocessed #{pp_log}")
     insert_sorted_result(pp_result, sorted_results)
   end
 
@@ -675,7 +708,7 @@ def try_extract_historical(
 end
 
 PostprocessedResult = Struct.new(
-  :main_link, :pattern, :links, :speculative_count, :count, :extra, keyword_init: true
+  :main_link, :pattern, :links, :speculative_count, :count, :is_matching_feed, :extra, keyword_init: true
 )
 
 def postprocess_archives_medium_pinned_entry_result(
@@ -710,6 +743,7 @@ def postprocess_archives_medium_pinned_entry_result(
     links: sorted_links,
     speculative_count: sorted_links.length,
     count: sorted_links.length,
+    is_matching_feed: true,
     extra: medium_result.extra
   )
 end
@@ -722,7 +756,7 @@ def postprocess_archives_shuffled_results(
 
   best_result = nil
   sorted_tentative_results.each do |tentative_result|
-    sorted_links = postprocess_sort_links_maybe_dates(
+    sorted_links, is_matching_feed = postprocess_sort_links_maybe_dates(
       tentative_result.links_maybe_dates, feed_entry_links, curi_eq_cfg, pages_by_canonical_url, crawl_ctx,
       mock_http_client, start_link_id, logger
     )
@@ -734,6 +768,7 @@ def postprocess_archives_shuffled_results(
       links: sorted_links,
       speculative_count: sorted_links.length,
       count: sorted_links.length,
+      is_matching_feed: is_matching_feed,
       extra: tentative_result.extra
     )
   end
@@ -745,7 +780,7 @@ def postprocess_archives_categories_result(
   archives_categories_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, start_link_id,
   logger
 )
-  sorted_links = postprocess_sort_links_maybe_dates(
+  sorted_links, is_matching_feed = postprocess_sort_links_maybe_dates(
     archives_categories_result.links_maybe_dates, feed_entry_links, curi_eq_cfg, {}, crawl_ctx,
     mock_http_client, start_link_id, logger
   )
@@ -757,6 +792,7 @@ def postprocess_archives_categories_result(
     links: sorted_links,
     speculative_count: sorted_links.length,
     count: sorted_links.length,
+    is_matching_feed: is_matching_feed,
     extra: archives_categories_result.extra
   )
 end
@@ -827,11 +863,7 @@ def postprocess_sort_links_maybe_dates(
   )
   return nil unless sorted_links
 
-  unless compare_with_feed(sorted_links, feed_entry_links, curi_eq_cfg, logger)
-    logger.log("Sorted links don't match feed but letting it slide in case the feed is bad")
-  end
-
-  sorted_links
+  [sorted_links, compare_with_feed(sorted_links, feed_entry_links, curi_eq_cfg, logger)]
 end
 
 def canonical_uri_without_query(curi)
