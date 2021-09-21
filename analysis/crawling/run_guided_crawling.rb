@@ -1,4 +1,6 @@
 require_relative '../../app/lib/guided_crawling/guided_crawling'
+require_relative 'mock_http_client'
+require_relative 'mock_puppeteer_client'
 require_relative 'run_common'
 
 GUIDED_CRAWLING_RESULT_COLUMNS = [
@@ -74,7 +76,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       result.gt_pattern = gt_row["pattern"]
     end
 
-    mock_http_client = MockJitHttpClient.new(db, start_link_id)
+    mock_http_client = MockHttpClient.new(db, start_link_id)
     if allow_puppeteer
       db.exec_params('delete from mock_puppeteer_pages where start_link_id = $1', [start_link_id])
       puppeteer_client = PuppeteerClient.new(db, start_link_id)
