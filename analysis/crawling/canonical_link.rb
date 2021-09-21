@@ -22,7 +22,7 @@ def to_canonical_link(url, logger, fetch_uri = nil)
         e.message.include?("Invalid scheme format") ||
         e.message.include?("Absolute URI missing hierarchical segment")
 
-        logger.log("Invalid URL: \"#{url}\" from \"#{fetch_uri}\" has #{e}")
+        logger.debug("Invalid URL: \"#{url}\" from \"#{fetch_uri}\" has #{e}")
         return nil
       else
         raise
@@ -37,7 +37,7 @@ def to_canonical_link(url, logger, fetch_uri = nil)
   begin
     uri = URI(url_escaped)
   rescue URI::InvalidURIError => e
-    logger.log("Invalid URL: \"#{url}\" from \"#{fetch_uri}\" has #{e}")
+    logger.debug("Invalid URL: \"#{url}\" from \"#{fetch_uri}\" has #{e}")
     return nil
   end
 
@@ -51,11 +51,11 @@ def to_canonical_link(url, logger, fetch_uri = nil)
 
   uri.fragment = nil
   if uri.userinfo != nil
-    logger.log("Invalid URL: \"#{uri}\" from \"#{fetch_uri}\" has userinfo: #{uri.userinfo}")
+    logger.debug("Invalid URL: \"#{uri}\" from \"#{fetch_uri}\" has userinfo: #{uri.userinfo}")
     return nil
   end
   if uri.opaque != nil
-    logger.log("Invalid URL: \"#{uri}\" from \"#{fetch_uri}\" has opaque: #{uri.opaque}")
+    logger.debug("Invalid URL: \"#{uri}\" from \"#{fetch_uri}\" has opaque: #{uri.opaque}")
     return nil
   end
   if uri.registry != nil

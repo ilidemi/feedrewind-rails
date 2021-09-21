@@ -92,7 +92,7 @@ def to_class_xpath(xpath, document, fetch_uri, classes_by_xpath, logger)
       begin
         ancestor = document.at_xpath(prefix_xpath)
       rescue Nokogiri::XML::XPath::SyntaxError, NoMethodError => e
-        logger.log("Invalid XPath on page #{fetch_uri}: #{prefix_xpath} has #{e}, skipping this link")
+        logger.debug("Invalid XPath on page #{fetch_uri}: #{prefix_xpath} has #{e}, skipping this link")
         return nil
       end
 

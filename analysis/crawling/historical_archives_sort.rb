@@ -31,13 +31,13 @@ def historical_archives_sort_add(page, sort_state, logger)
   end
 
   if new_sort_state.empty?
-    logger.log("Pages don't have a common date path after #{page.curi.to_s}:")
+    logger.debug("Pages don't have a common date path after #{page.curi.to_s}:")
     if sort_state
       sort_state.each do |xpath_source, dates|
-        logger.log("#{xpath_source} -> #{dates.map { |date| date.strftime("%Y-%m-%d") }}")
+        logger.debug("#{xpath_source} -> #{dates.map { |date| date.strftime("%Y-%m-%d") }}")
       end
     else
-      logger.log("(no prior sort state)")
+      logger.debug("(no prior sort state)")
     end
     return nil
   end
@@ -53,12 +53,12 @@ def historical_archives_sort_finish(links_with_known_dates, links, sort_state, l
       .to_h
     if sort_state.length == 1
       xpath, dates = sort_state.first
-      logger.log("Good shuffled date xpath: #{xpath}")
+      logger.debug("Good shuffled date xpath: #{xpath}")
     elsif dates_by_xpath_from_time.length == 1
       xpath, dates = dates_by_xpath_from_time.first
-      logger.log("Good shuffled date xpath from time: #{xpath}")
+      logger.debug("Good shuffled date xpath from time: #{xpath}")
     else
-      logger.log("Couldn't sort links: #{sort_state}")
+      logger.debug("Couldn't sort links: #{sort_state}")
       return nil
     end
 

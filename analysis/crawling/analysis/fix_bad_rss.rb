@@ -163,25 +163,25 @@ manual_feed_my_ids, no_manual_feed_my_ids = no_feed_my_ids.partition { |id| my_i
 manual_feed_blaggregator_ids, no_manual_feed_blaggregator_ids = no_feed_blaggregator_ids.partition { |id| blaggregator_ids_manual_rss.key?(id) }
 manual_multiple_feeds_by_id, still_multiple_feeds_by_id = multiple_feeds_by_id.partition { |id, _| blaggregator_ids_manual_rss.key?(id) || my_ids_manual_rss.key?(id) }
 
-logger.log("Blaggregator ids with recoverable feed: #{feed_recovered_blaggregator_ids}")
-logger.log("Single feed ids: #{single_feed_ids}")
-logger.log("Single reasonable feed ids: #{single_reasonable_feed_url_by_id.keys}")
-logger.log("Manual feed my ids: #{manual_feed_my_ids}")
-logger.log("Manual feed blaggregator ids: #{manual_feed_blaggregator_ids}")
-logger.log("Manual multiple feeds: #{manual_multiple_feeds_by_id}")
+logger.debug("Blaggregator ids with recoverable feed: #{feed_recovered_blaggregator_ids}")
+logger.debug("Single feed ids: #{single_feed_ids}")
+logger.debug("Single reasonable feed ids: #{single_reasonable_feed_url_by_id.keys}")
+logger.debug("Manual feed my ids: #{manual_feed_my_ids}")
+logger.debug("Manual feed blaggregator ids: #{manual_feed_blaggregator_ids}")
+logger.debug("Manual multiple feeds: #{manual_multiple_feeds_by_id}")
 
 url_by_id = start_link_urls_sources.to_h { |id, start_url, _| [id, start_url] }
-logger.log("No manual feed my ids:")
+logger.debug("No manual feed my ids:")
 no_manual_feed_my_ids.each do |id|
-  logger.log("#{id} (#{url_by_id[id]})")
+  logger.debug("#{id} (#{url_by_id[id]})")
 end
-logger.log("No manual feed blaggregator ids:")
+logger.debug("No manual feed blaggregator ids:")
 no_manual_feed_blaggregator_ids.each do |id|
-  logger.log("#{id} (#{url_by_id[id]})")
+  logger.debug("#{id} (#{url_by_id[id]})")
 end
-logger.log("Still multiple feed ids:")
+logger.debug("Still multiple feed ids:")
 still_multiple_feeds_by_id.each do |id, feed_urls|
-  logger.log("#{id} (#{url_by_id[id]}) -> #{feed_urls}")
+  logger.debug("#{id} (#{url_by_id[id]}) -> #{feed_urls}")
 end
 
 File.open("fix_bad_rss.sql", "w") do |sql_f|

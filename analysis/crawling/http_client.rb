@@ -74,7 +74,7 @@ class MockJitHttpClient
       )
     end
 
-    logger.log("URI not in mock tables, falling back on http client: #{uri}")
+    logger.debug("URI not in mock tables, falling back on http client: #{uri}")
     @network_requests_made += 1
     response = @http_client.request(uri, logger)
 

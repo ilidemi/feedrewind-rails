@@ -23,14 +23,14 @@ def try_extract_archives_categories(
   # Assuming all links in the feed are unique for simpler merging of categories
   return nil unless feed_entry_links.length == feed_entry_curis_set.length
 
-  logger.log("Trying to match archives categories")
+  logger.debug("Trying to match archives categories")
 
   best_links_maybe_dates = nil
   best_feed_matching_curis_set = nil
   best_xpath = nil
 
   extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
-    logger.log("Trying category match with #{star_count} stars")
+    logger.debug("Trying category match with #{star_count} stars")
 
     extractions_by_masked_xpath.each do |masked_xpath, extraction|
       links_extraction = extraction.links_extraction
@@ -70,12 +70,12 @@ def try_extract_archives_categories(
       best_links_maybe_dates = dedup_links_maybe_dates
       best_feed_matching_curis_set = feed_matching_curis_set
       best_xpath = masked_xpath
-      logger.log("Masked xpath looks like a category: #{masked_xpath}#{join_log_lines(log_lines)} (#{feed_matching_curis_set.length} links matching feed, #{dedup_links_maybe_dates.length} total)")
+      logger.debug("Masked xpath looks like a category: #{masked_xpath}#{join_log_lines(log_lines)} (#{feed_matching_curis_set.length} links matching feed, #{dedup_links_maybe_dates.length} total)")
     end
   end
 
   unless best_links_maybe_dates
-    logger.log("No archives categories match")
+    logger.debug("No archives categories match")
     return nil
   end
 
@@ -114,7 +114,7 @@ def try_extract_archives_categories(
     return result if result
   end
 
-  logger.log("No archives categories match. Combinations checked: #{combinations_count}")
+  logger.debug("No archives categories match. Combinations checked: #{combinations_count}")
 
   nil
 end
@@ -172,13 +172,13 @@ def try_combination(
   if merged_links_maybe_dates.length != unique_links_maybe_dates.length
     log_lines << "dedup #{merged_links_maybe_dates.length} -> #{unique_links_maybe_dates.length}"
   end
-  logger.log("Found match with #{categories.length} categories#{join_log_lines(log_lines)} (#{unique_links_maybe_dates.length} links total)")
+  logger.debug("Found match with #{categories.length} categories#{join_log_lines(log_lines)} (#{unique_links_maybe_dates.length} links total)")
   feed_matching_curis_sets_categories.each_with_index do |feed_matching_curis_set_category, index|
     feed_matching_curis_set, category = feed_matching_curis_set_category
-    logger.log("Category #{index + 1}: url #{category.curi}, masked xpath #{category.xpath}, feed count #{feed_matching_curis_set.length}, total count #{category.links_maybe_dates.length}")
+    logger.debug("Category #{index + 1}: url #{category.curi}, masked xpath #{category.xpath}, feed count #{feed_matching_curis_set.length}, total count #{category.links_maybe_dates.length}")
   end
-  logger.log("Missing links: #{missing_links_maybe_dates.length}")
-  logger.log("Combinations checked: #{combinations_count}")
+  logger.debug("Missing links: #{missing_links_maybe_dates.length}")
+  logger.debug("Combinations checked: #{combinations_count}")
 
   extra_lines = []
   feed_matching_curis_sets_categories.each_with_index do |feed_matching_curis_set_category, index|

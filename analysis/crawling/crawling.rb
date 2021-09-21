@@ -35,7 +35,7 @@ def crawl_request(
     (crawl_ctx.seen_fetch_urls.include?(link.url) ||
       crawl_ctx.fetched_curis.include?(link.curi))
 
-    logger.log("Cached redirect #{initial_link.url} -> #{link.url} (already seen)")
+    logger.debug("Cached redirect #{initial_link.url} -> #{link.url} (already seen)")
     return AlreadySeenLink.new(link)
   end
 
@@ -94,9 +94,9 @@ def crawl_request(
 
       if !crawl_ctx.fetched_curis.include?(link.curi)
         crawl_ctx.fetched_curis << link.curi
-        logger.log("#{resp.code} #{content_type} #{request_ms}ms #{link.url}")
+        logger.debug("#{resp.code} #{content_type} #{request_ms}ms #{link.url}")
       else
-        logger.log("#{resp.code} #{content_type} #{request_ms}ms #{link.url} - canonical uri already seen")
+        logger.debug("#{resp.code} #{content_type} #{request_ms}ms #{link.url} - canonical uri already seen")
       end
 
       # TODO: puppeteer will be executed twice for duplicate fetches
@@ -106,9 +106,9 @@ def crawl_request(
       if is_puppeteer_used
         if !crawl_ctx.pptr_fetched_curis.include?(link.curi)
           crawl_ctx.pptr_fetched_curis << link.curi
-          logger.log("Puppeteer page saved")
+          logger.debug("Puppeteer page saved")
         else
-          logger.log("Puppeteer page saved - canonical uri already seen")
+          logger.debug("Puppeteer page saved - canonical uri already seen")
         end
       end
 
@@ -118,20 +118,20 @@ def crawl_request(
         new_uri = link.uri.clone
         new_uri.host.gsub!(/^www\./, "")
         new_url = new_uri.to_s
-        logger.log("SSLError_www #{request_ms}ms #{link.url} -> #{new_url}")
+        logger.debug("SSLError_www #{request_ms}ms #{link.url} -> #{new_url}")
         link = to_canonical_link(new_url, logger)
         next
       else
-        logger.log("SSLError #{request_ms}ms #{link.url}")
+        logger.debug("SSLError #{request_ms}ms #{link.url}")
         raise "SSLError"
       end
     elsif PERMANENT_ERROR_CODES.include?(resp.code) || http_errors_count >= 3
       crawl_ctx.fetched_curis << link.curi
-      logger.log("#{resp.code} #{request_ms}ms #{link.url} - permanent error")
+      logger.debug("#{resp.code} #{request_ms}ms #{link.url} - permanent error")
       return PermanentError.new(link.curi, link.url, start_link_id, resp.code)
     elsif http_errors_count < 3
       sleep_interval = http_client.get_retry_delay(http_errors_count)
-      logger.log("#{resp.code} #{request_ms}ms #{link.url} - sleeping #{sleep_interval}s")
+      logger.debug("#{resp.code} #{request_ms}ms #{link.url} - sleeping #{sleep_interval}s")
       sleep(sleep_interval)
       http_errors_count += 1
       next
@@ -147,7 +147,7 @@ def process_redirect(
   redirection_link = to_canonical_link(redirection_url, logger, request_link.uri)
 
   if redirection_link.nil?
-    logger.log("#{code} #{request_ms}ms #{request_link.url} -> bad redirection link")
+    logger.debug("#{code} #{request_ms}ms #{request_link.url} -> bad redirection link")
     return BadRedirection.new(redirection_url)
   end
 
@@ -161,11 +161,11 @@ def process_redirect(
   if crawl_ctx.seen_fetch_urls.include?(redirection_link.url) ||
     crawl_ctx.fetched_curis.include?(redirection_link.curi)
 
-    logger.log("#{code} #{request_ms}ms #{request_link.url} -> #{redirection_link.url} (already seen)")
+    logger.debug("#{code} #{request_ms}ms #{request_link.url} -> #{redirection_link.url} (already seen)")
     return AlreadySeenLink.new(request_link)
   end
 
-  logger.log("#{code} #{request_ms}ms #{request_link.url} -> #{redirection_link.url}")
+  logger.debug("#{code} #{request_ms}ms #{request_link.url} -> #{redirection_link.url}")
   # Not marking canonical url as seen because redirect key is a fetch url which may be different for the
   # same canonical url
   crawl_ctx.seen_fetch_urls << redirection_link.url

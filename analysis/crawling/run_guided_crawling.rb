@@ -60,7 +60,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       end
 
       if allow_puppeteer && comment_row["issue"].start_with?("javascript")
-        logger.log("Emptying mock pages and redirects to rerun puppeteer")
+        logger.debug("Emptying mock pages and redirects to rerun puppeteer")
         db.exec_params("delete from mock_pages where start_link_id = $1", [start_link_id])
         db.exec_params("delete from mock_redirects where start_link_id = $1", [start_link_id])
       end
@@ -122,9 +122,9 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
 
     entries_count = historical_result.links.length
     oldest_link = historical_result.links.last
-    logger.log("Historical links: #{entries_count}")
+    logger.debug("Historical links: #{entries_count}")
     historical_result.links.each do |historical_link|
-      logger.log(historical_link.url)
+      logger.debug(historical_link.url)
     end
 
     db.exec_params(
@@ -187,7 +187,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
         db.exec_params(
           "insert into guided_successes (start_link_id, timestamp) values ($1, now())", [start_link_id]
         )
-        logger.log("Saved guided success")
+        logger.debug("Saved guided success")
       end
     else
       result.historical_links_matching = '?'

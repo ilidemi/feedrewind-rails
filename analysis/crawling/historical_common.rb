@@ -12,7 +12,7 @@ def get_extractions_by_masked_xpath_by_star_count(
     links_by_masked_xpath = group_links_by_masked_xpath(
       page_links, feed_entry_curis_set, xpath_name, star_count
     )
-    logger.log("Masked xpaths with #{star_count} stars: #{links_by_masked_xpath.length}")
+    logger.debug("Masked xpaths with #{star_count} stars: #{links_by_masked_xpath.length}")
 
     extractions_by_masked_xpath = links_by_masked_xpath.to_h do |masked_xpath, masked_xpath_links|
       [
@@ -344,7 +344,7 @@ def extract_maybe_markup_dates(
     next if link_dates.empty?
 
     if link_dates.length > 1
-      logger.log("Multiple dates found for #{link.xpath} + #{date_relative_xpath}: #{link_dates}")
+      logger.debug("Multiple dates found for #{link.xpath} + #{date_relative_xpath}: #{link_dates}")
       next
     end
 
