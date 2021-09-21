@@ -1,5 +1,5 @@
 require 'puppeteer'
-require_relative 'db'
+require_relative '../../../analysis/crawling/db'
 require_relative 'util'
 
 class Puppeteer::Page

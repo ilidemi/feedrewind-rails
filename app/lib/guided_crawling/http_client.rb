@@ -1,6 +1,6 @@
 require 'net/http'
 require 'set'
-require_relative 'db'
+require_relative '../../../analysis/crawling/db'
 require_relative 'util'
 
 HttpResponse = Struct.new(:code, :content_type, :location, :body)

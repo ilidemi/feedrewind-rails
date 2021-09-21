@@ -1,4 +1,4 @@
-require_relative 'guided_crawling'
+require_relative '../../app/lib/guided_crawling/guided_crawling'
 require_relative 'run_common'
 
 GUIDED_CRAWLING_RESULT_COLUMNS = [

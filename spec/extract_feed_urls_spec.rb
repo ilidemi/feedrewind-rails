@@ -1,6 +1,6 @@
 require 'rspec/expectations'
-require_relative '../analysis/crawling/feed_parsing'
 require_relative '../analysis/crawling/logger'
+require_relative '../app/lib/guided_crawling/feed_parsing'
 
 RSpec::Matchers.define :match_feed_links do |expected_root_url, expected_entry_urls|
   match do |actual_feed_links|
@@ -52,15 +52,15 @@ RSpec.describe "extract_feed_links" do
       .to match_feed_links("https://root", %w[root/a root/b])
   end
 
-  it "should fail RSS parsing if channel url is not present" do
+  it "should parse RSS if channel url is not present" do
     rss_content = %{
       <rss>
         <channel>
         </channel>
       </rss>
     }
-    expect { extract_feed_links(rss_content, "https://root/feed", logger) }
-      .to raise_error(/Couldn't extract root url from RSS/)
+    expect(extract_feed_links(rss_content, "https://root/feed", logger).root_link)
+      .to be_nil
   end
 
   it "should fail RSS parsing if item url is not present" do

@@ -4,7 +4,7 @@ require 'fileutils'
 require 'set'
 require 'sqlite3'
 require_relative '../../crawling/logger'
-require_relative '../../crawling/util'
+require_relative '../../../app/lib/guided_crawling/util'
 require_relative 'hn_rss'
 
 MAX_PROCESS_COUNT = 16

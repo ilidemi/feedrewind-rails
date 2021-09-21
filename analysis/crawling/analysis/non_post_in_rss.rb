@@ -1,8 +1,8 @@
-require_relative '../canonical_link'
+require_relative '../../../app/lib/guided_crawling/canonical_link'
 require_relative '../db'
 require_relative '../logger'
-require_relative '../feed_parsing'
-require_relative '../guided_crawling'
+require_relative '../../../app/lib/guided_crawling/feed_parsing'
+require_relative '../../../app/lib/guided_crawling/guided_crawling'
 
 start_link_ids = [209, 150, 145, 147, 217, 225, 251, 301, 304, 324, 338, 370, 375, 410, 439, 440, 458, 230, 132, 140, 409]
 

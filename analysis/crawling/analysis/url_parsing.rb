@@ -1,5 +1,5 @@
 require 'json'
-require_relative '../guided_crawling'
+require_relative '../../../app/lib/guided_crawling/guided_crawling'
 require_relative '../logger'
 
 logger = MyLogger.new($stdout)

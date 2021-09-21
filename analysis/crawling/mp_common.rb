@@ -3,7 +3,7 @@ require 'fileutils'
 require_relative 'db'
 require_relative 'logger'
 require_relative 'report'
-require_relative 'util'
+require_relative '../../app/lib/guided_crawling/util'
 
 MAX_PROCESS_COUNT = 16
 

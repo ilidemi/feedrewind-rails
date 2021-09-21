@@ -1,6 +1,6 @@
 require 'nokogumbo'
 require 'set'
-require_relative '../guided_crawling'
+require_relative '../../../app/lib/guided_crawling/guided_crawling'
 require_relative '../db'
 require_relative '../logger'
 

@@ -1,10 +1,10 @@
 require 'net/http'
 require 'nokogumbo'
 require 'set'
-require_relative '../../crawling/canonical_link'
-require_relative '../../crawling/feed_parsing'
-require_relative '../../crawling/page_parsing'
-require_relative '../../crawling/util'
+require_relative '../../../app/lib/guided_crawling/canonical_link'
+require_relative '../../../app/lib/guided_crawling/feed_parsing'
+require_relative '../../../app/lib/guided_crawling/page_parsing'
+require_relative '../../../app/lib/guided_crawling/util'
 
 InputRow = Struct.new(:index, :url, :sum_score, :count)
 

@@ -1,4 +1,4 @@
-require_relative '../analysis/crawling/date_extraction'
+require_relative '../app/lib/guided_crawling/date_extraction'
 
 passing_dates = [
   ["-  1 February 2015", 2015, 2, 1],

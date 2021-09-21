@@ -1,10 +1,5 @@
-require_relative '../analysis/crawling/canonical_link'
+require_relative '../app/lib/guided_crawling/canonical_link'
 require_relative '../analysis/crawling/logger'
-
-def canonical_link(url, canonical_url)
-  uri = URI(url)
-  { canonical_url: canonical_url, host: uri.host, uri: uri, url: url }
-end
 
 test_data = [
   # ["description", %w[url fetch_url], %w[expected_url expected_canonical_url]]
@@ -50,19 +45,30 @@ test_data = [
   ["should ignore url starting with :", %w[:2 https://blog.mozilla.org/en/mozilla/password-security-part-ii/], nil]
 ]
 
+def link_compare(link1, link2)
+  return true if link1.nil? && link2.nil?
+
+  canonical_uri_equal?(link1.curi, link2.curi, CanonicalEqualityConfig.new([], false)) &&
+    link1.uri == link2.uri &&
+    link2.url == link2.url
+end
+
 RSpec.describe "to_canonical_link" do
   logger = MyLogger.new($stdout)
   test_data.each do |test_case|
     it test_case[0] do
       if test_case[2]
         expected_uri = URI(test_case[2][0])
-        expected_result = Link.new(test_case[2][1], expected_uri, test_case[2][0])
+        expected_result = Link.new(
+          CanonicalUri.from_db_string(test_case[2][1]), expected_uri, test_case[2][0]
+        )
       else
         expected_result = nil
       end
 
-      expect(to_canonical_link(test_case[1][0], logger, URI(test_case[1][1])))
-        .to eq expected_result
+      result = to_canonical_link(test_case[1][0], logger, URI(test_case[1][1]))
+      expect(link_compare(result, expected_result))
+        .to eq true
     end
   end
 end
