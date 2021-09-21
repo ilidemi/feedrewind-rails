@@ -61,8 +61,8 @@ def try_extract_archives(
     sorted1_fewer_stars_curis = nil
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       sorted1_result = try_extract_sorted_highlight_first_link(
-        extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, page_curis_set, star_count,
-        sorted1_fewer_stars_curis, min_links_count, page_link, logger
+        extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_set, curi_eq_cfg, page_curis_set,
+        star_count, sorted1_fewer_stars_curis, min_links_count, page_link, logger
       )
       if sorted1_result
         main_result = sorted1_result
@@ -156,8 +156,8 @@ def try_extract_archives(
   extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
     sorted_almost_result = try_extract_sorted(
       extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, almost_match_threshold, star_count,
-      sorted_almost_fewer_stars_curis, sorted_almost_fewer_stars_have_dates,
-      min_links_count, page_link, logger
+      sorted_almost_fewer_stars_curis, sorted_almost_fewer_stars_have_dates, min_links_count, page_link,
+      logger
     )
     if sorted_almost_result
       main_result = sorted_almost_result
@@ -243,6 +243,8 @@ def try_extract_sorted(
       next unless feed_entry_links.all_included?(curis_set)
       target_feed_entry_links = feed_entry_links
     end
+
+    # In 1+*(*(*)) sorted links are deduped to pick the oldest occurrence of each, haven't had a real example here
 
     is_matching_feed = target_feed_entry_links.sequence_match?(curis, curi_eq_cfg)
     is_matching_fewer_stars_links = fewer_stars_curis &&
@@ -372,8 +374,8 @@ def join_log_lines(log_lines)
 end
 
 def try_extract_sorted_highlight_first_link(
-  extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, page_curis_set, star_count, fewer_stars_curis,
-  min_links_count, main_link, logger
+  extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_set, curi_eq_cfg, page_curis_set,
+  star_count, fewer_stars_curis, min_links_count, main_link, logger
 )
   logger.log("Trying sorted match with highlighted first link and #{star_count} stars")
 
@@ -386,14 +388,37 @@ def try_extract_sorted_highlight_first_link(
     curis = links_extraction.curis
     curis_set = links_extraction.curis_set
 
-    next if best_links && best_links.length >= links.length
-    next unless links.length >= feed_entry_links.length - 1
-    next unless links.length >= min_links_count - 1
+    log_lines = extraction.log_lines.clone
+    if feed_entry_links.length == feed_entry_curis_set.length
+      dedup_last_links = []
+      dedup_last_curis_set = CanonicalUriSet.new([], curi_eq_cfg)
+      links.reverse_each do |link|
+        next if dedup_last_curis_set.include?(link.curi)
 
-    is_matching_feed, first_link = feed_entry_links.sequence_match_except_first?(curis, curi_eq_cfg)
+        dedup_last_links << link
+        dedup_last_curis_set << link.curi
+      end
+      dedup_last_links.reverse!
+      dedup_last_curis = dedup_last_links.map(&:curi)
+
+      if dedup_last_links.length != links.length
+        log_lines << "dedup #{links.length} -> #{dedup_last_links.length}"
+      end
+    else
+      dedup_last_links = links
+      dedup_last_curis = curis
+    end
+
+    next if best_links && best_links.length >= dedup_last_links.length
+    next unless dedup_last_links.length >= feed_entry_links.length - 1
+    next unless dedup_last_links.length >= min_links_count - 1
+
+    is_matching_feed, first_link = feed_entry_links.sequence_match_except_first?(
+      dedup_last_curis, curi_eq_cfg
+    )
     is_matching_fewer_stars_links = fewer_stars_curis &&
       fewer_stars_curis[1..]
-        .zip(curis[...fewer_stars_curis.length - 1])
+        .zip(dedup_last_curis[...fewer_stars_curis.length - 1])
         .all? do |xpath_uri, fewer_stars_uri|
         canonical_uri_equal?(xpath_uri, fewer_stars_uri, curi_eq_cfg)
       end
@@ -404,8 +429,8 @@ def try_extract_sorted_highlight_first_link(
 
       best_xpath = masked_xpath
       best_first_link = first_link
-      best_links = links
-      logger.log("Masked xpath is good: #{masked_xpath}#{join_log_lines(extraction.log_lines)} (1 + #{links.length} links)")
+      best_links = dedup_last_links
+      logger.log("Masked xpath is good: #{masked_xpath}#{join_log_lines(log_lines)} (1 + #{dedup_last_links.length} links)")
       next
     end
   end
@@ -508,6 +533,8 @@ def try_extract_sorted_2xpaths(
     suffix_links = suffix_links_extraction.links
     suffix_curis = suffix_links_extraction.curis
 
+    # In 1+*(*(*)) sorted links are deduped to pick the oldest occurrence of each, haven't had a real example here
+
     is_suffix, target_prefix_length = feed_entry_links.sequence_is_suffix?(suffix_curis, curi_eq_cfg)
     next unless is_suffix
     next unless target_prefix_length + suffix_links.length >= feed_entry_links.length
@@ -597,6 +624,7 @@ def try_extract_sorted_2xpaths(
       links: best_links,
       speculative_count: best_links.length,
       count: best_links.length,
+      has_dates: nil,
       extra: "star_count: 1 + #{star_count}<br>counts: #{best_prefix_count} + #{best_suffix_count}<br>prefix_xpath: #{best_prefix_xpath}<br>suffix_xpath: #{best_suffix_xpath}"
     )
   else
@@ -727,6 +755,7 @@ def try_extract_shuffled(
         links: sorted_links,
         speculative_count: sorted_links.count,
         count: sorted_links.count,
+        has_dates: nil,
         extra: "xpath: #{best_xpath}<br>dates_present: #{dates_present}/#{sorted_links.length}"
       )
     else
@@ -836,6 +865,7 @@ def try_extract_shuffled_2xpaths(
         links: sorted_links,
         speculative_count: sorted_links.count,
         count: sorted_links.count,
+        has_dates: nil,
         extra: "star_count: 1 + #{star_count}<br>counts: #{best_prefix_links_maybe_dates.length} + #{best_suffix_links_maybe_dates.length}<br>prefix_xpath: #{best_prefix_xpath}<br>suffix_xpath: #{best_suffix_xpath}<br>dates_present: #{dates_present}/#{sorted_links.length}"
       )
     else
