@@ -8,8 +8,6 @@ GUIDED_CRAWLING_RESULT_COLUMNS = [
   [:source, :neutral],
   [:comment, :neutral],
   [:gt_pattern, :neutral],
-  [:feed_requests_made, :neutral],
-  [:feed_time, :neutral],
   [:feed_url, :boolean],
   [:feed_links, :boolean],
   [:duplicate_fetches, :neutral],
@@ -63,8 +61,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
 
       if allow_puppeteer && comment_row["issue"].start_with?("javascript")
         logger.debug("Emptying mock pages and redirects to rerun puppeteer")
-        db.exec_params("delete from mock_pages where start_link_id = $1", [start_link_id])
-        db.exec_params("delete from mock_redirects where start_link_id = $1", [start_link_id])
+        db.exec_params("delete from mock_responses where start_link_id = $1", [start_link_id])
       end
     end
 
@@ -87,12 +84,10 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     db.exec_params('delete from historical where start_link_id = $1', [start_link_id])
 
     guided_crawl_result = guided_crawl(
-      start_link_url, start_link_feed_url, crawl_ctx, mock_http_client, puppeteer_client, start_link_id,
+      start_link_feed_url || start_link_url, crawl_ctx, mock_http_client, puppeteer_client, start_link_id,
       logger
     )
     result.feed_url = guided_crawl_result.feed_result.feed_url
-    result.feed_requests_made = guided_crawl_result.feed_result.feed_requests_made
-    result.feed_time = guided_crawl_result.feed_result.feed_time
     result.feed_links = guided_crawl_result.feed_result.feed_links
     result.start_url = guided_crawl_result.start_url
     historical_result = guided_crawl_result.historical_result

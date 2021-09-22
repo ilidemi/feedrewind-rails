@@ -13,7 +13,7 @@ require_relative 'structs'
 require_relative 'util'
 
 GuidedCrawlResult = Struct.new(:feed_result, :start_url, :curi_eq_cfg, :historical_result, :historical_error)
-FeedResult = Struct.new(:feed_url, :feed_requests_made, :feed_time, :feed_links)
+FeedResult = Struct.new(:feed_url, :feed_links)
 HistoricalResult = Struct.new(:main_link, :pattern, :links, :count, :extra, keyword_init: true)
 
 class GuidedCrawlError < StandardError
@@ -25,120 +25,65 @@ class GuidedCrawlError < StandardError
   attr_reader :partial_result
 end
 
-def guided_crawl(
-  start_link_url, start_link_feed_url, crawl_ctx, mock_http_client, puppeteer_client, start_link_id, logger
-)
+def guided_crawl(start_url, crawl_ctx, mock_http_client, puppeteer_client, start_link_id, logger)
   guided_crawl_result = GuidedCrawlResult.new
   begin
     feed_result = FeedResult.new
     guided_crawl_result.feed_result = feed_result
 
-    if start_link_url
-      start_link = to_canonical_link(start_link_url, logger)
-      raise "Bad start link: #{start_link_url}" if start_link.nil?
+    start_link = to_canonical_link(start_url, logger)
+    raise "Bad start url: #{start_url}" if start_link.nil?
 
-      guided_crawl_result.start_url = "<a href=\"#{start_link.url}\">#{start_link.url}</a>"
-      start_result = crawl_request(
-        start_link, false, nil, crawl_ctx, mock_http_client, puppeteer_client, start_link_id, logger
-      )
-      raise "Unexpected start result: #{start_result}" unless start_result.is_a?(Page) && start_result.content
-      start_page = start_result
+    guided_crawl_result.start_url = "<a href=\"#{start_link.url}\">#{start_link.url}</a>"
+    start_result = crawl_request(
+      start_link, true, nil, crawl_ctx, mock_http_client, puppeteer_client, start_link_id, logger
+    )
+    raise "Unexpected start result: #{start_result}" unless start_result.is_a?(Page) && start_result.content
 
-      feed_start_time = monotonic_now
-      if start_link_feed_url
-        feed_link = to_canonical_link(start_link_feed_url, logger)
-        raise "Bad feed link: #{start_link_feed_url}" if feed_link.nil?
-      else
-        crawl_ctx.seen_fetch_urls << start_result.fetch_uri.to_s
-        feed_links = start_page
-          .document
-          .xpath("/html/head/link[@rel='alternate']")
-          .to_a
-          .filter { |link| %w[application/rss+xml application/atom+xml].include?(link.attributes["type"]&.value) }
-          .map { |link| link.attributes["href"]&.value }
-          .map { |url| to_canonical_link(url, logger, start_link.uri) }
-          .filter { |link| link }
-          .filter { |link| !link.url.end_with?("?alt=rss") }
-          .filter { |link| !link.url.end_with?("/comments/feed/") }
-          .filter { |link| !link.url.end_with?("/comments/feed") }
-        raise "No feed links for id #{start_link_id} (#{start_page.fetch_uri})" if feed_links.empty?
-        raise "Multiple feed links for id #{start_link_id} (#{start_page.fetch_uri})" if feed_links.length > 1
-
-        feed_link = feed_links.first
-      end
-
-      feed_result.feed_url = "<a href=\"#{feed_link.url}\">feed</a>"
-      feed_request_result = crawl_request(
-        feed_link, true, nil, crawl_ctx, mock_http_client, nil, start_link_id, logger
-      )
-      unless feed_request_result.is_a?(Page) && feed_request_result.content
-        raise "Unexpected feed result: #{feed_request_result}"
-      end
-
-      feed_page = feed_request_result
-      crawl_ctx.seen_fetch_urls << feed_page.fetch_uri.to_s
-      feed_result.feed_requests_made = crawl_ctx.requests_made
-      feed_result.feed_time = (monotonic_now - feed_start_time).to_i
-      logger.debug("Feed url: #{feed_page.curi}")
-
-      feed_links = extract_feed_links(feed_page.content, feed_page.fetch_uri, logger)
-    elsif start_link_feed_url
-      feed_start_time = monotonic_now
-      feed_link = to_canonical_link(start_link_feed_url, logger)
-      raise "Bad feed link: #{start_link_feed_url}" if feed_link.nil?
-
-      feed_result.feed_url = "<a href=\"#{feed_link.url}\">feed</a>"
-      feed_request_result = crawl_request(
-        feed_link, true, nil, crawl_ctx, mock_http_client, nil, start_link_id, logger
-      )
-      unless feed_request_result.is_a?(Page) && feed_request_result.content
-        raise "Unexpected feed result: #{feed_request_result}"
-      end
-
-      feed_page = feed_request_result
-      crawl_ctx.seen_fetch_urls << feed_page.fetch_uri.to_s
-      feed_result.feed_requests_made = crawl_ctx.requests_made
-      feed_result.feed_time = (monotonic_now - feed_start_time).to_i
-      logger.debug("Feed url: #{feed_page.curi}")
-
-      feed_links = extract_feed_links(feed_page.content, feed_page.fetch_uri, logger)
-
-      if feed_links.root_link
-        start_link = feed_links.root_link
-
-        guided_crawl_result.start_url = "<a href=\"#{start_link.url}\">#{start_link.url}</a>"
-        start_result = crawl_request(
-          start_link, false, nil, crawl_ctx, mock_http_client, puppeteer_client, start_link_id, logger
-        )
-        unless start_result.is_a?(Page) && start_result.content
-          raise "Unexpected start result: #{start_result}"
-        end
-        start_page = start_result
-      else
-        logger.debug("There is no start link or feed root link, trying to discover")
-        start_link = start_page = nil
-        possible_start_uri = feed_link.uri
-        loop do
-          raise "Couldn't discover start link" if !possible_start_uri.path || possible_start_uri.path.empty?
-
-          possible_start_uri.path = possible_start_uri.path.rpartition("/").first
-          possible_start_link = to_canonical_link(possible_start_uri.to_s, logger)
-          logger.debug("Possible start link: #{possible_start_uri.to_s}")
-          possible_start_result = crawl_request(
-            possible_start_link, false, nil, crawl_ctx, mock_http_client, puppeteer_client, start_link_id,
-            logger
-          )
-          next unless possible_start_result.is_a?(Page) && possible_start_result.content
-
-          start_link = possible_start_link
-          start_page = possible_start_result
-          break
-        end
-
-        guided_crawl_result.start_url = "<a href=\"#{start_link.url}\">#{start_link.url}</a>"
-      end
+    if is_feed(start_result.content, logger)
+      start_page = nil
+      feed_link = start_link
+      feed_page = start_result
+      feed_result.feed_url = "<a href=\"#{start_link.url}\">feed</a>"
     else
-      raise "Both url or feed url are not present"
+      start_page_link = start_link
+      start_page = start_result
+      crawl_ctx.seen_fetch_urls << start_result.fetch_uri.to_s
+      feed_links = start_page
+        .document
+        .xpath("/html/head/link[@rel='alternate']")
+        .to_a
+        .filter { |link| %w[application/rss+xml application/atom+xml].include?(link.attributes["type"]&.value) }
+        .map { |link| link.attributes["href"]&.value }
+        .map { |url| to_canonical_link(url, logger, start_link.uri) }
+        .filter { |link| link }
+        .filter { |link| !link.url.end_with?("?alt=rss") }
+        .filter { |link| !link.url.end_with?("/comments/feed/") }
+        .filter { |link| !link.url.end_with?("/comments/feed") }
+      raise "No feed links for id #{start_link_id} (#{start_page.fetch_uri})" if feed_links.empty?
+      raise "Multiple feed links for id #{start_link_id} (#{start_page.fetch_uri})" if feed_links.length > 1
+
+      feed_link = feed_links.first
+      feed_result.feed_url = "<a href=\"#{feed_link.url}\">feed</a>"
+      feed_request_result = crawl_request(
+        feed_link, true, nil, crawl_ctx, mock_http_client, nil, start_link_id, logger
+      )
+      unless feed_request_result.is_a?(Page) && feed_request_result.content
+        raise "Unexpected feed result: #{feed_request_result}"
+      end
+
+      feed_page = feed_request_result
+    end
+
+    crawl_ctx.seen_fetch_urls << feed_page.fetch_uri.to_s
+    logger.debug("Feed url: #{feed_page.curi}")
+
+    feed_links = extract_feed_links(feed_page.content, feed_page.fetch_uri, logger)
+
+    if start_page.nil?
+      start_page_link, start_page = get_feed_start_page(
+        feed_link, feed_links, crawl_ctx, mock_http_client, puppeteer_client, start_link_id, logger
+      )
     end
 
     feed_result.feed_links = feed_links.entry_links.length
@@ -157,7 +102,7 @@ def guided_crawl(
     end
 
     same_hosts = Set.new
-    [[start_link, start_page], [feed_link, feed_page]].each do |link, page|
+    [[start_page_link, start_page], [feed_link, feed_page]].each do |link, page|
       if canonical_uri_same_path?(link.curi, page.curi) &&
         (feed_entry_links_by_host.key?(link.uri.host) || feed_entry_links_by_host.key?(page.fetch_uri.host))
 
@@ -214,6 +159,39 @@ def guided_crawl(
     guided_crawl_result
   rescue => e
     raise GuidedCrawlError.new(e.message, guided_crawl_result), e
+  end
+end
+
+def get_feed_start_page(
+  feed_link, feed_links, crawl_ctx, mock_http_client, puppeteer_client, start_link_id, logger
+)
+  if feed_links.root_link
+    start_page_link = feed_links.root_link
+    start_result = crawl_request(
+      start_page_link, false, nil, crawl_ctx, mock_http_client, puppeteer_client, start_link_id, logger
+    )
+    if start_result.is_a?(Page) && start_result.content
+      return [start_page_link, start_result]
+    else
+      logger.debug("Root link page is malformed: #{start_result}")
+    end
+  end
+
+  logger.debug("Trying to discover start page")
+  possible_start_uri = feed_link.uri
+  loop do
+    raise "Couldn't discover start link" if !possible_start_uri.path || possible_start_uri.path.empty?
+
+    possible_start_uri.path = possible_start_uri.path.rpartition("/").first
+    possible_start_page_link = to_canonical_link(possible_start_uri.to_s, logger)
+    logger.debug("Possible start link: #{possible_start_uri.to_s}")
+    possible_start_result = crawl_request(
+      possible_start_page_link, false, nil, crawl_ctx, mock_http_client, puppeteer_client,
+      start_link_id, logger
+    )
+    next unless possible_start_result.is_a?(Page) && possible_start_result.content
+
+    return [possible_start_page_link, possible_start_result]
   end
 end
 
