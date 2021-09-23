@@ -1,8 +1,32 @@
-class MockPuppeteerClient
-  def initialize(db, start_link_id, puppeteer_client)
+require_relative '../../app/lib/guided_crawling/puppeteer_client'
+
+class CachingPuppeteerClient
+  def initialize(db, start_link_id)
     @db = db
     @start_link_id = start_link_id
-    @puppeteer_client = puppeteer_client
+    @puppeteer_client = PuppeteerClient.new
+  end
+
+
+  def fetch(link, match_curis_set, crawl_ctx, logger, &find_load_more_button)
+    content, document = @puppeteer_client.fetch(
+      link, match_curis_set, crawl_ctx, logger, &find_load_more_button
+    )
+
+    @db.exec_params(
+      "insert into mock_puppeteer_pages (start_link_id, fetch_url, body) values ($1, $2, $3)",
+      [@start_link_id, link.url, { value: content, format: 1 }]
+    )
+
+    [content, document]
+  end
+end
+
+class MockPuppeteerClient
+  def initialize(db, start_link_id)
+    @db = db
+    @start_link_id = start_link_id
+    @puppeteer_client = CachingPuppeteerClient.new(db, start_link_id)
   end
 
   def fetch(link, match_curis_set, crawl_ctx, logger, &find_load_more_button)

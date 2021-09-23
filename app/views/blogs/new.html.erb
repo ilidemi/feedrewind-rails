@@ -6,55 +6,9 @@
     <%= text_field_tag :blog_name %>
     <br>
 
-    <%= label_tag :blog_url, "Archive URL" %>
+    <%= label_tag :blog_url, "URL" %>
     <%= url_field_tag :blog_url %>
     <br>
-
-    <h3>Parsing</h3>
-
-    <%= label_tag :list_xpath, "List of posts XPath" %>
-    <%= text_field_tag :list_xpath %>
-    <br>
-
-    <%= label_tag :link_xpath, "Post link XPath" %>
-    <%= text_field_tag :link_xpath %>
-    <br>
-
-    <%= label_tag :title_xpath, "Post title XPath" %>
-    <%= text_field_tag :title_xpath %>
-    <br>
-
-    <%= label_tag :date_xpath, "Post date XPath" %>
-    <%= text_field_tag :date_xpath %>
-    <br>
-
-    <%= check_box_tag :paging_needed %>
-    <%= label_tag :paging_needed, "Blog needs paging" %>
-    <br>
-
-    <div id="paging_fields">
-      <%= label_tag :next_page_xpath, "Next page XPath" %>
-      <%= text_field_tag :next_page_xpath %>
-      <br>
-
-      <%= label_tag :page_order, "Order of posts on a page" %>
-      <%= select_tag :page_order, options_for_select([["Newest First", "newest_first"], ["Oldest First", "oldest_first"]], "oldest_first") %>
-      <br>
-    </div>
-
-    <%= check_box_tag :filtering_needed %>
-    <%= label_tag :filtering_needed, "Blog needs filtering" %>
-    <br>
-
-    <div id="filtering_fields">
-      <%= label_tag :length_filter_xpath, "Post content XPath" %>
-      <%= text_field_tag :length_filter_xpath %>
-      <br>
-
-      <%= label_tag :min_length, "Min post length" %>
-      <%= number_field_tag :min_length, '1000' %>
-      <br>
-    </div>
 
     <h3>Schedule</h3>
 
@@ -73,25 +27,3 @@
     <%= submit_tag "Save new blog" %>
   </div>
 <% end %>
-
-<script>
-    let pagingCheckbox = document.getElementById('paging_needed');
-    let pagingFields = document.getElementById('paging_fields');
-
-    function updatePagingVisibility() {
-        pagingFields.style['display'] = pagingCheckbox.checked ? 'block' : 'none';
-    }
-
-    pagingCheckbox.onchange = updatePagingVisibility;
-    updatePagingVisibility();
-
-    let filteringCheckbox = document.getElementById('filtering_needed');
-    let filteringFields = document.getElementById('filtering_fields');
-
-    function updateFilteringVisibility() {
-        filteringFields.style['display'] = filteringCheckbox.checked ? 'block' : 'none';
-    }
-
-    filteringCheckbox.onchange = updateFilteringVisibility;
-    updateFilteringVisibility();
-</script>

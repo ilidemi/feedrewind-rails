@@ -100,11 +100,6 @@ def crawl_link_with_puppeteer(
 end
 
 class PuppeteerClient
-  def initialize(db, start_link_id)
-    @db = db
-    @start_link_id = start_link_id
-  end
-
   def fetch(link, match_curis_set, crawl_ctx, logger, &find_load_more_button)
     logger.debug("Puppeteer start: #{link.url}")
     puppeteer_start = monotonic_now
@@ -155,11 +150,6 @@ class PuppeteerClient
           pptr_page.close
           crawl_ctx.puppeteer_requests_made += pptr_page.finished_requests
           logger.debug("Puppeteer done (#{monotonic_now - puppeteer_start}s, #{pptr_page.finished_requests} req)")
-
-          @db.exec_params(
-            "insert into mock_puppeteer_pages (start_link_id, fetch_url, body) values ($1, $2, $3)",
-            [@start_link_id, link.url, { value: content, format: 1 }]
-          )
 
           return [content, document]
         end

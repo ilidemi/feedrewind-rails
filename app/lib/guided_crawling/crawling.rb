@@ -26,7 +26,7 @@ BadRedirection = Struct.new(:url)
 
 def crawl_request(
   initial_link, is_feed_expected, feed_entry_curis_set, crawl_ctx, http_client, puppeteer_client,
-  start_link_id, logger
+  logger
 )
   link = initial_link
   seen_urls = [link.url]
@@ -112,7 +112,7 @@ def crawl_request(
         end
       end
 
-      return Page.new(link.curi, link.uri, start_link_id, content_type, content, document, is_puppeteer_used)
+      return Page.new(link.curi, link.uri, content, document)
     elsif resp.code == "SSLError"
       if link.uri.host.start_with?("www.")
         new_uri = link.uri.clone
@@ -128,7 +128,7 @@ def crawl_request(
     elsif PERMANENT_ERROR_CODES.include?(resp.code) || http_errors_count >= 3
       crawl_ctx.fetched_curis << link.curi
       logger.debug("#{resp.code} #{request_ms}ms #{link.url} - permanent error")
-      return PermanentError.new(link.curi, link.url, start_link_id, resp.code)
+      return PermanentError.new(link.curi, link.url, resp.code)
     elsif http_errors_count < 3
       sleep_interval = http_client.get_retry_delay(http_errors_count)
       logger.debug("#{resp.code} #{request_ms}ms #{link.url} - sleeping #{sleep_interval}s")

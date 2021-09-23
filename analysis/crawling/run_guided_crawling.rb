@@ -76,10 +76,9 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     mock_http_client = MockHttpClient.new(db, start_link_id)
     if allow_puppeteer
       db.exec_params('delete from mock_puppeteer_pages where start_link_id = $1', [start_link_id])
-      puppeteer_client = PuppeteerClient.new(db, start_link_id)
+      puppeteer_client = CachingPuppeteerClient.new(db, start_link_id)
     else
-      real_puppeteer_client = PuppeteerClient.new(db, start_link_id)
-      puppeteer_client = MockPuppeteerClient.new(db, start_link_id, real_puppeteer_client)
+      puppeteer_client = MockPuppeteerClient.new(db, start_link_id)
     end
     db.exec_params('delete from historical where start_link_id = $1', [start_link_id])
 
