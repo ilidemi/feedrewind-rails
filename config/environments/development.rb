@@ -1,5 +1,11 @@
 require "active_support/core_ext/integer/time"
 
+Rails.logger = Logger.new(STDOUT)
+Rails.logger.level = Logger::DEBUG
+Rails.logger.formatter = proc do |severity, time, progname, msg|
+  "[#{time.strftime('%Y-%m-%d %H:%M:%S.%3N')}] #{severity}: #{msg}\n"
+end
+
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
