@@ -10,7 +10,7 @@ def is_feed(page_content, logger)
   begin
     xml = Nokogiri::XML(page_content)
   rescue Nokogiri::XML::SyntaxError
-    logger.debug("Tried to parse as XML but looks malformed")
+    logger.info("Tried to parse as XML but looks malformed")
     return false
   end
 
@@ -41,7 +41,7 @@ def extract_feed_links(feed_content, fetch_uri, logger)
         begin
           pub_date = DateTime.rfc822(pub_dates[0].inner_text).to_date
         rescue Date::Error
-          logger.debug("Invalid pubDate: #{pub_dates[0].inner_text}")
+          logger.info("Invalid pubDate: #{pub_dates[0].inner_text}")
           pub_date = nil
         end
       else
@@ -102,7 +102,7 @@ def extract_feed_links(feed_content, fetch_uri, logger)
         begin
           published_date = DateTime.iso8601(published_dates[0].inner_text).to_date
         rescue Date::Error
-          logger.debug("Invalid published: #{published_dates[0].inner_text}")
+          logger.info("Invalid published: #{published_dates[0].inner_text}")
           published_date = nil
         end
       else
@@ -191,7 +191,7 @@ def try_sort_reverse_chronological(items, logger)
   end
 
   if all_dates_equal
-    logger.debug("All item dates are equal")
+    logger.info("All item dates are equal")
   end
 
   if !are_dates_ascending_order && !are_dates_descending_order

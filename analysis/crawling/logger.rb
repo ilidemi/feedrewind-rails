@@ -3,7 +3,7 @@ class MyLogger
     @log_file = log_file
   end
 
-  def debug(message)
+  def info(message)
     @log_file.write("#{Time.now} #{message}\n")
     @log_file.flush
     nil

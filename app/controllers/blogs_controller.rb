@@ -1,5 +1,5 @@
-require_relative '../lib/guided_crawling/guided_crawling'
-require_relative '../services/update_rss_service'
+require 'json'
+require_relative '../jobs/guided_crawling_job'
 
 class BlogsController < ApplicationController
   before_action :authorize
@@ -18,15 +18,6 @@ class BlogsController < ApplicationController
       :schedule_fri, :schedule_sat, :schedule_sun
     )
 
-    crawl_ctx = CrawlContext.new
-    http_client = HttpClient.new
-    puppeteer_client = PuppeteerClient.new
-    guided_crawl_result = guided_crawl(
-      create_params[:blog_url], crawl_ctx, http_client, puppeteer_client, Rails.logger
-    )
-
-    raise "Historical links not found" unless guided_crawl_result.historical_result
-
     days_of_week = BlogsHelper.days_of_week_from_params(create_params)
     raise "Days of week can't be empty" if days_of_week.empty?
 
@@ -35,27 +26,24 @@ class BlogsController < ApplicationController
       @blog.name = create_params[:blog_name]
       @blog.url = create_params[:blog_url]
       @blog.posts_per_day = create_params[:posts_per_day].to_i
-      @blog.is_fetched = true
+      @blog.fetch_status = :in_progress
       @blog.is_paused = false
-      guided_crawl_result.historical_result.links.each_with_index do |link, post_index|
-        @blog.posts.new(
-          link: link.url, order: -post_index, title: "", date: "",
-          is_published: false)
-      end
       days_of_week.each do |day_of_week|
         @blog.schedules.new(day_of_week: day_of_week)
       end
       @blog.save!
+
+      GuidedCrawlingJob.perform_later(
+        @blog.id, GuidedCrawlingJobArgs.new(create_params[:blog_url]).to_json
+      )
     end
 
-    UpdateRssService.update_rss(@blog.id)
-    UpdateRssJob.schedule_for_tomorrow(@blog.id)
-    redirect_to root_path
+    redirect_to action: 'status', name: @blog.name
   end
 
   def status
     @blog = @current_user.blogs.find_by(name: params[:name])
-    if @blog.is_fetched
+    if @blog.fetch_status == "succeeded"
       redirect_to root_path
     end
   end

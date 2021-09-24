@@ -14,16 +14,21 @@
   <% published_count = blog.posts.group(:is_published).count[true] || 0 %>
   <div style="display:flex; justify-content:space-between">
     <span>
-      <% if blog.is_fetched %>
+      <% if blog.fetch_status == "succeeded" %>
         <%= link_to blog.name, blog %> (<a href="<%= BlogsHelper.feed_url(request, blog) %>">feed</a>)
       <% else %>
-        <a href="<%= BlogsHelper.status_url(request, blog) %>"><%= blog.name %></a> (⏳)
+        <a href="<%= BlogsHelper.status_url(request, blog) %>"><%= blog.name %></a>
+        <% if blog.fetch_status == "in_progress" %>
+          (⏳)
+        <% else %>
+          (❌)
+        <% end %>
       <% end %>
     </span>
 
     <span>
       <span style="margin-right: 1em">
-        <% if blog.is_fetched %>
+        <% if blog.fetch_status == "succeeded" %>
           <% verb = blog.is_paused ? 'published, paused' : 'published' %>
           <%= published_count %>/<%= total_count %> <%= verb %>
         <% else %>

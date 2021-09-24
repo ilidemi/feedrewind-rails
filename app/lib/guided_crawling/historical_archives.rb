@@ -35,7 +35,7 @@ def try_extract_archives(
 )
   return [] unless feed_entry_links.count_included(page_curis_set) >= almost_match_threshold
 
-  logger.debug("Possible archives page: #{page.curi}")
+  logger.info("Possible archives page: #{page.curi}")
 
   main_result = nil
   min_links_count = 1
@@ -56,7 +56,7 @@ def try_extract_archives(
   end
 
   if feed_entry_links.length < 3
-    logger.debug("Skipping sorted match with highlighted first link because the feed is small (#{feed_entry_links.length})")
+    logger.info("Skipping sorted match with highlighted first link because the feed is small (#{feed_entry_links.length})")
   else
     sorted1_fewer_stars_curis = nil
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
@@ -95,7 +95,7 @@ def try_extract_archives(
   end
 
   if feed_entry_links.length < min_links_count
-    logger.debug("Skipping almost feed match because min links count is already greater (#{min_links_count} > #{feed_entry_links.length})")
+    logger.info("Skipping almost feed match because min links count is already greater (#{min_links_count} > #{feed_entry_links.length})")
   else
     almost_feed_fewer_stars_curis = nil
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
@@ -114,7 +114,7 @@ def try_extract_archives(
   tentative_better_results = []
 
   if main_result.is_a?(ArchivesSortedResult) && main_result.has_dates
-    logger.debug("Skipping shuffled match because there's already a sorted result with dates")
+    logger.info("Skipping shuffled match because there's already a sorted result with dates")
   else
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       shuffled_result = try_extract_shuffled(
@@ -133,7 +133,7 @@ def try_extract_archives(
   end
 
   if main_result.is_a?(ArchivesSortedResult) && main_result.has_dates
-    logger.debug("Skipping shuffled 2xpaths match because there's already a sorted result with dates")
+    logger.info("Skipping shuffled 2xpaths match because there's already a sorted result with dates")
   else
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       shuffled_2xpaths_result = try_extract_shuffled_2xpaths(
@@ -168,7 +168,7 @@ def try_extract_archives(
   end
 
   if main_result.is_a?(ArchivesSortedResult) && main_result.has_dates
-    logger.debug("Skipping shuffled_almost match because there's already a sorted result with dates")
+    logger.info("Skipping shuffled_almost match because there's already a sorted result with dates")
   else
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       shuffled_almost_result = try_extract_shuffled(
@@ -215,7 +215,7 @@ def try_extract_sorted(
   is_almost = !!almost_match_threshold
   almost_suffix = is_almost ? "_almost" : ""
   markup_dates_extraction_key = is_almost ? :almost_markup_dates_extraction : :markup_dates_extraction
-  logger.debug("Trying sorted#{almost_suffix} match with #{star_count} stars")
+  logger.info("Trying sorted#{almost_suffix} match with #{star_count} stars")
 
   best_xpath = nil
   best_links = nil
@@ -263,7 +263,7 @@ def try_extract_sorted(
       best_has_dates = !!dates
       best_pattern = "archives#{almost_suffix}"
       log_lines << "has dates" if best_has_dates
-      logger.debug("Masked xpath is good: #{masked_xpath}#{join_log_lines(log_lines)} (#{links.length} links)")
+      logger.info("Masked xpath is good: #{masked_xpath}#{join_log_lines(log_lines)} (#{links.length} links)")
       next
     end
 
@@ -294,7 +294,7 @@ def try_extract_sorted(
       best_has_dates = !!dates
       best_pattern = "archives#{almost_suffix}"
       log_lines << "has dates" if best_has_dates
-      logger.debug("Masked xpath is good in reverse order: #{masked_xpath}#{join_log_lines(log_lines)} (#{reversed_links.length} links)")
+      logger.info("Masked xpath is good in reverse order: #{masked_xpath}#{join_log_lines(log_lines)} (#{reversed_links.length} links)")
       next
     end
 
@@ -316,7 +316,7 @@ def try_extract_sorted(
         canonical_urls_dates = curis
           .zip(dates)
           .map { |curi, date| [curi.to_s, date.strftime("%Y-%m-%d")] }
-        logger.debug("Masked xpath #{masked_xpath} has all links with dates but also duplicates with conflicting dates: #{canonical_urls_dates}")
+        logger.info("Masked xpath #{masked_xpath} has all links with dates but also duplicates with conflicting dates: #{canonical_urls_dates}")
         next
       end
 
@@ -325,11 +325,11 @@ def try_extract_sorted(
       sorted_curis = sorted_links.map(&:curi)
       is_sorted_matching_feed = target_feed_entry_links.sequence_match?(sorted_curis, curi_eq_cfg)
       unless is_sorted_matching_feed
-        logger.debug("Masked xpath #{masked_xpath} has all links with dates but doesn't match feed after sorting")
+        logger.info("Masked xpath #{masked_xpath} has all links with dates but doesn't match feed after sorting")
         sorted_masked_xpath_links_dates_log = sorted_links_dates
           .map { |link_date| [link_date[0].curi.to_s, link_date[1].strftime("%Y-%m-%d")] }
-        logger.debug("Masked xpath links with dates: #{sorted_masked_xpath_links_dates_log}")
-        logger.debug("Feed links: #{target_feed_entry_links}")
+        logger.info("Masked xpath links with dates: #{sorted_masked_xpath_links_dates_log}")
+        logger.info("Feed links: #{target_feed_entry_links}")
         next
       end
 
@@ -344,7 +344,7 @@ def try_extract_sorted(
       log_lines_str = join_log_lines(log_lines)
       newest_date = sorted_links_dates.first[1]
       oldest_date = sorted_links_dates.last[1]
-      logger.debug("Masked xpath is good sorted by date: #{masked_xpath}#{log_lines_str} (#{sorted_links.length} links from #{oldest_date} to #{newest_date})")
+      logger.info("Masked xpath is good sorted by date: #{masked_xpath}#{log_lines_str} (#{sorted_links.length} links from #{oldest_date} to #{newest_date})")
       next
     end
   end
@@ -360,7 +360,7 @@ def try_extract_sorted(
       extra: "xpath: #{best_xpath}"
     )
   else
-    logger.debug("No sorted match with #{star_count} stars")
+    logger.info("No sorted match with #{star_count} stars")
     nil
   end
 end
@@ -377,7 +377,7 @@ def try_extract_sorted_highlight_first_link(
   extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_set, curi_eq_cfg, page_curis_set,
   star_count, fewer_stars_curis, min_links_count, main_link, logger
 )
-  logger.debug("Trying sorted match with highlighted first link and #{star_count} stars")
+  logger.info("Trying sorted match with highlighted first link and #{star_count} stars")
 
   best_xpath = nil
   best_first_link = nil
@@ -430,7 +430,7 @@ def try_extract_sorted_highlight_first_link(
       best_xpath = masked_xpath
       best_first_link = first_link
       best_links = dedup_last_links
-      logger.debug("Masked xpath is good: #{masked_xpath}#{join_log_lines(log_lines)} (1 + #{dedup_last_links.length} links)")
+      logger.info("Masked xpath is good: #{masked_xpath}#{join_log_lines(log_lines)} (1 + #{dedup_last_links.length} links)")
       next
     end
   end
@@ -446,7 +446,7 @@ def try_extract_sorted_highlight_first_link(
       extra: "counts: 1 + #{best_links.length}<br>prefix_xpath: #{best_first_link.xpath}<br>suffix_xpath: #{best_xpath}",
     )
   else
-    logger.debug("No sorted match with highlighted first link and #{star_count} stars")
+    logger.info("No sorted match with highlighted first link and #{star_count} stars")
     nil
   end
 end
@@ -455,10 +455,10 @@ def try_extract_medium_pinned_entry(
   extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, feed_generator, page_links, min_links_count,
   main_link, logger
 )
-  logger.debug("Trying medium match with pinned entry")
+  logger.info("Trying medium match with pinned entry")
 
   unless feed_generator == :medium
-    logger.debug("Feed generator is not Medium")
+    logger.info("Feed generator is not Medium")
     return nil
   end
 
@@ -485,7 +485,7 @@ def try_extract_medium_pinned_entry(
 
     other_links_dates = links.zip(medium_markup_dates)
 
-    logger.debug("Masked xpath is good with medium pinned entry: #{masked_xpath}#{join_log_lines(extraction.log_lines)} (1 + #{other_links_dates.length} links)")
+    logger.info("Masked xpath is good with medium pinned entry: #{masked_xpath}#{join_log_lines(extraction.log_lines)} (1 + #{other_links_dates.length} links)")
     return ArchivesMediumPinnedEntryResult.new(
       main_link: main_link,
       pattern: "archives_shuffled_2xpaths",
@@ -497,7 +497,7 @@ def try_extract_medium_pinned_entry(
     )
   end
 
-  logger.debug("No medium match with pinned entry")
+  logger.info("No medium match with pinned entry")
   nil
 end
 
@@ -505,7 +505,7 @@ def try_extract_sorted_2xpaths(
   prefix_extractions_by_masked_xpath, suffix_extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg,
   star_count, fewer_stars_curis, min_links_count, main_link, logger
 )
-  logger.debug("Trying sorted match with 1+#{star_count} stars")
+  logger.info("Trying sorted match with 1+#{star_count} stars")
 
   feed_prefix_xpaths_by_length = {}
   prefix_extractions_by_masked_xpath.each do |masked_prefix_xpath, prefix_extraction|
@@ -586,15 +586,15 @@ def try_extract_sorted_2xpaths(
     end
     next unless is_last_prefix_before_first_suffix
 
-    logger.debug("Found partition with two xpaths: #{target_prefix_length} + #{suffix_links.length}")
-    logger.debug("Prefix xpath: #{masked_prefix_xpath}#{join_log_lines(prefix_extraction.log_lines)}")
-    logger.debug("Suffix xpath: #{masked_suffix_xpath}#{join_log_lines(suffix_extraction.log_lines)}")
+    logger.info("Found partition with two xpaths: #{target_prefix_length} + #{suffix_links.length}")
+    logger.info("Prefix xpath: #{masked_prefix_xpath}#{join_log_lines(prefix_extraction.log_lines)}")
+    logger.info("Suffix xpath: #{masked_suffix_xpath}#{join_log_lines(suffix_extraction.log_lines)}")
 
     combined_links = prefix_links + suffix_links
     combined_curis = combined_links.map(&:curi)
     combined_curis_set = combined_curis.to_canonical_uri_set(curi_eq_cfg)
     if combined_curis.length != combined_curis_set.length
-      logger.debug("Combination has all feed links but also duplicates: #{combined_curis.map(&:to_s)}")
+      logger.info("Combination has all feed links but also duplicates: #{combined_curis.map(&:to_s)}")
       next
     end
 
@@ -605,7 +605,7 @@ def try_extract_sorted_2xpaths(
         canonical_uri_equal?(xpath_curi, fewer_stars_curi, curi_eq_cfg)
       end
     unless is_matching_prev_archives_links
-      logger.debug("Combination doesn't match previous archives links")
+      logger.info("Combination doesn't match previous archives links")
       next
     end
 
@@ -614,7 +614,7 @@ def try_extract_sorted_2xpaths(
     best_suffix_xpath = masked_suffix_xpath
     best_prefix_count = target_prefix_length
     best_suffix_count = suffix_links.length
-    logger.debug("Combination is good (#{combined_links.length} links)")
+    logger.info("Combination is good (#{combined_links.length} links)")
   end
 
   if best_links
@@ -628,7 +628,7 @@ def try_extract_sorted_2xpaths(
       extra: "star_count: 1 + #{star_count}<br>counts: #{best_prefix_count} + #{best_suffix_count}<br>prefix_xpath: #{best_prefix_xpath}<br>suffix_xpath: #{best_suffix_xpath}"
     )
   else
-    logger.debug("No sorted match with 1+#{star_count} stars")
+    logger.info("No sorted match with 1+#{star_count} stars")
     nil
   end
 end
@@ -637,7 +637,7 @@ def try_extract_almost_matching_feed(
   extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_set, curi_eq_cfg, almost_match_threshold,
   star_count, fewer_stars_curis, main_link, logger
 )
-  logger.debug("Trying almost feed match with #{star_count} stars")
+  logger.info("Trying almost feed match with #{star_count} stars")
 
   best_links = nil
   best_xpath = nil
@@ -664,7 +664,7 @@ def try_extract_almost_matching_feed(
 
     best_links = links
     best_xpath = masked_xpath
-    logger.debug("Masked xpath almost matches feed: #{masked_xpath}#{join_log_lines(extraction.log_lines)} (#{links.length}/#{feed_entry_links.length} links)")
+    logger.info("Masked xpath almost matches feed: #{masked_xpath}#{join_log_lines(extraction.log_lines)} (#{links.length}/#{feed_entry_links.length} links)")
   end
 
   if best_links
@@ -677,7 +677,7 @@ def try_extract_almost_matching_feed(
       extra: "almost_match: #{best_links.length}/#{feed_entry_links.length}<br>xpath:#{best_xpath}"
     )
   else
-    logger.debug("No almost feed match with #{star_count} stars")
+    logger.info("No almost feed match with #{star_count} stars")
     nil
   end
 end
@@ -692,7 +692,7 @@ def try_extract_shuffled(
 )
   is_almost = !!almost_match_threshold
   almost_suffix = is_almost ? "_almost" : ""
-  logger.debug("Trying shuffled#{almost_suffix} match with #{star_count} stars")
+  logger.info("Trying shuffled#{almost_suffix} match with #{star_count} stars")
 
   best_links_maybe_dates = nil
   best_xpath = nil
@@ -741,7 +741,7 @@ def try_extract_shuffled(
     if links.length > dedup_links_maybe_dates.length
       log_lines << "dedup #{links.length} -> #{dedup_links_maybe_dates.length}"
     end
-    logger.debug("Masked xpath is good but shuffled: #{masked_xpath}#{join_log_lines(log_lines)} (#{dedup_links_maybe_dates.length} links)")
+    logger.info("Masked xpath is good but shuffled: #{masked_xpath}#{join_log_lines(log_lines)} (#{dedup_links_maybe_dates.length} links)")
   end
 
   if best_links_maybe_dates
@@ -753,7 +753,7 @@ def try_extract_shuffled(
       extra: "xpath: #{best_xpath}<br>dates_present: #{dates_present}/#{best_links_maybe_dates.length}"
     )
   else
-    logger.debug("No shuffled match with #{star_count} stars")
+    logger.info("No shuffled match with #{star_count} stars")
     nil
   end
 end
@@ -762,7 +762,7 @@ def try_extract_shuffled_2xpaths(
   prefix_extractions_by_masked_xpath, suffix_extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg,
   star_count, min_links_count, main_link, logger
 )
-  logger.debug("Trying shuffled match with 1+#{star_count} stars")
+  logger.info("Trying shuffled match with 1+#{star_count} stars")
 
   best_prefix_links_maybe_dates = nil
   best_prefix_xpath = nil
@@ -787,7 +787,7 @@ def try_extract_shuffled_2xpaths(
   end
 
   unless best_prefix_links_maybe_dates
-    logger.debug("No shuffled match with 1+#{star_count} stars")
+    logger.info("No shuffled match with 1+#{star_count} stars")
     return nil
   end
 
@@ -835,9 +835,9 @@ def try_extract_shuffled_2xpaths(
       log_lines << "dedup #{links_maybe_dates.length} -> #{dedup_links_maybe_dates.length}"
     end
 
-    logger.debug("Found partition with two xpaths: #{best_prefix_links_maybe_dates.length} + #{suffix_links.length}#{join_log_lines(log_lines)}")
-    logger.debug("Prefix xpath: #{best_prefix_xpath}#{join_log_lines(best_prefix_log_lines)}")
-    logger.debug("Suffix xpath: #{masked_suffix_xpath}#{join_log_lines(suffix_extraction.log_lines)}")
+    logger.info("Found partition with two xpaths: #{best_prefix_links_maybe_dates.length} + #{suffix_links.length}#{join_log_lines(log_lines)}")
+    logger.info("Prefix xpath: #{best_prefix_xpath}#{join_log_lines(best_prefix_log_lines)}")
+    logger.info("Suffix xpath: #{masked_suffix_xpath}#{join_log_lines(suffix_extraction.log_lines)}")
   end
 
   if best_links_maybe_dates
@@ -863,19 +863,19 @@ def try_extract_shuffled_2xpaths(
       )
     end
   else
-    logger.debug("No shuffled match with 1+#{star_count} stars")
+    logger.info("No shuffled match with 1+#{star_count} stars")
     nil
   end
 end
 
 def try_extract_long_feed(feed_entry_links, page_curis_set, min_links_count, main_link, logger)
-  logger.debug("Trying archives long feed match")
+  logger.info("Trying archives long feed match")
 
   if feed_entry_links.length >= 31 &&
     feed_entry_links.length > min_links_count &&
     feed_entry_links.all_included?(page_curis_set)
 
-    logger.debug("Long feed is matching (#{feed_entry_links.length} links)")
+    logger.info("Long feed is matching (#{feed_entry_links.length} links)")
     LongFeedResult.new(
       main_link: main_link,
       pattern: "archives_long_feed",
@@ -885,7 +885,7 @@ def try_extract_long_feed(feed_entry_links, page_curis_set, min_links_count, mai
       extra: ""
     )
   else
-    logger.debug("No archives long feed match")
+    logger.info("No archives long feed match")
     nil
   end
 end

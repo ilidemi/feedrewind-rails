@@ -20,5 +20,7 @@ module RssCatchupRails
     # config.eager_load_paths << Rails.root.join("extras")
 
     config.active_job.queue_adapter = :delayed_job
+
+    Delayed::Worker.sleep_delay = 0.1
   end
 end

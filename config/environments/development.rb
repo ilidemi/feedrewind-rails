@@ -1,11 +1,5 @@
 require "active_support/core_ext/integer/time"
 
-Rails.logger = Logger.new(STDOUT)
-Rails.logger.level = Logger::DEBUG
-Rails.logger.formatter = proc do |severity, time, progname, msg|
-  "[#{time.strftime('%Y-%m-%d %H:%M:%S.%3N')}] #{severity}: #{msg}\n"
-end
-
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
@@ -80,4 +74,12 @@ Rails.application.configure do
 
   # Uncomment if you wish to allow Action Cable access from any origin.
   # config.action_cable.disable_request_forgery_protection = true
+  #
+
+  Rails.logger = Logger.new(STDOUT)
+  Rails.logger.level = Logger::INFO
+  Rails.logger.formatter = proc do |severity, time, _, msg|
+    "[#{time.strftime('%Y-%m-%d %H:%M:%S.%3N')}] #{severity}: #{msg}\n"
+  end
+  config.log_level = :info
 end

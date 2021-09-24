@@ -38,7 +38,7 @@ def try_extract_page1(
   paging_pattern_extra = paging_pattern.is_a?(Hash) ? '' : "<br>paging_pattern: #{paging_pattern}"
 
   page_overlapping_links_count = feed_entry_links.included_prefix_length(page_curis_set)
-  logger.debug("Possible page 1: #{page1.curi} (#{page_overlapping_links_count} overlaps)")
+  logger.info("Possible page 1: #{page1.curi} (#{page_overlapping_links_count} overlaps)")
 
   page1_extractions_by_masked_xpath = nil
 
@@ -116,7 +116,7 @@ def try_extract_page1(
 
     masked_xpath_curis_set = page1_xpath_curis.to_canonical_uri_set(curi_eq_cfg)
     if masked_xpath_curis_set.length != page1_xpath_curis.length
-      logger.debug("Masked xpath #{masked_xpath} has duplicates: #{page1_xpath_curis.map(&:to_s)}")
+      logger.info("Masked xpath #{masked_xpath} has duplicates: #{page1_xpath_curis.map(&:to_s)}")
       next
     end
 
@@ -126,7 +126,7 @@ def try_extract_page1(
   end
 
   if page1_size_masked_xpaths.empty?
-    logger.debug("No good overlap with feed prefix")
+    logger.info("No good overlap with feed prefix")
     return nil
   end
 
@@ -139,7 +139,7 @@ def try_extract_page1(
     ]
   end
   max_page1_size = page1_size_masked_xpaths_sorted.first[0]
-  logger.debug("Max prefix: #{max_page1_size}")
+  logger.info("Max prefix: #{max_page1_size}")
 
   Page1Result.new(
     main_link: page1_link,
@@ -158,7 +158,7 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
   paging_pattern = page2_state.paging_pattern
   paging_pattern_extra = page2_state.paging_pattern_extra
 
-  logger.debug("Possible page 2: #{page2.curi}")
+  logger.info("Possible page 2: #{page2.curi}")
   page2_doc = Nokogiri::HTML5(page2.content)
 
   page2_classes_by_xpath = {}
@@ -212,7 +212,7 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
     page2_entry_links = page2_xpath_links
     good_classless_masked_xpath = page1_classless_masked_xpath
     page_sizes << xpath_page1_size << page2_xpath_links.length
-    logger.debug("XPath looks good for page 2: #{page1_masked_xpath} (#{page1_entry_links.length} + #{page2_entry_links.length} links#{decorated_first_post_log})")
+    logger.info("XPath looks good for page 2: #{page1_masked_xpath} (#{page1_entry_links.length} + #{page2_entry_links.length} links#{decorated_first_post_log})")
   end
 
   # See if the first page had some sort of decoration, and links on the second page moved under another
@@ -283,14 +283,14 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
       page2_entry_links = page2_xpath_links
       good_classless_masked_xpath = class_xpath_remove_classes(page2_masked_xpath)
       page_sizes << page1_size << page2_xpath_links.length
-      logger.debug("XPath looks good for page 1: #{page1_masked_xpath} (#{page1_entry_links.length} links)")
-      logger.debug("XPath looks good for page 2: #{page2_masked_xpath} (#{page2_entry_links.length} links)")
+      logger.info("XPath looks good for page 1: #{page1_masked_xpath} (#{page1_entry_links.length} links)")
+      logger.info("XPath looks good for page 2: #{page2_masked_xpath} (#{page2_entry_links.length} links)")
       break
     end
   end
 
   if page2_entry_links.nil?
-    logger.debug("Couldn't find an xpath matching page 1 and page 2")
+    logger.info("Couldn't find an xpath matching page 1 and page 2")
     return nil
   end
 
@@ -304,7 +304,7 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
 
   entry_links = page1_entry_links + page2_entry_links
   unless link_to_page3
-    logger.debug("Best count: #{entry_links.length} with 2 pages of #{page_sizes}")
+    logger.info("Best count: #{entry_links.length} with 2 pages of #{page_sizes}")
     page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
     return PagedResult.new(
       main_link: page2_state.main_link,
@@ -341,7 +341,7 @@ def try_extract_next_page(page, page_state, feed_entry_links, curi_eq_cfg, logge
   known_entry_curis_set = page_state.known_entry_curis_set
   classless_masked_xpath = page_state.classless_masked_xpath
 
-  logger.debug("Possible page #{page_number}: #{page.curi}")
+  logger.info("Possible page #{page_number}: #{page.curi}")
 
   page_classes_by_xpath = {}
   page_xpath_link_elements = page.document.xpath(classless_masked_xpath)
@@ -352,7 +352,7 @@ def try_extract_next_page(page, page_state, feed_entry_links, curi_eq_cfg, logge
   end
 
   if page_xpath_links.empty?
-    logger.debug("XPath doesn't work for page #{page_number}: #{classless_masked_xpath}")
+    logger.info("XPath doesn't work for page #{page_number}: #{classless_masked_xpath}")
     return nil
   end
 
@@ -360,7 +360,7 @@ def try_extract_next_page(page, page_state, feed_entry_links, curi_eq_cfg, logge
     .map(&:curi)
     .filter { |page_uri| known_entry_curis_set.include?(page_uri) }
   unless page_known_curis.empty?
-    logger.debug("Page #{page_number} has known links: #{page_known_curis}")
+    logger.info("Page #{page_number} has known links: #{page_known_curis}")
     return nil
   end
 
@@ -369,9 +369,9 @@ def try_extract_next_page(page, page_state, feed_entry_links, curi_eq_cfg, logge
     page_entry_curis, entry_links.length, curi_eq_cfg
   )
   unless is_overlap_matching
-    logger.debug("Page #{page_number} doesn't overlap with feed")
-    logger.debug("Page urls: #{page_entry_curis.map(&:to_s)}")
-    logger.debug("Feed urls (offset #{entry_links.length}): #{feed_entry_links}")
+    logger.info("Page #{page_number} doesn't overlap with feed")
+    logger.info("Page urls: #{page_entry_curis.map(&:to_s)}")
+    logger.info("Feed urls (offset #{entry_links.length}): #{feed_entry_links}")
     return nil
   end
 
@@ -410,7 +410,7 @@ def try_extract_next_page(page, page_state, feed_entry_links, curi_eq_cfg, logge
       )
     end
 
-    logger.debug("Best count: #{next_entry_links.length} with #{page_count} pages of #{page_sizes}")
+    logger.info("Best count: #{next_entry_links.length} with #{page_count} pages of #{page_sizes}")
     page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
 
     PagedResult.new(
@@ -440,7 +440,7 @@ def find_link_to_page2(current_page_links, current_page, feed_generator, curi_eq
       .to_canonical_uri_set(curi_eq_cfg)
       .length > 1
 
-      logger.debug("Page #{current_page.curi} has multiple page 2 links: #{links_to_page2}")
+      logger.info("Page #{current_page.curi} has multiple page 2 links: #{links_to_page2}")
       return nil
     end
 
@@ -476,7 +476,7 @@ def find_link_to_page2(current_page_links, current_page, feed_generator, curi_eq
     end
     return nil if links_to_page2.empty?
 
-    logger.debug("Did not find certain links to page to but found some probable ones: #{links_to_page2.map(&:curi).map(&:to_s)}")
+    logger.info("Did not find certain links to page to but found some probable ones: #{links_to_page2.map(&:curi).map(&:to_s)}")
   end
 
   if links_to_page2
@@ -484,7 +484,7 @@ def find_link_to_page2(current_page_links, current_page, feed_generator, curi_eq
     .to_canonical_uri_set(curi_eq_cfg)
     .length > 1
 
-    logger.debug("Page #{current_page.curi} has multiple page 2 links: #{links_to_page2}")
+    logger.info("Page #{current_page.curi} has multiple page 2 links: #{links_to_page2}")
     return nil
   end
 
@@ -552,7 +552,7 @@ def find_link_to_next_page(
     .to_canonical_uri_set(curi_eq_cfg)
     .length > 1
 
-    logger.debug("Page #{next_page_number - 1} #{current_page.curi} has multiple page #{next_page_number} links: #{links_to_next_page}")
+    logger.info("Page #{next_page_number - 1} #{current_page.curi} has multiple page #{next_page_number} links: #{links_to_next_page}")
     return :multiple
   end
 

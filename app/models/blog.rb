@@ -6,6 +6,7 @@ class Blog < ApplicationRecord
   validates :name, presence: true
   validates :url, presence: true
   validates :posts_per_day, presence: true
+  validates :fetch_status, presence: true
 
   def to_param
     name

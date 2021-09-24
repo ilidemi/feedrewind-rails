@@ -15,7 +15,7 @@ if cutoff_index
 else
   top_urls_csv = urls_csv
 end
-logger.debug("#{urls_csv.length} rows total, #{top_urls_csv.length} over cutoff of #{score_cutoff}")
+logger.info("#{urls_csv.length} rows total, #{top_urls_csv.length} over cutoff of #{score_cutoff}")
 
 db = SQLite3::Database.new("hn.db")
 
@@ -31,9 +31,9 @@ url_index = 0
 top_urls_csv.each do |url, sum_score, count|
   url_index += 1
   next unless url_index == 15770
-  logger.debug("#{url_index}/#{top_urls_csv.length} Url #{url}, sum_score #{sum_score}, count #{count}")
+  logger.info("#{url_index}/#{top_urls_csv.length} Url #{url}, sum_score #{sum_score}, count #{count}")
   if indices_processed.include?(url_index)
-    logger.debug("Url already processed")
+    logger.info("Url already processed")
     next
   end
 
