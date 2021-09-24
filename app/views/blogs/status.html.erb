@@ -1,6 +1,12 @@
 <a href="/">← Go back</a>
 <h1><%= @blog.name %></h1>
-<div>⏳ Loading posts: <%= @blog.posts.count %></div>
+<div>
+  <% if @blog.fetch_status == 'in_progress' %>
+    ⏳ Loading posts: <%= @blog.posts.count %>
+  <% else %>
+    ❌ Loading posts failed
+  <% end %>
+</div>
 
 <script>
     window.setTimeout(function () {

@@ -15,11 +15,16 @@ class GuidedCrawlingJob < ApplicationJob
       crawl_ctx = CrawlContext.new
       http_client = HttpClient.new
       puppeteer_client = PuppeteerClient.new
-      guided_crawl_result = guided_crawl(
-        args.blog_url, crawl_ctx, http_client, puppeteer_client, Rails.logger
-      )
+      begin
+        guided_crawl_result = guided_crawl(
+          args.blog_url, crawl_ctx, http_client, puppeteer_client, Rails.logger
+        )
+      rescue => e
+        Rails.logger.info(e)
+        guided_crawl_result = nil
+      end
 
-      if guided_crawl_result.historical_result
+      if guided_crawl_result&.historical_result
         Blog.transaction do
           guided_crawl_result.historical_result.links.each_with_index do |link, post_index|
             blog.posts.new(link: link.url, order: -post_index, title: "", date: "", is_published: false)
