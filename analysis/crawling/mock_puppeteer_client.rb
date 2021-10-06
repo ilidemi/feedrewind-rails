@@ -7,10 +7,9 @@ class CachingPuppeteerClient
     @puppeteer_client = PuppeteerClient.new
   end
 
-
-  def fetch(link, match_curis_set, crawl_ctx, logger, &find_load_more_button)
+  def fetch(link, match_curis_set, crawl_ctx, progress_logger, logger, &find_load_more_button)
     content, document = @puppeteer_client.fetch(
-      link, match_curis_set, crawl_ctx, logger, &find_load_more_button
+      link, match_curis_set, crawl_ctx, progress_logger, logger, &find_load_more_button
     )
 
     @db.exec_params(
@@ -29,7 +28,7 @@ class MockPuppeteerClient
     @puppeteer_client = CachingPuppeteerClient.new(db, start_link_id)
   end
 
-  def fetch(link, match_curis_set, crawl_ctx, logger, &find_load_more_button)
+  def fetch(link, match_curis_set, crawl_ctx, progress_logger, logger, &find_load_more_button)
     row = @db.exec_params(
       "select body from mock_puppeteer_pages where start_link_id = $1 and fetch_url = $2",
       [@start_link_id, link.url]
@@ -42,7 +41,7 @@ class MockPuppeteerClient
     end
 
     @puppeteer_client.fetch(
-      link, match_curis_set, crawl_ctx, logger, &find_load_more_button
+      link, match_curis_set, crawl_ctx, progress_logger, logger, &find_load_more_button
     )
   end
 end

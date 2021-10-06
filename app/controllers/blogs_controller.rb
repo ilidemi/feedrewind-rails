@@ -44,7 +44,7 @@ class BlogsController < ApplicationController
   def status
     @blog = @current_user.blogs.find_by(name: params[:name])
     if @blog.fetch_status == "succeeded"
-      redirect_to root_path
+      redirect_to action: 'show', name: @blog.name
     end
   end
 

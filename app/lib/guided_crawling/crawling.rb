@@ -26,7 +26,7 @@ BadRedirection = Struct.new(:url)
 
 def crawl_request(
   initial_link, is_feed_expected, feed_entry_curis_set, crawl_ctx, http_client, puppeteer_client,
-  logger
+  progress_logger, logger
 )
   link = initial_link
   seen_urls = [link.url]
@@ -92,6 +92,8 @@ def crawl_request(
         end
       end
 
+      progress_logger.log_html
+
       if !crawl_ctx.fetched_curis.include?(link.curi)
         crawl_ctx.fetched_curis << link.curi
         logger.info("#{resp.code} #{content_type} #{request_ms}ms #{link.url}")
@@ -101,7 +103,7 @@ def crawl_request(
 
       # TODO: puppeteer will be executed twice for duplicate fetches
       content, document, is_puppeteer_used = crawl_link_with_puppeteer(
-        link, content, document, feed_entry_curis_set, puppeteer_client, crawl_ctx, logger
+        link, content, document, feed_entry_curis_set, puppeteer_client, crawl_ctx, progress_logger, logger
       )
       if is_puppeteer_used
         if !crawl_ctx.pptr_fetched_curis.include?(link.curi)

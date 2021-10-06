@@ -74,12 +74,12 @@ Rails.application.configure do
 
   # Uncomment if you wish to allow Action Cable access from any origin.
   # config.action_cable.disable_request_forgery_protection = true
-  #
 
-  Rails.logger = Logger.new(STDOUT)
-  Rails.logger.level = Logger::INFO
-  Rails.logger.formatter = proc do |severity, time, _, msg|
+  logger = ActiveSupport::Logger.new(STDOUT)
+  logger.level = Logger::INFO
+  logger.formatter = proc do |severity, time, _, msg|
     "[#{time.strftime('%Y-%m-%d %H:%M:%S.%3N')}] #{severity}: #{msg}\n"
   end
+  config.logger = ActiveSupport::TaggedLogging.new(logger)
   config.log_level = :info
 end

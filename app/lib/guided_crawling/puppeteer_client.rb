@@ -62,13 +62,15 @@ SUBSTACK_FOOTER_SELECTOR = "[class*=footer-substack]"
 BUTTONDOWN_TWITTER_XPATH = "/html/head/meta[@name='twitter:site'][@content='@buttondown']"
 
 def crawl_link_with_puppeteer(
-  link, content, document, match_curis_set, puppeteer_client, crawl_ctx, logger
+  link, content, document, match_curis_set, puppeteer_client, crawl_ctx, progress_logger, logger
 )
   is_puppeteer_used = false
   if puppeteer_client && document
     if document.at_css(LOAD_MORE_SELECTOR)
       logger.info("Found load more button, rerunning with puppeteer")
-      content, document = puppeteer_client.fetch(link, match_curis_set, crawl_ctx, logger) do |pptr_page|
+      content, document = puppeteer_client.fetch(
+        link, match_curis_set, crawl_ctx, progress_logger, logger
+      ) do |pptr_page|
         pptr_page.query_visible_selector(LOAD_MORE_SELECTOR)
       end
       is_puppeteer_used = true
@@ -76,7 +78,9 @@ def crawl_link_with_puppeteer(
       document.css("button").any? { |button| button.text.downcase == "show more" }
 
       logger.info("Spotted Medium page, rerunning with puppeteer")
-      content, document = puppeteer_client.fetch(link, match_curis_set, crawl_ctx, logger) do |pptr_page|
+      content, document = puppeteer_client.fetch(
+        link, match_curis_set, crawl_ctx, progress_logger, logger
+      ) do |pptr_page|
         pptr_page
           .query_selector_all("button")
           .filter { |button| button.evaluate("b => b.textContent").downcase == "show more" }
@@ -87,11 +91,11 @@ def crawl_link_with_puppeteer(
       document.at_css(SUBSTACK_FOOTER_SELECTOR)
 
       logger.info("Spotted Substack archives, rerunning with puppeteer")
-      content, document = puppeteer_client.fetch(link, match_curis_set, crawl_ctx, logger)
+      content, document = puppeteer_client.fetch(link, match_curis_set, crawl_ctx, progress_logger, logger)
       is_puppeteer_used = true
     elsif document.at_xpath(BUTTONDOWN_TWITTER_XPATH)
       logger.info("Spotted Buttondown page, rerunning with puppeteer")
-      content, document = puppeteer_client.fetch(link, match_curis_set, crawl_ctx, logger)
+      content, document = puppeteer_client.fetch(link, match_curis_set, crawl_ctx, progress_logger, logger)
       is_puppeteer_used = true
     end
   end
@@ -100,7 +104,7 @@ def crawl_link_with_puppeteer(
 end
 
 class PuppeteerClient
-  def fetch(link, match_curis_set, crawl_ctx, logger, &find_load_more_button)
+  def fetch(link, match_curis_set, crawl_ctx, progress_logger, logger, &find_load_more_button)
     logger.info("Puppeteer start: #{link.url}")
     puppeteer_start = monotonic_now
 
@@ -115,6 +119,7 @@ class PuppeteerClient
           end
           pptr_page.enable_request_tracking
           pptr_page.goto(link.url, wait_until: "networkidle0")
+          progress_logger.log_puppeteer
 
           if match_curis_set
             initial_content = pptr_page.content
@@ -131,11 +136,13 @@ class PuppeteerClient
               while load_more_button do
                 logger.info("Clicking load more button")
                 pptr_page.wait_and_scroll(logger) { load_more_button.click }
+                progress_logger.log_puppeteer
                 load_more_button = find_load_more_button.call(pptr_page)
               end
             else
               logger.info("Scrolling")
               pptr_page.wait_and_scroll(logger)
+              progress_logger.log_puppeteer
             end
             content = pptr_page.content
             document = nokogiri_html5(content)

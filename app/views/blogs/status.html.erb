@@ -1,8 +1,86 @@
+<style>
+    .progress_page {
+        width: 1em;
+        height: 1em;
+        border-width: 1px;
+        border-style: solid;
+        display: inline-block;
+    }
+
+    .progress_long_page {
+        width: 3em;
+        height: 1em;
+        border-width: 1px;
+        border-style: solid;
+        display: inline-block;
+    }
+
+    .progress_regular {
+        background-color: silver;
+        border-color: gray;
+    }
+
+    .progress_highlighted {
+        background-color: lightsalmon;
+        border-color: darksalmon;
+    }
+
+    .progress_finishing {
+        background-color: tomato;
+        border-color: orangered;
+    }
+
+    .progress_page_remaining {
+        width: 1em;
+        height: 1em;
+        border-width: 1px;
+        border-style: solid;
+        border-color: transparent;
+        display: inline-block;
+        background-color: whitesmoke;
+    }
+</style>
+
 <a href="/">← Go back</a>
 <h1><%= @blog.name %></h1>
-<div>
+<div style="overflow-wrap: break-word">
   <% if @blog.fetch_status == 'in_progress' %>
-    ⏳ Loading posts: <%= @blog.posts.count %>
+    ⏳ Loading:
+    <% if @blog.fetch_progress %>
+      <% progress_tokens = @blog.fetch_progress.scan(/hH|p+H?|hF\d*|h/) %>
+      <% progress_tokens.each_with_index do |token, index| %>
+        <% if token == 'h' %>
+          <div class="progress_page progress_regular"></div>
+        <% elsif token == 'hH' %>
+          <div class="progress_page progress_highlighted"></div>
+        <% elsif token.start_with?('p') %>
+          <% if token.end_with?('H') %>
+            <% token.count('p').times do %>
+              <div class="progress_long_page progress_highlighted"></div>
+            <% end %>
+          <% else %>
+            <% token.count('p').times do %>
+              <div class="progress_long_page progress_regular"></div>
+            <% end %>
+          <% end %>
+        <% elsif token.start_with?('hF') %>
+          <div class="progress_page progress_finishing"></div>
+          <% if index == progress_tokens.length - 1 %>
+            <% remaining_count_match = /\d+$/.match(token) %>
+            <% if remaining_count_match %>
+              <% remaining_count_match[0].to_i.times do %>
+                <div class="progress_page_remaining"></div>
+              <% end %>
+            <% end %>
+          <% end %>
+        <% else %>
+          <% Rails.warn("Unknown progress token: #{token} (#{@blog.fetch_progress})") %>
+        <% end %>
+      <% end %>
+    <% end %>
+    <% if @blog.fetch_count %>
+      <div>Posts discovered: <%= @blog.fetch_count %></div>
+    <% end %>
   <% else %>
     ❌ Loading posts failed
   <% end %>
@@ -11,5 +89,5 @@
 <script>
     window.setTimeout(function () {
         window.location.reload();
-    }, 3000);
+    }, 1000);
 </script>

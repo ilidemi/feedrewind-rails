@@ -123,7 +123,10 @@ process_count.times do |process_idx|
           write_object(result_writer, result)
         rescue => e
           logger.write("--- EXCEPTION ---")
-          print_nice_error(log_file, e)
+          error_lines = print_nice_error(e)
+          error_lines.each do |line|
+            log_file.puts(line)
+          end
         end
       end
     end

@@ -15,12 +15,16 @@ class GuidedCrawlingJob < ApplicationJob
       crawl_ctx = CrawlContext.new
       http_client = HttpClient.new
       puppeteer_client = PuppeteerClient.new
+      progress_saver = BlogsHelper::ProgressSaver.new(blog)
       begin
         guided_crawl_result = guided_crawl(
-          args.blog_url, crawl_ctx, http_client, puppeteer_client, Rails.logger
+          args.blog_url, crawl_ctx, http_client, puppeteer_client, progress_saver, Rails.logger
         )
       rescue => e
-        Rails.logger.info(e)
+        error_lines = print_nice_error(e)
+        error_lines.each do |line|
+          Rails.logger.info(line)
+        end
         guided_crawl_result = nil
       end
 

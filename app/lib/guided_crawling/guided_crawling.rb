@@ -8,6 +8,7 @@ require_relative 'historical_common'
 require_relative 'historical_paged'
 require_relative 'http_client'
 require_relative 'page_parsing'
+require_relative 'progress_logger'
 require_relative 'puppeteer_client'
 require_relative 'structs'
 require_relative 'util'
@@ -25,17 +26,20 @@ class GuidedCrawlError < StandardError
   attr_reader :partial_result
 end
 
-def guided_crawl(start_url, crawl_ctx, http_client, puppeteer_client, logger)
+def guided_crawl(start_url, crawl_ctx, http_client, puppeteer_client, progress_saver, logger)
   guided_crawl_result = GuidedCrawlResult.new
   begin
     feed_result = FeedResult.new
     guided_crawl_result.feed_result = feed_result
+    progress_logger = ProgressLogger.new(progress_saver)
 
     start_link = to_canonical_link(start_url, logger)
     raise "Bad start url: #{start_url}" if start_link.nil?
 
     guided_crawl_result.start_url = "<a href=\"#{start_link.url}\">#{start_link.url}</a>"
-    start_result = crawl_request(start_link, true, nil, crawl_ctx, http_client, puppeteer_client, logger)
+    start_result = crawl_request(
+      start_link, true, nil, crawl_ctx, http_client, puppeteer_client, progress_logger, logger
+    )
     raise "Unexpected start result: #{start_result}" unless start_result.is_a?(Page) && start_result.content
 
     if is_feed(start_result.content, logger)
@@ -64,7 +68,9 @@ def guided_crawl(start_url, crawl_ctx, http_client, puppeteer_client, logger)
 
       feed_link = feed_links.first
       feed_result.feed_url = "<a href=\"#{feed_link.url}\">feed</a>"
-      feed_request_result = crawl_request(feed_link, true, nil, crawl_ctx, http_client, nil, logger)
+      feed_request_result = crawl_request(
+        feed_link, true, nil, crawl_ctx, http_client, nil, progress_logger, logger
+      )
       unless feed_request_result.is_a?(Page) && feed_request_result.content
         raise "Unexpected feed result: #{feed_request_result}"
       end
@@ -79,7 +85,7 @@ def guided_crawl(start_url, crawl_ctx, http_client, puppeteer_client, logger)
 
     if start_page.nil?
       start_page_link, start_page = get_feed_start_page(
-        feed_link, feed_links, crawl_ctx, http_client, puppeteer_client, logger
+        feed_link, feed_links, crawl_ctx, http_client, puppeteer_client, progress_logger, logger
       )
     end
 
@@ -114,7 +120,7 @@ def guided_crawl(start_url, crawl_ctx, http_client, puppeteer_client, logger)
         .last
         .first
       entry_result = crawl_request(
-        entry_link_from_popular_host, false, nil, crawl_ctx, http_client, nil, logger
+        entry_link_from_popular_host, false, nil, crawl_ctx, http_client, nil, progress_logger, logger
       )
 
       unless entry_result.is_a?(Page) && entry_result.content
@@ -145,7 +151,7 @@ def guided_crawl(start_url, crawl_ctx, http_client, puppeteer_client, logger)
       begin
         historical_result = guided_crawl_historical(
           start_page, feed_links.entry_links, feed_links.generator, crawl_ctx, curi_eq_cfg, http_client,
-          puppeteer_client, logger
+          puppeteer_client, progress_logger, logger
         )
       rescue => e
         historical_result = nil
@@ -161,12 +167,12 @@ def guided_crawl(start_url, crawl_ctx, http_client, puppeteer_client, logger)
 end
 
 def get_feed_start_page(
-  feed_link, feed_links, crawl_ctx, mock_http_client, puppeteer_client, logger
+  feed_link, feed_links, crawl_ctx, mock_http_client, puppeteer_client, progress_logger, logger
 )
   if feed_links.root_link
     start_page_link = feed_links.root_link
     start_result = crawl_request(
-      start_page_link, false, nil, crawl_ctx, mock_http_client, puppeteer_client, logger
+      start_page_link, false, nil, crawl_ctx, mock_http_client, puppeteer_client, progress_logger, logger
     )
     if start_result.is_a?(Page) && start_result.content
       return [start_page_link, start_result]
@@ -185,7 +191,7 @@ def get_feed_start_page(
     logger.info("Possible start link: #{possible_start_uri.to_s}")
     possible_start_result = crawl_request(
       possible_start_page_link, false, nil, crawl_ctx, mock_http_client, puppeteer_client,
-      logger
+      progress_logger, logger
     )
     next unless possible_start_result.is_a?(Page) && possible_start_result.content
 
@@ -198,7 +204,7 @@ MAIN_PAGE_REGEX = "/(?:blog|articles|writing|journal|essays)(?:\\.[a-z]+)?$"
 
 def guided_crawl_historical(
   start_page, feed_entry_links, feed_generator, crawl_ctx, curi_eq_cfg, mock_http_client,
-  puppeteer_client, logger
+  puppeteer_client, progress_logger, logger
 )
   archives_queue = []
   main_page_queue = []
@@ -249,7 +255,7 @@ def guided_crawl_historical(
   result = guided_crawl_fetch_loop(
     [archives_queue, main_page_queue], nil, guided_seen_queryless_curis_set, archives_categories_state,
     feed_entry_links, feed_entry_curis_set, feed_generator, curi_eq_cfg, allowed_hosts, crawl_ctx,
-    mock_http_client, puppeteer_client, logger
+    mock_http_client, puppeteer_client, progress_logger, logger
   )
   if result
     if result.count >= 11
@@ -262,10 +268,12 @@ def guided_crawl_historical(
   raise "Too few entries in feed: #{feed_entry_links.length}" if feed_entry_links.length < 2
   feed_entry_links_arr = feed_entry_links.to_a
   entry1_page = crawl_request(
-    feed_entry_links_arr[0], false, feed_entry_curis_set, crawl_ctx, mock_http_client, nil, logger
+    feed_entry_links_arr[0], false, feed_entry_curis_set, crawl_ctx, mock_http_client, nil, progress_logger,
+    logger
   )
   entry2_page = crawl_request(
-    feed_entry_links_arr[1], false, feed_entry_curis_set, crawl_ctx, mock_http_client, nil, logger
+    feed_entry_links_arr[1], false, feed_entry_curis_set, crawl_ctx, mock_http_client, nil, progress_logger,
+    logger
   )
   raise "Couldn't fetch entry 1: #{entry1_page}" unless entry1_page.is_a?(Page) && entry1_page.document
   raise "Couldn't fetch entry 2: #{entry2_page}" unless entry2_page.is_a?(Page) && entry2_page.document
@@ -310,7 +318,7 @@ def guided_crawl_historical(
   result = guided_crawl_fetch_loop(
     [archives_queue, main_page_queue], result, guided_seen_queryless_curis_set, archives_categories_state,
     feed_entry_links, feed_entry_curis_set, feed_generator, curi_eq_cfg, allowed_hosts, crawl_ctx,
-    mock_http_client, puppeteer_client, logger
+    mock_http_client, puppeteer_client, progress_logger, logger
   )
   if result
     if result.count >= 11
@@ -367,7 +375,7 @@ def guided_crawl_historical(
     result = guided_crawl_fetch_loop(
       [archives_queue, main_page_queue, others_queue], result, guided_seen_queryless_curis_set,
       archives_categories_state, feed_entry_links, feed_entry_curis_set, feed_generator, curi_eq_cfg,
-      allowed_hosts, crawl_ctx, mock_http_client, puppeteer_client, logger
+      allowed_hosts, crawl_ctx, mock_http_client, puppeteer_client, progress_logger, logger
     )
     return result if result
   end
@@ -379,7 +387,7 @@ end
 def guided_crawl_fetch_loop(
   queues, initial_result, guided_seen_queryless_curis_set, archives_categories_state, feed_entry_links,
   feed_entry_curis_set, feed_generator, curi_eq_cfg, allowed_hosts, crawl_ctx, mock_http_client,
-  puppeteer_client, logger
+  puppeteer_client, progress_logger, logger
 )
   logger.info("Guided crawl loop started")
 
@@ -397,7 +405,8 @@ def guided_crawl_fetch_loop(
       next if crawl_ctx.fetched_curis.include?(link.curi)
 
       page = crawl_request(
-        link, false, feed_entry_curis_set, crawl_ctx, mock_http_client, puppeteer_client, logger
+        link, false, feed_entry_curis_set, crawl_ctx, mock_http_client, puppeteer_client, progress_logger,
+        logger
       )
       unless page.is_a?(Page) && page.document
         logger.info("Couldn't fetch link: #{page}")
@@ -437,7 +446,7 @@ def guided_crawl_fetch_loop(
       .to_canonical_uri_set(curi_eq_cfg)
     page_results = try_extract_historical(
       link, page, page_all_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator,
-      curi_eq_cfg, archives_categories_state, logger
+      curi_eq_cfg, archives_categories_state, progress_logger, logger
     )
     page_results.each do |page_result|
       insert_sorted_result(page_result, sorted_results)
@@ -445,7 +454,7 @@ def guided_crawl_fetch_loop(
 
     if had_archives && archives_queue.empty? && !sorted_results.empty?
       postprocessed_result = postprocess_results(
-        sorted_results, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, logger
+        sorted_results, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, progress_logger, logger
       )
       if postprocessed_result
         if postprocessed_result.count >= 21
@@ -460,7 +469,7 @@ def guided_crawl_fetch_loop(
   end
 
   postprocessed_result = postprocess_results(
-    sorted_results, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, logger
+    sorted_results, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, progress_logger, logger
   )
   if postprocessed_result
     logger.info("Guided crawl loop finished with best result of #{postprocessed_result.count} links")
@@ -473,7 +482,7 @@ end
 
 def try_extract_historical(
   page_link, page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator,
-  curi_eq_cfg, archives_categories_state, logger
+  curi_eq_cfg, archives_categories_state, progress_logger, logger
 )
   logger.info("Trying to extract historical from #{page.fetch_uri}")
   results = []
@@ -500,6 +509,8 @@ def try_extract_historical(
     curi_eq_cfg, logger
   )
   results << page1_result if page1_result
+
+  progress_logger.log_historical unless results.empty?
 
   results
 end
@@ -531,7 +542,7 @@ def speculative_count_equal(result1, result2)
 end
 
 def postprocess_results(
-  sorted_results, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, logger
+  sorted_results, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, progress_logger, logger
 )
   sorted_results_log = sorted_results.map do |result|
     [result.class.name, result.main_link.url, result.speculative_count]
@@ -545,30 +556,34 @@ def postprocess_results(
     else
       if result.is_a?(ArchivesMediumPinnedEntryResult)
         pp_result = postprocess_archives_medium_pinned_entry_result(
-          result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, logger
+          result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, progress_logger, logger
         )
       elsif result.is_a?(ArchivesShuffledResults)
         pp_result = postprocess_archives_shuffled_results(
-          result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, logger
+          result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, progress_logger, logger
         )
       elsif result.is_a?(ArchivesCategoriesResult)
         pp_result = postprocess_archives_categories_result(
-          result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, logger
+          result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, progress_logger, logger
         )
       elsif result.is_a?(Page1Result)
         # If page 1 result looks the best, check just page 2 in case it was a scam
         pp_result = postprocess_page1_result(
-          result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, logger
+          result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, progress_logger, logger
         )
       elsif result.is_a?(PartialPagedResult)
         pp_result = postprocess_paged_result(
-          result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, logger
+          result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, progress_logger, logger
         )
       else
         raise "Unknown result type: #{result}"
       end
     end
-    next unless pp_result
+
+    unless pp_result
+      logger.info("Postprocessing failed for #{result.main_link.url}")
+      next
+    end
 
     if sorted_results.empty? ||
       speculative_count_better_than(pp_result, sorted_results.first) ||
@@ -576,7 +591,7 @@ def postprocess_results(
 
       if pp_result.is_a?(PartialPagedResult)
         pp_result = postprocess_paged_result(
-          pp_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, logger
+          pp_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, progress_logger, logger
         )
       end
 
@@ -597,11 +612,12 @@ PostprocessedResult = Struct.new(
 )
 
 def postprocess_archives_medium_pinned_entry_result(
-  medium_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, logger
+  medium_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, progress_logger, logger
 )
   pinned_entry_page = crawl_request(
-    medium_result.pinned_entry_link, false, nil, crawl_ctx, mock_http_client, nil, logger
+    medium_result.pinned_entry_link, false, nil, crawl_ctx, mock_http_client, nil, progress_logger, logger
   )
+  progress_logger.log_postprocessing
   unless pinned_entry_page.is_a?(Page) && pinned_entry_page.document
     logger.info("Couldn't fetch first Medium link during result postprocess: #{pinned_entry_page}")
     return nil
@@ -634,16 +650,20 @@ def postprocess_archives_medium_pinned_entry_result(
 end
 
 def postprocess_archives_shuffled_results(
-  shuffled_results, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, logger
+  shuffled_results, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, progress_logger, logger
 )
   pages_by_canonical_url = {}
-  sorted_tentative_results = shuffled_results.results.sort_by { |tentative_result| tentative_result.count }
+  sorted_tentative_results = shuffled_results.results.sort_by do |tentative_result|
+    tentative_result.speculative_count
+  end
+  logger.info("Archives shuffled counts: #{sorted_tentative_results.map(&:speculative_count)}")
 
   best_result = nil
   sorted_tentative_results.each do |tentative_result|
+    logger.info("Postprocessing shuffled result of #{tentative_result.speculative_count}")
     sorted_links, is_matching_feed = postprocess_sort_links_maybe_dates(
       tentative_result.links_maybe_dates, feed_entry_links, curi_eq_cfg, pages_by_canonical_url, crawl_ctx,
-      mock_http_client, logger
+      mock_http_client, progress_logger, logger
     )
     return best_result unless sorted_links
 
@@ -662,11 +682,12 @@ def postprocess_archives_shuffled_results(
 end
 
 def postprocess_archives_categories_result(
-  archives_categories_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, logger
+  archives_categories_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, progress_logger,
+  logger
 )
   sorted_links, is_matching_feed = postprocess_sort_links_maybe_dates(
     archives_categories_result.links_maybe_dates, feed_entry_links, curi_eq_cfg, {}, crawl_ctx,
-    mock_http_client, logger
+    mock_http_client, progress_logger, logger
   )
   return nil unless sorted_links
 
@@ -682,11 +703,12 @@ def postprocess_archives_categories_result(
 end
 
 def postprocess_page1_result(
-  page1_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, logger
+  page1_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, progress_logger, logger
 )
   page2 = crawl_request(
-    page1_result.link_to_page2, false, nil, crawl_ctx, mock_http_client, nil, logger
+    page1_result.link_to_page2, false, nil, crawl_ctx, mock_http_client, nil, progress_logger, logger
   )
+  progress_logger.log_postprocessing
   unless page2 && page2.is_a?(Page) && page2.document
     logger.info("Page 2 is not a page: #{page2}")
     return nil
@@ -697,12 +719,15 @@ def postprocess_page1_result(
 end
 
 def postprocess_paged_result(
-  paged_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, logger
+  paged_result, feed_entry_links, curi_eq_cfg, crawl_ctx, mock_http_client, progress_logger, logger
 )
+
   while paged_result.is_a?(PartialPagedResult)
+    progress_logger.log_count(paged_result.speculative_count - 1)
     page = crawl_request(
-      paged_result.link_to_next_page, false, nil, crawl_ctx, mock_http_client, nil, logger
+      paged_result.link_to_next_page, false, nil, crawl_ctx, mock_http_client, nil, progress_logger, logger
     )
+    progress_logger.log_postprocessing
     unless page && page.is_a?(Page) && page.document
       logger.info("Page #{paged_result.page_number} is not a page: #{page}")
       return nil
@@ -713,31 +738,49 @@ def postprocess_paged_result(
     )
   end
 
+  if paged_result
+    progress_logger.log_count(paged_result.count)
+  else
+    progress_logger.log_count(nil)
+  end
   paged_result
 end
 
 def postprocess_sort_links_maybe_dates(
   links_maybe_dates, feed_entry_links, curi_eq_cfg, pages_by_canonical_url, crawl_ctx, mock_http_client,
-  logger
+  progress_logger, logger
 )
   result_pages = []
   sort_state = nil
   links_with_dates, links_without_dates = links_maybe_dates.partition { |_, maybe_date| maybe_date }
   links_without_dates = links_without_dates.map(&:first)
-  links_without_dates.each do |link|
-    if pages_by_canonical_url.key?(link.curi.to_s)
-      page = pages_by_canonical_url[link.curi.to_s]
-    else
-      page = crawl_request(link, false, nil, crawl_ctx, mock_http_client, nil, logger)
-      unless page.is_a?(Page) && page.document
-        logger.info("Couldn't fetch link during result postprocess: #{page}")
-        return nil
-      end
-    end
+  crawled_links, links_to_crawl = links_without_dates.partition do |link|
+    pages_by_canonical_url.key?(link.curi.to_s)
+  end
 
+  crawled_links.each do |link|
+    page = pages_by_canonical_url[link.curi.to_s]
     sort_state = historical_archives_sort_add(page, sort_state, logger)
     return nil unless sort_state
 
+    result_pages << page
+  end
+
+  links_to_crawl.each_with_index do |link, index|
+    page = crawl_request(link, false, nil, crawl_ctx, mock_http_client, nil, progress_logger, logger)
+    unless page.is_a?(Page) && page.document
+      logger.info("Couldn't fetch link during result postprocess: #{page}")
+      progress_logger.log_postprocessing
+      return nil
+    end
+
+    sort_state = historical_archives_sort_add(page, sort_state, logger)
+    unless sort_state
+      progress_logger.log_postprocessing
+      return nil
+    end
+
+    progress_logger.log_postprocessing_remaining(links_to_crawl.length - index - 1)
     result_pages << page
     pages_by_canonical_url[page.curi.to_s] = page
   end

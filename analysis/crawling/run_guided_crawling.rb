@@ -1,5 +1,7 @@
 require_relative '../../app/lib/guided_crawling/guided_crawling'
+require_relative '../../app/lib/guided_crawling/progress_logger'
 require_relative 'mock_http_client'
+require_relative 'mock_progress_saver'
 require_relative 'mock_puppeteer_client'
 require_relative 'run_common'
 
@@ -82,10 +84,14 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     end
     db.exec_params('delete from historical where start_link_id = $1', [start_link_id])
 
+    progress_saver = MockProgressSaver.new
+
     guided_crawl_result = guided_crawl(
-      start_link_feed_url || start_link_url, crawl_ctx, mock_http_client, puppeteer_client, start_link_id,
-      logger
+      start_link_feed_url || start_link_url, crawl_ctx, mock_http_client, puppeteer_client,
+      progress_saver, logger
     )
+    logger.info("Progress string: #{progress_saver.status_str}")
+    logger.info("Progress count: #{progress_saver.count}")
     result.feed_url = guided_crawl_result.feed_result.feed_url
     result.feed_links = guided_crawl_result.feed_result.feed_links
     result.start_url = guided_crawl_result.start_url

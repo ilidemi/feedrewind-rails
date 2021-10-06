@@ -99,8 +99,11 @@ def mp_run(runnable, allow_puppeteer, output_prefix, start_link_ids_override=nil
             write_object(result_writer, [start_link_id, result, nil])
           end
         rescue => error
+          error_lines = print_nice_error(error)
           File.open("#{log_dir}/exception#{start_link_id}.txt", 'w') do |error_file|
-            print_nice_error(error_file, error)
+            error_lines.each do |line|
+              error_file.puts(line)
+            end
           end
           result = error.is_a?(RunError) ? error.result : nil
           write_object(result_writer, [start_link_id, result, error.message])

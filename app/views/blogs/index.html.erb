@@ -31,8 +31,6 @@
         <% if blog.fetch_status == "succeeded" %>
           <% verb = blog.is_paused ? 'published, paused' : 'published' %>
           <%= published_count %>/<%= total_count %> <%= verb %>
-        <% else %>
-          <%= total_count %> loaded
         <% end %>
       </span>
       <%= link_to "Delete", blog_path(blog),

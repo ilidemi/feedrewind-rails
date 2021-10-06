@@ -18,4 +18,20 @@ module BlogsHelper
     days_of_week << 'sun' if schedule_params[:schedule_sun] == '1'
     days_of_week
   end
+
+  class ProgressSaver
+    def initialize(blog)
+      @blog = blog
+    end
+
+    def save_status(status_str)
+      @blog.fetch_progress = status_str
+      @blog.save!
+    end
+
+    def save_count(count)
+      @blog.fetch_count = count
+      @blog.save!
+    end
+  end
 end
