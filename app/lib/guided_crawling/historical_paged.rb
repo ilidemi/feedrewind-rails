@@ -451,7 +451,7 @@ def find_link_to_page2(current_page_links, current_page, feed_generator, curi_eq
     }
   end
 
-  link_to_page2_path_regex = Regexp.new("/(?:index-?2[^/^\\d]*|page/?2)$")
+  link_to_page2_path_regex = Regexp.new("/(?:index-?2|page/?2)[^/^\\d]*$")
   is_certain = true
   is_path_match = true
   links_to_page2 = current_page_links.filter do |link|

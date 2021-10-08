@@ -24,10 +24,7 @@ PERMANENT_ERROR_CODES = %w[400 401 402 403 404 405 406 407 410 411 412 413 414 4
 AlreadySeenLink = Struct.new(:link)
 BadRedirection = Struct.new(:url)
 
-def crawl_request(
-  initial_link, is_feed_expected, feed_entry_curis_set, crawl_ctx, http_client, puppeteer_client,
-  progress_logger, logger
-)
+def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progress_logger, logger)
   link = initial_link
   seen_urls = [link.url]
   link = follow_cached_redirects(link, crawl_ctx.redirects, seen_urls)
@@ -101,19 +98,6 @@ def crawl_request(
         logger.info("#{resp.code} #{content_type} #{request_ms}ms #{link.url} - canonical uri already seen")
       end
 
-      # TODO: puppeteer will be executed twice for duplicate fetches
-      content, document, is_puppeteer_used = crawl_link_with_puppeteer(
-        link, content, document, feed_entry_curis_set, puppeteer_client, crawl_ctx, progress_logger, logger
-      )
-      if is_puppeteer_used
-        if !crawl_ctx.pptr_fetched_curis.include?(link.curi)
-          crawl_ctx.pptr_fetched_curis << link.curi
-          logger.info("Puppeteer page saved")
-        else
-          logger.info("Puppeteer page saved - canonical uri already seen")
-        end
-      end
-
       return Page.new(link.curi, link.uri, content, document)
     elsif resp.code == "SSLError"
       if link.uri.host.start_with?("www.")
@@ -172,4 +156,63 @@ def process_redirect(
   # same canonical url
   crawl_ctx.seen_fetch_urls << redirection_link.url
   redirection_link
+end
+
+LOAD_MORE_SELECTOR = "a[class*=load-more], button[class*=load-more]"
+MEDIUM_FEED_LINK_SELECTOR = "link[rel=alternate][type='application/rss+xml'][href^='https://medium.']"
+SUBSTACK_FOOTER_SELECTOR = "[class*=footer-substack]"
+BUTTONDOWN_TWITTER_XPATH = "/html/head/meta[@name='twitter:site'][@content='@buttondown']"
+
+def crawl_with_puppeteer_if_match(
+  page, match_curis_set, puppeteer_client, crawl_ctx, progress_logger, logger
+)
+  pptr_content = nil
+  if puppeteer_client && page.document
+    if page.document.at_css(LOAD_MORE_SELECTOR)
+      logger.info("Found load more button, rerunning with puppeteer")
+      pptr_content = puppeteer_client.fetch(
+        page.fetch_uri, match_curis_set, crawl_ctx, progress_logger, logger
+      ) do |pptr_page|
+        pptr_page.query_visible_selector(LOAD_MORE_SELECTOR)
+      end
+    elsif page.document.at_css(MEDIUM_FEED_LINK_SELECTOR) &&
+      page.document.css("button").any? { |button| button.text.downcase == "show more" }
+
+      logger.info("Spotted Medium page, rerunning with puppeteer")
+      pptr_content = puppeteer_client.fetch(
+        page.fetch_uri, match_curis_set, crawl_ctx, progress_logger, logger
+      ) do |pptr_page|
+        pptr_page
+          .query_selector_all("button")
+          .filter { |button| button.evaluate("b => b.textContent").downcase == "show more" }
+          .first
+      end
+    elsif page.curi.trimmed_path&.match?("/archive/*$") &&
+      page.document.at_css(SUBSTACK_FOOTER_SELECTOR)
+
+      logger.info("Spotted Substack archives, rerunning with puppeteer")
+      pptr_content = puppeteer_client.fetch(
+        page.fetch_uri, match_curis_set, crawl_ctx, progress_logger, logger
+      )
+    elsif page.document.at_xpath(BUTTONDOWN_TWITTER_XPATH)
+      logger.info("Spotted Buttondown page, rerunning with puppeteer")
+      pptr_content = puppeteer_client.fetch(
+        page.fetch_uri, match_curis_set, crawl_ctx, progress_logger, logger
+      )
+    end
+  end
+
+  if pptr_content
+    if !crawl_ctx.pptr_fetched_curis.include?(page.curi)
+      crawl_ctx.pptr_fetched_curis << page.curi
+      logger.info("Puppeteer page saved")
+    else
+      logger.info("Puppeteer page saved - canonical uri already seen")
+    end
+
+    pptr_document = nokogiri_html5(pptr_content)
+    Page.new(page.curi, page.fetch_uri, pptr_content, pptr_document)
+  else
+    page
+  end
 end

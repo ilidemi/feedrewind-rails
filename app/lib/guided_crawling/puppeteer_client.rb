@@ -56,56 +56,9 @@ class Puppeteer::Page
   attr_reader :finished_requests
 end
 
-LOAD_MORE_SELECTOR = "a[class*=load-more], button[class*=load-more]"
-MEDIUM_FEED_LINK_SELECTOR = "link[rel=alternate][type='application/rss+xml'][href^='https://medium.']"
-SUBSTACK_FOOTER_SELECTOR = "[class*=footer-substack]"
-BUTTONDOWN_TWITTER_XPATH = "/html/head/meta[@name='twitter:site'][@content='@buttondown']"
-
-def crawl_link_with_puppeteer(
-  link, content, document, match_curis_set, puppeteer_client, crawl_ctx, progress_logger, logger
-)
-  is_puppeteer_used = false
-  if puppeteer_client && document
-    if document.at_css(LOAD_MORE_SELECTOR)
-      logger.info("Found load more button, rerunning with puppeteer")
-      content, document = puppeteer_client.fetch(
-        link, match_curis_set, crawl_ctx, progress_logger, logger
-      ) do |pptr_page|
-        pptr_page.query_visible_selector(LOAD_MORE_SELECTOR)
-      end
-      is_puppeteer_used = true
-    elsif document.at_css(MEDIUM_FEED_LINK_SELECTOR) &&
-      document.css("button").any? { |button| button.text.downcase == "show more" }
-
-      logger.info("Spotted Medium page, rerunning with puppeteer")
-      content, document = puppeteer_client.fetch(
-        link, match_curis_set, crawl_ctx, progress_logger, logger
-      ) do |pptr_page|
-        pptr_page
-          .query_selector_all("button")
-          .filter { |button| button.evaluate("b => b.textContent").downcase == "show more" }
-          .first
-      end
-      is_puppeteer_used = true
-    elsif link.curi.trimmed_path&.match?("/archive/*$") &&
-      document.at_css(SUBSTACK_FOOTER_SELECTOR)
-
-      logger.info("Spotted Substack archives, rerunning with puppeteer")
-      content, document = puppeteer_client.fetch(link, match_curis_set, crawl_ctx, progress_logger, logger)
-      is_puppeteer_used = true
-    elsif document.at_xpath(BUTTONDOWN_TWITTER_XPATH)
-      logger.info("Spotted Buttondown page, rerunning with puppeteer")
-      content, document = puppeteer_client.fetch(link, match_curis_set, crawl_ctx, progress_logger, logger)
-      is_puppeteer_used = true
-    end
-  end
-
-  [content, document, is_puppeteer_used]
-end
-
 class PuppeteerClient
-  def fetch(link, match_curis_set, crawl_ctx, progress_logger, logger, &find_load_more_button)
-    logger.info("Puppeteer start: #{link.url}")
+  def fetch(uri, match_curis_set, crawl_ctx, progress_logger, logger, &find_load_more_button)
+    logger.info("Puppeteer start: #{uri}")
     puppeteer_start = monotonic_now
 
     timeout_errors_count = 0
@@ -118,13 +71,13 @@ class PuppeteerClient
             %w[image font].include?(request.resource_type) ? request.abort : request.continue
           end
           pptr_page.enable_request_tracking
-          pptr_page.goto(link.url, wait_until: "networkidle0")
+          pptr_page.goto(uri.to_s, wait_until: "networkidle0")
           progress_logger.log_puppeteer
 
           if match_curis_set
             initial_content = pptr_page.content
             initial_document = nokogiri_html5(initial_content)
-            initial_links = extract_links(initial_document, link.uri, nil, nil, logger, false, false)
+            initial_links = extract_links(initial_document, uri, nil, nil, logger, false, false)
             is_scrolling_allowed = initial_links.any? { |page_link| match_curis_set.include?(page_link.curi) }
           else
             is_scrolling_allowed = true
@@ -145,20 +98,17 @@ class PuppeteerClient
               progress_logger.log_puppeteer
             end
             content = pptr_page.content
-            document = nokogiri_html5(content)
           else
             logger.info("Puppeteer didn't find any matching links on initial load")
             #noinspection RubyScope
             content = initial_content
-            #noinspection RubyScope
-            document = initial_document
           end
 
           pptr_page.close
           crawl_ctx.puppeteer_requests_made += pptr_page.finished_requests
           logger.info("Puppeteer done (#{monotonic_now - puppeteer_start}s, #{pptr_page.finished_requests} req)")
 
-          return [content, document]
+          return content
         end
       rescue Puppeteer::FrameManager::NavigationError
         timeout_errors_count += 1
