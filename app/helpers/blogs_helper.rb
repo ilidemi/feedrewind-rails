@@ -19,24 +19,33 @@ module BlogsHelper
     days_of_week
   end
 
+  class BlogDeletedError < StandardError
+  end
+
   class ProgressSaver
-    def initialize(blog)
-      @blog = blog
+    def initialize(blog_id)
+      @blog_id = blog_id
     end
 
     def save_status(status_str)
-      @blog.transaction do
-        @blog.fetch_progress = status_str
-        @blog.save!
-        ActionCable.server.broadcast("discovery_channel", { progress: status_str })
+      Blog.transaction do
+        #noinspection RailsChecklist05
+        blog = Blog.find_by_id(@blog_id)
+        raise BlogDeletedError unless blog
+
+        blog.update_column(:fetch_progress, status_str)
+        ActionCable.server.broadcast("discovery_#{@blog_id}", { status: status_str })
       end
     end
 
     def save_count(count)
-      @blog.transaction do
-        @blog.fetch_count = count
-        @blog.save!
-        ActionCable.server.broadcast("discovery_channel", { count: count })
+      Blog.transaction do
+        #noinspection RailsChecklist05
+        blog = Blog.find_by_id(@blog_id)
+        raise BlogDeletedError unless blog
+
+        blog.update_column(:fetch_count, count)
+        ActionCable.server.broadcast("discovery_#{@blog_id}", { count: count })
       end
     end
   end

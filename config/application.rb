@@ -22,5 +22,6 @@ module RssCatchupRails
     config.active_job.queue_adapter = :delayed_job
 
     Delayed::Worker.sleep_delay = 0.1
+    Delayed::Worker.raise_signal_exceptions = :term
   end
 end

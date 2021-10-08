@@ -1,16 +1,21 @@
 import consumer from "./consumer"
 
-consumer.subscriptions.create("DiscoveryChannel", {
-  connected() {
-    // Called when the subscription is ready for use on the server
-  },
+window.discoverySubscribe = (blogId, dataHandler) => {
+    return consumer.subscriptions.create({channel: "DiscoveryChannel", blog_id: blogId}, {
+        connected() {
+            // Called when the subscription is ready for use on the server
+        },
 
-  disconnected() {
-    // Called when the subscription has been terminated by the server
-  },
+        disconnected() {
+            // Called when the subscription has been terminated by the server
+        },
 
-  received(data) {
-    document.body.insertAdjacentHTML("beforeend", JSON.stringify(data));
-    document.body.insertAdjacentHTML("beforeend", "<br>");
-  }
-});
+        received(data) {
+            dataHandler(data);
+        }
+    });
+};
+
+window.discoveryUnsubscribe = (subscription) => {
+    consumer.subscriptions.remove(subscription);
+};

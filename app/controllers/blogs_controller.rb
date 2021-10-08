@@ -43,6 +43,10 @@ class BlogsController < ApplicationController
 
   def status
     @blog = @current_user.blogs.find_by(name: params[:name])
+    unless @blog
+      return redirect_to action: 'index'
+    end
+
     if @blog.fetch_status == "succeeded"
       redirect_to action: 'show', name: @blog.name
     end
