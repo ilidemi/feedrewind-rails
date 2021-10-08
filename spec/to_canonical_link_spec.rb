@@ -29,6 +29,7 @@ test_data = [
   ["should escape middle spaces", ["/tagged/alex norris", "https://webcomicname.com/post/652255218526011392/amp"], %w[https://webcomicname.com/tagged/alex%20norris webcomicname.com/tagged/alex%20norris]],
   ["should replace // in path with /", %w[https://NQNStudios.github.io//2020//04//06/byte-size-mindfulness-1.html https://www.natquaylenelson.com/feed.xml], %w[https://NQNStudios.github.io/2020/04/06/byte-size-mindfulness-1.html NQNStudios.github.io/2020/04/06/byte-size-mindfulness-1.html]],
   ["should leave + in query escaped", %w[https://blog.gardeviance.org/search?updated-max=2019-09-04T15:49:00%2B01:00&max-results=12 https://blog.gardeviance.org], %w[https://blog.gardeviance.org/search?updated-max=2019-09-04T15:49:00%2B01:00&max-results=12 blog.gardeviance.org/search?updated-max=2019-09-04T15:49:00%2B01:00]],
+  ["should use the port from fetch uri", %w[/rss http://localhost:8000/page], %w[http://localhost:8000/rss localhost:8000/rss]],
   ["should ignore invalid character in host", ["http://targetWindow.postMessage(message, targetOrigin, [transfer]);", "https://thewitchofendor.com/2019/02/20/"], nil],
   ["should ignore invalid port number", %w[http://localhost:${port}` https://medium.com/samsung-internet-dev/hello-deno-ed1f8961be26?source=post_internal_links---------2----------------------------], nil],
   ["should ignore url with userinfo", ["http://npm install phaser@3.15.1", "https://thewitchofendor.com/2019/01/page/2/"], nil],

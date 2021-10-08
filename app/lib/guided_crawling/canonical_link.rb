@@ -44,7 +44,7 @@ def to_canonical_link(url, logger, fetch_uri = nil)
   if uri.scheme.nil? && !fetch_uri.nil? # Relative uri
     fetch_uri_classes = { 'http' => URI::HTTP, 'https' => URI::HTTPS }
     path = URI::join(fetch_uri, uri).path
-    uri = fetch_uri_classes[fetch_uri.scheme].build(host: fetch_uri.host, path: path, query: uri.query)
+    uri = fetch_uri_classes[fetch_uri.scheme].build(host: fetch_uri.host, port: fetch_uri.port, path: path, query: uri.query)
   end
 
   return nil unless %w[http https].include? uri.scheme
