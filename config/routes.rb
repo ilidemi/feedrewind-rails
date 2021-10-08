@@ -11,4 +11,6 @@ Rails.application.routes.draw do
   post '/:name/pause', to: 'blogs#pause'
   post '/:name/unpause', to: 'blogs#unpause'
   get '/:user_id/:name/feed', to: 'rss#show'
+
+  mount ActionCable.server => '/cable'
 end

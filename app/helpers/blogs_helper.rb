@@ -25,13 +25,19 @@ module BlogsHelper
     end
 
     def save_status(status_str)
-      @blog.fetch_progress = status_str
-      @blog.save!
+      @blog.transaction do
+        @blog.fetch_progress = status_str
+        @blog.save!
+        ActionCable.server.broadcast("discovery_channel", { progress: status_str })
+      end
     end
 
     def save_count(count)
-      @blog.fetch_count = count
-      @blog.save!
+      @blog.transaction do
+        @blog.fetch_count = count
+        @blog.save!
+        ActionCable.server.broadcast("discovery_channel", { count: count })
+      end
     end
   end
 end
