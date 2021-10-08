@@ -37,9 +37,8 @@ def guided_crawl(start_url, crawl_ctx, http_client, puppeteer_client, progress_s
     raise "Bad start url: #{start_url}" if start_link.nil?
 
     guided_crawl_result.start_url = "<a href=\"#{start_link.url}\">#{start_link.url}</a>"
-    start_result = crawl_request(
-      start_link, true, crawl_ctx, http_client, progress_logger, logger
-    )
+    start_result = crawl_request(start_link, true, crawl_ctx, http_client, progress_logger, logger)
+    progress_logger.save_status
     raise "Unexpected start result: #{start_result}" unless start_result.is_a?(Page) && start_result.content
 
     if is_feed(start_result.content, logger)
@@ -68,9 +67,8 @@ def guided_crawl(start_url, crawl_ctx, http_client, puppeteer_client, progress_s
 
       feed_link = feed_links.first
       feed_result.feed_url = "<a href=\"#{feed_link.url}\">feed</a>"
-      feed_request_result = crawl_request(
-        feed_link, true, crawl_ctx, http_client, progress_logger, logger
-      )
+      feed_request_result = crawl_request(feed_link, true, crawl_ctx, http_client, progress_logger, logger)
+      progress_logger.save_status
       unless feed_request_result.is_a?(Page) && feed_request_result.content
         raise "Unexpected feed result: #{feed_request_result}"
       end
@@ -122,6 +120,7 @@ def guided_crawl(start_url, crawl_ctx, http_client, puppeteer_client, progress_s
       entry_result = crawl_request(
         entry_link_from_popular_host, false, crawl_ctx, http_client, progress_logger, logger
       )
+      progress_logger.save_status
 
       unless entry_result.is_a?(Page) && entry_result.content
         raise "Unexpected entry result: #{entry_result}"
@@ -169,9 +168,8 @@ end
 def get_feed_start_page(feed_link, feed_links, crawl_ctx, mock_http_client, progress_logger, logger)
   if feed_links.root_link
     start_page_link = feed_links.root_link
-    start_result = crawl_request(
-      start_page_link, false, crawl_ctx, mock_http_client, progress_logger, logger
-    )
+    start_result = crawl_request(start_page_link, false, crawl_ctx, mock_http_client, progress_logger, logger)
+    progress_logger.save_status
     if start_result.is_a?(Page) && start_result.content
       return [start_page_link, start_result]
     else
@@ -190,6 +188,7 @@ def get_feed_start_page(feed_link, feed_links, crawl_ctx, mock_http_client, prog
     possible_start_result = crawl_request(
       possible_start_page_link, false, crawl_ctx, mock_http_client, progress_logger, logger
     )
+    progress_logger.save_status
     next unless possible_start_result.is_a?(Page) && possible_start_result.content
 
     return [possible_start_page_link, possible_start_result]
@@ -267,9 +266,11 @@ def guided_crawl_historical(
   entry1_page = crawl_request(
     feed_entry_links_arr[0], false, crawl_ctx, mock_http_client, progress_logger, logger
   )
+  progress_logger.save_status
   entry2_page = crawl_request(
     feed_entry_links_arr[1], false, crawl_ctx, mock_http_client, progress_logger, logger
   )
+  progress_logger.save_status
   raise "Couldn't fetch entry 1: #{entry1_page}" unless entry1_page.is_a?(Page) && entry1_page.document
   raise "Couldn't fetch entry 2: #{entry2_page}" unless entry2_page.is_a?(Page) && entry2_page.document
 
@@ -399,7 +400,7 @@ def guided_crawl_fetch_loop(
       link = link_or_page
       next if crawl_ctx.fetched_curis.include?(link.curi)
 
-      page = crawl_request(link, false, crawl_ctx, mock_http_client, progress_logger, logger)
+      page = crawl_request(link, false, crawl_ctx, mock_http_client, logger)
       unless page.is_a?(Page) && page.document
         logger.info("Couldn't fetch link: #{page}")
         next
@@ -409,6 +410,12 @@ def guided_crawl_fetch_loop(
       link = to_canonical_link(page.fetch_uri.to_s, logger)
     else
       raise "Neither link nor page in the queue: #{link_or_page}"
+    end
+
+    if is_puppeteer_match(page)
+      # Without puppeteer match, it's better to check for historical, then save a colored rectangle
+      # With puppeteer match, there will be more waits so log a simple rectangle before that
+      progress_logger.save_status
     end
 
     pptr_page = crawl_with_puppeteer_if_match(
@@ -444,6 +451,7 @@ def guided_crawl_fetch_loop(
       link, pptr_page, page_all_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator,
       curi_eq_cfg, archives_categories_state, progress_logger, logger
     )
+    progress_logger.save_status
     page_results.each do |page_result|
       insert_sorted_result(page_result, sorted_results)
     end
@@ -613,7 +621,7 @@ def postprocess_archives_medium_pinned_entry_result(
   pinned_entry_page = crawl_request(
     medium_result.pinned_entry_link, false, crawl_ctx, mock_http_client, progress_logger, logger
   )
-  progress_logger.log_postprocessing
+  progress_logger.log_and_save_postprocessing
   unless pinned_entry_page.is_a?(Page) && pinned_entry_page.document
     logger.info("Couldn't fetch first Medium link during result postprocess: #{pinned_entry_page}")
     return nil
@@ -704,7 +712,7 @@ def postprocess_page1_result(
   page2 = crawl_request(
     page1_result.link_to_page2, false, crawl_ctx, mock_http_client, progress_logger, logger
   )
-  progress_logger.log_postprocessing
+  progress_logger.log_and_save_postprocessing
   unless page2 && page2.is_a?(Page) && page2.document
     logger.info("Page 2 is not a page: #{page2}")
     return nil
@@ -723,7 +731,7 @@ def postprocess_paged_result(
     page = crawl_request(
       paged_result.link_to_next_page, false, crawl_ctx, mock_http_client, progress_logger, logger
     )
-    progress_logger.log_postprocessing
+    progress_logger.log_and_save_postprocessing
     unless page && page.is_a?(Page) && page.document
       logger.info("Page #{paged_result.page_number} is not a page: #{page}")
       return nil
@@ -766,17 +774,17 @@ def postprocess_sort_links_maybe_dates(
     page = crawl_request(link, false, crawl_ctx, mock_http_client, progress_logger, logger)
     unless page.is_a?(Page) && page.document
       logger.info("Couldn't fetch link during result postprocess: #{page}")
-      progress_logger.log_postprocessing
+      progress_logger.log_and_save_postprocessing
       return nil
     end
 
     sort_state = historical_archives_sort_add(page, sort_state, logger)
     unless sort_state
-      progress_logger.log_postprocessing
+      progress_logger.log_and_save_postprocessing
       return nil
     end
 
-    progress_logger.log_postprocessing_remaining(links_to_crawl.length - index - 1)
+    progress_logger.log_and_save_postprocessing_remaining(links_to_crawl.length - index - 1)
     result_pages << page
     pages_by_canonical_url[page.curi.to_s] = page
   end

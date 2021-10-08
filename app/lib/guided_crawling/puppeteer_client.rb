@@ -72,7 +72,7 @@ class PuppeteerClient
           end
           pptr_page.enable_request_tracking
           pptr_page.goto(uri.to_s, wait_until: "networkidle0")
-          progress_logger.log_puppeteer
+          progress_logger.log_and_save_puppeteer
 
           if match_curis_set
             initial_content = pptr_page.content
@@ -89,13 +89,13 @@ class PuppeteerClient
               while load_more_button do
                 logger.info("Clicking load more button")
                 pptr_page.wait_and_scroll(logger) { load_more_button.click }
-                progress_logger.log_puppeteer
+                progress_logger.log_and_save_puppeteer
                 load_more_button = find_load_more_button.call(pptr_page)
               end
             else
               logger.info("Scrolling")
               pptr_page.wait_and_scroll(logger)
-              progress_logger.log_puppeteer
+              progress_logger.log_and_save_puppeteer
             end
             content = pptr_page.content
           else

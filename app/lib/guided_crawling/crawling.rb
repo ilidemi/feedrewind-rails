@@ -163,56 +163,71 @@ MEDIUM_FEED_LINK_SELECTOR = "link[rel=alternate][type='application/rss+xml'][hre
 SUBSTACK_FOOTER_SELECTOR = "[class*=footer-substack]"
 BUTTONDOWN_TWITTER_XPATH = "/html/head/meta[@name='twitter:site'][@content='@buttondown']"
 
-def crawl_with_puppeteer_if_match(
-  page, match_curis_set, puppeteer_client, crawl_ctx, progress_logger, logger
-)
+def is_load_more(page)
+  page.document.at_css(LOAD_MORE_SELECTOR)
+end
+
+def is_medium_list(page)
+  page.document.at_css(MEDIUM_FEED_LINK_SELECTOR) &&
+    page.document.css("button").any? { |button| button.text.downcase == "show more" }
+end
+
+def is_substack_archive(page)
+  page.curi.trimmed_path&.match?("/archive/*$") &&
+    page.document.at_css(SUBSTACK_FOOTER_SELECTOR)
+end
+
+def is_buttondown(page)
+  page.document.at_xpath(BUTTONDOWN_TWITTER_XPATH)
+end
+
+def is_puppeteer_match(page)
+  return false unless page.document
+
+  is_load_more(page) ||
+    is_medium_list(page) ||
+    is_substack_archive(page) ||
+    is_buttondown(page)
+end
+
+def crawl_with_puppeteer_if_match(page, match_curis_set, puppeteer_client, crawl_ctx, progress_logger, logger)
+  return page unless puppeteer_client && page.document
+
   pptr_content = nil
-  if puppeteer_client && page.document
-    if page.document.at_css(LOAD_MORE_SELECTOR)
-      logger.info("Found load more button, rerunning with puppeteer")
-      pptr_content = puppeteer_client.fetch(
-        page.fetch_uri, match_curis_set, crawl_ctx, progress_logger, logger
-      ) do |pptr_page|
-        pptr_page.query_visible_selector(LOAD_MORE_SELECTOR)
-      end
-    elsif page.document.at_css(MEDIUM_FEED_LINK_SELECTOR) &&
-      page.document.css("button").any? { |button| button.text.downcase == "show more" }
-
-      logger.info("Spotted Medium page, rerunning with puppeteer")
-      pptr_content = puppeteer_client.fetch(
-        page.fetch_uri, match_curis_set, crawl_ctx, progress_logger, logger
-      ) do |pptr_page|
-        pptr_page
-          .query_selector_all("button")
-          .filter { |button| button.evaluate("b => b.textContent").downcase == "show more" }
-          .first
-      end
-    elsif page.curi.trimmed_path&.match?("/archive/*$") &&
-      page.document.at_css(SUBSTACK_FOOTER_SELECTOR)
-
-      logger.info("Spotted Substack archives, rerunning with puppeteer")
-      pptr_content = puppeteer_client.fetch(
-        page.fetch_uri, match_curis_set, crawl_ctx, progress_logger, logger
-      )
-    elsif page.document.at_xpath(BUTTONDOWN_TWITTER_XPATH)
-      logger.info("Spotted Buttondown page, rerunning with puppeteer")
-      pptr_content = puppeteer_client.fetch(
-        page.fetch_uri, match_curis_set, crawl_ctx, progress_logger, logger
-      )
+  if is_load_more(page)
+    logger.info("Found load more button, rerunning with puppeteer")
+    pptr_content = puppeteer_client.fetch(
+      page.fetch_uri, match_curis_set, crawl_ctx, progress_logger, logger
+    ) do |pptr_page|
+      pptr_page.query_visible_selector(LOAD_MORE_SELECTOR)
     end
+  elsif is_medium_list(page)
+    logger.info("Spotted Medium page, rerunning with puppeteer")
+    pptr_content = puppeteer_client.fetch(
+      page.fetch_uri, match_curis_set, crawl_ctx, progress_logger, logger
+    ) do |pptr_page|
+      pptr_page
+        .query_selector_all("button")
+        .filter { |button| button.evaluate("b => b.textContent").downcase == "show more" }
+        .first
+    end
+  elsif is_substack_archive(page)
+    logger.info("Spotted Substack archives, rerunning with puppeteer")
+    pptr_content = puppeteer_client.fetch(page.fetch_uri, match_curis_set, crawl_ctx, progress_logger, logger)
+  elsif is_buttondown(page)
+    logger.info("Spotted Buttondown page, rerunning with puppeteer")
+    pptr_content = puppeteer_client.fetch(page.fetch_uri, match_curis_set, crawl_ctx, progress_logger, logger)
   end
 
-  if pptr_content
-    if !crawl_ctx.pptr_fetched_curis.include?(page.curi)
-      crawl_ctx.pptr_fetched_curis << page.curi
-      logger.info("Puppeteer page saved")
-    else
-      logger.info("Puppeteer page saved - canonical uri already seen")
-    end
+  return page unless pptr_content
 
-    pptr_document = nokogiri_html5(pptr_content)
-    Page.new(page.curi, page.fetch_uri, pptr_content, pptr_document)
+  if !crawl_ctx.pptr_fetched_curis.include?(page.curi)
+    crawl_ctx.pptr_fetched_curis << page.curi
+    logger.info("Puppeteer page saved")
   else
-    page
+    logger.info("Puppeteer page saved - canonical uri already seen")
   end
+
+  pptr_document = nokogiri_html5(pptr_content)
+  Page.new(page.curi, page.fetch_uri, pptr_content, pptr_document)
 end
