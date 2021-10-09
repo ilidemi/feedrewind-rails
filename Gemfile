@@ -42,6 +42,8 @@ group :development do
   gem 'listen', '~> 3.3'
   # Spring speeds up development by keeping your application running in the background. Read more: https://github.com/rails/spring
   gem 'spring'
+
+  gem 'sqlite3', '~> 1.4', '>= 1.4.2'
 end
 
 group :test do
@@ -67,4 +69,3 @@ gem 'rspec', '~> 3.10', '>= 3.10.0'
 gem 'rspec-rails', '~> 5.0', '>= 5.0.1'
 gem 'gnuplot', '~> 2.6', '>= 2.6.2'
 gem 'puppeteer-ruby', '~> 0.35', '>= 0.35.0'
-gem 'sqlite3', '~> 1.4', '>= 1.4.2'
