@@ -23,5 +23,8 @@ module RssCatchupRails
 
     Delayed::Worker.sleep_delay = 0.1
     Delayed::Worker.raise_signal_exceptions = :term
+
+    config.autoload_paths += Dir["#{config.root}/app/lib/**/"]
+    config.eager_load_paths += Dir["#{config.root}/app/lib/**/"]
   end
 end
