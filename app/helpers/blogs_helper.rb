@@ -1,10 +1,10 @@
 module BlogsHelper
   def BlogsHelper.feed_url(request, blog)
-    "#{request.protocol}#{request.host_with_port}/#{blog.user.id}/#{blog.name}/feed"
+    "#{request.protocol}#{request.host_with_port}/blogs/#{blog.id}/feed"
   end
 
   def BlogsHelper.status_url(request, blog)
-    "#{request.protocol}#{request.host_with_port}/#{blog.name}/status"
+    "#{request.protocol}#{request.host_with_port}/blogs/#{blog.id}/setup"
   end
 
   def BlogsHelper.days_of_week_from_params(schedule_params)

@@ -1,4 +1,4 @@
-<a href="/">← Go back</a>
+<a href="/blogs">← Go back</a>
 <h1><%= @blog.name %></h1>
 <div>URL: <a href="<%= @blog.url %>"><%= @blog.url %></a></div>
 <div>Feed:
@@ -24,7 +24,7 @@
 <br>
 
 <% if published_count < total_count %>
-  <%= form_tag({ :controller => :blogs, :action => :update, :name => @blog.name }, { :method => :put }) do |form| %>
+  <%= form_tag({ :controller => :blogs, :action => :update, :id => @blog.id }, { :method => :put }) do |form| %>
     <%= render partial: "schedule", locals: {
       form: form,
       schedule: {

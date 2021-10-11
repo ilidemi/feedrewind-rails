@@ -25,13 +25,14 @@ def is_feed(page_content, logger)
   false
 end
 
-FeedLinks = Struct.new(:root_link, :entry_links, :generator)
+FeedLinks = Struct.new(:title, :root_link, :entry_links, :generator)
 
 def extract_feed_links(feed_content, fetch_uri, logger)
   xml = Nokogiri::XML(feed_content)
   has_feedburner_namespace = xml.namespaces.key?("xmlns:feedburner")
   rss_channel = xml.at_xpath("/rss/channel")
   if rss_channel
+    title = rss_channel.at_xpath("title")&.inner_text&.strip
     root_url = rss_channel.at_xpath("link")&.inner_text
 
     item_nodes = rss_channel.xpath("item")
@@ -89,6 +90,7 @@ def extract_feed_links(feed_content, fetch_uri, logger)
     end
   else
     atom_feed = xml.at_xpath("/xmlns:feed")
+    title = rss_channel.at_xpath("xmlns:title")&.inner_text&.strip
     root_url = get_atom_url(atom_feed, false)
 
     entry_nodes = atom_feed.xpath("xmlns:entry")
@@ -128,6 +130,10 @@ def extract_feed_links(feed_content, fetch_uri, logger)
       end
     end
   end
+
+  if title.nil? || title.empty?
+    title = fetch_uri.host
+  end
   root_link = root_url ? to_canonical_link(root_url, logger, fetch_uri) : nil
 
   entry_links = sorted_entries.map do |entry|
@@ -135,15 +141,7 @@ def extract_feed_links(feed_content, fetch_uri, logger)
   end
   entry_dates = are_dates_certain ? sorted_entries.map { |entry| entry[:pub_date] } : nil
   entry_links = FeedEntryLinks.from_links_dates(entry_links, entry_dates)
-  FeedLinks.new(root_link, entry_links, generator)
-end
-
-def finalize_feed_links(possible_redirect_feed_links, entry_to_host, logger)
-  final_entry_links = possible_redirect_feed_links.entry_links.map do |entry_link|
-    entry_link.uri.host = entry_to_host
-    to_canonical_link(entry_link.uri.to_s, logger)
-  end
-  FeedLinks.new(possible_redirect_feed_links.root_link, final_entry_links)
+  FeedLinks.new(title, root_link, entry_links, generator)
 end
 
 def get_atom_url(linkable, has_feedburner_namespace)

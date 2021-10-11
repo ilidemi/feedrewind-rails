@@ -6,11 +6,11 @@ Rails.application.routes.draw do
   resources :sessions, only: [:new, :create, :destroy]
 
   root "blogs#index"
-  resources :blogs, only: [:index, :show, :new, :create, :update, :destroy], param: :name
-  get '/:name/status', to: 'blogs#status'
-  post '/:name/pause', to: 'blogs#pause'
-  post '/:name/unpause', to: 'blogs#unpause'
-  get '/:user_id/:name/feed', to: 'rss#show'
+  resources :blogs, only: [:index, :show, :new, :create, :update, :destroy], param: :id
+  get '/blogs/:id/setup', to: 'blogs#setup'
+  post '/blogs/:id/pause', to: 'blogs#pause'
+  post '/blogs/:id/unpause', to: 'blogs#unpause'
+  get '/blogs/:id/feed', to: 'rss#show'
 
   mount ActionCable.server => '/cable'
 end

@@ -9,7 +9,7 @@ class BlogsController < ApplicationController
   end
 
   def show
-    @blog = @current_user.blogs.find_by(name: params[:name])
+    @blog = @current_user.blogs.find(params[:id])
   end
 
   def create
@@ -38,40 +38,40 @@ class BlogsController < ApplicationController
       )
     end
 
-    redirect_to action: 'status', name: @blog.name
+    redirect_to action: 'setup', id: @blog.id
   end
 
-  def status
-    @blog = @current_user.blogs.find_by(name: params[:name])
+  def setup
+    @blog = @current_user.blogs.find(params[:id])
     unless @blog
       return redirect_to action: 'index'
     end
 
     if @blog.fetch_status == "succeeded"
-      redirect_to action: 'show', name: @blog.name
+      redirect_to action: 'show', id: @blog.id
     end
   end
 
   def pause
-    @blog = @current_user.blogs.find_by(name: params[:name])
+    @blog = @current_user.blogs.find(params[:id])
     @blog.is_paused = true
     @blog.save!
-    redirect_to action: 'show', name: @blog.name
+    redirect_to action: 'show', id: @blog.id
   end
 
   def unpause
-    @blog = @current_user.blogs.find_by(name: params[:name])
+    @blog = @current_user.blogs.find(params[:id])
     @blog.is_paused = false
     @blog.save!
-    redirect_to action: 'show', name: @blog.name
+    redirect_to action: 'show', id: @blog.id
   end
 
   def update
     update_params = params.permit(
-      :name, :posts_per_day, :schedule_mon, :schedule_tue, :schedule_wed, :schedule_thu, :schedule_fri,
+      :id, :posts_per_day, :schedule_mon, :schedule_tue, :schedule_wed, :schedule_thu, :schedule_fri,
       :schedule_sat, :schedule_sun)
 
-    @blog = @current_user.blogs.find_by!(name: update_params[:name])
+    @blog = @current_user.blogs.find(update_params[:id])
     new_days_of_week = BlogsHelper.days_of_week_from_params(update_params)
                                   .to_set
     existing_days_of_week = @blog.schedules
@@ -99,7 +99,7 @@ class BlogsController < ApplicationController
   end
 
   def destroy
-    @blog = @current_user.blogs.find_by(name: params[:name])
+    @blog = @current_user.blogs.find(params[:id])
     @blog.destroy!
 
     redirect_to root_path

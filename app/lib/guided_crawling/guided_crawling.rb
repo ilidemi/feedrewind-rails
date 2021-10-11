@@ -88,6 +88,7 @@ def guided_crawl(start_url, crawl_ctx, http_client, puppeteer_client, progress_s
     end
 
     feed_result.feed_links = feed_links.entry_links.length
+    logger.info("title: #{feed_links.title}")
     logger.info("Root url: #{feed_links.root_link&.url}")
     logger.info("Entries in feed: #{feed_links.entry_links.length}")
     logger.info("Feed order is certain: #{feed_links.entry_links.is_order_certain}")
@@ -400,7 +401,7 @@ def guided_crawl_fetch_loop(
       link = link_or_page
       next if crawl_ctx.fetched_curis.include?(link.curi)
 
-      page = crawl_request(link, false, crawl_ctx, mock_http_client, logger)
+      page = crawl_request(link, false, crawl_ctx, mock_http_client, progress_logger, logger)
       unless page.is_a?(Page) && page.document
         logger.info("Couldn't fetch link: #{page}")
         next
