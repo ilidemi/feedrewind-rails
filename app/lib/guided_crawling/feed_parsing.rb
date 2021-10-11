@@ -14,13 +14,8 @@ def is_feed(page_content, logger)
     return false
   end
 
-  unless xml.xpath("/rss/channel").empty?
-    return true
-  end
-
-  if xml.namespaces["xmlns"] == "http://www.w3.org/2005/Atom" && !xml.xpath("/xmlns:feed").empty?
-    return true
-  end
+  return true unless xml.xpath("/rss/channel").empty?
+  return true if xml.namespaces["xmlns"] == "http://www.w3.org/2005/Atom" && !xml.xpath("/xmlns:feed").empty?
 
   false
 end
@@ -147,9 +142,7 @@ end
 def get_atom_url(linkable, has_feedburner_namespace)
   if has_feedburner_namespace
     feedburner_orig_link = linkable.at_xpath("feedburner:origLink")
-    if feedburner_orig_link
-      return feedburner_orig_link.inner_text
-    end
+    return feedburner_orig_link.inner_text if feedburner_orig_link
   end
 
   feed_links = linkable.xpath("xmlns:link")
@@ -164,13 +157,8 @@ def get_atom_url(linkable, has_feedburner_namespace)
 end
 
 def try_sort_reverse_chronological(items, logger)
-  if items.any? { |item| item[:pub_date].nil? }
-    return [items, false]
-  end
-
-  if items.length < 2
-    return [items, false]
-  end
+  return [items, false] if items.any? { |item| item[:pub_date].nil? }
+  return [items, false] if items.length < 2
 
   all_dates_equal = true
   are_dates_ascending_order = true
