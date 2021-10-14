@@ -1,0 +1,2 @@
+class StartFeed < ApplicationRecord
+end

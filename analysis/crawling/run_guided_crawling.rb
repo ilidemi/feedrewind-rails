@@ -1,7 +1,8 @@
+require_relative '../../app/lib/guided_crawling/feed_discovery'
 require_relative '../../app/lib/guided_crawling/guided_crawling'
+require_relative '../../app/lib/guided_crawling/mock_progress_saver'
 require_relative '../../app/lib/guided_crawling/progress_logger'
 require_relative 'mock_http_client'
-require_relative 'mock_progress_saver'
 require_relative 'mock_puppeteer_client'
 require_relative 'run_common'
 
@@ -84,10 +85,24 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     end
     db.exec_params('delete from historical where start_link_id = $1', [start_link_id])
 
-    progress_saver = MockProgressSaver.new
+    discover_feeds_result = discover_feeds(
+      start_link_feed_url || start_link_url, crawl_ctx, mock_http_client, logger
+    )
 
+    if discover_feeds_result.is_a?(SingleFeedResult)
+      discovered_start_page = nil
+      discovered_start_feed = discover_feeds_result.start_feed
+    else
+      raise "No feeds discovered" if discover_feeds_result.start_feeds.empty?
+      raise "More than one feed discovered" if discover_feeds_result.start_feeds.length > 1
+
+      discovered_start_page = discover_feeds_result.start_page
+      discovered_start_feed = discover_feeds_result.start_feeds.first
+    end
+
+    progress_saver = MockProgressSaver.new
     guided_crawl_result = guided_crawl(
-      start_link_feed_url || start_link_url, crawl_ctx, mock_http_client, puppeteer_client,
+      discovered_start_page, discovered_start_feed, crawl_ctx, mock_http_client, puppeteer_client,
       progress_saver, logger
     )
     logger.info("Progress string: #{progress_saver.status_str}")

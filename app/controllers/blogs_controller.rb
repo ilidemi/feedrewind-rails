@@ -13,32 +13,13 @@ class BlogsController < ApplicationController
   end
 
   def create
-    create_params = params.permit(
-      :blog_name, :blog_url, :posts_per_day, :schedule_mon, :schedule_tue, :schedule_wed, :schedule_thu,
-      :schedule_fri, :schedule_sat, :schedule_sun
+    create_params = params.permit(:start_page_id, :start_feed_id, :start_feed_final_url, :name)
+    blog = BlogsHelper.create(
+      create_params[:start_page_id], create_params[:start_feed_id], create_params[:start_feed_final_url],
+      create_params[:name], @current_user
     )
 
-    days_of_week = BlogsHelper.days_of_week_from_params(create_params)
-    raise "Days of week can't be empty" if days_of_week.empty?
-
-    Blog.transaction do
-      @blog = @current_user.blogs.new
-      @blog.name = create_params[:blog_name]
-      @blog.url = create_params[:blog_url]
-      @blog.posts_per_day = create_params[:posts_per_day].to_i
-      @blog.fetch_status = :in_progress
-      @blog.is_paused = false
-      days_of_week.each do |day_of_week|
-        @blog.schedules.new(day_of_week: day_of_week)
-      end
-      @blog.save!
-
-      GuidedCrawlingJob.perform_later(
-        @blog.id, GuidedCrawlingJobArgs.new(create_params[:blog_url]).to_json
-      )
-    end
-
-    redirect_to action: 'setup', id: @blog.id
+    redirect_to BlogsHelper.setup_url(request, blog)
   end
 
   def setup

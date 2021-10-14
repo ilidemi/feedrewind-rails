@@ -5,12 +5,13 @@ require_relative 'util'
 HttpResponse = Struct.new(:code, :content_type, :location, :body)
 
 class HttpClient
-  def initialize
+  def initialize(enable_throttling = true)
     @prev_timestamp = nil
+    @enable_throttling = enable_throttling
   end
 
   def request(uri, _)
-    throttle
+    throttle if @enable_throttling
 
     req = Net::HTTP::Get.new(uri, initheader = { 'User-Agent' => 'rss-catchup/0.1' })
     begin

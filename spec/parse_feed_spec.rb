@@ -30,7 +30,7 @@ RSpec.describe "extract_feed_links" do
         </channel>
       </rss>
     }
-    expect(extract_feed_links(rss_content, "https://root/feed", logger))
+    expect(parse_feed(rss_content, "https://root/feed", logger))
       .to match_feed_links("https://root", %w[root/a root/b])
   end
 
@@ -48,7 +48,7 @@ RSpec.describe "extract_feed_links" do
         </channel>
       </rss>
     }
-    expect(extract_feed_links(rss_content, "https://root/feed", logger))
+    expect(parse_feed(rss_content, "https://root/feed", logger))
       .to match_feed_links("https://root", %w[root/a root/b])
   end
 
@@ -59,7 +59,7 @@ RSpec.describe "extract_feed_links" do
         </channel>
       </rss>
     }
-    expect(extract_feed_links(rss_content, "https://root/feed", logger).root_link)
+    expect(parse_feed(rss_content, "https://root/feed", logger).root_link)
       .to be_nil
   end
 
@@ -76,7 +76,7 @@ RSpec.describe "extract_feed_links" do
         </channel>
       </rss>
     }
-    expect { extract_feed_links(rss_content, "https://root/feed", logger) }
+    expect { parse_feed(rss_content, "https://root/feed", logger) }
       .to raise_error(/Couldn't extract item urls from RSS/)
   end
 
@@ -96,7 +96,7 @@ RSpec.describe "extract_feed_links" do
         </channel>
       </rss>
     }
-    expect(extract_feed_links(rss_content, "https://root/feed", logger))
+    expect(parse_feed(rss_content, "https://root/feed", logger))
       .to match_feed_links("https://root", %w[root/b root/a])
   end
 
@@ -120,7 +120,7 @@ RSpec.describe "extract_feed_links" do
         </channel>
       </rss>
     }
-    expect(extract_feed_links(rss_content, "https://root/feed", logger))
+    expect(parse_feed(rss_content, "https://root/feed", logger))
       .to match_feed_links("https://root", %w[root/b root/a root/c])
   end
 
@@ -144,7 +144,7 @@ RSpec.describe "extract_feed_links" do
         </channel>
       </rss>
     }
-    expect(extract_feed_links(rss_content, "https://root/feed", logger))
+    expect(parse_feed(rss_content, "https://root/feed", logger))
       .to match_feed_links("https://root", %w[root/b root/a root/c])
             .and match_feed_links("https://root", %w[root/b root/c root/a])
   end
@@ -165,7 +165,7 @@ RSpec.describe "extract_feed_links" do
         </channel>
       </rss>
     }
-    expect(extract_feed_links(rss_content, "https://root/feed", logger))
+    expect(parse_feed(rss_content, "https://root/feed", logger))
       .to match_feed_links("https://root", %w[root/a root/b])
             .and match_feed_links("https://root", %w[root/b root/a])
   end
@@ -182,7 +182,7 @@ RSpec.describe "extract_feed_links" do
         </channel>
       </rss>
     }
-    expect(extract_feed_links(rss_content, "https://root/feed", logger))
+    expect(parse_feed(rss_content, "https://root/feed", logger))
       .to match_feed_links("https://root", %w[root/a])
   end
 
@@ -202,7 +202,7 @@ RSpec.describe "extract_feed_links" do
         </channel>
       </rss>
     }
-    expect(extract_feed_links(rss_content, "https://root/feed", logger))
+    expect(parse_feed(rss_content, "https://root/feed", logger))
       .to match_feed_links("https://root", %w[root/a root/b])
   end
 
@@ -221,7 +221,7 @@ RSpec.describe "extract_feed_links" do
         </channel>
       </rss>
     }
-    expect(extract_feed_links(rss_content, "https://root/feed", logger).generator)
+    expect(parse_feed(rss_content, "https://root/feed", logger).generator)
       .to eq :tumblr
   end
 
@@ -240,7 +240,7 @@ RSpec.describe "extract_feed_links" do
         </channel>
       </rss>
     }
-    expect(extract_feed_links(rss_content, "https://root/feed", logger).generator)
+    expect(parse_feed(rss_content, "https://root/feed", logger).generator)
       .to eq :blogger
   end
 
@@ -259,7 +259,7 @@ RSpec.describe "extract_feed_links" do
         </channel>
       </rss>
     }
-    expect(extract_feed_links(rss_content, "https://root/feed", logger).generator)
+    expect(parse_feed(rss_content, "https://root/feed", logger).generator)
       .to eq :medium
   end
 
@@ -275,7 +275,7 @@ RSpec.describe "extract_feed_links" do
         </entry>
       </feed>
     }
-    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+    expect(parse_feed(atom_content, "https://root/feed", logger))
       .to match_feed_links("https://root", %w[root/a root/b])
   end
 
@@ -291,7 +291,7 @@ RSpec.describe "extract_feed_links" do
         </entry>
       </feed>
     }
-    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+    expect(parse_feed(atom_content, "https://root/feed", logger))
       .to match_feed_links("https://root", %w[root/a root/b])
   end
 
@@ -301,7 +301,7 @@ RSpec.describe "extract_feed_links" do
           <link/>
       </feed>
     }
-    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+    expect(parse_feed(atom_content, "https://root/feed", logger))
       .to match_feed_links(nil, [])
   end
 
@@ -310,7 +310,7 @@ RSpec.describe "extract_feed_links" do
       <feed xmlns="http://www.w3.org/2005/Atom">
       </feed>
     }
-    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+    expect(parse_feed(atom_content, "https://root/feed", logger))
       .to match_feed_links(nil, [])
   end
 
@@ -326,7 +326,7 @@ RSpec.describe "extract_feed_links" do
         </entry>
       </feed>
     }
-    expect { extract_feed_links(atom_content, "https://root/feed", logger) }
+    expect { parse_feed(atom_content, "https://root/feed", logger) }
       .to raise_error(/Couldn't extract entry urls from Atom/)
   end
 
@@ -341,7 +341,7 @@ RSpec.describe "extract_feed_links" do
         </entry>
       </feed>
     }
-    expect { extract_feed_links(atom_content, "https://root/feed", logger) }
+    expect { parse_feed(atom_content, "https://root/feed", logger) }
       .to raise_error(/Couldn't extract entry urls from Atom/)
   end
 
@@ -359,7 +359,7 @@ RSpec.describe "extract_feed_links" do
         </entry>
       </feed>
     }
-    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+    expect(parse_feed(atom_content, "https://root/feed", logger))
       .to match_feed_links("https://root", %w[root/b root/a])
   end
 
@@ -381,7 +381,7 @@ RSpec.describe "extract_feed_links" do
         </entry>
       </feed>
     }
-    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+    expect(parse_feed(atom_content, "https://root/feed", logger))
       .to match_feed_links("https://root", %w[root/b root/a root/c])
   end
 
@@ -403,7 +403,7 @@ RSpec.describe "extract_feed_links" do
         </entry>
       </feed>
     }
-    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+    expect(parse_feed(atom_content, "https://root/feed", logger))
       .to match_feed_links("https://root", %w[root/b root/a root/c])
             .and match_feed_links("https://root", %w[root/b root/c root/a])
   end
@@ -422,7 +422,7 @@ RSpec.describe "extract_feed_links" do
         </entry>
       </feed>
     }
-    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+    expect(parse_feed(atom_content, "https://root/feed", logger))
       .to match_feed_links("https://root", %w[root/b root/a])
             .and match_feed_links("https://root", %w[root/a root/b])
   end
@@ -437,7 +437,7 @@ RSpec.describe "extract_feed_links" do
         </entry>
       </feed>
     }
-    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+    expect(parse_feed(atom_content, "https://root/feed", logger))
       .to match_feed_links("https://root", %w[root/a])
   end
 
@@ -455,7 +455,7 @@ RSpec.describe "extract_feed_links" do
         </entry>
       </feed>
     }
-    expect(extract_feed_links(atom_content, "https://root/feed", logger))
+    expect(parse_feed(atom_content, "https://root/feed", logger))
       .to match_feed_links("https://root", %w[root/a root/b])
   end
 
@@ -472,7 +472,7 @@ RSpec.describe "extract_feed_links" do
         </entry>
       </feed>
     }
-    expect(extract_feed_links(atom_content, "https://root/feed", logger).generator)
+    expect(parse_feed(atom_content, "https://root/feed", logger).generator)
       .to eq :blogger
   end
 end

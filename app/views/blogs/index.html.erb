@@ -18,7 +18,7 @@
         <%= link_to blog.name, blog %>
         (<a data-turbolinks="false" href="<%= BlogsHelper.feed_url(request, blog) %>">feed</a>)
       <% else %>
-        <a href="<%= BlogsHelper.status_url(request, blog) %>"><%= blog.name %></a>
+        <a href="<%= BlogsHelper.setup_url(request, blog) %>"><%= blog.name %></a>
         <% if blog.fetch_status == "in_progress" %>
           (⏳)
         <% else %>
@@ -41,4 +41,4 @@
   </div>
 <% end %>
 
-<%= link_to "Add blog", new_blog_path %>
+<%= link_to "Add blog", blogs_add_path %>

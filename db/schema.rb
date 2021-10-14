@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_09_24_030232) do
+ActiveRecord::Schema.define(version: 2021_10_14_202926) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -63,6 +63,23 @@ ActiveRecord::Schema.define(version: 2021_09_24_030232) do
 
 # Could not dump table "schedules" because of following StandardError
 #   Unknown type 'day_of_week' for column 'day_of_week'
+
+  create_table "start_feeds", force: :cascade do |t|
+    t.binary "content", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.text "url", null: false
+    t.text "final_url", null: false
+    t.text "title", null: false
+  end
+
+  create_table "start_pages", force: :cascade do |t|
+    t.binary "content", null: false
+    t.text "url", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.text "final_url", null: false
+  end
 
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "email"

@@ -3,7 +3,7 @@ module BlogsHelper
     "#{request.protocol}#{request.host_with_port}/blogs/#{blog.id}/feed"
   end
 
-  def BlogsHelper.status_url(request, blog)
+  def BlogsHelper.setup_url(request, blog)
     "#{request.protocol}#{request.host_with_port}/blogs/#{blog.id}/setup"
   end
 
@@ -17,6 +17,22 @@ module BlogsHelper
     days_of_week << 'sat' if schedule_params[:schedule_sat] == '1'
     days_of_week << 'sun' if schedule_params[:schedule_sun] == '1'
     days_of_week
+  end
+
+  def BlogsHelper.create(start_page_id, start_feed_id, start_feed_url, name, current_user)
+    Blog.transaction do
+      blog = current_user.blogs.new
+      blog.name = name
+      blog.url = start_feed_url
+      blog.fetch_status = :in_progress
+      blog.save!
+
+      GuidedCrawlingJob.perform_later(
+        blog.id, GuidedCrawlingJobArgs.new(start_page_id, start_feed_id).to_json
+      )
+
+      blog
+    end
   end
 
   class BlogDeletedError < StandardError

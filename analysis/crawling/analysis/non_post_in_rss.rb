@@ -20,7 +20,7 @@ start_link_ids.each do |start_link_id|
   content = unescape_bytea(row["content"])
   fetch_uri = URI(row["fetch_url"])
   pattern = row["pattern"]
-  feed_links = extract_feed_links(content, fetch_uri, logger)
+  feed_links = parse_feed(content, fetch_uri, logger)
   feed_uris = feed_links.entry_links.map(&:curi)
   feed_urls = feed_uris.map(&:to_s)
   path_prefix, feed_filtered_curis = try_filter_non_posts_from_feed(feed_uris, Set.new)

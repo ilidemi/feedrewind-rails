@@ -26,78 +26,59 @@ class GuidedCrawlError < StandardError
   attr_reader :partial_result
 end
 
-def guided_crawl(start_url, crawl_ctx, http_client, puppeteer_client, progress_saver, logger)
+def guided_crawl(
+  discovered_start_page, discovered_start_feed, crawl_ctx, http_client, puppeteer_client, progress_saver,
+  logger
+)
   guided_crawl_result = GuidedCrawlResult.new
   begin
     feed_result = FeedResult.new
     guided_crawl_result.feed_result = feed_result
     progress_logger = ProgressLogger.new(progress_saver)
 
-    start_link = to_canonical_link(start_url, logger)
-    raise "Bad start url: #{start_url}" if start_link.nil?
+    crawl_ctx.seen_fetch_urls << discovered_start_feed.url
+    crawl_ctx.seen_fetch_urls << discovered_start_feed.final_url
+    logger.info("Feed url: #{discovered_start_feed.final_url}")
+    feed_result.feed_url = "<a href=\"#{discovered_start_feed.final_url}\">feed</a>"
 
-    guided_crawl_result.start_url = "<a href=\"#{start_link.url}\">#{start_link.url}</a>"
-    start_result = crawl_request(start_link, true, crawl_ctx, http_client, progress_logger, logger)
-    progress_logger.save_status
-    raise "Unexpected start result: #{start_result}" unless start_result.is_a?(Page) && start_result.content
+    feed_link = to_canonical_link(discovered_start_feed.url, logger)
+    feed_final_link = to_canonical_link(discovered_start_feed.final_url, logger)
 
-    if is_feed(start_result.content, logger)
-      start_page_link = nil
-      start_page = nil
-      feed_link = start_link
-      feed_page = start_result
-      feed_result.feed_url = "<a href=\"#{start_link.url}\">feed</a>"
-    else
-      start_page_link = start_link
-      start_page = start_result
-      crawl_ctx.seen_fetch_urls << start_result.fetch_uri.to_s
-      feed_links = start_page
-        .document
-        .xpath("/html/head/link[@rel='alternate']")
-        .to_a
-        .filter { |link| %w[application/rss+xml application/atom+xml].include?(link.attributes["type"]&.value) }
-        .map { |link| link.attributes["href"]&.value }
-        .map { |url| to_canonical_link(url, logger, start_link.uri) }
-        .filter { |link| link }
-        .filter { |link| !link.url.end_with?("?alt=rss") }
-        .filter { |link| !link.url.end_with?("/comments/feed/") }
-        .filter { |link| !link.url.end_with?("/comments/feed") }
-      raise "No feed links for #{start_page.fetch_uri}" if feed_links.empty?
-      raise "Multiple feed links for #{start_page.fetch_uri}" if feed_links.length > 1
+    parsed_feed = parse_feed(discovered_start_feed.content, feed_final_link.uri, logger)
 
-      feed_link = feed_links.first
-      feed_result.feed_url = "<a href=\"#{feed_link.url}\">feed</a>"
-      feed_request_result = crawl_request(feed_link, true, crawl_ctx, http_client, progress_logger, logger)
-      progress_logger.save_status
-      unless feed_request_result.is_a?(Page) && feed_request_result.content
-        raise "Unexpected feed result: #{feed_request_result}"
-      end
+    if discovered_start_page
+      crawl_ctx.seen_fetch_urls << discovered_start_page.url
+      crawl_ctx.seen_fetch_urls << discovered_start_page.final_url
+      guided_crawl_result.start_url = "<a href=\"#{discovered_start_page.url}\">#{discovered_start_page.url}</a>"
 
-      feed_page = feed_request_result
-    end
-
-    crawl_ctx.seen_fetch_urls << feed_page.fetch_uri.to_s
-    logger.info("Feed url: #{feed_page.curi}")
-
-    feed_links = extract_feed_links(feed_page.content, feed_page.fetch_uri, logger)
-
-    if start_page.nil?
-      start_page_link, start_page = get_feed_start_page(
-        feed_link, feed_links, crawl_ctx, http_client, progress_logger, logger
+      start_page_link = to_canonical_link(discovered_start_page.url, logger)
+      start_page_final_link = to_canonical_link(discovered_start_page.final_url, logger)
+      start_page_document = nokogiri_html5(discovered_start_page.content)
+      start_page = Page.new(
+        start_page_final_link.curi,
+        start_page_final_link.uri,
+        discovered_start_page.content,
+        start_page_document
       )
+    else
+      guided_crawl_result.start_url = "<a href=\"#{discovered_start_feed.url}\">#{discovered_start_feed.url}</a>"
+      start_page_link, start_page = get_feed_start_page(
+        feed_link, parsed_feed, crawl_ctx, http_client, progress_logger, logger
+      )
+      start_page_final_link = to_canonical_link(start_page.fetch_uri.to_s, logger)
     end
 
-    feed_result.feed_links = feed_links.entry_links.length
-    logger.info("title: #{feed_links.title}")
-    logger.info("Root url: #{feed_links.root_link&.url}")
-    logger.info("Entries in feed: #{feed_links.entry_links.length}")
-    logger.info("Feed order is certain: #{feed_links.entry_links.is_order_certain}")
+    feed_result.feed_links = parsed_feed.entry_links.length
+    logger.info("Title: #{parsed_feed.title}")
+    logger.info("Root url: #{parsed_feed.root_link&.url}")
+    logger.info("Entries in feed: #{parsed_feed.entry_links.length}")
+    logger.info("Feed order is certain: #{parsed_feed.entry_links.is_order_certain}")
 
-    raise "Feed is empty" if feed_links.entry_links.length == 0
-    raise "Feed only has 1 item" if feed_links.entry_links.length == 1
+    raise "Feed is empty" if parsed_feed.entry_links.length == 0
+    raise "Feed only has 1 item" if parsed_feed.entry_links.length == 1
 
     feed_entry_links_by_host = {}
-    feed_links.entry_links.to_a.each do |entry_link|
+    parsed_feed.entry_links.to_a.each do |entry_link|
       unless feed_entry_links_by_host.key?(entry_link.uri.host)
         feed_entry_links_by_host[entry_link.uri.host] = []
       end
@@ -105,11 +86,11 @@ def guided_crawl(start_url, crawl_ctx, http_client, puppeteer_client, progress_s
     end
 
     same_hosts = Set.new
-    [[start_page_link, start_page], [feed_link, feed_page]].each do |link, page|
-      if canonical_uri_same_path?(link.curi, page.curi) &&
-        (feed_entry_links_by_host.key?(link.uri.host) || feed_entry_links_by_host.key?(page.fetch_uri.host))
+    [[start_page_link, start_page_final_link], [feed_link, feed_final_link]].each do |link, final_link|
+      if canonical_uri_same_path?(link.curi, final_link.curi) &&
+        (feed_entry_links_by_host.key?(link.uri.host) || feed_entry_links_by_host.key?(final_link.uri.host))
 
-        same_hosts << link.uri.host << page.fetch_uri.host
+        same_hosts << link.uri.host << final_link.uri.host
       end
     end
 
@@ -132,25 +113,25 @@ def guided_crawl(start_url, crawl_ctx, http_client, puppeteer_client, progress_s
       end
     end
 
-    curi_eq_cfg = CanonicalEqualityConfig.new(same_hosts, feed_links.generator == :tumblr)
+    curi_eq_cfg = CanonicalEqualityConfig.new(same_hosts, parsed_feed.generator == :tumblr)
     crawl_ctx.fetched_curis.update_equality_config(curi_eq_cfg)
     crawl_ctx.pptr_fetched_curis.update_equality_config(curi_eq_cfg)
     guided_crawl_result.curi_eq_cfg = curi_eq_cfg
 
     historical_error = nil
-    if feed_links.entry_links.length >= 101
-      logger.info("Feed is long with #{feed_links.entry_links.length} entries")
+    if parsed_feed.entry_links.length >= 101
+      logger.info("Feed is long with #{parsed_feed.entry_links.length} entries")
       historical_result = HistoricalResult.new(
         main_link: feed_link,
         pattern: "long_feed",
-        links: feed_links.entry_links.to_a,
-        count: feed_links.entry_links.length,
+        links: parsed_feed.entry_links.to_a,
+        count: parsed_feed.entry_links.length,
         extra: ""
       )
     else
       begin
         historical_result = guided_crawl_historical(
-          start_page, feed_links.entry_links, feed_links.generator, crawl_ctx, curi_eq_cfg, http_client,
+          start_page, parsed_feed.entry_links, parsed_feed.generator, crawl_ctx, curi_eq_cfg, http_client,
           puppeteer_client, progress_logger, logger
         )
       rescue => e

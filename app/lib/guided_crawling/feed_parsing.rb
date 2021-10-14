@@ -20,9 +20,9 @@ def is_feed(page_content, logger)
   false
 end
 
-FeedLinks = Struct.new(:title, :root_link, :entry_links, :generator)
+ParsedFeed = Struct.new(:title, :root_link, :entry_links, :generator)
 
-def extract_feed_links(feed_content, fetch_uri, logger)
+def parse_feed(feed_content, fetch_uri, logger)
   xml = Nokogiri::XML(feed_content)
   has_feedburner_namespace = xml.namespaces.key?("xmlns:feedburner")
   rss_channel = xml.at_xpath("/rss/channel")
@@ -85,7 +85,7 @@ def extract_feed_links(feed_content, fetch_uri, logger)
     end
   else
     atom_feed = xml.at_xpath("/xmlns:feed")
-    title = rss_channel.at_xpath("xmlns:title")&.inner_text&.strip
+    title = xml.at_xpath("xmlns:title")&.inner_text&.strip
     root_url = get_atom_url(atom_feed, false)
 
     entry_nodes = atom_feed.xpath("xmlns:entry")
@@ -136,7 +136,7 @@ def extract_feed_links(feed_content, fetch_uri, logger)
   end
   entry_dates = are_dates_certain ? sorted_entries.map { |entry| entry[:pub_date] } : nil
   entry_links = FeedEntryLinks.from_links_dates(entry_links, entry_dates)
-  FeedLinks.new(title, root_link, entry_links, generator)
+  ParsedFeed.new(title, root_link, entry_links, generator)
 end
 
 def get_atom_url(linkable, has_feedburner_namespace)
