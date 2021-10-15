@@ -1,22 +1,18 @@
 module BlogsHelper
-  def BlogsHelper.feed_url(request, blog)
-    "#{request.protocol}#{request.host_with_port}/blogs/#{blog.id}/feed"
-  end
-
   def BlogsHelper.setup_url(request, blog)
     "#{request.protocol}#{request.host_with_port}/blogs/#{blog.id}/setup"
   end
 
-  def BlogsHelper.days_of_week_from_params(schedule_params)
-    days_of_week = []
-    days_of_week << 'mon' if schedule_params[:schedule_mon] == '1'
-    days_of_week << 'tue' if schedule_params[:schedule_tue] == '1'
-    days_of_week << 'wed' if schedule_params[:schedule_wed] == '1'
-    days_of_week << 'thu' if schedule_params[:schedule_thu] == '1'
-    days_of_week << 'fri' if schedule_params[:schedule_fri] == '1'
-    days_of_week << 'sat' if schedule_params[:schedule_sat] == '1'
-    days_of_week << 'sun' if schedule_params[:schedule_sun] == '1'
-    days_of_week
+  def BlogsHelper.confirm_url(request, blog)
+    "#{request.protocol}#{request.host_with_port}/blogs/#{blog.id}/confirm"
+  end
+
+  def BlogsHelper.schedule_url(request, blog)
+    "#{request.protocol}#{request.host_with_port}/blogs/#{blog.id}/schedule"
+  end
+
+  def BlogsHelper.feed_url(request, blog)
+    "#{request.protocol}#{request.host_with_port}/blogs/#{blog.id}/feed"
   end
 
   def BlogsHelper.create(start_page_id, start_feed_id, start_feed_url, name, current_user)
@@ -24,7 +20,7 @@ module BlogsHelper
       blog = current_user.blogs.new
       blog.name = name
       blog.url = start_feed_url
-      blog.fetch_status = :in_progress
+      blog.status = "crawl_in_progress"
       blog.save!
 
       GuidedCrawlingJob.perform_later(

@@ -5,5 +5,4 @@ class Blog < ApplicationRecord
   has_one :current_rss, dependent: :destroy
   validates :name, presence: true
   validates :url, presence: true
-  validates :fetch_status, presence: true
 end

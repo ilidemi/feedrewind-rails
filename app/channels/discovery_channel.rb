@@ -5,7 +5,7 @@ class DiscoveryChannel < ApplicationCable::Channel
 
   def after_subscribe
     blog = Blog.find(params[:blog_id])
-    if blog.fetch_status != :in_progress
+    if blog.status != "crawl_in_progress"
       # Safeguard from race condition with the job and client UI hanging
       ActionCable.server.broadcast("discovery_#{params[:blog_id]}", { done: true })
     end
@@ -13,7 +13,7 @@ class DiscoveryChannel < ApplicationCable::Channel
     sleep(1)
 
     blog = Blog.find(params[:blog_id])
-    if blog.fetch_status != :in_progress
+    if blog.status != "crawl_in_progress"
       # Safeguard from race condition with the job and client UI hanging
       ActionCable.server.broadcast("discovery_#{params[:blog_id]}", { done: true })
     end

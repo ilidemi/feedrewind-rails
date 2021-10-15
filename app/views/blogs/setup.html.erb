@@ -1,125 +1,15 @@
-<style>
-    .progress_page {
-        width: 1em;
-        height: 1em;
-        border-width: 1px;
-        border-style: solid;
-        display: inline-block;
-        margin-left: 2px;
-        margin-right: 2px;
-    }
-
-    .progress_long_page {
-        width: 3em;
-        height: 1em;
-        border-width: 1px;
-        border-style: solid;
-        display: inline-block;
-        margin-left: 2px;
-        margin-right: 2px;
-    }
-
-    .progress_regular {
-        background-color: silver;
-        border-color: gray;
-    }
-
-    .progress_highlighted {
-        background-color: lightsalmon;
-        border-color: darksalmon;
-    }
-
-    .progress_finishing {
-        background-color: tomato;
-        border-color: orangered;
-    }
-
-    .progress_page_remaining {
-        width: 1em;
-        height: 1em;
-        border-width: 1px;
-        border-style: solid;
-        border-color: transparent;
-        display: inline-block;
-        background-color: whitesmoke;
-    }
-</style>
-
 <a href="/blogs">← Go back</a>
 <h1><%= @blog.name %></h1>
 <div style="overflow-wrap: break-word">
-  <% if @blog.fetch_status == 'in_progress' %>
-    <script>
-        function createRect(classes) {
-            let rect = document.createElement("div");
-            rect.className = classes;
-            return rect;
-        }
-
-        function displayProgress(data) {
-            if (data.status) {
-                let rects = [];
-                let tokens = [...data.status.matchAll(/hH|p+H?|hF\d*|h/g)];
-                for (let index in tokens) {
-                    let token = tokens[index];
-                    if (token[0] === "h") {
-                        rects.push(createRect("progress_page progress_regular"));
-                    } else if (token[0] === "hH") {
-                        rects.push(createRect("progress_page progress_highlighted"));
-                    } else if (token[0].startsWith("p")) {
-                        let classes = token[0].endsWith("H")
-                            ? "progress_long_page progress_highlighted"
-                            : "progress_long_page progress_regular";
-                        (token[0].match(/p/g) || []).forEach(() => {
-                            rects.push(createRect(classes));
-                        });
-                    } else if (token[0].startsWith("hF")) {
-                        rects.push(createRect("progress_page progress_finishing"));
-                        if (index === tokens.length - 1) {
-                            let remainingCountMatch = token.match(/\d+$/g);
-                            if (remainingCountMatch) {
-                                Array(parseInt(remainingCountMatch[0])).forEach(() => {
-                                    rects.push(createRect("progress_page_remaining"));
-                                });
-                            }
-                        }
-                    } else {
-                        console.warn(`Unknown progress token: ${token} (${data})`);
-                    }
-                }
-                document.getElementById("progress_rects").replaceChildren(...rects);
-            }
-
-            if (data.hasOwnProperty("count")) {
-                if (data.count) {
-                    document.getElementById("progress_count").innerHTML = `Posts discovered: ${data.count}`;
-                } else {
-                    document.getElementById("progress_count").innerHTML = "";
-                }
-            }
-
-            if (data.done) {
-                // Reload the page
-                Turbolinks.visit(window.location);
-            }
-        }
-
-        subscription = window.discoverySubscribe("<%= @blog.id %>", data => {
-            displayProgress(data);
-        });
-        document.addEventListener('turbolinks:before-render', () => {
-            window.discoveryUnsubscribe(subscription)
-        });
-    </script>
-    ⏳ Loading: <span id="progress_rects"></span>
-    <% if @blog.fetch_progress %>
-      <script>displayProgress({status: "<%= @blog.fetch_progress %>"})</script>
-    <% end %>
-    <div id="progress_count"></div>
-    <% if @blog.fetch_count %>
-      <script>displayProgress({count: <%= @blog.fetch_count %>})</script>
-    <% end %>
-  <% else %>
+  <% if @blog.status == "crawl_in_progress" %>
+    <%= render partial: "setup_crawl_in_progress", locals: { blog: @blog } %>
+  <% elsif @blog.status == "crawl_failed" %>
     ❌ Loading posts failed
+  <% elsif @blog.status == "crawled" %>
+    <%= render partial: "setup_confirm", locals: { blog: @blog } %>
+  <% elsif @blog.status == "confirmed" %>
+    <%= render partial: "setup_set_schedule", locals: { blog: @blog } %>
+  <% else %>
+    TODO
   <% end %>
 </div>

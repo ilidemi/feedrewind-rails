@@ -24,13 +24,15 @@ COMMENT ON EXTENSION pgcrypto IS 'cryptographic functions';
 
 
 --
--- Name: blog_fetch_status; Type: TYPE; Schema: public; Owner: -
+-- Name: blog_status; Type: TYPE; Schema: public; Owner: -
 --
 
-CREATE TYPE public.blog_fetch_status AS ENUM (
-    'in_progress',
-    'succeeded',
-    'failed'
+CREATE TYPE public.blog_status AS ENUM (
+    'crawl_in_progress',
+    'crawled',
+    'confirmed',
+    'live',
+    'crawl_failed'
 );
 
 
@@ -110,9 +112,9 @@ CREATE TABLE public.blogs (
     url character varying,
     is_paused boolean,
     user_id uuid NOT NULL,
-    fetch_status public.blog_fetch_status NOT NULL,
     fetch_progress character varying,
-    fetch_count integer
+    fetch_count integer,
+    status public.blog_status NOT NULL
 );
 
 
@@ -249,9 +251,10 @@ ALTER SEQUENCE public.posts_id_seq OWNED BY public.posts.id;
 CREATE TABLE public.schedules (
     id bigint NOT NULL,
     blog_id bigint NOT NULL,
+    day_of_week public.day_of_week NOT NULL,
+    count integer NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL,
-    day_of_week public.day_of_week
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -616,6 +619,10 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20211013220113'),
 ('20211013224946'),
 ('20211013225920'),
-('20211014202926');
+('20211014202926'),
+('20211014231606'),
+('20211014232158'),
+('20211014232819'),
+('20211015001452');
 
 

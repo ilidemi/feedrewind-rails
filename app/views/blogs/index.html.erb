@@ -14,22 +14,22 @@
   <% published_count = blog.posts.group(:is_published).count[true] || 0 %>
   <div style="display:flex; justify-content:space-between">
     <span>
-      <% if blog.fetch_status == "succeeded" %>
+      <% if blog.status == "live" %>
         <%= link_to blog.name, blog %>
         (<a data-turbolinks="false" href="<%= BlogsHelper.feed_url(request, blog) %>">feed</a>)
       <% else %>
         <a href="<%= BlogsHelper.setup_url(request, blog) %>"><%= blog.name %></a>
-        <% if blog.fetch_status == "in_progress" %>
-          (⏳)
-        <% else %>
+        <% if blog.status == "crawl_failed" %>
           (❌)
+        <% else %>
+          (⏳)
         <% end %>
       <% end %>
     </span>
 
     <span>
       <span style="margin-right: 1em">
-        <% if blog.fetch_status == "succeeded" %>
+        <% if blog.status == "live" %>
           <% verb = blog.is_paused ? 'published, paused' : 'published' %>
           <%= published_count %>/<%= total_count %> <%= verb %>
         <% end %>

@@ -8,8 +8,10 @@ Rails.application.routes.draw do
   root "blogs#index"
   resources :blogs, only: [:index, :create, :update, :destroy], param: :id
   get '/blogs/add', to: 'blogs#add'
-  get '/blogs/:id', to: 'blogs#show'
+  get '/blogs/:id', to: 'blogs#show' # Should come after /add so that it doesn't get treated as id
   get '/blogs/:id/setup', to: 'blogs#setup'
+  post '/blogs/:id/confirm', to: 'blogs#confirm'
+  post '/blogs/:id/schedule', to: 'blogs#schedule'
   post '/blogs/:id/pause', to: 'blogs#pause'
   post '/blogs/:id/unpause', to: 'blogs#unpause'
   get '/blogs/:id/feed', to: 'rss#show'

@@ -1,0 +1,29 @@
+<div>
+  <%= form_with url: BlogsHelper.schedule_url(request, blog), method: :post do |form| %>
+    <div>
+    <%= label_tag :name %>
+    <%= text_field_tag :name, blog.name %>
+    </div>
+    <br>
+
+    <script>
+      function onValidateSchedule(isValid) {
+          let saveButton = document.getElementById("save_schedule");
+          saveButton.disabled = !isValid;
+      }
+    </script>
+    <%= render partial: "schedule", locals: {
+      sun_count: 0,
+      mon_count: 1,
+      tue_count: 1,
+      wed_count: 1,
+      thu_count: 1,
+      fri_count: 1,
+      sat_count: 0,
+      js_validate_callback: "onValidateSchedule"
+    } %>
+    <br>
+
+    <%= submit_tag "Save", id: "save_schedule" %>
+  <% end %>
+</div>

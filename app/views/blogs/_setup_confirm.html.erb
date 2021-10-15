@@ -1,0 +1,31 @@
+<div>
+  Discovered <%= blog.posts.length %> posts (oldest to newest):
+  <br>
+
+  <% ordered_posts = blog.posts.sort_by(&:order) %>
+  <% if ordered_posts.length <= 10 %>
+    <% ordered_posts.each do |post| %>
+      <div>
+        <a href="<%= post.link %>"><%= post.title %></a>
+      </div>
+    <% end %>
+  <% else %>
+    <% ordered_posts[...5].each do |post| %>
+      <div>
+        <a href="<%= post.link %>"><%= post.title %></a>
+      </div>
+    <% end %>
+    <div>...</div>
+    <% ordered_posts[-5..].each do |post| %>
+      <div>
+        <a href="<%= post.link %>"><%= post.title %></a>
+      </div>
+    <% end %>
+  <% end %>
+  <br>
+
+  <div style="display: flex; gap: 1em;">
+    <%= button_to "Continue", BlogsHelper.confirm_url(request, blog), method: :post %>
+    <%= button_to "Discard", blog_path(blog), method: :delete %>
+  </div>
+</div>

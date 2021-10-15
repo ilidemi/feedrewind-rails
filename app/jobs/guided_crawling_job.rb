@@ -41,16 +41,16 @@ class GuidedCrawlingJob < ApplicationJob
         Blog.transaction do
           blog = Blog.find(blog_id)
           guided_crawl_result.historical_result.links.each_with_index do |link, post_index|
-            blog.posts.new(link: link.url, order: -post_index, title: "", date: "", is_published: false)
+            blog.posts.new(link: link.url, order: -post_index, title: link.url, date: "", is_published: false)
           end
-          blog.fetch_status = :succeeded
+          blog.status = "crawled"
           blog.save!
         end
       else
         Rails.logger.info("Historical links not found")
         Blog.transaction do
           blog = Blog.find(blog_id)
-          blog.fetch_status = :failed
+          blog.status = "crawl_failed"
           blog.save!
         end
       end

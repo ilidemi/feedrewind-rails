@@ -1,31 +1,44 @@
 <div>
-  <span>
-    Publish
-    <%= select_tag :posts_per_day, options_for_select([1, 2, 3, 4, 5], schedule[:posts_per_day]) %>
-    <span id="posts_per_day_label">post</span> every
-  </span>
-  <%= check_box_tag :schedule_mon, '1', schedule[:mon] %>
-  <%= label_tag :schedule_mon, "M" %>
-  <%= check_box_tag :schedule_tue, '1', schedule[:tue] %>
-  <%= label_tag :schedule_tue, "T" %>
-  <%= check_box_tag :schedule_wed, '1', schedule[:wed] %>
-  <%= label_tag :schedule_wed, "W" %>
-  <%= check_box_tag :schedule_thu, '1', schedule[:thu] %>
-  <%= label_tag :schedule_thu, "T" %>
-  <%= check_box_tag :schedule_fri, '1', schedule[:fri] %>
-  <%= label_tag :schedule_fri, "F" %>
-  <%= check_box_tag :schedule_sat, '1', schedule[:sat] %>
-  <%= label_tag :schedule_sat, "S" %>
-  <%= check_box_tag :schedule_sun, '1', schedule[:sun] %>
-  <%= label_tag :schedule_sun, "S" %>
-</div>
+  <div>Posts every week:</div>
+  <div style="
+  display: inline-grid;
+    grid-template-columns: auto auto auto auto auto auto auto;
+    column-gap: 4px;
+  ">
+    <span>Sun</span>
+    <span>Mon</span>
+    <span>Tue</span>
+    <span>Wed</span>
+    <span>Thu</span>
+    <span>Fri</span>
+    <span>Sat</span>
+    <% count_options = [0, 1, 2, 3, 4, 5] %>
+    <%= select_tag :sun_count, options_for_select(count_options, sun_count) %>
+    <%= select_tag :mon_count, options_for_select(count_options, mon_count) %>
+    <%= select_tag :tue_count, options_for_select(count_options, tue_count) %>
+    <%= select_tag :wed_count, options_for_select(count_options, wed_count) %>
+    <%= select_tag :thu_count, options_for_select(count_options, thu_count) %>
+    <%= select_tag :fri_count, options_for_select(count_options, fri_count) %>
+    <%= select_tag :sat_count, options_for_select(count_options, sat_count) %>
+  </div>
+  <div id="schedule_empty_error" style="display: none; color: red">Select at least some days</div>
+  <script>
+      {
+          let daysOfWeek = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
-<script>
-    let postsPerDayDropdown = document.getElementById('posts_per_day');
-    let postsPerDayLabel = document.getElementById('posts_per_day_label');
-    function updatePostsPerDayLabel() {
-        postsPerDayLabel.innerText = postsPerDayDropdown.value === '1' ? 'post' : 'posts';
-    }
-    postsPerDayDropdown.onchange = updatePostsPerDayLabel;
-    updatePostsPerDayLabel();
-</script>
+          function validateSchedule() {
+              let totalCount = 0;
+              daysOfWeek.forEach(day => {
+                  totalCount += parseInt(document.getElementById(day + "_count").value);
+              });
+              let isValid = totalCount > 0;
+              <%= js_validate_callback %>(isValid);
+              document.getElementById("schedule_empty_error").style.display = isValid ? "none" : "block";
+          }
+
+          daysOfWeek.forEach(day => {
+              document.getElementById(day + "_count").addEventListener("change", () => validateSchedule());
+          });
+      }
+  </script>
+</div>

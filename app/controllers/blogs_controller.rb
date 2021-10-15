@@ -4,6 +4,8 @@ require_relative '../jobs/guided_crawling_job'
 class BlogsController < ApplicationController
   before_action :authorize
 
+  DAY_COUNT_NAMES = [:sun_count, :mon_count, :tue_count, :wed_count, :thu_count, :fri_count, :sat_count]
+
   def index
     @blogs = @current_user.blogs
   end
@@ -24,13 +26,46 @@ class BlogsController < ApplicationController
 
   def setup
     @blog = @current_user.blogs.find(params[:id])
-    unless @blog
-      return redirect_to action: 'index'
+
+    if @blog.status == "live"
+      redirect_to action: "show", id: @blog.id
+    end
+  end
+
+  def confirm
+    @blog = @current_user.blogs.find(params[:id])
+
+    return if @blog.status != "crawled"
+
+    @blog.status = "confirmed"
+    @blog.save!
+
+    redirect_to action: "setup", id: @blog.id
+  end
+
+  def schedule
+    schedule_params = params.permit(:id, :name, *DAY_COUNT_NAMES)
+
+    total_count = DAY_COUNT_NAMES
+      .map { |day_count_name| schedule_params[day_count_name].to_i }
+      .sum
+    raise "Expecting some count to not be zero" unless total_count > 0
+
+    @blog = @current_user.blogs.find(schedule_params[:id])
+    Blog.transaction do
+      DAY_COUNT_NAMES.each do |day_count_name|
+        day_count = schedule_params[day_count_name].to_i
+        @blog.name = schedule_params[:name]
+        @blog.schedules.new(
+          day_of_week: day_count_name.to_s[...3],
+          count: day_count
+        )
+        @blog.status = "live"
+        @blog.save!
+      end
     end
 
-    if @blog.fetch_status == "succeeded"
-      redirect_to action: 'show', id: @blog.id
-    end
+    redirect_to action: "setup", id: @blog.id
   end
 
   def pause
@@ -48,35 +83,25 @@ class BlogsController < ApplicationController
   end
 
   def update
-    update_params = params.permit(
-      :id, :posts_per_day, :schedule_mon, :schedule_tue, :schedule_wed, :schedule_thu, :schedule_fri,
-      :schedule_sat, :schedule_sun)
+    update_params = params.permit(:id, *DAY_COUNT_NAMES)
+
+    total_count = DAY_COUNT_NAMES
+      .map { |day_count_name| update_params[day_count_name].to_i }
+      .sum
+    raise "Expecting some count to not be zero" unless total_count > 0
 
     @blog = @current_user.blogs.find(update_params[:id])
-    new_days_of_week = BlogsHelper.days_of_week_from_params(update_params)
-                                  .to_set
-    existing_days_of_week = @blog.schedules
-                                 .select(:day_of_week)
-                                 .map { |schedule| schedule[:day_of_week] }
-                                 .to_set
-    days_of_week_to_add = new_days_of_week - existing_days_of_week
-    days_of_week_to_remove = existing_days_of_week - new_days_of_week
-
     Blog.transaction do
-      @blog.posts_per_day = update_params[:posts_per_day].to_i
-      days_of_week_to_add.each do |day_of_week|
-        @blog.schedules.new(day_of_week: day_of_week)
+      DAY_COUNT_NAMES.each do |day_count_name|
+        day_of_week = day_count_name.to_s[...3]
+        day_count = update_params[day_count_name].to_i
+        schedule = @blog.schedules.find_by(day_of_week: day_of_week)
+        schedule.count = day_count
+        schedule.save!
       end
-      days_of_week_to_remove.each do |day_of_week|
-        @blog.schedules
-             .where(day_of_week: day_of_week)
-             .first
-             .destroy!
-      end
-      @blog.save!
     end
 
-    redirect_to root_path
+    redirect_to action: "show", id: @blog.id
   end
 
   def destroy
