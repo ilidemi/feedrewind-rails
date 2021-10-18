@@ -15,6 +15,10 @@ module BlogsHelper
     "#{request.protocol}#{request.host_with_port}/blogs/#{blog.id}/feed"
   end
 
+  def BlogsHelper.blog_path(blog)
+    "/blogs/#{blog.id}"
+  end
+
   def BlogsHelper.create(start_page_id, start_feed_id, start_feed_url, name, current_user)
     Blog.transaction do
       blog = current_user.blogs.new

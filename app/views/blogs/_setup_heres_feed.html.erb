@@ -1,0 +1,28 @@
+Here's your private feed. Add it to your feed reader and you're all set!
+<br>
+<a data-turbolinks="false" href="<%= BlogsHelper.feed_url(request, blog) %>"><%= BlogsHelper.feed_url(request, blog) %></a>
+<button id="copy_button">Copy</button>
+<script>
+    document.getElementById("copy_button").addEventListener("click", () => {
+        navigator.clipboard.writeText("<%= BlogsHelper.feed_url(request, blog) %>");
+    });
+</script>
+
+<br>
+<br>
+<%
+  enabled_days_of_week = Schedule
+    .where(blog_id: blog.id)
+    .where("count > 0")
+    .order(:day_of_week)
+    .map(&:day_of_week)
+  days_of_week = %w[sun mon tue wed thu fri sat]
+  today_index = days_of_week.index(DateService.day_of_week)
+  days_of_week_from_tomorrow = days_of_week.rotate((today_index + 1) % 7)
+  next_enabled_day_of_week = days_of_week_from_tomorrow
+    .first { |day_of_week| enabled_days_of_week.include?(day_of_week) }
+  next_enabled_day_of_week_str = Date.strptime(next_enabled_day_of_week, "%a").strftime("%A")
+%>
+First post will arrive on <%= next_enabled_day_of_week_str %>.
+<br>
+<%= link_to "Manage", blog_path %>

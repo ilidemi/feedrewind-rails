@@ -26,10 +26,6 @@ class BlogsController < ApplicationController
 
   def setup
     @blog = @current_user.blogs.find(params[:id])
-
-    if @blog.status == "live"
-      redirect_to action: "show", id: @blog.id
-    end
   end
 
   def confirm
@@ -63,6 +59,7 @@ class BlogsController < ApplicationController
         @blog.status = "live"
         @blog.save!
       end
+      UpdateRssService.init(@blog)
     end
 
     redirect_to action: "setup", id: @blog.id

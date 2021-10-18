@@ -1,8 +1,14 @@
-<a href="/blogs">← Go back</a>
+<%= link_to "← Dashboard", blogs_path %>
 <h1><%= @blog.name %></h1>
 <div>URL: <a href="<%= @blog.url %>"><%= @blog.url %></a></div>
-<div>Feed:
+<div>Private feed:
   <a data-turbolinks="false" href="<%= BlogsHelper.feed_url(request, @blog) %>"><%= BlogsHelper.feed_url(request, @blog) %></a>
+  <button id="copy_button">Copy</button>
+  <script>
+      document.getElementById("copy_button").addEventListener("click", () => {
+          navigator.clipboard.writeText("<%= BlogsHelper.feed_url(request, @blog) %>");
+      });
+  </script>
 </div>
 <% total_count = @blog.posts.count %>
 <% published_count = @blog.posts.group(:is_published).count[true] || 0 %>

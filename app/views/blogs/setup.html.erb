@@ -1,4 +1,4 @@
-<a href="/blogs">← Go back</a>
+<%= link_to "← Dashboard", blogs_path %>
 <h1><%= @blog.name %></h1>
 <div style="overflow-wrap: break-word">
   <% if @blog.status == "crawl_in_progress" %>
@@ -10,6 +10,6 @@
   <% elsif @blog.status == "confirmed" %>
     <%= render partial: "setup_set_schedule", locals: { blog: @blog } %>
   <% else %>
-    TODO
+    <%= render partial: "setup_heres_feed", locals: { blog: @blog } %>
   <% end %>
 </div>
