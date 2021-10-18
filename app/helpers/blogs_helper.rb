@@ -25,6 +25,8 @@ module BlogsHelper
       blog.name = name
       blog.url = start_feed_url
       blog.status = "crawl_in_progress"
+      blog.fetch_progress_epoch = 0
+      blog.fetch_count_epoch = 0
       blog.save!
 
       GuidedCrawlingJob.perform_later(
@@ -50,7 +52,9 @@ module BlogsHelper
         raise BlogDeletedError unless blog
 
         blog.update_column(:fetch_progress, status_str)
-        ActionCable.server.broadcast("discovery_#{@blog_id}", { status: status_str })
+        new_epoch = blog.fetch_progress_epoch + 1
+        blog.update_column(:fetch_progress_epoch, new_epoch)
+        ActionCable.server.broadcast("discovery_#{@blog_id}", { status: status_str, status_epoch: new_epoch })
       end
     end
 
@@ -61,7 +65,9 @@ module BlogsHelper
         raise BlogDeletedError unless blog
 
         blog.update_column(:fetch_count, count)
-        ActionCable.server.broadcast("discovery_#{@blog_id}", { count: count })
+        new_epoch = blog.fetch_count_epoch + 1
+        blog.update_column(:fetch_count_epoch, new_epoch)
+        ActionCable.server.broadcast("discovery_#{@blog_id}", { count: count, count_epoch: new_epoch })
       end
     end
   end

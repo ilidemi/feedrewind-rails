@@ -46,66 +46,73 @@
 </style>
 
 <script>
-    function createRect(classes) {
-        let rect = document.createElement("div");
-        rect.className = classes;
-        return rect;
-    }
+    {
+        let status_epoch;
+        let count_epoch;
 
-    function displayProgress(data) {
-        if (data.status) {
-            let rects = [];
-            let tokens = [...data.status.matchAll(/hH|p+H?|hF\d*|h/g)];
-            for (let index in tokens) {
-                let token = tokens[index];
-                if (token[0] === "h") {
-                    rects.push(createRect("progress_page progress_regular"));
-                } else if (token[0] === "hH") {
-                    rects.push(createRect("progress_page progress_highlighted"));
-                } else if (token[0].startsWith("p")) {
-                    let classes = token[0].endsWith("H")
-                        ? "progress_long_page progress_highlighted"
-                        : "progress_long_page progress_regular";
-                    (token[0].match(/p/g) || []).forEach(() => {
-                        rects.push(createRect(classes));
-                    });
-                } else if (token[0].startsWith("hF")) {
-                    rects.push(createRect("progress_page progress_finishing"));
-                    if (index === tokens.length - 1) {
-                        let remainingCountMatch = token.match(/\d+$/g);
-                        if (remainingCountMatch) {
-                            Array(parseInt(remainingCountMatch[0])).forEach(() => {
-                                rects.push(createRect("progress_page_remaining"));
-                            });
+        function createRect(classes) {
+            let rect = document.createElement("div");
+            rect.className = classes;
+            return rect;
+        }
+
+        function displayProgress(data) {
+            if (data.status && (!status_epoch || data.status_epoch > status_epoch)) {
+                status_epoch = data.status_epoch;
+                let rects = [];
+                let tokens = [...data.status.matchAll(/hH|p+H?|hF\d*|h/g)];
+                for (let index in tokens) {
+                    let token = tokens[index];
+                    if (token[0] === "h") {
+                        rects.push(createRect("progress_page progress_regular"));
+                    } else if (token[0] === "hH") {
+                        rects.push(createRect("progress_page progress_highlighted"));
+                    } else if (token[0].startsWith("p")) {
+                        let classes = token[0].endsWith("H")
+                            ? "progress_long_page progress_highlighted"
+                            : "progress_long_page progress_regular";
+                        (token[0].match(/p/g) || []).forEach(() => {
+                            rects.push(createRect(classes));
+                        });
+                    } else if (token[0].startsWith("hF")) {
+                        rects.push(createRect("progress_page progress_finishing"));
+                        if (index === tokens.length - 1) {
+                            let remainingCountMatch = token.match(/\d+$/g);
+                            if (remainingCountMatch) {
+                                Array(parseInt(remainingCountMatch[0])).forEach(() => {
+                                    rects.push(createRect("progress_page_remaining"));
+                                });
+                            }
                         }
+                    } else {
+                        console.warn(`Unknown progress token: ${token} (${data})`);
                     }
+                }
+                document.getElementById("progress_rects").replaceChildren(...rects);
+            }
+
+            if (data.hasOwnProperty("count") && (!count_epoch || data.count_epoch > count_epoch)) {
+                count_epoch = data.count_epoch;
+                if (data.count) {
+                    document.getElementById("progress_count").innerHTML = `Posts discovered: ${data.count}`;
                 } else {
-                    console.warn(`Unknown progress token: ${token} (${data})`);
+                    document.getElementById("progress_count").innerHTML = "";
                 }
             }
-            document.getElementById("progress_rects").replaceChildren(...rects);
-        }
 
-        if (data.hasOwnProperty("count")) {
-            if (data.count) {
-                document.getElementById("progress_count").innerHTML = `Posts discovered: ${data.count}`;
-            } else {
-                document.getElementById("progress_count").innerHTML = "";
+            if (data.done) {
+                // Reload the page
+                Turbolinks.visit(window.location);
             }
         }
 
-        if (data.done) {
-            // Reload the page
-            Turbolinks.visit(window.location);
-        }
+        let subscription = window.discoverySubscribe("<%= blog.id %>", data => {
+            displayProgress(data);
+        });
+        document.addEventListener('turbolinks:before-render', () => {
+            window.discoveryUnsubscribe(subscription)
+        });
     }
-
-    subscription = window.discoverySubscribe("<%= blog.id %>", data => {
-        displayProgress(data);
-    });
-    document.addEventListener('turbolinks:before-render', () => {
-        window.discoveryUnsubscribe(subscription)
-    });
 </script>
 
 ⏳ Loading: <span id="progress_rects"></span>

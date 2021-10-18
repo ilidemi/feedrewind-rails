@@ -12,6 +12,10 @@ class BlogsController < ApplicationController
 
   def show
     @blog = @current_user.blogs.find(params[:id])
+
+    if @blog.status != "live"
+      redirect_to action: "setup", id: @blog.id
+    end
   end
 
   def create
@@ -30,7 +34,6 @@ class BlogsController < ApplicationController
 
   def confirm
     @blog = @current_user.blogs.find(params[:id])
-
     return if @blog.status != "crawled"
 
     @blog.status = "confirmed"
@@ -42,12 +45,14 @@ class BlogsController < ApplicationController
   def schedule
     schedule_params = params.permit(:id, :name, *DAY_COUNT_NAMES)
 
+    @blog = @current_user.blogs.find(schedule_params[:id])
+    return if @blog.status != "confirmed"
+
     total_count = DAY_COUNT_NAMES
       .map { |day_count_name| schedule_params[day_count_name].to_i }
       .sum
     raise "Expecting some count to not be zero" unless total_count > 0
 
-    @blog = @current_user.blogs.find(schedule_params[:id])
     Blog.transaction do
       DAY_COUNT_NAMES.each do |day_count_name|
         day_count = schedule_params[day_count_name].to_i
@@ -67,6 +72,8 @@ class BlogsController < ApplicationController
 
   def pause
     @blog = @current_user.blogs.find(params[:id])
+    return if @blog.status != "live"
+
     @blog.is_paused = true
     @blog.save!
     redirect_to action: 'show', id: @blog.id
@@ -74,6 +81,8 @@ class BlogsController < ApplicationController
 
   def unpause
     @blog = @current_user.blogs.find(params[:id])
+    return if @blog.status != "live"
+
     @blog.is_paused = false
     @blog.save!
     redirect_to action: 'show', id: @blog.id
@@ -81,13 +90,14 @@ class BlogsController < ApplicationController
 
   def update
     update_params = params.permit(:id, *DAY_COUNT_NAMES)
+    @blog = @current_user.blogs.find(update_params[:id])
+    return if @blog.status != "live"
 
     total_count = DAY_COUNT_NAMES
       .map { |day_count_name| update_params[day_count_name].to_i }
       .sum
     raise "Expecting some count to not be zero" unless total_count > 0
 
-    @blog = @current_user.blogs.find(update_params[:id])
     Blog.transaction do
       DAY_COUNT_NAMES.each do |day_count_name|
         day_of_week = day_count_name.to_s[...3]

@@ -114,7 +114,9 @@ CREATE TABLE public.blogs (
     user_id uuid NOT NULL,
     fetch_progress character varying,
     fetch_count integer,
-    status public.blog_status NOT NULL
+    status public.blog_status NOT NULL,
+    fetch_progress_epoch integer NOT NULL,
+    fetch_count_epoch integer NOT NULL
 );
 
 
@@ -623,6 +625,8 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20211014231606'),
 ('20211014232158'),
 ('20211014232819'),
-('20211015001452');
+('20211015001452'),
+('20211018223825'),
+('20211018224514');
 
 
