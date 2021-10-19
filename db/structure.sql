@@ -110,7 +110,7 @@ CREATE TABLE public.blogs (
     updated_at timestamp(6) without time zone NOT NULL,
     url character varying,
     is_paused boolean,
-    user_id uuid NOT NULL,
+    user_id uuid,
     fetch_progress character varying,
     fetch_count integer,
     status public.blog_status NOT NULL,
@@ -630,6 +630,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20211018224514'),
 ('20211018233856'),
 ('20211018234402'),
-('20211018234839');
+('20211018234839'),
+('20211019223144');
 
 

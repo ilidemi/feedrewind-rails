@@ -39,7 +39,7 @@ def hn_rss(input_rows, throttler, logger)
           seen_urls = [prefix_uri.to_s]
 
           loop do
-            req = Net::HTTP::Get.new(prefix_uri, initheader = { 'User-Agent' => 'rss-catchup/0.1' })
+            req = Net::HTTP::Get.new(prefix_uri, initheader = { 'User-Agent' => 'Feeduler/0.1' })
             if prefix_uri.host == http_host && prefix_uri.port == http_port
               resp = http.request(req)
             else
@@ -182,7 +182,7 @@ def find_feed_links(page_doc, page_uri, throttler, http, http_host, http_port, l
       content = nil
       seen_urls = [feed_link.url]
       loop do
-        req = Net::HTTP::Get.new(feed_link.uri, initheader = { 'User-Agent' => 'rss-catchup/0.1' })
+        req = Net::HTTP::Get.new(feed_link.uri, initheader = { 'User-Agent' => 'Feeduler/0.1' })
         if feed_link.uri.host == http_host && feed_link.uri.port == http_port
           resp = http.request(req)
         else

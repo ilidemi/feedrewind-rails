@@ -70,7 +70,7 @@ module UpdateRssService
     channel = Ox::Element.new("channel")
 
     channel_title = Ox::Element.new("title")
-    channel_title << "#{blog.name} · RSS Catchup"
+    channel_title << "#{blog.name} · Feeduler"
     channel << channel_title
 
     posts_to_publish.to_enum.with_index.reverse_each do |post, post_index|
@@ -114,7 +114,7 @@ module UpdateRssService
     item = Ox::Element.new("item")
 
     post_title = Ox::Element.new("title")
-    post_title << "#{blog.name} added to RSS Catchup"
+    post_title << "#{blog.name} added to Feeduler"
     item << post_title
 
     blog_path = BlogsHelper.blog_path(blog)
