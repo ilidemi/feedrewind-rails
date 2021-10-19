@@ -108,7 +108,6 @@ CREATE TABLE public.blogs (
     name character varying,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    posts_per_day integer,
     url character varying,
     is_paused boolean,
     user_id uuid NOT NULL,
@@ -116,7 +115,8 @@ CREATE TABLE public.blogs (
     fetch_count integer,
     status public.blog_status NOT NULL,
     fetch_progress_epoch integer NOT NULL,
-    fetch_count_epoch integer NOT NULL
+    fetch_count_epoch integer NOT NULL,
+    is_added_past_midnight boolean
 );
 
 
@@ -627,6 +627,9 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20211014232819'),
 ('20211015001452'),
 ('20211018223825'),
-('20211018224514');
+('20211018224514'),
+('20211018233856'),
+('20211018234402'),
+('20211018234839');
 
 

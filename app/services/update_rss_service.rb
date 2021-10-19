@@ -11,13 +11,13 @@ module UpdateRssService
     current_rss.save!
   end
 
-  def UpdateRssService.update_rss(blog_id)
+  def UpdateRssService.update_rss(blog_id, to_publish_count)
     blog = Blog.find(blog_id)
     posts_to_publish = blog
       .posts
       .where(is_published: false)
       .order(order: :asc)
-      .limit(blog.posts_per_day)
+      .limit(to_publish_count)
     posts_last_published = blog
       .posts
       .where(is_published: true)

@@ -7,4 +7,10 @@ module DateService
         .strftime('%a')
         .downcase
   end
+
+  def DateService::now
+    DateTime
+      .now
+      .in_time_zone(PACIFIC_TIME_ZONE)
+  end
 end

@@ -18,8 +18,12 @@ Here's your private feed. Add it to your feed reader and you're all set!
     .map(&:day_of_week)
   days_of_week = %w[sun mon tue wed thu fri sat]
   today_index = days_of_week.index(DateService.day_of_week)
-  days_of_week_from_tomorrow = days_of_week.rotate((today_index + 1) % 7)
-  next_enabled_day_of_week = days_of_week_from_tomorrow
+  if blog.is_added_past_midnight
+    days_of_week_from_next_schedule = days_of_week.rotate(today_index)
+  else
+    days_of_week_from_next_schedule = days_of_week.rotate((today_index + 1) % 7)
+  end
+  next_enabled_day_of_week = days_of_week_from_next_schedule
     .first { |day_of_week| enabled_days_of_week.include?(day_of_week) }
   next_enabled_day_of_week_str = Date.strptime(next_enabled_day_of_week, "%a").strftime("%A")
 %>

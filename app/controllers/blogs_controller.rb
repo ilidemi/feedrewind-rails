@@ -56,15 +56,26 @@ class BlogsController < ApplicationController
     Blog.transaction do
       DAY_COUNT_NAMES.each do |day_count_name|
         day_count = schedule_params[day_count_name].to_i
-        @blog.name = schedule_params[:name]
         @blog.schedules.new(
           day_of_week: day_count_name.to_s[...3],
           count: day_count
         )
-        @blog.status = "live"
-        @blog.save!
       end
+
       UpdateRssService.init(@blog)
+
+      if DateService.now.hour < 5
+        # People setting up a blog just after midnight should still get it in the morning
+        UpdateRssJob.perform_later(@blog.id)
+        @blog.is_added_past_midnight = true
+      else
+        UpdateRssJob.schedule_for_tomorrow(@blog.id)
+        @blog.is_added_past_midnight = false
+      end
+
+      @blog.name = schedule_params[:name]
+      @blog.status = "live"
+      @blog.save!
     end
 
     redirect_to action: "setup", id: @blog.id
