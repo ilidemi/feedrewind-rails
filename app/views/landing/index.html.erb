@@ -7,9 +7,17 @@
 <% end %>
 <p>Feeduler is great and you should use it!</p>
 Try it out:
-<%= form_with url: "blogs/add", method: :post do |form| %>
+<% if @blog %>
   <div>
-    <%= form.url_field :start_url, placeholder: "Feed or blog link" %>
-    <%= form.submit "Go" %>
+    <%= link_to "Continue with #{@blog.name}", BlogsHelper.setup_path(@blog) %>
+    or
+    <%= link_to "discard", "/discard", method: :post %>
   </div>
+<% else %>
+  <%= form_with url: "blogs/add", method: :post do |form| %>
+    <div>
+      <%= form.url_field :start_url, placeholder: "Feed or blog link" %>
+      <%= form.submit "Go" %>
+    </div>
+  <% end %>
 <% end %>

@@ -40,6 +40,10 @@ class BlogsController < ApplicationController
         return redirect_to blogs_path
       end
     end
+
+    if @current_user.nil?
+      cookies[:unfinished_blog] = @blog.id
+    end
   end
 
   def confirm
@@ -62,7 +66,6 @@ class BlogsController < ApplicationController
     if @current_user
       redirect_to action: "setup", id: @blog.id
     else
-      cookies[:blog_to_add] = @blog.id
       redirect_to signup_path
     end
   end

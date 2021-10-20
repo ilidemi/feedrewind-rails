@@ -9,16 +9,16 @@ class UsersController < ApplicationController
     if @user.save
       session[:user_id] = @user.id
 
-      if cookies[:blog_to_add]
-        blog = Blog.find_by(id: cookies[:blog_to_add], user_id: nil)
-        cookies.delete(:blog_to_add)
+      if cookies[:unfinished_blog]
+        blog = Blog.find_by(id: cookies[:unfinished_blog], user_id: nil)
+        cookies.delete(:unfinished_blog)
       else
         blog = nil
       end
 
       if blog
         blog.user_id = @user.id
-        blog.save
+        blog.save!
         redirect_to BlogsHelper.setup_path(blog), notice: "Thank you for signing up!"
       else
         redirect_to blogs_path, notice: "Thank you for signing up!"
