@@ -18,7 +18,7 @@
         <%= link_to blog.name, blog %>
         (<a data-turbolinks="false" href="<%= BlogsHelper.feed_url(request, blog) %>">feed</a>)
       <% else %>
-        <a href="<%= BlogsHelper.setup_url(request, blog) %>"><%= blog.name %></a>
+        <a href="<%= BlogsHelper.setup_path(blog) %>"><%= blog.name %></a>
         <% if blog.status == "crawl_failed" %>
           (❌)
         <% else %>

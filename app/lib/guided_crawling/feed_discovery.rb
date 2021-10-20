@@ -10,7 +10,7 @@ UnsupportedFeed = Struct.new(:title, :url)
 DiscoverFeedsResult = Struct.new(:start_page, :start_feeds, :unsupported_start_feeds)
 SingleFeedResult = Struct.new(:start_feed)
 
-def discover_feeds(start_url, crawl_ctx, http_client, logger)
+def discover_feeds_at_url(start_url, crawl_ctx, http_client, logger)
   mock_progress_logger = ProgressLogger.new(MockProgressSaver.new)
 
   start_link = to_canonical_link(start_url, logger)

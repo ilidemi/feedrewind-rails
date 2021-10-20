@@ -1,8 +1,0 @@
-{
-    let feeds = document.getElementById("feeds");
-    feeds.innerHTML = "<%= j render partial: "feeds", locals: {
-      start_page_id: @start_page_id,
-      feeds: @start_feeds,
-      unsupported_feeds: @unsupported_start_feeds
-    } %>"
-}

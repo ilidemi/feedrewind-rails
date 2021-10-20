@@ -12,10 +12,6 @@
 
 <body>
 <div>
-  <% unless current_user %>
-    <%= link_to "Sign Up", signup_path %> or
-    <%= link_to "Log In", login_path %>
-  <% end %>
   <%= yield %>
 </div>
 </body>

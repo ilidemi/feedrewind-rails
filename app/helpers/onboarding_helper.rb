@@ -2,13 +2,13 @@ require_relative '../lib/guided_crawling/crawling'
 require_relative '../lib/guided_crawling/http_client'
 require_relative '../lib/guided_crawling/feed_discovery'
 
-class DiscoverFeedsController < ApplicationController
-  before_action :authorize
+module OnboardingHelper
+  Feeds = Struct.new(:start_page_id, :supported_feeds, :unsupported_feeds)
 
-  def discover
+  def OnboardingHelper::discover_feeds(start_url, user)
     crawl_ctx = CrawlContext.new
     http_client = HttpClient.new(false)
-    discover_feeds_result = discover_feeds(params[:start_url], crawl_ctx, http_client, Rails.logger)
+    discover_feeds_result = discover_feeds_at_url(start_url, crawl_ctx, http_client, Rails.logger)
 
     if discover_feeds_result.is_a?(SingleFeedResult)
       start_feed = StartFeed.new(
@@ -20,10 +20,10 @@ class DiscoverFeedsController < ApplicationController
       start_feed.save!
 
       blog = BlogsHelper.create(
-        nil, start_feed.id, start_feed.final_url, discover_feeds_result.start_feed.title, @current_user
+        nil, start_feed.id, start_feed.final_url, discover_feeds_result.start_feed.title, user
       )
 
-      redirect_to BlogsHelper.setup_url(request, blog)
+      blog
     else
       start_page = StartPage.new(
         url: discover_feeds_result.start_page.url,
@@ -44,12 +44,7 @@ class DiscoverFeedsController < ApplicationController
         start_feeds << start_feed
       end
 
-      @start_page_id = start_page.id
-      @start_feeds = start_feeds
-      @unsupported_start_feeds = discover_feeds_result.unsupported_start_feeds
-      respond_to do |format|
-        format.js
-      end
+      Feeds.new(start_page.id, start_feeds, discover_feeds_result.unsupported_start_feeds)
     end
   end
 end

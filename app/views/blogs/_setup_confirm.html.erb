@@ -25,7 +25,7 @@
   <br>
 
   <div style="display: flex; gap: 1em;">
-    <%= button_to "Continue", BlogsHelper.confirm_url(request, blog), method: :post %>
+    <%= button_to "Continue", BlogsHelper.confirm_path(blog), method: :post %>
     <%= button_to "Discard", blog_path(blog), method: :delete %>
   </div>
 </div>

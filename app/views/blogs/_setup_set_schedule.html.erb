@@ -1,5 +1,5 @@
 <div>
-  <%= form_with url: BlogsHelper.schedule_url(request, blog), method: :post do |form| %>
+  <%= form_with url: BlogsHelper.schedule_path(blog), method: :post do |form| %>
     <div>
     <%= label_tag :name %>
     <%= text_field_tag :name, blog.name %>

@@ -8,9 +8,23 @@ class UsersController < ApplicationController
     @user = User.new(user_params)
     if @user.save
       session[:user_id] = @user.id
-      redirect_to root_url, notice: "Thank you for signing up!"
+
+      if cookies[:blog_to_add]
+        blog = Blog.find_by(id: cookies[:blog_to_add], user_id: nil)
+        cookies.delete(:blog_to_add)
+      else
+        blog = nil
+      end
+
+      if blog
+        blog.user_id = @user.id
+        blog.save
+        redirect_to BlogsHelper.setup_path(blog), notice: "Thank you for signing up!"
+      else
+        redirect_to blogs_path, notice: "Thank you for signing up!"
+      end
     else
-      render "new"
+      render :new
     end
   end
 end

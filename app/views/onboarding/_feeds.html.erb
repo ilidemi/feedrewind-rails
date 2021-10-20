@@ -1,4 +1,4 @@
-<% feeds.each do |feed| %>
+<% feeds.supported_feeds.each do |feed| %>
   <div style="display:flex; justify-content:space-between">
     <span>
       <b><%= feed.title %></b>
@@ -7,7 +7,7 @@
     </span>
     <span>
       <%= button_to "Fetch posts", blogs_path, action: :post, params: {
-        start_page_id: start_page_id,
+        start_page_id: feeds.start_page_id,
         start_feed_id: feed.id,
         start_feed_final_url: feed.final_url,
         name: feed.title
@@ -16,7 +16,7 @@
   </div>
 <% end %>
 
-<% unsupported_feeds.each do |unsupported_feed| %>
+<% feeds.unsupported_feeds.each do |unsupported_feed| %>
   <div style="display:flex; justify-content:space-between">
     <span>
       <b><%= unsupported_feed.title %></b>
@@ -27,6 +27,6 @@
   </div>
 <% end %>
 
-<% if feeds.empty? && unsupported_feeds.empty? %>
+<% if feeds.supported_feeds.empty? && feeds.unsupported_feeds.empty? %>
   <div>This link doesn't seem to have a feed</div>
 <% end %>

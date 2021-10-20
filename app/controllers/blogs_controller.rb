@@ -2,7 +2,7 @@ require 'json'
 require_relative '../jobs/guided_crawling_job'
 
 class BlogsController < ApplicationController
-  before_action :authorize
+  before_action :authorize, except: [:create, :setup, :confirm]
 
   DAY_COUNT_NAMES = [:sun_count, :mon_count, :tue_count, :wed_count, :thu_count, :fri_count, :sat_count]
 
@@ -19,27 +19,52 @@ class BlogsController < ApplicationController
   end
 
   def create
+    fill_current_user
     create_params = params.permit(:start_page_id, :start_feed_id, :start_feed_final_url, :name)
     blog = BlogsHelper.create(
       create_params[:start_page_id], create_params[:start_feed_id], create_params[:start_feed_final_url],
       create_params[:name], @current_user
     )
 
-    redirect_to BlogsHelper.setup_url(request, blog)
+    redirect_to BlogsHelper.setup_path(blog)
   end
 
   def setup
-    @blog = @current_user.blogs.find(params[:id])
+    fill_current_user
+    @blog = Blog.find(params[:id])
+
+    if @blog.user_id
+      if @current_user.nil?
+        return redirect_to login_path, alert: "Not authorized"
+      elsif @blog.user_id != @current_user.id
+        return redirect_to blogs_path
+      end
+    end
   end
 
   def confirm
-    @blog = @current_user.blogs.find(params[:id])
+    fill_current_user
+    @blog = Blog.find(params[:id])
+
+    if @blog.user_id
+      if @current_user.nil?
+        return redirect_to login_path, alert: "Not authorized"
+      elsif @blog.user_id != @current_user.id
+        return redirect_to blogs_path
+      end
+    end
+
     return if @blog.status != "crawled"
 
     @blog.status = "confirmed"
     @blog.save!
 
-    redirect_to action: "setup", id: @blog.id
+    if @current_user
+      redirect_to action: "setup", id: @blog.id
+    else
+      cookies[:blog_to_add] = @blog.id
+      redirect_to signup_path
+    end
   end
 
   def schedule
@@ -126,6 +151,6 @@ class BlogsController < ApplicationController
     @blog = @current_user.blogs.find(params[:id])
     @blog.destroy!
 
-    redirect_to root_path
+    redirect_to action: "index"
   end
 end

@@ -1,27 +1,29 @@
 module BlogsHelper
-  def BlogsHelper.setup_url(request, blog)
-    "#{request.protocol}#{request.host_with_port}/blogs/#{blog.id}/setup"
+  def BlogsHelper.setup_path(blog)
+    "/blogs/#{blog.id}/setup"
   end
 
-  def BlogsHelper.confirm_url(request, blog)
-    "#{request.protocol}#{request.host_with_port}/blogs/#{blog.id}/confirm"
+  def BlogsHelper.confirm_path(blog)
+    "/blogs/#{blog.id}/confirm"
   end
 
-  def BlogsHelper.schedule_url(request, blog)
-    "#{request.protocol}#{request.host_with_port}/blogs/#{blog.id}/schedule"
-  end
-
-  def BlogsHelper.feed_url(request, blog)
-    "#{request.protocol}#{request.host_with_port}/blogs/#{blog.id}/feed"
+  def BlogsHelper.schedule_path(blog)
+    "/blogs/#{blog.id}/schedule"
   end
 
   def BlogsHelper.blog_path(blog)
     "/blogs/#{blog.id}"
   end
 
+  # This has to be a full url because we're showing it to the user to select and copy
+  def BlogsHelper.feed_url(request, blog)
+    "#{request.protocol}#{request.host_with_port}/blogs/#{blog.id}/feed"
+  end
+
   def BlogsHelper.create(start_page_id, start_feed_id, start_feed_url, name, current_user)
     Blog.transaction do
-      blog = current_user.blogs.new
+      blog = Blog.new
+      blog.user_id = current_user&.id
       blog.name = name
       blog.url = start_feed_url
       blog.status = "crawl_in_progress"

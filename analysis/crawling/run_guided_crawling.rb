@@ -85,7 +85,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     end
     db.exec_params('delete from historical where start_link_id = $1', [start_link_id])
 
-    discover_feeds_result = discover_feeds(
+    discover_feeds_result = discover_feeds_at_url(
       start_link_feed_url || start_link_url, crawl_ctx, mock_http_client, logger
     )
 

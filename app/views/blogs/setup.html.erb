@@ -1,4 +1,8 @@
-<%= link_to "← Dashboard", blogs_path %>
+<% if @current_user %>
+  <%= link_to "← Dashboard", blogs_path %>
+<% else %>
+  <%= link_to "← Main page", root_path %>
+<% end %>
 <h1><%= @blog.name %></h1>
 <div style="overflow-wrap: break-word">
   <% if @blog.status == "crawl_in_progress" %>
