@@ -2,7 +2,7 @@ require 'json'
 require_relative '../jobs/guided_crawling_job'
 
 class BlogsController < ApplicationController
-  before_action :authorize, except: [:create, :setup, :confirm]
+  before_action :authorize, except: [:create, :setup, :confirm, :destroy]
 
   DAY_COUNT_NAMES = [:sun_count, :mon_count, :tue_count, :wed_count, :thu_count, :fri_count, :sat_count]
 
@@ -31,15 +31,11 @@ class BlogsController < ApplicationController
 
   def setup
     fill_current_user
-    @blog = Blog.find(params[:id])
+    @blog = Blog.find_by(id: params[:id])
+    return redirect_from_not_found unless @blog
 
-    if @blog.user_id
-      if @current_user.nil?
-        return redirect_to login_path, alert: "Not authorized"
-      elsif @blog.user_id != @current_user.id
-        return redirect_to blogs_path
-      end
-    end
+    user_mismatch = redirect_if_user_mismatch(@blog)
+    return user_mismatch if user_mismatch
 
     if @current_user.nil?
       cookies[:unfinished_blog] = @blog.id
@@ -48,15 +44,11 @@ class BlogsController < ApplicationController
 
   def confirm
     fill_current_user
-    @blog = Blog.find(params[:id])
+    @blog = Blog.find_by(id: params[:id])
+    return redirect_from_not_found unless @blog
 
-    if @blog.user_id
-      if @current_user.nil?
-        return redirect_to login_path, alert: "Not authorized"
-      elsif @blog.user_id != @current_user.id
-        return redirect_to blogs_path
-      end
-    end
+    user_mismatch = redirect_if_user_mismatch(@blog)
+    return user_mismatch if user_mismatch
 
     return if @blog.status != "crawled"
 
@@ -73,7 +65,8 @@ class BlogsController < ApplicationController
   def schedule
     schedule_params = params.permit(:id, :name, *DAY_COUNT_NAMES)
 
-    @blog = @current_user.blogs.find(schedule_params[:id])
+    @blog = @current_user.blogs.find_by(id: schedule_params[:id])
+    return redirect_from_not_found unless @blog
     return if @blog.status != "confirmed"
 
     total_count = DAY_COUNT_NAMES
@@ -110,7 +103,8 @@ class BlogsController < ApplicationController
   end
 
   def pause
-    @blog = @current_user.blogs.find(params[:id])
+    @blog = @current_user.blogs.find_by(id: params[:id])
+    return redirect_from_not_found unless @blog
     return if @blog.status != "live"
 
     @blog.is_paused = true
@@ -119,7 +113,8 @@ class BlogsController < ApplicationController
   end
 
   def unpause
-    @blog = @current_user.blogs.find(params[:id])
+    @blog = @current_user.blogs.find_by(id: params[:id])
+    return redirect_from_not_found unless @blog
     return if @blog.status != "live"
 
     @blog.is_paused = false
@@ -129,7 +124,8 @@ class BlogsController < ApplicationController
 
   def update
     update_params = params.permit(:id, *DAY_COUNT_NAMES)
-    @blog = @current_user.blogs.find(update_params[:id])
+    @blog = @current_user.blogs.find_by(id: update_params[:id])
+    return redirect_from_not_found unless @blog
     return if @blog.status != "live"
 
     total_count = DAY_COUNT_NAMES
@@ -151,9 +147,41 @@ class BlogsController < ApplicationController
   end
 
   def destroy
-    @blog = @current_user.blogs.find(params[:id])
+    fill_current_user
+    @blog = Blog.find_by(id: params[:id])
+    return redirect_from_not_found unless @blog
+
+    user_mismatch = redirect_if_user_mismatch(@blog)
+    return user_mismatch if user_mismatch
+
     @blog.destroy!
 
-    redirect_to action: "index"
+    if params[:redirect] == "add"
+      redirect_to "/blogs/add"
+    else
+      redirect_from_not_found
+    end
+  end
+
+  private
+
+  def redirect_from_not_found
+    if @current_user.nil?
+      redirect_to root_path
+    else
+      redirect_to action: "index"
+    end
+  end
+
+  def redirect_if_user_mismatch(blog)
+    if blog.user_id
+      if @current_user.nil?
+        return redirect_to login_path, alert: "Not authorized"
+      elsif blog.user_id != @current_user.id
+        return redirect_to action: "index"
+      end
+    end
+
+    nil
   end
 end

@@ -8,7 +8,7 @@
   <% if @blog.status == "crawl_in_progress" %>
     <%= render partial: "setup_crawl_in_progress", locals: { blog: @blog } %>
   <% elsif @blog.status == "crawl_failed" %>
-    ❌ Loading posts failed
+    <%= render partial: "setup_failed", locals: { blog: @blog } %>
   <% elsif @blog.status == "crawled" %>
     <%= render partial: "setup_confirm", locals: { blog: @blog } %>
   <% elsif @blog.status == "confirmed" %>
