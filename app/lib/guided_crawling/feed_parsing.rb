@@ -85,7 +85,7 @@ def parse_feed(feed_content, fetch_uri, logger)
     end
   else
     atom_feed = xml.at_xpath("/xmlns:feed")
-    title = xml.at_xpath("xmlns:title")&.inner_text&.strip
+    title = atom_feed.xpath("xmlns:title")&.inner_text&.strip
     root_url = get_atom_url(atom_feed, false)
 
     entry_nodes = atom_feed.xpath("xmlns:entry")

@@ -385,6 +385,7 @@ def guided_crawl_fetch_loop(
       page = crawl_request(link, false, crawl_ctx, mock_http_client, progress_logger, logger)
       unless page.is_a?(Page) && page.document
         logger.info("Couldn't fetch link: #{page}")
+        progress_logger.save_status
         next
       end
     elsif link_or_page.is_a?(Page)

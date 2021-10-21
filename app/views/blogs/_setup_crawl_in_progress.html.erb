@@ -94,9 +94,9 @@
             if (data.hasOwnProperty("count") && (!count_epoch || data.count_epoch > count_epoch)) {
                 count_epoch = data.count_epoch;
                 if (data.count) {
-                    document.getElementById("progress_count").innerHTML = `Posts discovered: ${data.count}`;
+                    document.getElementById("progress_count").innerHTML = `Discovering posts: ${data.count}`;
                 } else {
-                    document.getElementById("progress_count").innerHTML = "";
+                    document.getElementById("progress_count").innerHTML = "Discovering posts...";
                 }
             }
 
@@ -115,11 +115,21 @@
     }
 </script>
 
-⏳ Loading: <span id="progress_rects"></span>
-<% if blog.fetch_progress %>
-  <script>displayProgress({status: "<%= blog.fetch_progress %>"})</script>
-<% end %>
-<div id="progress_count"></div>
+<div id="progress_count">
+  <% unless blog.fetch_count %>
+    Discovering posts...
+  <% end %>
+</div>
 <% if blog.fetch_count %>
-  <script>displayProgress({count: <%= blog.fetch_count %>})</script>
+  <script>displayProgress({
+      count: <%= blog.fetch_count %>,
+      count_epoch: <%= blog.fetch_count_epoch %>
+  })</script>
+<% end %>
+<span id="progress_rects"></span>
+<% if blog.fetch_progress %>
+  <script>displayProgress({
+      status: "<%= blog.fetch_progress %>",
+      status_epoch: <%= blog.fetch_status_epoch %>
+  })</script>
 <% end %>
