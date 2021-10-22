@@ -2,7 +2,7 @@ require 'json'
 require_relative '../jobs/guided_crawling_job'
 
 class BlogsController < ApplicationController
-  before_action :authorize, except: [:create, :setup, :confirm, :destroy]
+  before_action :authorize, except: [:create, :setup, :confirm, :mark_wrong, :destroy]
 
   DAY_COUNT_NAMES = [:sun_count, :mon_count, :tue_count, :wed_count, :thu_count, :fri_count, :sat_count]
 
@@ -37,6 +37,10 @@ class BlogsController < ApplicationController
     user_mismatch = redirect_if_user_mismatch(@blog)
     return user_mismatch if user_mismatch
 
+    if @current_user.nil? && !%w[crawl_in_progress crawled crawl_failed].include?(@blog.status)
+      return redirect_to signup_path
+    end
+
     if @current_user.nil?
       cookies[:unfinished_blog] = @blog.id
     end
@@ -59,6 +63,24 @@ class BlogsController < ApplicationController
       redirect_to action: "setup", id: @blog.id
     else
       redirect_to signup_path
+    end
+  end
+
+  def mark_wrong
+    fill_current_user
+    @blog = Blog.find_by(id: params[:id])
+    return redirect_from_not_found unless @blog
+
+    user_mismatch = redirect_if_user_mismatch(@blog)
+    return user_mismatch if user_mismatch
+
+    return if @blog.status != "crawled"
+
+    @blog.looks_wrong = true
+    @blog.save!
+
+    respond_to do |format|
+      format.js
     end
   end
 

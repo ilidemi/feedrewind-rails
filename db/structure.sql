@@ -32,7 +32,8 @@ CREATE TYPE public.blog_status AS ENUM (
     'crawled',
     'confirmed',
     'live',
-    'crawl_failed'
+    'crawl_failed',
+    'crawled_looks_wrong'
 );
 
 
@@ -116,7 +117,8 @@ CREATE TABLE public.blogs (
     status public.blog_status NOT NULL,
     fetch_progress_epoch integer NOT NULL,
     fetch_count_epoch integer NOT NULL,
-    is_added_past_midnight boolean
+    is_added_past_midnight boolean,
+    looks_wrong boolean
 );
 
 
@@ -631,6 +633,8 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20211018233856'),
 ('20211018234402'),
 ('20211018234839'),
-('20211019223144');
+('20211019223144'),
+('20211022194206'),
+('20211022194540');
 
 

@@ -7,6 +7,10 @@ module BlogsHelper
     "/blogs/#{blog.id}/confirm"
   end
 
+  def BlogsHelper.mark_wrong_path(blog)
+    "/blogs/#{blog.id}/mark_wrong"
+  end
+
   def BlogsHelper.schedule_path(blog)
     "/blogs/#{blog.id}/schedule"
   end

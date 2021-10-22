@@ -15,17 +15,23 @@
         <a href="<%= post.link %>"><%= post.title %></a>
       </div>
     <% end %>
-    <div>...</div>
+    <div>(<%= ordered_posts.length - 10 %> more)</div>
     <% ordered_posts[-5..].each do |post| %>
       <div>
         <a href="<%= post.link %>"><%= post.title %></a>
       </div>
     <% end %>
   <% end %>
-  <br>
 
-  <div style="display: flex; gap: 1em;">
-    <%= button_to "Continue", BlogsHelper.confirm_path(blog), method: :post %>
-    <%= button_to "Discard", blog_path(blog), method: :delete %>
+  <div id="confirm_section">
+    <% if !blog.looks_wrong %>
+      <br>
+      <div style="display: flex; gap: 1em;">
+        <%= button_to "Continue", BlogsHelper.confirm_path(blog), method: :post %>
+        <%= button_to "Looks wrong", BlogsHelper.mark_wrong_path(blog), method: :post, remote: true %>
+      </div>
+    <% else %>
+      <%= render partial: "looks_wrong", locals: { blog: blog } %>
+    <% end %>
   </div>
 </div>
