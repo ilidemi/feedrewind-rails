@@ -16,3 +16,13 @@
     <%= render partial: "feeds", locals: { feeds: @feeds } %>
   <% end %>
 </div>
+<script>
+    {
+        let start_url_field = document.getElementById("start_url");
+        let feeds = document.getElementById("feeds");
+        document.addEventListener('turbolinks:before-render', () => {
+            start_url_field.value = "";
+            feeds.innerHTML = "";
+        });
+    }
+</script>
