@@ -46,6 +46,21 @@ class BlogsController < ApplicationController
     end
   end
 
+  def posts
+    fill_current_user
+    @blog = Blog.find_by(id: params[:id])
+    return redirect_from_not_found unless @blog
+
+    user_mismatch = redirect_if_user_mismatch(@blog)
+    return user_mismatch if user_mismatch
+
+    return unless @blog.status == "crawled"
+
+    respond_to do |format|
+      format.js
+    end
+  end
+
   def confirm
     fill_current_user
     @blog = Blog.find_by(id: params[:id])

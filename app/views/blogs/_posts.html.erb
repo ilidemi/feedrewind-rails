@@ -1,0 +1,6 @@
+<% ordered_posts = blog.posts.sort_by(&:order) %>
+<% ordered_posts.each do |post| %>
+  <div>
+    <a href="<%= post.link %>"><%= post.title %></a>
+  </div>
+<% end %>

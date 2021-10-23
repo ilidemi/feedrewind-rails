@@ -3,6 +3,10 @@ module BlogsHelper
     "/blogs/#{blog.id}/setup"
   end
 
+  def BlogsHelper.posts_path(blog)
+    "/blogs/#{blog.id}/posts"
+  end
+
   def BlogsHelper.confirm_path(blog)
     "/blogs/#{blog.id}/confirm"
   end

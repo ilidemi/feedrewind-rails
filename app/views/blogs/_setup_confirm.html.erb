@@ -2,26 +2,30 @@
   Discovered <%= blog.posts.length %> posts (oldest to newest):
   <br>
 
-  <% ordered_posts = blog.posts.sort_by(&:order) %>
-  <% if ordered_posts.length <= 10 %>
-    <% ordered_posts.each do |post| %>
+  <div id="posts">
+    <% ordered_posts = blog.posts.sort_by(&:order) %>
+    <% if ordered_posts.length <= 10 %>
+      <% ordered_posts.each do |post| %>
+        <div>
+          <a href="<%= post.link %>"><%= post.title %></a>
+        </div>
+      <% end %>
+    <% else %>
+      <% ordered_posts[...5].each do |post| %>
+        <div>
+          <a href="<%= post.link %>"><%= post.title %></a>
+        </div>
+      <% end %>
       <div>
-        <a href="<%= post.link %>"><%= post.title %></a>
+        (<%= link_to "#{ordered_posts.length - 10} more", BlogsHelper.posts_path(blog), remote: true %>)
       </div>
+      <% ordered_posts[-5..].each do |post| %>
+        <div>
+          <a href="<%= post.link %>"><%= post.title %></a>
+        </div>
+      <% end %>
     <% end %>
-  <% else %>
-    <% ordered_posts[...5].each do |post| %>
-      <div>
-        <a href="<%= post.link %>"><%= post.title %></a>
-      </div>
-    <% end %>
-    <div>(<%= ordered_posts.length - 10 %> more)</div>
-    <% ordered_posts[-5..].each do |post| %>
-      <div>
-        <a href="<%= post.link %>"><%= post.title %></a>
-      </div>
-    <% end %>
-  <% end %>
+  </div>
 
   <div id="confirm_section">
     <% if !blog.looks_wrong %>
