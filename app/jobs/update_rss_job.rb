@@ -2,16 +2,17 @@ class UpdateRssJob < ApplicationJob
   queue_as :default
 
   def perform(blog_id)
-    day_of_week = DateService.day_of_week
     blog = Blog.find_by(id: blog_id)
-    if blog
-      schedule = Schedule.find_by(blog_id: blog_id, day_of_week: day_of_week)
-      if !blog.is_paused and schedule
-        UpdateRssService.update_rss(blog_id, schedule.count)
-      end
-      if blog.posts.where(is_published: false).count > 0
-        UpdateRssJob.schedule_for_tomorrow(blog_id)
-      end
+    return unless blog
+
+    day_of_week = DateService.day_of_week
+    schedule = Schedule.find_by(blog_id: blog_id, day_of_week: day_of_week)
+    if !blog.is_paused && schedule && schedule.count > 0
+      UpdateRssService.update_rss(blog_id, schedule.count)
+    end
+
+    if blog.posts.where(is_published: false).count > 0
+      UpdateRssJob.schedule_for_tomorrow(blog_id)
     end
   end
 

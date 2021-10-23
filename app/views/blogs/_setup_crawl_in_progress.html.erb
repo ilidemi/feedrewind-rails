@@ -130,6 +130,12 @@
 <% if blog.fetch_progress %>
   <script>displayProgress({
       status: "<%= blog.fetch_progress %>",
-      status_epoch: <%= blog.fetch_status_epoch %>
+      status_epoch: <%= blog.fetch_progress_epoch %>
   })</script>
 <% end %>
+<br>
+<br>
+<%= button_to "Cancel", blog_path(blog),
+              method: :delete,
+              data: { confirm: "Cancel adding #{blog.name}? Progress in discovering posts will be lost." }
+%>

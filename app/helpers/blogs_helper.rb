@@ -61,6 +61,7 @@ module BlogsHelper
         new_epoch = blog.fetch_progress_epoch + 1
         blog.update_column(:fetch_progress_epoch, new_epoch)
         ActionCable.server.broadcast("discovery_#{@blog_id}", { status: status_str, status_epoch: new_epoch })
+        Rails.logger.info("discovery_#{@blog_id} status: #{status_str} status_epoch: #{new_epoch}")
       end
     end
 
@@ -74,6 +75,7 @@ module BlogsHelper
         new_epoch = blog.fetch_count_epoch + 1
         blog.update_column(:fetch_count_epoch, new_epoch)
         ActionCable.server.broadcast("discovery_#{@blog_id}", { count: count, count_epoch: new_epoch })
+        Rails.logger.info("discovery_#{@blog_id} count: #{count} count_epoch: #{new_epoch}")
       end
     end
   end

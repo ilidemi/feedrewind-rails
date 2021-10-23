@@ -113,6 +113,7 @@ class PuppeteerClient
       rescue Puppeteer::FrameManager::NavigationError
         timeout_errors_count += 1
         logger.info("Recovered Puppeteer timeout (#{timeout_errors_count})")
+        progress_logger.log_and_save_puppeteer
         raise if timeout_errors_count >= 3
       end
     end

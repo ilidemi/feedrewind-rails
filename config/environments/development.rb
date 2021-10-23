@@ -82,4 +82,5 @@ Rails.application.configure do
   end
   config.logger = ActiveSupport::TaggedLogging.new(logger)
   config.log_level = :info
+  config.log_tags = [ :request_id, :referer ]
 end
