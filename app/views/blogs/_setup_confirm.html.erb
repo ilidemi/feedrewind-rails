@@ -17,7 +17,10 @@
         </div>
       <% end %>
       <div>
-        (<%= link_to "#{ordered_posts.length - 10} more", BlogsHelper.posts_path(blog), remote: true %>)
+        (<%= link_to "#{ordered_posts.length - 10} more",
+                     BlogsHelper.posts_path(blog),
+                     method: :post,
+                     remote: true %>)
       </div>
       <% ordered_posts[-5..].each do |post| %>
         <div>

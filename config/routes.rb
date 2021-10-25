@@ -15,7 +15,7 @@ Rails.application.routes.draw do
 
   get "/blogs/:id", to: "blogs#show" # Should come after /add so that it doesn't get treated as id
   get "/blogs/:id/setup", to: "blogs#setup"
-  get "/blogs/:id/posts", to: "blogs#posts"
+  post "/blogs/:id/posts", to: "blogs#posts" # all js should be post for redirects to work
   post "/blogs/:id/confirm", to: "blogs#confirm"
   post "/blogs/:id/mark_wrong", to: "blogs#mark_wrong"
   post "/blogs/:id/schedule", to: "blogs#schedule"

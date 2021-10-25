@@ -49,12 +49,12 @@ class BlogsController < ApplicationController
   def posts
     fill_current_user
     @blog = Blog.find_by(id: params[:id])
-    return redirect_from_not_found_js unless @blog
+    return redirect_from_not_found unless @blog
 
-    user_mismatch = redirect_if_user_mismatch_js(@blog)
+    user_mismatch = redirect_if_user_mismatch(@blog)
     return user_mismatch if user_mismatch
 
-    return render js: redirect_js(BlogsHelper.setup_path(@blog)) unless @blog.status == "crawled"
+    return redirect_to BlogsHelper.setup_path(@blog) unless @blog.status == "crawled"
 
     respond_to do |format|
       format.js
@@ -84,12 +84,12 @@ class BlogsController < ApplicationController
   def mark_wrong
     fill_current_user
     @blog = Blog.find_by(id: params[:id])
-    return redirect_from_not_found_js unless @blog
+    return redirect_from_not_found unless @blog
 
-    user_mismatch = redirect_if_user_mismatch_js(@blog)
+    user_mismatch = redirect_if_user_mismatch(@blog)
     return user_mismatch if user_mismatch
 
-    return render js: redirect_js(BlogsHelper.setup_path(@blog)) unless @blog.status == "crawled"
+    return redirect_to BlogsHelper.setup_path(@blog) unless @blog.status == "crawled"
 
     @blog.looks_wrong = true
     @blog.save!
@@ -191,7 +191,7 @@ class BlogsController < ApplicationController
     user_mismatch = redirect_if_user_mismatch(@blog)
     return user_mismatch if user_mismatch
 
-    @blog.destroy!
+    @blog.discard!
 
     if params[:redirect] == "add"
       redirect_to "/blogs/add"
@@ -210,14 +210,6 @@ class BlogsController < ApplicationController
     end
   end
 
-  def redirect_from_not_found_js
-    if @current_user.nil?
-      render js: redirect_js(root_path)
-    else
-      render js: redirect_js(blogs_path)
-    end
-  end
-
   def redirect_if_user_mismatch(blog)
     if blog.user_id
       if @current_user.nil?
@@ -226,21 +218,5 @@ class BlogsController < ApplicationController
         return redirect_to action: "index"
       end
     end
-  end
-
-  def redirect_if_user_mismatch_js(blog)
-    if blog.user_id
-      if @current_user.nil?
-        render js: redirect_js(login_path)
-      elsif blog.user_id != @current_user.id
-        render js: redirect_js(blogs_path)
-      end
-    end
-
-    nil
-  end
-
-  def redirect_js(location)
-    "window.location = '#{location}'"
   end
 end

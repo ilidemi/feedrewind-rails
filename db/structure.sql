@@ -118,7 +118,8 @@ CREATE TABLE public.blogs (
     fetch_progress_epoch integer NOT NULL,
     fetch_count_epoch integer NOT NULL,
     is_added_past_midnight boolean,
-    looks_wrong boolean
+    looks_wrong boolean,
+    discarded_at timestamp without time zone
 );
 
 
@@ -635,6 +636,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20211018234839'),
 ('20211019223144'),
 ('20211022194206'),
-('20211022194540');
+('20211022194540'),
+('20211025203926');
 
 
