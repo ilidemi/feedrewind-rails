@@ -69,38 +69,6 @@ CREATE TABLE public.ar_internal_metadata (
 
 
 --
--- Name: articles; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.articles (
-    id bigint NOT NULL,
-    title character varying,
-    body text,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
-);
-
-
---
--- Name: articles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.articles_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: articles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.articles_id_seq OWNED BY public.articles.id;
-
-
---
 -- Name: blogs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -373,13 +341,6 @@ CREATE TABLE public.users (
 
 
 --
--- Name: articles id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.articles ALTER COLUMN id SET DEFAULT nextval('public.articles_id_seq'::regclass);
-
-
---
 -- Name: blogs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -434,14 +395,6 @@ ALTER TABLE ONLY public.start_pages ALTER COLUMN id SET DEFAULT nextval('public.
 
 ALTER TABLE ONLY public.ar_internal_metadata
     ADD CONSTRAINT ar_internal_metadata_pkey PRIMARY KEY (key);
-
-
---
--- Name: articles articles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.articles
-    ADD CONSTRAINT articles_pkey PRIMARY KEY (id);
 
 
 --
@@ -637,6 +590,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20211019223144'),
 ('20211022194206'),
 ('20211022194540'),
-('20211025203926');
+('20211025203926'),
+('20211025210217');
 
 
