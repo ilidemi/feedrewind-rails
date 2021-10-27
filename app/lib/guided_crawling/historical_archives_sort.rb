@@ -1,5 +1,8 @@
 require_relative 'date_extraction'
 require_relative 'page_parsing'
+require_relative 'util'
+
+SortState = Struct.new(:dates_by_xpath_source, :page_titles)
 
 def historical_archives_sort_add(page, sort_state, logger)
   page_dates_xpaths_sources = []
@@ -15,25 +18,28 @@ def historical_archives_sort_add(page, sort_state, logger)
     }
   end
 
+  page_title = page.document.title&.strip
+
   if sort_state
     page_dates_by_xpath_source = page_dates_xpaths_sources.to_h do |xpath_date_source|
       [[xpath_date_source[:xpath], xpath_date_source[:source]], xpath_date_source[:date]]
     end
-    new_sort_state = {}
-    sort_state.each do |xpath_source, dates|
+    new_sort_state = SortState.new({}, sort_state.page_titles + [page_title])
+    sort_state.dates_by_xpath_source.each do |xpath_source, dates|
       next unless page_dates_by_xpath_source.key?(xpath_source)
-      new_sort_state[xpath_source] = dates + [page_dates_by_xpath_source[xpath_source]]
+      new_sort_state.dates_by_xpath_source[xpath_source] = dates + [page_dates_by_xpath_source[xpath_source]]
     end
   else
-    new_sort_state = page_dates_xpaths_sources.to_h do |xpath_date_source|
+    dates_by_xpath_source = page_dates_xpaths_sources.to_h do |xpath_date_source|
       [[xpath_date_source[:xpath], xpath_date_source[:source]], [xpath_date_source[:date]]]
     end
+    new_sort_state = SortState.new(dates_by_xpath_source, [page_title])
   end
 
-  if new_sort_state.empty?
+  if new_sort_state.dates_by_xpath_source.empty?
     logger.info("Pages don't have a common date path after #{page.curi.to_s}:")
     if sort_state
-      sort_state.each do |xpath_source, dates|
+      sort_state.dates_by_xpath_source.each do |xpath_source, dates|
         logger.info("#{xpath_source} -> #{dates.map { |date| date.strftime("%Y-%m-%d") }}")
       end
     else
@@ -41,19 +47,21 @@ def historical_archives_sort_add(page, sort_state, logger)
     end
     return nil
   end
+
   new_sort_state
 end
 
 def historical_archives_sort_finish(links_with_known_dates, links, sort_state, logger)
   if sort_state
-    sort_state ||= {}
+    sort_state.dates_by_xpath_source ||= {}
     dates_by_xpath_from_time = sort_state
+      .dates_by_xpath_source
       .filter { |xpath_source, _| xpath_source[1] == :time }
       .map { |xpath_source, dates| [xpath_source[0], dates] }
       .to_h
-    if sort_state.length == 1
-      xpath, dates = sort_state.first
-      logger.info("Good shuffled date xpath: #{xpath}")
+    if sort_state.dates_by_xpath_source.length == 1
+      xpath_source, dates = sort_state.dates_by_xpath_source.first
+      logger.info("Good shuffled date xpath_source: #{xpath_source}")
     elsif dates_by_xpath_from_time.length == 1
       xpath, dates = dates_by_xpath_from_time.first
       logger.info("Good shuffled date xpath from time: #{xpath}")
@@ -62,7 +70,11 @@ def historical_archives_sort_finish(links_with_known_dates, links, sort_state, l
       return nil
     end
 
-    links_dates = links_with_known_dates + links.zip(dates)
+    titled_links = links
+      .zip(sort_state.page_titles)
+      .map { |link, page_title| link_with_title(link, page_title) }
+
+    links_dates = links_with_known_dates + titled_links.zip(dates)
   else
     links_dates = links_with_known_dates
   end

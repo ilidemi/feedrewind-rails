@@ -1,5 +1,6 @@
 require 'nokogumbo'
 require_relative 'canonical_link'
+require_relative 'util'
 
 def extract_links(
   document, fetch_uri, allowed_hosts, redirects, logger, include_xpath = false, include_class_xpath = false
@@ -44,6 +45,8 @@ def html_element_to_link(
   return nil if link.nil?
 
   link = follow_cached_redirects(link, redirects).clone
+  title = element.inner_text&.strip
+  link.title = is_str_nil_or_empty(title) ? nil : title
   link.element = element
 
   if include_xpath

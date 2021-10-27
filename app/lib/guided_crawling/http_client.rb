@@ -20,6 +20,8 @@ class HttpClient
       end
     rescue OpenSSL::SSL::SSLError
       return HttpResponse.new("SSLError", nil, nil, nil)
+    rescue Errno::ETIMEDOUT
+      return HttpResponse.new("Timeout", nil, nil, nil)
     end
 
     HttpResponse.new(

@@ -55,6 +55,26 @@ module BlogsHelper
       @blog_id = blog_id
     end
 
+    def save_status_and_count(status_str, count)
+      Blog.transaction do
+        #noinspection RailsChecklist05
+        blog = Blog.find_by_id(@blog_id)
+        raise BlogDeletedError unless blog
+
+        blog.update_column(:fetch_progress, status_str)
+        blog.update_column(:fetch_count, count)
+        new_progress_epoch = blog.fetch_progress_epoch + 1
+        new_count_epoch = blog.fetch_count_epoch + 1
+        blog.update_column(:fetch_progress_epoch, new_progress_epoch)
+        blog.update_column(:fetch_count_epoch, new_count_epoch)
+        ActionCable.server.broadcast(
+          "discovery_#{@blog_id}",
+          { status: status_str, status_epoch: new_progress_epoch, count: count, count_epoch: new_count_epoch }
+        )
+        Rails.logger.info("discovery_#{@blog_id} status: #{status_str} status_epoch: #{new_progress_epoch} count: #{count} count_epoch: #{new_count_epoch}")
+      end
+    end
+
     def save_status(status_str)
       Blog.transaction do
         #noinspection RailsChecklist05

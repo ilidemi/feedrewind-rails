@@ -1,4 +1,15 @@
 Page = Struct.new(:curi, :fetch_uri, :content, :document)
 PermanentError = Struct.new(:curi, :fetch_uri, :code)
-Link = Struct.new(:curi, :uri, :url, :element, :xpath, :class_xpath)
-HostRedirectConfig = Struct.new(:redirect_from_host, :redirect_to_host, :weird_feed_host)
+Link = Struct.new(:curi, :uri, :url, :title, :element, :xpath, :class_xpath)
+
+def link_with_title(link, title)
+  Link.new(
+    link.curi,
+    link.uri,
+    link.url,
+    link.title || title,
+    link.element,
+    link.xpath,
+    link.class_xpath
+  )
+end

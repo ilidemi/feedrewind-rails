@@ -10,7 +10,7 @@ PagedResult = Struct.new(
   :main_link, :pattern, :links, :speculative_count, :count, :extra, keyword_init: true
 )
 PartialPagedResult = Struct.new(
-  :link_to_next_page, :next_page_number, :speculative_count, :count, :paged_state, keyword_init: true
+  :link_to_next_page, :next_page_number, :links, :speculative_count, :count, :paged_state, keyword_init: true
 )
 
 Page2State = Struct.new(
@@ -18,7 +18,7 @@ Page2State = Struct.new(
   :page1_extractions_by_masked_xpath, :page1_size_masked_xpaths_sorted, :main_link
 )
 NextPageState = Struct.new(
-  :paging_pattern, :paging_pattern_extra, :page_number, :entry_links, :known_entry_curis_set,
+  :paging_pattern, :paging_pattern_extra, :page_number, :known_entry_curis_set,
   :classless_masked_xpath, :page_sizes, :page1, :page1_links, :main_link
 )
 
@@ -135,7 +135,7 @@ def try_extract_page1(
     .with_index do |page_size_masked_xpath, index|
     [
       -page_size_masked_xpath[0], # -page_size
-      index # for stable sort, which should put header before footer
+      index # for stable sort, which should put title before no title and header before footer
     ]
   end
   max_page1_size = page1_size_masked_xpaths_sorted.first[0]
@@ -232,8 +232,7 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
       page2_classless_xpath_suffix_links = page2_classless_xpath_suffix_elements
         .filter_map do |element|
         html_element_to_link(
-          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, nil, logger, true,
-          true
+          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, nil, logger, true, true
         )
       end
       page2_classless_xpath_suffix_first_links_by_xpath_prefix = page2_classless_xpath_suffix_links
@@ -259,8 +258,7 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
       )
       page2_xpath_classless_links = page2_xpath_classless_link_elements.filter_map do |element|
         html_element_to_link(
-          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, nil, logger, true,
-          true
+          element, page2.fetch_uri, page2_doc, page2_classes_by_xpath, nil, logger, true, true
         )
       end
       page2_xpath_links = page2_xpath_classless_links
@@ -274,9 +272,7 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
       end
 
       page2_xpath_curis = page2_xpath_links.map(&:curi)
-      is_overlap_matching = feed_entry_links.subsequence_match?(
-        page2_xpath_curis, page1_size, curi_eq_cfg
-      )
+      is_overlap_matching = feed_entry_links.subsequence_match?(page2_xpath_curis, page1_size, curi_eq_cfg)
       next unless is_overlap_matching
 
       page1_entry_links = page1_xpath_links
@@ -323,23 +319,25 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
   PartialPagedResult.new(
     link_to_next_page: link_to_page3,
     next_page_number: 3,
+    links: entry_links,
     speculative_count: entry_links.count + 1,
     count: nil,
     paged_state: NextPageState.new(
-      paging_pattern, paging_pattern_extra, 3, entry_links, known_entry_curis_set,
+      paging_pattern, paging_pattern_extra, 3, known_entry_curis_set,
       good_classless_masked_xpath, page_sizes, page2_state.page1, page2_state.page1_links,
       page2_state.main_link
     )
   )
 end
 
-def try_extract_next_page(page, page_state, feed_entry_links, curi_eq_cfg, logger)
-  paging_pattern = page_state.paging_pattern
-  paging_pattern_extra = page_state.paging_pattern_extra
-  page_number = page_state.page_number
-  entry_links = page_state.entry_links
-  known_entry_curis_set = page_state.known_entry_curis_set
-  classless_masked_xpath = page_state.classless_masked_xpath
+def try_extract_next_page(page, paged_result, feed_entry_links, curi_eq_cfg, logger)
+  entry_links = paged_result.links
+  paged_state = paged_result.paged_state
+  paging_pattern = paged_state.paging_pattern
+  paging_pattern_extra = paged_state.paging_pattern_extra
+  page_number = paged_state.page_number
+  known_entry_curis_set = paged_state.known_entry_curis_set
+  classless_masked_xpath = paged_state.classless_masked_xpath
 
   logger.info("Possible page #{page_number}: #{page.curi}")
 
@@ -387,17 +385,18 @@ def try_extract_next_page(page, page_state, feed_entry_links, curi_eq_cfg, logge
   next_entry_links = entry_links + page_xpath_links
   next_known_entry_curis_set = (known_entry_curis_set.curis + page_xpath_links.map(&:curi))
     .to_canonical_uri_set(curi_eq_cfg)
-  page_sizes = page_state.page_sizes + [page_xpath_links.length]
+  page_sizes = paged_state.page_sizes + [page_xpath_links.length]
 
   if link_to_next_page
     PartialPagedResult.new(
       link_to_next_page: link_to_next_page,
       next_page_number: next_page_number,
+      links: next_entry_links,
       speculative_count: next_entry_links.count + 1,
       count: nil,
       paged_state: NextPageState.new(
-        paging_pattern, paging_pattern_extra, next_page_number, next_entry_links, next_known_entry_curis_set,
-        classless_masked_xpath, page_sizes, page_state.page1, page_state.page1_links, page_state.main_link
+        paging_pattern, paging_pattern_extra, next_page_number, next_known_entry_curis_set,
+        classless_masked_xpath, page_sizes, paged_state.page1, paged_state.page1_links, paged_state.main_link
       )
     )
   else
@@ -406,7 +405,7 @@ def try_extract_next_page(page, page_state, feed_entry_links, curi_eq_cfg, logge
       first_page_links_to_last_page = false
     else
       first_page_links_to_last_page = !!find_link_to_next_page(
-        page_state.page1_links, page_state.page1, curi_eq_cfg, page_count, paging_pattern, logger
+        paged_state.page1_links, paged_state.page1, curi_eq_cfg, page_count, paging_pattern, logger
       )
     end
 
@@ -414,7 +413,7 @@ def try_extract_next_page(page, page_state, feed_entry_links, curi_eq_cfg, logge
     page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
 
     PagedResult.new(
-      main_link: page_state.main_link,
+      main_link: paged_state.main_link,
       pattern: first_page_links_to_last_page ? "paged_last" : "paged_next",
       links: next_entry_links,
       speculative_count: next_entry_links.count,

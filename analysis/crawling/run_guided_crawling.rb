@@ -19,6 +19,7 @@ GUIDED_CRAWLING_RESULT_COLUMNS = [
   [:historical_links_matching, :boolean],
   [:historical_links_pattern, :neutral_present],
   [:historical_links_count, :neutral_present],
+  [:titles_present, :neutral_present],
   [:main_url, :neutral_present],
   [:oldest_link, :neutral_present],
   [:extra, :neutral],
@@ -100,7 +101,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       discovered_start_feed = discover_feeds_result.start_feeds.first
     end
 
-    progress_saver = MockProgressSaver.new
+    progress_saver = MockProgressSaver.new(logger)
     guided_crawl_result = guided_crawl(
       discovered_start_page, discovered_start_feed, crawl_ctx, mock_http_client, puppeteer_client,
       progress_saver, logger
@@ -141,8 +142,11 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     oldest_link = historical_result.links.last
     logger.info("Historical links: #{entries_count}")
     historical_result.links.each do |historical_link|
-      logger.info(historical_link.url)
+      logger.info("#{historical_link.title} (#{historical_link.url})")
     end
+    titles_present_count = historical_result.links.count { |link| !link.title.nil? && !link.title.empty? }
+    result.titles_present = "#{titles_present_count}/#{historical_result.links.length}"
+    result.titles_present_status = titles_present_count == historical_result.links.length ? :success : :failure
 
     db.exec_params(
       "insert into historical "\

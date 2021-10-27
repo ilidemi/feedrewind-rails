@@ -42,6 +42,8 @@
         border-color: transparent;
         display: inline-block;
         background-color: whitesmoke;
+        margin-left: 2px;
+        margin-right: 2px;
     }
 </style>
 
@@ -76,12 +78,13 @@
                         });
                     } else if (token[0].startsWith("hF")) {
                         rects.push(createRect("progress_page progress_finishing"));
-                        if (index === tokens.length - 1) {
-                            let remainingCountMatch = token.match(/\d+$/g);
+                        if (parseInt(index) === tokens.length - 1) {
+                            let remainingCountMatch = token[0].match(/\d+$/g);
                             if (remainingCountMatch) {
-                                Array(parseInt(remainingCountMatch[0])).forEach(() => {
+                                let remainingCount = parseInt(remainingCountMatch[0]);
+                                for (let i = 0; i < remainingCount; i++) {
                                     rects.push(createRect("progress_page_remaining"));
-                                });
+                                }
                             }
                         }
                     } else {

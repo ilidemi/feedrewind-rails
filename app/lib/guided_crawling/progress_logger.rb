@@ -22,13 +22,13 @@ class ProgressLogger
     @progress_saver.save_status(@status_str)
   end
 
-  def log_and_save_postprocessing_remaining(remaining_count)
+  def log_and_save_postprocessing_counts(fetched_count, remaining_count)
     @status_str << 'F'
     @status_str << "#{remaining_count}"
-    @progress_saver.save_status(@status_str)
+    @progress_saver.save_status_and_count(@status_str, fetched_count)
   end
 
-  def log_count(count)
+  def log_and_save_count(count)
     @progress_saver.save_count(count)
   end
 

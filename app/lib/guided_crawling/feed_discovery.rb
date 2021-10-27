@@ -11,7 +11,7 @@ DiscoverFeedsResult = Struct.new(:start_page, :start_feeds, :unsupported_start_f
 SingleFeedResult = Struct.new(:start_feed)
 
 def discover_feeds_at_url(start_url, crawl_ctx, http_client, logger)
-  mock_progress_logger = ProgressLogger.new(MockProgressSaver.new)
+  mock_progress_logger = ProgressLogger.new(MockProgressSaver.new(logger))
 
   start_link = to_canonical_link(start_url, logger)
   raise "Bad start url: #{start_url}" if start_link.nil?

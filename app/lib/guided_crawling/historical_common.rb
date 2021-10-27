@@ -32,11 +32,27 @@ end
 
 XpathTreeNode = Struct.new(:xpath_segments, :children, :parent, :is_link, :is_feed_link)
 
+def pretty_print_xpath_tree_node(xpath_tree_node, depth = 0)
+  lines = []
+  tab = "  " * depth
+  lines << "#{tab}xpath_segments: #{xpath_tree_node.xpath_segments}"
+  lines << "#{tab}children: ["
+  xpath_tree_node.children.each do |key, value|
+    lines << "#{tab}[#{key}]:"
+    lines.push(*pretty_print_xpath_tree_node(value, depth + 2))
+  end
+  lines << "#{tab}]"
+  lines << "#{tab}parent: #{xpath_tree_node.parent ? "(parent)" : "(nil)"}"
+  lines << "#{tab}is_link: #{xpath_tree_node.is_link}"
+  lines << "#{tab}is_feed_link: #{xpath_tree_node.is_feed_link}"
+  lines.join("\n")
+end
+
 def group_links_by_masked_xpath(page_links, feed_entry_curis_set, xpath_name, star_count)
   def xpath_to_segments(xpath)
     xpath.split("/")[1..].map do |token|
       match = token.match(/^([^\[]+)\[(\d+)\]$/)
-      raise "XPath token match failed: #{link_xpath}, #{token}" unless match && match[1] && match[2]
+      raise "XPath token match failed: #{xpath}, #{token}" unless match && match[1] && match[2]
       [match[1], match[2].to_i]
     end
   end
@@ -49,7 +65,7 @@ def group_links_by_masked_xpath(page_links, feed_entry_curis_set, xpath_name, st
   end
 
   def build_xpath_tree(xpaths_segments_is_feed_link)
-    xpath_tree = XpathTreeNode.new([], {}, nil, false)
+    xpath_tree = XpathTreeNode.new([], {}, nil, false, false)
     xpaths_segments_is_feed_link.each do |xpath_segments, is_feed_link|
       current_node = xpath_tree
       xpath_segments.each_with_index do |segment, index|
@@ -163,7 +179,17 @@ def group_links_by_masked_xpath(page_links, feed_entry_curis_set, xpath_name, st
     add_links_matching_subtree(masked_xpath_tree, page_link, page_link_xpath_segments, links_by_masked_xpath)
   end
 
-  links_by_masked_xpath
+  # Prioritize xpaths with maximum number of titles present
+  ordered_masked_xpaths = links_by_masked_xpath
+    .keys
+    .sort_by do |masked_xpath|
+    -links_by_masked_xpath[masked_xpath].count(&:title)
+  end
+  ordered_links_by_masked_xpath = {}
+  ordered_masked_xpaths.each do |masked_xpath|
+    ordered_links_by_masked_xpath[masked_xpath] = links_by_masked_xpath[masked_xpath]
+  end
+  ordered_links_by_masked_xpath
 end
 
 LinksExtraction = Struct.new(:links, :curis, :curis_set, :has_duplicates)
