@@ -122,7 +122,7 @@ module UpdateRssService
     link << blog_path
     item << link
 
-    description = Ox::Element.new("content:encoded")
+    description = Ox::Element.new("description")
     description << "<![CDATA[<a href=\"#{blog_path}\">Manage</a>]]>"
     item << description
 
