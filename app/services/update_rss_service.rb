@@ -1,3 +1,4 @@
+require "htmlentities"
 require "ox"
 
 module UpdateRssService
@@ -123,7 +124,7 @@ module UpdateRssService
     item << link
 
     description = Ox::Element.new("description")
-    description << "<![CDATA[<a href=\"#{blog_path}\">Manage</a>]]>"
+    description << HTMLEntities.new.encode("<a href=\"#{blog_path}\">Manage</a>")
     item << description
 
     item
