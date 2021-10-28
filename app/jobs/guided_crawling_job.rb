@@ -41,7 +41,13 @@ class GuidedCrawlingJob < ApplicationJob
         Blog.transaction do
           blog = Blog.find(blog_id)
           guided_crawl_result.historical_result.links.each_with_index do |link, post_index|
-            blog.posts.new(link: link.url, order: -post_index, title: link.url, date: "", is_published: false)
+            blog.posts.new(
+              link: link.url,
+              order: -post_index,
+              title: link.title,
+              date: nil,
+              is_published: false
+            )
           end
           blog.status = "crawled"
           blog.save!

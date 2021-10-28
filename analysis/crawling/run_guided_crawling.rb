@@ -19,13 +19,14 @@ GUIDED_CRAWLING_RESULT_COLUMNS = [
   [:historical_links_matching, :boolean],
   [:historical_links_pattern, :neutral_present],
   [:historical_links_count, :neutral_present],
-  [:titles_present, :neutral_present],
+  [:historical_links_titles_matching, :neutral_present],
   [:main_url, :neutral_present],
   [:oldest_link, :neutral_present],
   [:extra, :neutral],
   [:total_requests, :neutral],
   [:total_pages, :neutral],
   [:total_network_requests, :neutral],
+  [:title_requests, :neutral],
   [:total_time, :neutral]
 ]
 
@@ -106,8 +107,6 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       discovered_start_page, discovered_start_feed, crawl_ctx, mock_http_client, puppeteer_client,
       progress_saver, logger
     )
-    logger.info("Progress string: #{progress_saver.status_str}")
-    logger.info("Progress count: #{progress_saver.count}")
     result.feed_url = guided_crawl_result.feed_result.feed_url
     result.feed_links = guided_crawl_result.feed_result.feed_links
     result.start_url = guided_crawl_result.start_url
@@ -144,9 +143,9 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     historical_result.links.each do |historical_link|
       logger.info("#{historical_link.title} (#{historical_link.url})")
     end
-    titles_present_count = historical_result.links.count { |link| !link.title.nil? && !link.title.empty? }
-    result.titles_present = "#{titles_present_count}/#{historical_result.links.length}"
-    result.titles_present_status = titles_present_count == historical_result.links.length ? :success : :failure
+    result.historical_links_titles_matching = guided_crawl_result.feed_result.feed_matching_titles
+    result.historical_links_titles_matching_status =
+      guided_crawl_result.feed_result.feed_matching_titles_status
 
     db.exec_params(
       "insert into historical "\
@@ -232,6 +231,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     result.total_network_requests =
       ((defined?(mock_http_client) && mock_http_client && mock_http_client.network_requests_made) || 0) +
         crawl_ctx.puppeteer_requests_made
+    result.title_requests = crawl_ctx.title_requests_made
     result.total_time = (monotonic_now - start_time).to_i
   end
 end

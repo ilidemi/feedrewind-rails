@@ -9,7 +9,7 @@ RSpec::Matchers.define :match_feed_links do |expected_root_url, expected_entry_u
     actual_feed_links.root_link&.url == expected_root_url &&
       actual_feed_links
         .entry_links
-        .sequence_match?(expected_entry_curis, CanonicalEqualityConfig.new(Set.new, false))
+        .sequence_match(expected_entry_curis, CanonicalEqualityConfig.new(Set.new, false))
   end
 end
 

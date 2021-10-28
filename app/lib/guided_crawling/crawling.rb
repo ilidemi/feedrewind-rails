@@ -13,10 +13,11 @@ class CrawlContext
     @requests_made = 0
     @puppeteer_requests_made = 0
     @duplicate_fetches = 0
+    @title_requests_made = 0
   end
 
   attr_reader :seen_fetch_urls, :fetched_curis, :pptr_fetched_curis, :redirects
-  attr_accessor :requests_made, :puppeteer_requests_made, :duplicate_fetches
+  attr_accessor :requests_made, :puppeteer_requests_made, :duplicate_fetches, :title_requests_made
 end
 
 PERMANENT_ERROR_CODES = %w[400 401 402 403 404 405 406 407 410 411 412 413 414 415 416 417 418 451]
@@ -43,6 +44,7 @@ def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progre
     resp = http_client.request(link.uri, logger)
     request_ms = ((monotonic_now - request_start) * 1000).to_i
     crawl_ctx.requests_made += 1
+    progress_logger.log_html
 
     if resp.code.start_with?('3')
       redirection_url = resp.location
@@ -56,12 +58,30 @@ def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progre
         return redirection_link_or_result
       end
     elsif resp.code == "200"
-      content_type = resp.content_type ? resp.content_type.split(';')[0] : nil
+      if resp.content_type
+        content_type_tokens = resp
+          .content_type
+          .split(';')
+          .map(&:strip)
+        content_type = content_type_tokens.first
+        charset_token = content_type_tokens
+          .find { |token| token.downcase.start_with?('charset') }
+        if charset_token
+          encoding = charset_token.split("=").last.strip
+        else
+          encoding = "utf-8"
+        end
+        body = resp.body.force_encoding(encoding)
+      else
+        content_type = nil
+        body = resp.body.force_encoding("utf-8")
+      end
+
       if content_type == "text/html"
-        content = resp.body
+        content = body
         document = nokogiri_html5(content)
-      elsif is_feed_expected && is_feed(resp.body, logger)
-        content = resp.body
+      elsif is_feed_expected && is_feed(body, logger)
+        content = body
         document = nil
       else
         content = nil
@@ -88,8 +108,6 @@ def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progre
           end
         end
       end
-
-      progress_logger.log_html
 
       if !crawl_ctx.fetched_curis.include?(link.curi)
         crawl_ctx.fetched_curis << link.curi

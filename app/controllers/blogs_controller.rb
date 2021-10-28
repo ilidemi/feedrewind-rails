@@ -7,7 +7,7 @@ class BlogsController < ApplicationController
   DAY_COUNT_NAMES = [:sun_count, :mon_count, :tue_count, :wed_count, :thu_count, :fri_count, :sat_count]
 
   def index
-    @blogs = @current_user.blogs
+    @blogs = @current_user.blogs.order(created_at: :desc)
   end
 
   def show

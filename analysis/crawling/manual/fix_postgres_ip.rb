@@ -1,7 +1,7 @@
 ip_output = %x[wsl ip addr]
 ip = ip_output
   .split("\n")
-  .filter_map { |line| /inet (172\.\d+\.\d+\.\d+)\/20/.match(line) }
+  .filter_map { |line| /inet (192\.\d+\.\d+\.\d+)\/20/.match(line) }
   .first[1]
 puts "IP #{ip}"
 

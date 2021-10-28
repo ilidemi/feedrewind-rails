@@ -1,9 +1,10 @@
 require 'date'
+require 'htmlentities'
 require 'nokogumbo'
 require 'set'
 require_relative 'canonical_link'
 require_relative 'feed_entry_links'
-require_relative 'util'
+require_relative 'title'
 
 def is_feed(page_content, logger)
   return false if page_content.nil?
@@ -133,6 +134,8 @@ def parse_feed(feed_content, fetch_uri, logger)
 
   if is_str_nil_or_empty(feed_title)
     feed_title = fetch_uri.host
+  else
+    feed_title = normalize_title(HTMLEntities.new.decode(feed_title))
   end
   root_link = root_url ? to_canonical_link(root_url, logger, fetch_uri) : nil
 
@@ -140,7 +143,7 @@ def parse_feed(feed_content, fetch_uri, logger)
     return nil unless entry[:url]
 
     link = to_canonical_link(entry[:url], logger, fetch_uri)
-    link.title = is_str_nil_or_empty(entry[:title]) ? nil : entry[:title]
+    link.title = normalize_title(HTMLEntities.new.decode(entry[:title]))
     link
   end
   entry_dates = are_dates_certain ? sorted_entries.map { |entry| entry[:pub_date] } : nil

@@ -6,24 +6,24 @@
     <% ordered_posts = blog.posts.sort_by(&:order) %>
     <% if ordered_posts.length <= 10 %>
       <% ordered_posts.each do |post| %>
-        <div>
+        <div style="margin-top: 0.2em;">
           <a href="<%= post.link %>"><%= post.title %></a>
         </div>
       <% end %>
     <% else %>
       <% ordered_posts[...5].each do |post| %>
-        <div>
+        <div style="margin-top: 0.2em;">
           <a href="<%= post.link %>"><%= post.title %></a>
         </div>
       <% end %>
-      <div>
+      <div style="margin-top: 0.2em;">
         (<%= link_to "#{ordered_posts.length - 10} more",
                      BlogsHelper.posts_path(blog),
                      method: :post,
                      remote: true %>)
       </div>
       <% ordered_posts[-5..].each do |post| %>
-        <div>
+        <div style="margin-top: 0.2em;">
           <a href="<%= post.link %>"><%= post.title %></a>
         </div>
       <% end %>

@@ -15,8 +15,7 @@ def extract_links(
   classes_by_xpath = {}
   link_elements.each do |element|
     link = html_element_to_link(
-      element, fetch_uri, document, classes_by_xpath, redirects, logger, include_xpath,
-      include_class_xpath
+      element, fetch_uri, document, classes_by_xpath, redirects, logger, include_xpath, include_class_xpath
     )
     next if link.nil?
     if allowed_hosts.nil? || allowed_hosts.include?(link.uri.host)
@@ -45,8 +44,6 @@ def html_element_to_link(
   return nil if link.nil?
 
   link = follow_cached_redirects(link, redirects).clone
-  title = element.inner_text&.strip
-  link.title = is_str_nil_or_empty(title) ? nil : title
   link.element = element
 
   if include_xpath

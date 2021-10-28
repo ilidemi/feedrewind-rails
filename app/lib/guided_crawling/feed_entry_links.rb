@@ -63,12 +63,12 @@ class FeedEntryLinks
     prefix_length
   end
 
-  def sequence_match?(seq_curis, curi_eq_cfg)
-    subsequence_match?(seq_curis, 0, curi_eq_cfg)
+  def sequence_match(seq_curis, curi_eq_cfg)
+    subsequence_match(seq_curis, 0, curi_eq_cfg)
   end
 
-  def subsequence_match?(seq_curis, offset, curi_eq_cfg)
-    return true if offset >= length
+  def subsequence_match(seq_curis, offset, curi_eq_cfg)
+    return [] if offset >= length
 
     current_bucket_index = 0
     while offset >= @link_buckets[current_bucket_index].length
@@ -77,11 +77,13 @@ class FeedEntryLinks
     end
 
     remaining_in_bucket = @link_buckets[current_bucket_index].length - offset
+    subsequence_links = []
     seq_curis.each do |seq_curi|
-      seq_curi_matches = @link_buckets[current_bucket_index]
-        .any? { |bucket_link| canonical_uri_equal?(seq_curi, bucket_link.curi, curi_eq_cfg) }
-      return false unless seq_curi_matches
+      seq_curi_matching_link = @link_buckets[current_bucket_index]
+        .find { |bucket_link| canonical_uri_equal?(seq_curi, bucket_link.curi, curi_eq_cfg) }
+      return nil unless seq_curi_matching_link
 
+      subsequence_links << seq_curi_matching_link
       remaining_in_bucket -= 1
       if remaining_in_bucket == 0
         current_bucket_index += 1
@@ -90,7 +92,7 @@ class FeedEntryLinks
       end
     end
 
-    true
+    subsequence_links
   end
 
   def sequence_match_except_first?(seq_curis, curi_eq_cfg)
@@ -99,7 +101,7 @@ class FeedEntryLinks
 
     first_bucket = @link_buckets.first
     if first_bucket.length == 1
-      is_match = subsequence_match?(seq_curis, 1, curi_eq_cfg)
+      is_match = subsequence_match(seq_curis, 1, curi_eq_cfg)
       if is_match
         return [true, first_bucket.first]
       else
@@ -121,7 +123,7 @@ class FeedEntryLinks
         first_bucket_remaining.delete_at(match_index)
       end
 
-      is_match = subsequence_match?(seq_curis[(first_bucket.length - 1)..], first_bucket.length, curi_eq_cfg)
+      is_match = subsequence_match(seq_curis[(first_bucket.length - 1)..], first_bucket.length, curi_eq_cfg)
       if is_match
         return [true, first_bucket_remaining.first]
       else
@@ -153,9 +155,9 @@ class FeedEntryLinks
       @link_buckets[...start_bucket_index].map(&:length).sum +
         (start_bucket.length - seq_offset)
 
-    is_match = subsequence_match?(seq_curis[seq_offset..], prefix_length + seq_offset, curi_eq_cfg)
+    is_match = subsequence_match(seq_curis[seq_offset..], prefix_length + seq_offset, curi_eq_cfg)
     if is_match
-      [true, prefix_length]
+      [is_match, prefix_length]
     else
       [false, nil]
     end

@@ -246,7 +246,7 @@ def try_extract_sorted(
 
     # In 1+*(*(*)) sorted links are deduped to pick the oldest occurrence of each, haven't had a real example here
 
-    is_matching_feed = target_feed_entry_links.sequence_match?(curis, curi_eq_cfg)
+    is_matching_feed = target_feed_entry_links.sequence_match(curis, curi_eq_cfg)
     is_matching_fewer_stars_links = fewer_stars_curis &&
       curis[...fewer_stars_curis.length]
         .zip(fewer_stars_curis)
@@ -269,7 +269,7 @@ def try_extract_sorted(
 
     reversed_links = links.reverse
     reversed_curis = curis.reverse
-    is_reversed_matching_feed = target_feed_entry_links.sequence_match?(reversed_curis, curi_eq_cfg)
+    is_reversed_matching_feed = target_feed_entry_links.sequence_match(reversed_curis, curi_eq_cfg)
     is_reversed_matching_fewer_stars_links_prefix = fewer_stars_curis &&
       reversed_curis[...fewer_stars_curis.length]
         .zip(fewer_stars_curis)
@@ -323,7 +323,7 @@ def try_extract_sorted(
       sorted_links_dates = sort_links_dates(unique_links_dates)
       sorted_links = sorted_links_dates.map { |link_date| link_date[0] }
       sorted_curis = sorted_links.map(&:curi)
-      is_sorted_matching_feed = target_feed_entry_links.sequence_match?(sorted_curis, curi_eq_cfg)
+      is_sorted_matching_feed = target_feed_entry_links.sequence_match(sorted_curis, curi_eq_cfg)
       unless is_sorted_matching_feed
         logger.info("Masked xpath #{masked_xpath} has all links with dates but doesn't match feed after sorting")
         sorted_masked_xpath_links_dates_log = sorted_links_dates
@@ -512,9 +512,7 @@ def try_extract_sorted_2xpaths(
     links = prefix_extraction.links_extraction.links
     curis = prefix_extraction.links_extraction.curis
     next if links.length >= feed_entry_links.length
-
-    is_matching_feed = feed_entry_links.sequence_match?(curis, curi_eq_cfg)
-    next unless is_matching_feed
+    next unless feed_entry_links.sequence_match(curis, curi_eq_cfg)
 
     unless feed_prefix_xpaths_by_length.key?(links.length)
       feed_prefix_xpaths_by_length[links.length] = []
@@ -773,7 +771,7 @@ def try_extract_shuffled_2xpaths(
     prefix_curis = prefix_extraction.links_extraction.curis
     next if prefix_links.length >= feed_entry_links.length
     next if best_prefix_links_maybe_dates && prefix_links.length <= best_prefix_links_maybe_dates.length
-    next unless feed_entry_links.sequence_match?(prefix_curis, curi_eq_cfg)
+    next unless feed_entry_links.sequence_match(prefix_curis, curi_eq_cfg)
 
     prefix_maybe_dates = prefix_extraction
       .maybe_url_dates
