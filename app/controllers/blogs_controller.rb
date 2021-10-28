@@ -2,7 +2,7 @@ require 'json'
 require_relative '../jobs/guided_crawling_job'
 
 class BlogsController < ApplicationController
-  before_action :authorize, except: [:create, :setup, :confirm, :mark_wrong, :destroy]
+  before_action :authorize, except: [:create, :setup, :posts, :confirm, :mark_wrong, :destroy]
 
   DAY_COUNT_NAMES = [:sun_count, :mon_count, :tue_count, :wed_count, :thu_count, :fri_count, :sat_count]
 
