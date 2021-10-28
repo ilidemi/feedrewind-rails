@@ -57,6 +57,14 @@ class Puppeteer::Page
 end
 
 class PuppeteerClient
+  def initialize
+    if ENV["DYNO"]
+      @executable_path = "/app/.apt/usr/bin/google-chrome"
+    else
+      @executable_path = nil
+    end
+  end
+
   def fetch(uri, match_curis_set, crawl_ctx, progress_logger, logger, &find_load_more_button)
     logger.info("Puppeteer start: #{uri}")
     puppeteer_start = monotonic_now
@@ -64,7 +72,7 @@ class PuppeteerClient
     timeout_errors_count = 0
     loop do
       begin
-        Puppeteer.launch(args: ["--no-sandbox"]) do |browser|
+        Puppeteer.launch(executable_path: @executable_path, args: ["--no-sandbox"]) do |browser|
           pptr_page = browser.new_page
           pptr_page.request_interception = true
           pptr_page.on("request") do |request|
