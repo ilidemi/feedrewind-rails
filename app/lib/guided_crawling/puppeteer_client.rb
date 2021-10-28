@@ -64,7 +64,7 @@ class PuppeteerClient
     timeout_errors_count = 0
     loop do
       begin
-        Puppeteer.launch do |browser|
+        Puppeteer.launch(args: ["--no-sandbox"]) do |browser|
           pptr_page = browser.new_page
           pptr_page.request_interception = true
           pptr_page.on("request") do |request|
