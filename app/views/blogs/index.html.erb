@@ -12,12 +12,12 @@
 <% @blogs.each do |blog| %>
   <% total_count = blog.posts.count %>
   <% published_count = blog.posts.group(:is_published).count[true] || 0 %>
-  <div style="display:flex; justify-content:space-between">
+  <div style="display:flex; justify-content:space-between;">
     <span>
       <% if blog.status == "live" %>
-        <%= link_to blog.name, blog %>
+        <%= link_to blog.name, blog, { style: "overflow-wrap: break-word;" } %>
       <% else %>
-        <a href="<%= BlogsHelper.setup_path(blog) %>"><%= blog.name %></a>
+        <%= link_to blog.name, BlogsHelper.setup_path(blog), { style: "overflow-wrap: break-word;" } %>
         <% if blog.status == "crawl_failed" %>
           (❌)
         <% else %>
@@ -26,7 +26,7 @@
       <% end %>
     </span>
 
-    <span>
+    <span style="white-space: nowrap;">
       <span style="margin-right: 1em">
         <% if blog.status == "live" %>
           <% verb = blog.is_paused ? 'published, paused' : 'published' %>
