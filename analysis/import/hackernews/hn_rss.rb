@@ -1,5 +1,5 @@
 require 'net/http'
-require 'nokogumbo'
+require 'nokogiri'
 require 'set'
 require_relative '../../../app/lib/guided_crawling/canonical_link'
 require_relative '../../../app/lib/guided_crawling/feed_parsing'

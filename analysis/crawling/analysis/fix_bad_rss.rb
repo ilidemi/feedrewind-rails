@@ -1,4 +1,4 @@
-require 'nokogumbo'
+require 'nokogiri'
 require 'set'
 require_relative '../../../app/lib/guided_crawling/guided_crawling'
 require_relative '../db'

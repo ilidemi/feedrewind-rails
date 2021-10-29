@@ -1,5 +1,5 @@
 require 'json'
-require 'nokogumbo'
+require 'nokogiri'
 require_relative '../db'
 
 db = connect_db

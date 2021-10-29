@@ -1,6 +1,6 @@
 require 'date'
 require 'htmlentities'
-require 'nokogumbo'
+require 'nokogiri'
 require 'set'
 require_relative 'canonical_link'
 require_relative 'feed_entry_links'

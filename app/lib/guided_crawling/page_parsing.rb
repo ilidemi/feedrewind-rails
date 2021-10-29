@@ -1,4 +1,4 @@
-require 'nokogumbo'
+require 'nokogiri'
 require_relative 'canonical_link'
 require_relative 'util'
 
