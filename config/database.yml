@@ -24,7 +24,7 @@ default: &default
 development:
   <<: *default
   database: rss_catchup_rails_development
-  host: 192.168.103.150
+  host: 172.19.4.131
 
   # The specified database role being used to connect to postgres.
   # To create additional roles in postgres see `$ createuser --help`.

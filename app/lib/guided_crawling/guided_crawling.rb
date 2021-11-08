@@ -873,10 +873,10 @@ def fetch_missing_titles(result, crawl_ctx, http_client, progress_logger, logger
     # Always making a request may produce some duplicate requests, but hopefully not too many
     page = crawl_request(link, false, crawl_ctx, http_client, progress_logger, logger)
     if page.is_a?(Page) && page.document
-      links_with_titles << link_with_title(link, page.document.title&.strip)
+      links_with_titles << link_fill_title(link, page.document.title&.strip)
     else
       logger.info("Couldn't fetch link title, going with url: #{page}")
-      links_with_titles << link_with_title(link, link.url)
+      links_with_titles << link_fill_title(link, link.url)
     end
 
     fetched_titles_count += 1
