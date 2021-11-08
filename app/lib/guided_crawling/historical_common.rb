@@ -196,7 +196,6 @@ def group_links_by_masked_xpath(
     title_relative_xpaths = extract_title_relative_xpaths(
       masked_xpath_links_matching_feed, feed_titles_set, distance_to_top_parent, relative_xpath_to_top_parent
     )
-    logger.info("Title relative xpaths for #{masked_xpath}: #{title_relative_xpaths}")
     masked_xpath_titled_links = masked_xpath_links
       .map { |masked_xpath_link| populate_link_title(masked_xpath_link, title_relative_xpaths) }
     masked_xpath_link_groupings << [
@@ -243,10 +242,19 @@ def get_masked_xpath_extraction(
       last_link = collapsed_links[-1]
       if last_link.title && links[index].title
         new_title = last_link.title + links[index].title
+        if last_link.title_xpath == links[index].title_xpath
+          new_title_xpath = last_link.title_xpath
+        else
+          new_title_xpath = :collapsed
+        end
+      elsif last_link.title
+        new_title = last_link.title
+        new_title_xpath = last_link.title_xpath
       else
-        new_title = last_link.title || links[index].title
+        new_title =  links[index].title
+        new_title_xpath = links[index].title_xpath
       end
-      collapsed_links[-1] = link_force_title(last_link, new_title)
+      collapsed_links[-1] = link_force_title(last_link, new_title, new_title_xpath)
     end
   end
 
@@ -461,7 +469,8 @@ def populate_link_title(link, title_relative_xpaths)
   return nil unless link
 
   element = link.element
-  xpath_title = nil
+  title = nil
+  title_xpath = nil
   title_relative_xpaths.each do |title_relative_xpath|
     if title_relative_xpath.empty?
       title_elements = [element]
@@ -471,13 +480,14 @@ def populate_link_title(link, title_relative_xpaths)
         .to_a
     end
 
-    xpath_title = title_elements
+    title = title_elements
       .map(&:inner_text)
       .first
+    title_xpath = title_relative_xpath
 
-    break if xpath_title
+    break if title
   end
 
-  title = normalize_title(xpath_title)
-  link_fill_title(link, title)
+  normalized_title = normalize_title(title)
+  link_fill_title(link, normalized_title, title_xpath)
 end

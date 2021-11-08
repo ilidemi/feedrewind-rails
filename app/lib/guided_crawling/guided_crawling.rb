@@ -145,6 +145,8 @@ def guided_crawl(
       historical_result_with_titles = fetch_missing_titles(
         historical_result, crawl_ctx, http_client, progress_logger, logger
       )
+      extra_newline = historical_result_with_titles.extra.empty? ? "" : "<br>"
+      historical_result_with_titles.extra += "#{extra_newline}title_xpaths: #{count_link_title_xpaths(historical_result_with_titles.links)}"
       feed_links_matching_result = parsed_feed.entry_links.sequence_match(
         historical_result_with_titles.links.map(&:curi), curi_eq_cfg
       )
@@ -155,11 +157,15 @@ def guided_crawl(
           feed_entry_link.title.nil? || are_titles_equal(feed_entry_link.title, result_link.title)
         end
         mismatching_titles.each do |feed_entry_link, result_link|
-          logger.info("Title mismatch: feed \"#{feed_entry_link.title}\", historical \"#{result_link.title}\"")
+          logger.info("Title mismatch with feed: feed \"#{feed_entry_link.title}\", historical \"#{result_link.title}\" (#{result_link.title_xpath})")
         end
-        feed_result.feed_matching_titles = "#{matching_titles.length}/#{feed_links_matching_result.length}"
-        feed_result.feed_matching_titles_status =
-          matching_titles.length == feed_links_matching_result.length ? :success : :failure
+        if matching_titles.length == feed_links_matching_result.length
+          feed_result.feed_matching_titles = "#{matching_titles.length}"
+          feed_result.feed_matching_titles_status = :success
+        else
+          feed_result.feed_matching_titles = "#{matching_titles.length} (#{feed_links_matching_result.length})"
+          feed_result.feed_matching_titles_status = :failure
+        end
       else
         feed_result.feed_matching_titles_status = :neutral
       end
@@ -873,10 +879,10 @@ def fetch_missing_titles(result, crawl_ctx, http_client, progress_logger, logger
     # Always making a request may produce some duplicate requests, but hopefully not too many
     page = crawl_request(link, false, crawl_ctx, http_client, progress_logger, logger)
     if page.is_a?(Page) && page.document
-      links_with_titles << link_fill_title(link, page.document.title&.strip)
+      links_with_titles << link_fill_title(link, page.document.title&.strip, :page_title)
     else
       logger.info("Couldn't fetch link title, going with url: #{page}")
-      links_with_titles << link_fill_title(link, link.url)
+      links_with_titles << link_fill_title(link, link.url, :page_title)
     end
 
     fetched_titles_count += 1
@@ -893,4 +899,17 @@ end
 
 def zero_to_nil(count)
   count == 0 ? nil : count
+end
+
+def count_link_title_xpaths(links)
+  result = {}
+  links.each do |link|
+    if result.key?(link.title_xpath)
+      result[link.title_xpath] += 1
+    else
+      result[link.title_xpath] = 1
+    end
+  end
+
+  result
 end

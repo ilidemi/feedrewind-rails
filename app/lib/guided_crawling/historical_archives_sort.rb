@@ -72,7 +72,7 @@ def historical_archives_sort_finish(links_with_known_dates, links, sort_state, l
 
     titled_links = links
       .zip(sort_state.page_titles)
-      .map { |link, page_title| link_fill_title(link, page_title) }
+      .map { |link, page_title| link_fill_title(link, page_title, :page_title) }
 
     links_dates = links_with_known_dates + titled_links.zip(dates)
   else

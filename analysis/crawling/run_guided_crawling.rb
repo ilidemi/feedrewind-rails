@@ -1,3 +1,5 @@
+require 'pg'
+require 'set'
 require_relative '../../app/lib/guided_crawling/feed_discovery'
 require_relative '../../app/lib/guided_crawling/guided_crawling'
 require_relative '../../app/lib/guided_crawling/mock_progress_saver'
@@ -20,6 +22,7 @@ GUIDED_CRAWLING_RESULT_COLUMNS = [
   [:historical_links_pattern, :neutral_present],
   [:historical_links_count, :neutral_present],
   [:historical_links_titles_matching, :neutral_present],
+  [:historical_links_titles_matching_feed, :neutral_present],
   [:main_url, :neutral_present],
   [:oldest_link, :neutral_present],
   [:extra, :neutral],
@@ -71,7 +74,9 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     end
 
     gt_row = db.exec_params(
-      "select pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url from historical_ground_truth where start_link_id = $1",
+      "select pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url, titles, links "\
+      "from historical_ground_truth "\
+      "where start_link_id = $1",
       [start_link_id]
     ).first
     if gt_row
@@ -143,18 +148,21 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     historical_result.links.each do |historical_link|
       logger.info("#{historical_link.title} (#{historical_link.url})")
     end
-    result.historical_links_titles_matching = guided_crawl_result.feed_result.feed_matching_titles
-    result.historical_links_titles_matching_status =
+    result.historical_links_titles_matching_feed = guided_crawl_result.feed_result.feed_matching_titles
+    result.historical_links_titles_matching_feed_status =
       guided_crawl_result.feed_result.feed_matching_titles_status
 
+    link_titles = historical_result.links.map(&:title)
+    link_curis = historical_result.links.map(&:curi)
     db.exec_params(
       "insert into historical "\
-      "(start_link_id, pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url) "\
+      "(start_link_id, pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url, titles, links) "\
       "values "\
-      "($1, $2, $3, $4, $5)",
+      "($1, $2, $3, $4, $5, $6::text[], $7::text[])",
       [
         start_link_id, historical_result.pattern, entries_count, historical_result.main_link.curi.to_s,
-        oldest_link.curi.to_s
+        oldest_link.curi.to_s, PG::TextEncoder::Array.new.encode(link_titles),
+        PG::TextEncoder::Array.new.encode(link_curis.map(&:to_s))
       ]
     )
 
@@ -171,13 +179,42 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       end
 
       gt_entries_count = gt_row["entries_count"].to_i
+      if gt_row["links"]
+        gt_curis = PG::TextDecoder::Array
+          .new
+          .decode(gt_row["links"])
+          .map { |curl| CanonicalUri::from_db_string(curl) }
+      else
+        gt_curis = nil
+      end
       if gt_entries_count != entries_count
         historical_links_matching = false
         result.historical_links_count_status = :failure
         result.historical_links_count = "#{entries_count} (#{gt_entries_count})"
+        if gt_curis
+          logger.info("Ground truth links:")
+          gt_curis.each do |gt_curi|
+            logger.info(gt_curi.to_s)
+          end
+        else
+          logger.info("Ground truth links not present")
+        end
       else
-        result.historical_links_count_status = :success
-        result.historical_links_count = entries_count
+        link_mismatches = link_curis.zip(gt_curis).filter do |curi, gt_curi|
+          !canonical_uri_equal?(curi, gt_curi, guided_crawl_result.curi_eq_cfg)
+        end
+        if link_mismatches.empty?
+          result.historical_links_count_status = :success
+          result.historical_links_count = entries_count
+        else
+          historical_links_matching = false
+          result.historical_links_count_status = :failure
+          result.historical_links_count = "#{entries_count} (uri mismatch: #{link_mismatches.length})"
+          logger.info("Historical link mismatches (#{link_mismatches.length}):")
+          link_mismatches.each do |curi, gt_curi|
+            logger.info("#{curi.to_s} != #{gt_curi.to_s}")
+          end
+        end
       end
 
       # Main page url is compared as FYI but doesn't affect status
@@ -198,6 +235,40 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
         result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.curi}</a>"
       end
 
+      if gt_row["titles"]
+        gt_titles = PG::TextDecoder::Array.new.decode(gt_row["titles"])
+      else
+        gt_titles = nil
+      end
+      if gt_titles.nil?
+        logger.info("Ground truth titles not present")
+        result.historical_links_titles_matching_status = :neutral
+      elsif entries_count == gt_titles.length
+        mismatching_titles = link_titles.zip(gt_titles).filter { |title, gt_title| title != gt_title }
+        if mismatching_titles.empty?
+          result.historical_links_titles_matching_status = :success
+          result.historical_links_titles_matching = "#{link_titles.length}"
+        else
+          historical_links_matching = false
+          result.historical_links_titles_matching_status = :failure
+          result.historical_links_titles_matching = "#{gt_titles.length - mismatching_titles.length} (#{gt_titles.length})"
+          logger.info("Mismatching titles (#{mismatching_titles.length}):")
+          mismatching_titles.each do |title, gt_title|
+            logger.info("\"#{title}\" != \"#{gt_title}\"")
+          end
+        end
+      else
+        gt_titles_set = gt_titles.to_set
+        titles_matching_count = link_titles.count { |title| gt_titles_set.include?(title) }
+        historical_links_matching = false
+        result.historical_links_titles_matching_status = :failure
+        result.historical_links_titles_matching = "#{titles_matching_count} (#{gt_titles.length})"
+        logger.info("Ground truth titles:")
+        gt_titles.each do |gt_title|
+          logger.info(gt_title)
+        end
+      end
+
       result.historical_links_matching = historical_links_matching
 
       if has_guided_succeeded_before
@@ -215,6 +286,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       result.no_guided_regression_status = :neutral
       result.historical_links_pattern = historical_result.pattern
       result.historical_links_count = entries_count
+      result.historical_links_titles_matching_status = :neutral
       result.main_url = "<a href=\"#{historical_result.main_link.url}\">#{historical_result.main_link.curi.to_s}</a>"
       result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.curi}</a>"
     end

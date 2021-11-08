@@ -77,6 +77,7 @@ def try_extract_page1(
         next unless page1_extractions_by_masked_xpath.key?(masked_class_xpath)
 
         page_link.title = normalize_title(page_link.element.inner_text)
+        page_link.title_xpath = ""
         page1_extractions_by_masked_xpath[masked_class_xpath].links << page_link
       end
     end
@@ -197,9 +198,7 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
   page2_links = extract_links(
     page2.document, page2.fetch_uri, [page2.fetch_uri.host], nil, logger, true, false
   )
-  link_to_page3 = find_link_to_next_page(
-    page2_links, page2, curi_eq_cfg, 3, paging_pattern, logger
-  )
+  link_to_page3 = find_link_to_next_page(page2_links, page2, curi_eq_cfg, 3, paging_pattern, logger)
   if link_to_page3 == :multiple
     logger.info("Multiple links to page 3")
     return nil
