@@ -150,8 +150,8 @@ def find_feed_links(page_doc, page_uri, throttler, http, http_host, http_port, l
   probable_feed_links = page_doc
     .xpath("/html/head/link[@rel='alternate']")
     .to_a
-    .filter { |link| %w[application/rss+xml application/atom+xml].include?(link.attributes["type"]&.value) }
-    .map { |link| link.attributes["href"]&.value }
+    .filter { |link| %w[application/rss+xml application/atom+xml].include?(link["type"]) }
+    .map { |link| link["href"] }
     .map { |url| to_canonical_link(url, logger, page_uri) }
     .filter { |link| link }
     .filter { |link| !link.url.end_with?("?alt=rss") }

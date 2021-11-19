@@ -30,7 +30,7 @@ def get_archives_almost_match_threshold(feed_length)
 end
 
 def try_extract_archives(
-  page_link, page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator,
+  page_link, page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_titles_map, feed_generator,
   extractions_by_masked_xpath_by_star_count, almost_match_threshold, curi_eq_cfg, logger
 )
   return [] unless feed_entry_links.count_included(page_curis_set) >= almost_match_threshold
@@ -61,8 +61,8 @@ def try_extract_archives(
     sorted1_fewer_stars_curis = nil
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       sorted1_result = try_extract_sorted_highlight_first_link(
-        extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_set, curi_eq_cfg, page_curis_set,
-        star_count, sorted1_fewer_stars_curis, min_links_count, page_link, logger
+        extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_titles_map, curi_eq_cfg,
+        page_curis_set, star_count, sorted1_fewer_stars_curis, min_links_count, page_link, logger
       )
       if sorted1_result
         main_result = sorted1_result
@@ -100,7 +100,7 @@ def try_extract_archives(
     almost_feed_fewer_stars_curis = nil
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       almost_feed_result = try_extract_almost_matching_feed(
-        extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_set, curi_eq_cfg,
+        extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_titles_map, curi_eq_cfg,
         almost_match_threshold, star_count, almost_feed_fewer_stars_curis, page_link, logger
       )
       if almost_feed_result
@@ -374,7 +374,7 @@ def join_log_lines(log_lines)
 end
 
 def try_extract_sorted_highlight_first_link(
-  extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_set, curi_eq_cfg, page_curis_set,
+  extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_titles_map, curi_eq_cfg, page_curis_set,
   star_count, fewer_stars_curis, min_links_count, main_link, logger
 )
   logger.info("Trying sorted match with highlighted first link and #{star_count} stars")
@@ -389,7 +389,7 @@ def try_extract_sorted_highlight_first_link(
     curis_set = links_extraction.curis_set
 
     log_lines = extraction.log_lines.clone
-    if feed_entry_links.length == feed_entry_curis_set.length
+    if feed_entry_links.length == feed_entry_curis_titles_map.length
       dedup_last_links = []
       dedup_last_curis_set = CanonicalUriSet.new([], curi_eq_cfg)
       links.reverse_each do |link|
@@ -632,8 +632,8 @@ def try_extract_sorted_2xpaths(
 end
 
 def try_extract_almost_matching_feed(
-  extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_set, curi_eq_cfg, almost_match_threshold,
-  star_count, fewer_stars_curis, main_link, logger
+  extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_titles_map, curi_eq_cfg,
+  almost_match_threshold, star_count, fewer_stars_curis, main_link, logger
 )
   logger.info("Trying almost feed match with #{star_count} stars")
 
@@ -650,7 +650,7 @@ def try_extract_almost_matching_feed(
     next unless links.length < feed_entry_links.length
     next unless links.length >= almost_match_threshold
     next unless feed_entry_links.count_included(curis_set) >= almost_match_threshold
-    next unless curis.all? { |curi| feed_entry_curis_set.include?(curi) }
+    next unless curis.all? { |curi| feed_entry_curis_titles_map.include?(curi) }
 
     is_matching_fewer_stars_links = fewer_stars_curis &&
       curis[...fewer_stars_curis.length]

@@ -2,8 +2,8 @@ require 'time'
 
 def try_extract_element_date(element, guess_year)
   if element.name == "time"
-    if element.attributes.key?("datetime")
-      date = try_extract_text_date(element.attributes["datetime"].value, guess_year)
+    if element.key?("datetime")
+      date = try_extract_text_date(element["datetime"], guess_year)
       return { date: date, source: :time } if date
     end
     return nil

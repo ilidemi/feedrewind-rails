@@ -6,7 +6,6 @@ require_relative 'util'
 
 class CrawlContext
   def initialize
-    @seen_fetch_urls = Set.new
     @fetched_curis = CanonicalUriSet.new([], CanonicalEqualityConfig.new(Set.new, false))
     @pptr_fetched_curis = CanonicalUriSet.new([], CanonicalEqualityConfig.new(Set.new, false))
     @redirects = {}
@@ -16,7 +15,7 @@ class CrawlContext
     @title_requests_made = 0
   end
 
-  attr_reader :seen_fetch_urls, :fetched_curis, :pptr_fetched_curis, :redirects
+  attr_reader :fetched_curis, :pptr_fetched_curis, :redirects
   attr_accessor :requests_made, :puppeteer_requests_made, :duplicate_fetches, :title_requests_made
 end
 
@@ -29,11 +28,8 @@ def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progre
   link = initial_link
   seen_urls = [link.url]
   link = follow_cached_redirects(link, crawl_ctx.redirects, seen_urls)
-  if !link.equal?(initial_link) &&
-    (crawl_ctx.seen_fetch_urls.include?(link.url) ||
-      crawl_ctx.fetched_curis.include?(link.curi))
-
-    logger.info("Cached redirect #{initial_link.url} -> #{link.url} (already seen)")
+  if !link.equal?(initial_link) && crawl_ctx.fetched_curis.include?(link.curi)
+    logger.info("Cached redirect #{initial_link.url} -> #{link.url} (already fetched)")
     return AlreadySeenLink.new(link)
   end
 
@@ -113,7 +109,7 @@ def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progre
         crawl_ctx.fetched_curis << link.curi
         logger.info("#{resp.code} #{content_type} #{request_ms}ms #{link.url}")
       else
-        logger.info("#{resp.code} #{content_type} #{request_ms}ms #{link.url} - canonical uri already seen")
+        logger.info("#{resp.code} #{content_type} #{request_ms}ms #{link.url} - canonical uri already fetched")
       end
 
       return Page.new(link.curi, link.uri, content, document)
@@ -162,17 +158,15 @@ def process_redirect(
   crawl_ctx.redirects[request_link.url] = redirection_link
   redirection_link = follow_cached_redirects(redirection_link, crawl_ctx.redirects, seen_urls)
 
-  if crawl_ctx.seen_fetch_urls.include?(redirection_link.url) ||
-    crawl_ctx.fetched_curis.include?(redirection_link.curi)
-
-    logger.info("#{code} #{request_ms}ms #{request_link.url} -> #{redirection_link.url} (already seen)")
+  if crawl_ctx.fetched_curis.include?(redirection_link.curi)
+    logger.info("#{code} #{request_ms}ms #{request_link.url} -> #{redirection_link.url} (already fetched)")
     return AlreadySeenLink.new(request_link)
   end
 
-  logger.info("#{code} #{request_ms}ms #{request_link.url} -> #{redirection_link.url}")
-  # Not marking canonical url as seen because redirect key is a fetch url which may be different for the
+  # Not marking canonical url as fetched because redirect key is a fetch url which may be different for the
   # same canonical url
-  crawl_ctx.seen_fetch_urls << redirection_link.url
+
+  logger.info("#{code} #{request_ms}ms #{request_link.url} -> #{redirection_link.url}")
   redirection_link
 end
 

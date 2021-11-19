@@ -37,8 +37,6 @@ def guided_crawl(
     guided_crawl_result.feed_result = feed_result
     progress_logger = ProgressLogger.new(progress_saver)
 
-    crawl_ctx.seen_fetch_urls << discovered_start_feed.url
-    crawl_ctx.seen_fetch_urls << discovered_start_feed.final_url
     logger.info("Feed url: #{discovered_start_feed.final_url}")
     feed_result.feed_url = "<a href=\"#{discovered_start_feed.final_url}\">feed</a>"
 
@@ -48,8 +46,6 @@ def guided_crawl(
     parsed_feed = parse_feed(discovered_start_feed.content, feed_final_link.uri, logger)
 
     if discovered_start_page
-      crawl_ctx.seen_fetch_urls << discovered_start_page.url
-      crawl_ctx.seen_fetch_urls << discovered_start_page.final_url
       guided_crawl_result.start_url = "<a href=\"#{discovered_start_page.url}\">#{discovered_start_page.url}</a>"
 
       start_page_link = to_canonical_link(discovered_start_page.url, logger)
@@ -143,18 +139,19 @@ def guided_crawl(
 
     if historical_result
       historical_result_with_titles = fetch_missing_titles(
-        historical_result, crawl_ctx, http_client, progress_logger, logger
+        historical_result, parsed_feed.generator, crawl_ctx, http_client, progress_logger, logger
       )
       extra_newline = historical_result_with_titles.extra.empty? ? "" : "<br>"
       historical_result_with_titles.extra += "#{extra_newline}title_xpaths: #{count_link_title_xpaths(historical_result_with_titles.links)}"
       feed_links_matching_result = parsed_feed.entry_links.sequence_match(
         historical_result_with_titles.links.map(&:curi), curi_eq_cfg
       )
-      if feed_links_matching_result
+      feed_titles_present = parsed_feed.entry_links.to_a.all?(&:title)
+      if feed_links_matching_result && feed_titles_present
         matching_titles, mismatching_titles = feed_links_matching_result
           .zip(historical_result_with_titles.links[...feed_links_matching_result.length])
           .partition do |feed_entry_link, result_link|
-          feed_entry_link.title.nil? || are_titles_equal(feed_entry_link.title, result_link.title)
+          feed_entry_link.title.nil? || are_titles_roughly_equal(result_link.title, feed_entry_link.title)
         end
         mismatching_titles.each do |feed_entry_link, result_link|
           logger.info("Title mismatch with feed: feed \"#{feed_entry_link.title}\", historical \"#{result_link.title}\" (#{result_link.title_xpath})")
@@ -216,8 +213,8 @@ ARCHIVES_REGEX = "/(?:(?:[a-z]+-)?archives?|posts?|all(?:-[a-z]+)?)(?:\\.[a-z]+)
 MAIN_PAGE_REGEX = "/(?:blog|articles|writing|journal|essays)(?:\\.[a-z]+)?$"
 
 def guided_crawl_historical(
-  start_page, feed_entry_links, feed_generator, crawl_ctx, curi_eq_cfg, http_client,
-  puppeteer_client, progress_logger, logger
+  start_page, feed_entry_links, feed_generator, crawl_ctx, curi_eq_cfg, http_client, puppeteer_client,
+  progress_logger, logger
 )
   archives_queue = []
   main_page_queue = []
@@ -231,15 +228,7 @@ def guided_crawl_historical(
   start_page_allowed_hosts_links = start_page_all_links
     .filter { |link| allowed_hosts.include?(link.uri.host) }
 
-  feed_entry_curis_set = feed_entry_links
-    .to_a
-    .map(&:curi)
-    .to_canonical_uri_set(curi_eq_cfg)
-  feed_titles_set = feed_entry_links
-    .to_a
-    .map(&:title)
-    .reject(&:nil?)
-    .to_set
+  feed_entry_curis_titles_map = CanonicalUriTitleMap.new(feed_entry_links.to_a, curi_eq_cfg)
 
   archives_categories_state = ArchivesCategoriesState.new
 
@@ -269,8 +258,8 @@ def guided_crawl_historical(
 
   result = guided_crawl_fetch_loop(
     [archives_queue, main_page_queue], nil, guided_seen_queryless_curis_set, archives_categories_state,
-    feed_entry_links, feed_entry_curis_set, feed_titles_set, feed_generator, curi_eq_cfg, allowed_hosts,
-    crawl_ctx, http_client, puppeteer_client, progress_logger, logger
+    feed_entry_links, feed_entry_curis_titles_map, feed_generator, curi_eq_cfg, allowed_hosts, crawl_ctx,
+    http_client, puppeteer_client, progress_logger, logger
   )
   if result
     if result.count >= 11
@@ -332,8 +321,8 @@ def guided_crawl_historical(
 
   result = guided_crawl_fetch_loop(
     [archives_queue, main_page_queue], result, guided_seen_queryless_curis_set, archives_categories_state,
-    feed_entry_links, feed_entry_curis_set, feed_titles_set, feed_generator, curi_eq_cfg, allowed_hosts,
-    crawl_ctx, http_client, puppeteer_client, progress_logger, logger
+    feed_entry_links, feed_entry_curis_titles_map, feed_generator, curi_eq_cfg, allowed_hosts, crawl_ctx,
+    http_client, puppeteer_client, progress_logger, logger
   )
   if result
     if result.count >= 11
@@ -350,7 +339,7 @@ def guided_crawl_historical(
     return result if result
   else
     filtered_two_entries_other_links = two_entries_other_links
-      .filter { |link| !feed_entry_curis_set.include?(link.curi) }
+      .filter { |link| !feed_entry_curis_titles_map.include?(link.curi) }
     if filtered_two_entries_other_links.length > 10
       twice_filtered_two_entries_other_links = filtered_two_entries_other_links.filter do |link|
         !link.curi.trimmed_path&.match?(/\/\d\d\d\d(\/\d\d)?(\/\d\d)?$/)
@@ -389,8 +378,8 @@ def guided_crawl_historical(
 
     result = guided_crawl_fetch_loop(
       [archives_queue, main_page_queue, others_queue], result, guided_seen_queryless_curis_set,
-      archives_categories_state, feed_entry_links, feed_entry_curis_set, feed_titles_set, feed_generator,
-      curi_eq_cfg, allowed_hosts, crawl_ctx, http_client, puppeteer_client, progress_logger, logger
+      archives_categories_state, feed_entry_links, feed_entry_curis_titles_map, feed_generator, curi_eq_cfg,
+      allowed_hosts, crawl_ctx, http_client, puppeteer_client, progress_logger, logger
     )
     return result if result
   end
@@ -401,7 +390,7 @@ end
 
 def guided_crawl_fetch_loop(
   queues, initial_result, guided_seen_queryless_curis_set, archives_categories_state, feed_entry_links,
-  feed_entry_curis_set, feed_titles_set, feed_generator, curi_eq_cfg, allowed_hosts, crawl_ctx, http_client,
+  feed_entry_curis_titles_map, feed_generator, curi_eq_cfg, allowed_hosts, crawl_ctx, http_client,
   puppeteer_client, progress_logger, logger
 )
   logger.info("Guided crawl loop started")
@@ -439,7 +428,7 @@ def guided_crawl_fetch_loop(
     end
 
     pptr_page = crawl_with_puppeteer_if_match(
-      page, feed_entry_curis_set, puppeteer_client, crawl_ctx, progress_logger, logger
+      page, feed_entry_curis_titles_map, puppeteer_client, crawl_ctx, progress_logger, logger
     )
 
     page_all_links = extract_links(
@@ -468,8 +457,8 @@ def guided_crawl_fetch_loop(
       .map(&:curi)
       .to_canonical_uri_set(curi_eq_cfg)
     page_results = try_extract_historical(
-      link, pptr_page, page_all_links, page_curis_set, feed_entry_links, feed_entry_curis_set,
-      feed_titles_set, feed_generator, curi_eq_cfg, archives_categories_state, progress_logger, logger
+      link, pptr_page, page_all_links, page_curis_set, feed_entry_links, feed_entry_curis_titles_map,
+      feed_generator, curi_eq_cfg, archives_categories_state, progress_logger, logger
     )
     progress_logger.save_status
     page_results.each do |page_result|
@@ -478,7 +467,8 @@ def guided_crawl_fetch_loop(
 
     if had_archives && archives_queue.empty? && !sorted_results.empty?
       postprocessed_result = postprocess_results(
-        sorted_results, feed_entry_links, curi_eq_cfg, crawl_ctx, http_client, progress_logger, logger
+        sorted_results, feed_entry_links, feed_generator, curi_eq_cfg, crawl_ctx, http_client,
+        progress_logger, logger
       )
       if postprocessed_result
         if postprocessed_result.count >= 21
@@ -493,7 +483,8 @@ def guided_crawl_fetch_loop(
   end
 
   postprocessed_result = postprocess_results(
-    sorted_results, feed_entry_links, curi_eq_cfg, crawl_ctx, http_client, progress_logger, logger
+    sorted_results, feed_entry_links, feed_generator, curi_eq_cfg, crawl_ctx, http_client, progress_logger,
+    logger
   )
   if postprocessed_result
     logger.info("Guided crawl loop finished with best result of #{postprocessed_result.count} links")
@@ -505,33 +496,34 @@ def guided_crawl_fetch_loop(
 end
 
 def try_extract_historical(
-  page_link, page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_titles_set,
-  feed_generator, curi_eq_cfg, archives_categories_state, progress_logger, logger
+  page_link, page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_titles_map, feed_generator,
+  curi_eq_cfg, archives_categories_state, progress_logger, logger
 )
   logger.info("Trying to extract historical from #{page.fetch_uri}")
   results = []
 
   archives_almost_match_threshold = get_archives_almost_match_threshold(feed_entry_links.length)
   extractions_by_masked_xpath_by_star_count = get_extractions_by_masked_xpath_by_star_count(
-    page_links, feed_entry_links, feed_entry_curis_set, feed_titles_set, curi_eq_cfg,
-    archives_almost_match_threshold, logger
+    page_links, feed_entry_links, feed_entry_curis_titles_map, curi_eq_cfg, archives_almost_match_threshold,
+    logger
   )
 
   archives_results = try_extract_archives(
-    page_link, page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_generator,
-    extractions_by_masked_xpath_by_star_count, archives_almost_match_threshold, curi_eq_cfg, logger
+    page_link, page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_titles_map,
+    feed_generator, extractions_by_masked_xpath_by_star_count, archives_almost_match_threshold, curi_eq_cfg,
+    logger
   )
   results.push(*archives_results)
 
   archives_categories_result = try_extract_archives_categories(
-    page_link, page, page_curis_set, feed_entry_links, feed_entry_curis_set,
+    page_link, page, page_curis_set, feed_entry_links, feed_entry_curis_titles_map,
     extractions_by_masked_xpath_by_star_count, archives_categories_state, curi_eq_cfg, logger
   )
   results << archives_categories_result if archives_categories_result
 
   page1_result = try_extract_page1(
-    page_link, page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_titles_set,
-    feed_generator, curi_eq_cfg, logger
+    page_link, page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_titles_map,
+    feed_generator, extractions_by_masked_xpath_by_star_count, curi_eq_cfg, logger
   )
   results << page1_result if page1_result
 
@@ -567,7 +559,8 @@ def speculative_count_equal(result1, result2)
 end
 
 def postprocess_results(
-  sorted_results, feed_entry_links, curi_eq_cfg, crawl_ctx, http_client, progress_logger, logger
+  sorted_results, feed_entry_links, feed_generator, curi_eq_cfg, crawl_ctx, http_client, progress_logger,
+  logger
 )
   sorted_results_log = sorted_results.map do |result|
     [result.class.name, result.main_link.url, result.speculative_count]
@@ -585,11 +578,13 @@ def postprocess_results(
         )
       elsif result.is_a?(ArchivesShuffledResults)
         pp_result = postprocess_archives_shuffled_results(
-          result, feed_entry_links, curi_eq_cfg, crawl_ctx, http_client, progress_logger, logger
+          result, feed_entry_links, feed_generator, curi_eq_cfg, crawl_ctx, http_client, progress_logger,
+          logger
         )
       elsif result.is_a?(ArchivesCategoriesResult)
         pp_result = postprocess_archives_categories_result(
-          result, feed_entry_links, curi_eq_cfg, crawl_ctx, http_client, progress_logger, logger
+          result, feed_entry_links, feed_generator, curi_eq_cfg, crawl_ctx, http_client, progress_logger,
+          logger
         )
       elsif result.is_a?(Page1Result)
         # If page 1 result looks the best, check just page 2 in case it was a scam
@@ -680,7 +675,8 @@ def postprocess_archives_medium_pinned_entry_result(
 end
 
 def postprocess_archives_shuffled_results(
-  shuffled_results, feed_entry_links, curi_eq_cfg, crawl_ctx, http_client, progress_logger, logger
+  shuffled_results, feed_entry_links, feed_generator, curi_eq_cfg, crawl_ctx, http_client, progress_logger,
+  logger
 )
   logger.info("Postprocess archives shuffled results start")
   pages_by_canonical_url = {}
@@ -693,8 +689,8 @@ def postprocess_archives_shuffled_results(
   sorted_tentative_results.each do |tentative_result|
     logger.info("Postprocessing archives shuffled result of #{tentative_result.speculative_count}")
     sorted_links, is_matching_feed = postprocess_sort_links_maybe_dates(
-      tentative_result.links_maybe_dates, feed_entry_links, curi_eq_cfg, pages_by_canonical_url, crawl_ctx,
-      http_client, progress_logger, logger
+      tentative_result.links_maybe_dates, feed_entry_links, feed_generator, curi_eq_cfg,
+      pages_by_canonical_url, crawl_ctx, http_client, progress_logger, logger
     )
     unless sorted_links
       logger.info("Postprocess archives shuffled results finish, iteration failed")
@@ -717,12 +713,13 @@ def postprocess_archives_shuffled_results(
 end
 
 def postprocess_archives_categories_result(
-  archives_categories_result, feed_entry_links, curi_eq_cfg, crawl_ctx, http_client, progress_logger, logger
+  archives_categories_result, feed_entry_links, feed_generator, curi_eq_cfg, crawl_ctx, http_client,
+  progress_logger, logger
 )
   logger.info("Postprocess archives categories results start")
   sorted_links, is_matching_feed = postprocess_sort_links_maybe_dates(
-    archives_categories_result.links_maybe_dates, feed_entry_links, curi_eq_cfg, {}, crawl_ctx,
-    http_client, progress_logger, logger
+    archives_categories_result.links_maybe_dates, feed_entry_links, feed_generator, curi_eq_cfg, {},
+    crawl_ctx, http_client, progress_logger, logger
   )
   unless sorted_links
     logger.info("Postprocess archives categories results failed")
@@ -792,8 +789,8 @@ def postprocess_paged_result(
 end
 
 def postprocess_sort_links_maybe_dates(
-  links_maybe_dates, feed_entry_links, curi_eq_cfg, pages_by_canonical_url, crawl_ctx, http_client,
-  progress_logger, logger
+  links_maybe_dates, feed_entry_links, feed_generator, curi_eq_cfg, pages_by_canonical_url, crawl_ctx,
+  http_client, progress_logger, logger
 )
   result_pages = []
   sort_state = nil
@@ -808,7 +805,7 @@ def postprocess_sort_links_maybe_dates(
 
   crawled_links.each do |link|
     page = pages_by_canonical_url[link.curi.to_s]
-    sort_state = historical_archives_sort_add(page, sort_state, logger)
+    sort_state = historical_archives_sort_add(page, feed_generator, sort_state, logger)
     return nil unless sort_state
 
     result_pages << page
@@ -822,7 +819,7 @@ def postprocess_sort_links_maybe_dates(
       return nil
     end
 
-    sort_state = historical_archives_sort_add(page, sort_state, logger)
+    sort_state = historical_archives_sort_add(page, feed_generator, sort_state, logger)
     unless sort_state
       progress_logger.log_and_save_postprocessing
       return nil
@@ -861,7 +858,7 @@ def compare_with_feed(sorted_links, feed_entry_links, curi_eq_cfg, logger)
   false
 end
 
-def fetch_missing_titles(result, crawl_ctx, http_client, progress_logger, logger)
+def fetch_missing_titles(result, feed_generator, crawl_ctx, http_client, progress_logger, logger)
   logger.info("Fetch missing titles start")
   present_titles_count = result.links.count(&:title)
   missing_titles_count = result.links.length - present_titles_count
@@ -879,7 +876,8 @@ def fetch_missing_titles(result, crawl_ctx, http_client, progress_logger, logger
     # Always making a request may produce some duplicate requests, but hopefully not too many
     page = crawl_request(link, false, crawl_ctx, http_client, progress_logger, logger)
     if page.is_a?(Page) && page.document
-      links_with_titles << link_fill_title(link, page.document.title&.strip, :page_title)
+      page_title = get_page_title(page, feed_generator)
+      links_with_titles << link_fill_title(link, page_title, :page_title)
     else
       logger.info("Couldn't fetch link title, going with url: #{page}")
       links_with_titles << link_fill_title(link, link.url, :page_title)

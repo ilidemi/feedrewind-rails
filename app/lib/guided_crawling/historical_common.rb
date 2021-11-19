@@ -2,8 +2,7 @@ require 'set'
 require_relative 'title'
 
 def get_extractions_by_masked_xpath_by_star_count(
-  page_links, feed_entry_links, feed_entry_curis_set, feed_titles_set, curi_eq_cfg, almost_match_threshold,
-  logger
+  page_links, feed_entry_links, feed_entry_curis_titles_map, curi_eq_cfg, almost_match_threshold, logger
 )
   star_count_xpath_names = [
     [1, :xpath],
@@ -14,7 +13,7 @@ def get_extractions_by_masked_xpath_by_star_count(
   extractions_by_masked_xpath_by_star_count = {}
   star_count_xpath_names.each do |star_count, xpath_name|
     link_groupings_by_masked_xpath = group_links_by_masked_xpath(
-      page_links, feed_entry_curis_set, feed_titles_set, xpath_name, star_count, logger
+      page_links, feed_entry_curis_titles_map, xpath_name, star_count, logger
     )
     logger.info("Masked xpaths with #{star_count} stars: #{link_groupings_by_masked_xpath.length}")
 
@@ -22,7 +21,7 @@ def get_extractions_by_masked_xpath_by_star_count(
       [
         masked_xpath,
         get_masked_xpath_extraction(
-          masked_xpath, link_grouping, star_count, feed_entry_links, feed_entry_curis_set, curi_eq_cfg,
+          masked_xpath, link_grouping, star_count, feed_entry_links, feed_entry_curis_titles_map, curi_eq_cfg,
           almost_match_threshold, logger
         )
       ]
@@ -52,11 +51,9 @@ def pretty_print_xpath_tree_node(xpath_tree_node, depth = 0)
   lines.join("\n")
 end
 
-MaskedXpathLinksGrouping = Struct.new(:links, :title_relative_xpaths)
+MaskedXpathLinksGrouping = Struct.new(:links, :title_relative_xpaths, :xpath_name)
 
-def group_links_by_masked_xpath(
-  page_links, feed_entry_curis_set, feed_titles_set, xpath_name, star_count, logger
-)
+def group_links_by_masked_xpath(page_links, feed_entry_curis_titles_map, xpath_name, star_count, logger)
   def xpath_to_segments(xpath)
     xpath.split("/")[1..].map do |token|
       match = token.match(/^([^\[]+)\[(\d+)\]$/)
@@ -65,10 +62,14 @@ def group_links_by_masked_xpath(
     end
   end
 
-  page_link_xpaths_segments_is_feed_link = page_links.map do |page_link|
+  page_links_xpath_segments = page_links.map { |page_link| xpath_to_segments(page_link[xpath_name]) }
+
+  page_link_xpaths_segments_is_feed_link = page_links
+    .zip(page_links_xpath_segments)
+    .map do |page_link, xpath_segments|
     [
-      xpath_to_segments(page_link[xpath_name]),
-      feed_entry_curis_set.include?(page_link.curi)
+      xpath_segments,
+      feed_entry_curis_titles_map.include?(page_link.curi)
     ]
   end
 
@@ -182,31 +183,46 @@ def group_links_by_masked_xpath(
   end
 
   links_by_masked_xpath = {}
-  page_links.each do |page_link|
-    page_link_xpath_segments = xpath_to_segments(page_link[xpath_name])
-    add_links_matching_subtree(masked_xpath_tree, page_link, page_link_xpath_segments, links_by_masked_xpath)
+  page_links.zip(page_links_xpath_segments).each do |page_link, xpath_segments|
+    add_links_matching_subtree(masked_xpath_tree, page_link, xpath_segments, links_by_masked_xpath)
   end
 
   masked_xpath_link_groupings = []
   links_by_masked_xpath.each do |masked_xpath, masked_xpath_links|
-    distance_to_top_parent, relative_xpath_to_top_parent =
-      get_top_parent_distance_relative_xpath(masked_xpath)
+    top_parent_distance, top_parent_relative_xpath = get_top_parent_distance_relative_xpath(masked_xpath)
     masked_xpath_links_matching_feed = masked_xpath_links
-      .filter { |page_link| feed_entry_curis_set.include?(page_link.curi) }
+      .filter { |page_link| feed_entry_curis_titles_map.include?(page_link.curi) }
     title_relative_xpaths = extract_title_relative_xpaths(
-      masked_xpath_links_matching_feed, feed_titles_set, distance_to_top_parent, relative_xpath_to_top_parent
+      masked_xpath_links_matching_feed, feed_entry_curis_titles_map, top_parent_distance,
+      top_parent_relative_xpath, logger
     )
     masked_xpath_titled_links = masked_xpath_links
       .map { |masked_xpath_link| populate_link_title(masked_xpath_link, title_relative_xpaths) }
     masked_xpath_link_groupings << [
       masked_xpath,
-      MaskedXpathLinksGrouping.new(masked_xpath_titled_links, title_relative_xpaths)
+      MaskedXpathLinksGrouping.new(masked_xpath_titled_links, title_relative_xpaths, xpath_name)
     ]
   end
 
-  # Prioritize xpaths with maximum number of titles matching feed
+  # Prioritize xpaths with maximum number of original link titles matching feed, then discovered link titles
+  # matching feed
   ordered_masked_xpath_link_groupings = masked_xpath_link_groupings.sort_by do |_, link_grouping|
-    -link_grouping.links.count { |masked_xpath_link| feed_titles_set.include?(masked_xpath_link.title) }
+    [
+      -link_grouping.links.count do |masked_xpath_link|
+        feed_entry_curis_titles_map.include?(masked_xpath_link.curi) &&
+          are_titles_roughly_equal(
+            normalize_title(element_title(masked_xpath_link.element)),
+            feed_entry_curis_titles_map[masked_xpath_link.curi]
+          )
+      end,
+      -link_grouping.links.count do |masked_xpath_link|
+        feed_entry_curis_titles_map.include?(masked_xpath_link.curi) &&
+          are_titles_roughly_equal(
+            masked_xpath_link.title,
+            feed_entry_curis_titles_map[masked_xpath_link.curi]
+          )
+      end
+    ]
   end
 
   ordered_link_groupings_by_masked_xpath = {}
@@ -220,16 +236,17 @@ end
 LinksExtraction = Struct.new(:links, :curis, :curis_set, :has_duplicates)
 DatesExtraction = Struct.new(:dates, :are_sorted, :are_reverse_sorted)
 MaskedXpathExtraction = Struct.new(
-  :links_extraction, :log_lines, :markup_dates_extraction, :medium_markup_dates,
-  :almost_markup_dates_extraction, :some_markup_dates, :maybe_url_dates, :title_relative_xpaths
+  :links_extraction, :unfiltered_links, :log_lines, :markup_dates_extraction, :medium_markup_dates,
+  :almost_markup_dates_extraction, :some_markup_dates, :maybe_url_dates, :title_relative_xpaths, :xpath_name
 )
 
 def get_masked_xpath_extraction(
-  masked_xpath, link_grouping, star_count, feed_entry_links, feed_entry_curis_set, curi_eq_cfg,
+  masked_xpath, link_grouping, star_count, feed_entry_links, feed_entry_curis_titles_map, curi_eq_cfg,
   almost_match_threshold, logger
 )
   links = link_grouping.links
   title_relative_xpaths = link_grouping.title_relative_xpaths
+  xpath_name = link_grouping.xpath_name
 
   collapsed_links = []
   links.length.times do |index|
@@ -251,7 +268,7 @@ def get_masked_xpath_extraction(
         new_title = last_link.title
         new_title_xpath = last_link.title_xpath
       else
-        new_title =  links[index].title
+        new_title = links[index].title
         new_title_xpath = links[index].title_xpath
       end
       collapsed_links[-1] = link_force_title(last_link, new_title, new_title_xpath)
@@ -270,7 +287,7 @@ def get_masked_xpath_extraction(
   some_markup_dates = nil
 
   links_matching_feed = collapsed_links
-    .filter { |link| feed_entry_curis_set.include?(link.curi) }
+    .filter { |link| feed_entry_curis_titles_map.include?(link.curi) }
   unique_links_matching_feed_count = links_matching_feed
     .map(&:curi)
     .to_canonical_uri_set(curi_eq_cfg)
@@ -357,15 +374,19 @@ def get_masked_xpath_extraction(
   end
 
   MaskedXpathExtraction.new(
-    links_extraction, log_lines, markup_dates_extraction, medium_markup_dates, almost_markup_dates_extraction,
-    some_markup_dates, maybe_url_dates, title_relative_xpaths
+    links_extraction, collapsed_links, log_lines, markup_dates_extraction, medium_markup_dates,
+    almost_markup_dates_extraction, some_markup_dates, maybe_url_dates, title_relative_xpaths, xpath_name
   )
 end
 
 def get_top_parent_distance_relative_xpath(masked_xpath)
   last_star_index = masked_xpath.rindex("*")
   distance_to_top_parent = masked_xpath[last_star_index..].count("/")
-  relative_xpath_to_top_parent = "/.." * distance_to_top_parent
+  if distance_to_top_parent == 0
+    relative_xpath_to_top_parent = ""
+  else
+    relative_xpath_to_top_parent = ".." + "/.." * (distance_to_top_parent - 1)
+  end
   [distance_to_top_parent, relative_xpath_to_top_parent]
 end
 
@@ -430,43 +451,147 @@ def extract_maybe_markup_dates(
 end
 
 def extract_title_relative_xpaths(
-  links_matching_feed, feed_titles_set, distance_to_top_parent, relative_xpath_to_top_parent
+  links_matching_feed, feed_entry_curis_titles_map, top_parent_distance, top_parent_relative_xpath, logger
 )
-  title_counts_by_relative_xpath = {}
-  links_matching_feed.each do |link|
+  link_titles = links_matching_feed.map { |link| normalize_title(element_title(link.element)) }
+  eq_feed_titles = links_matching_feed.map { |link| equalize_title(feed_entry_curis_titles_map[link.curi]) }
+
+  # See if the link inner text just matches
+  if link_titles
+    .zip(eq_feed_titles)
+    .all? { |link_title, feed_title| are_titles_equal(link_title, feed_title) }
+
+    return [""]
+  end
+
+  logger.info("Title not matching feed I see")
+
+  def find_title_match(element, eq_feed_title, feed_title_without_ellipsis = nil, child_xpath_to_skip = nil)
+    return nil unless eq_feed_title
+
+    feed_title_without_ellipsis ||= eq_feed_title
+
+    element.children.each do |child|
+      next unless child.element?
+
+      child_title = normalize_title(element_title(child))
+      next unless child_title
+
+      child_xpath = child.path.match("/([^/]+)$")[1]
+      unless child_xpath.end_with?("]")
+        child_xpath += "[1]"
+      end
+      next if child_xpath == child_xpath_to_skip
+
+      return child_xpath if are_titles_equal(child_title, feed_title_without_ellipsis)
+
+      if equalize_title(child_title).include?(feed_title_without_ellipsis)
+        grandchild_xpath = find_title_match(child, eq_feed_title, feed_title_without_ellipsis)
+        return child_xpath + "/" + grandchild_xpath if grandchild_xpath
+
+        # If the child roughly matches but the grandchild doesn't, child is good enough
+        return child_xpath if are_titles_roughly_equal(child_title, eq_feed_title)
+      end
+    end
+
+    nil
+  end
+
+  # See if there is a child element that matches
+  if link_titles
+    .zip(eq_feed_titles)
+    .all? { |link_title, eq_feed_title| eq_feed_title && equalize_title(link_title)&.include?(eq_feed_title) }
+
+    logger.info("Title that is a substring I see")
+    child_xpaths = links_matching_feed
+      .zip(eq_feed_titles)
+      .map { |link, eq_feed_title| find_title_match(link.element, eq_feed_title) }
+      .to_set
+
+    child_xpaths.each do |child_xpath|
+      next unless child_xpath
+
+      are_all_child_titles_matching = links_matching_feed
+        .zip(eq_feed_titles)
+        .all? do |link, eq_feed_title|
+        child_element = link.element.xpath(child_xpath).first
+        child_element && are_titles_equal(normalize_title(element_title(child_element)), eq_feed_title)
+      end
+
+      if are_all_child_titles_matching
+        logger.info("Found good child xpath: #{child_xpath}")
+        return [child_xpath]
+      end
+    end
+
+    logger.info("No good child xpath")
+  end
+
+  # See if there is a neighbor element that matches
+  neighbor_xpaths = Set.new
+  eq_feed_titles_without_ellipsis = eq_feed_titles.map do |eq_feed_title|
+    feed_title_ellipsis_match = ENDS_WITH_ELLIPSIS_REGEX.match(eq_feed_title)
+    feed_title_ellipsis_match ? feed_title_ellipsis_match[1] : eq_feed_title
+  end
+  links_matching_feed
+    .zip(eq_feed_titles, eq_feed_titles_without_ellipsis)
+    .each do |link, eq_feed_title, eq_feed_title_without_ellipsis|
+
+    link_xpath_relative_to_top_parent = link.xpath.match("(/[^/]+){#{top_parent_distance}}$")[0]
     link_top_parent = link.element
-    distance_to_top_parent.times do
+    top_parent_distance.times do
       link_top_parent = link_top_parent.parent
     end
-    link_top_parent_path = link_top_parent.path
-    link_title_relative_xpaths = []
-    link_top_parent.traverse do |element|
-      next unless feed_titles_set.include?(normalize_title(element.inner_text))
+    title_xpath_relative_to_top_parent = find_title_match(
+      link_top_parent, eq_feed_title, eq_feed_title_without_ellipsis, link_xpath_relative_to_top_parent
+    )
+    next unless title_xpath_relative_to_top_parent
 
-      title_relative_xpath = (relative_xpath_to_top_parent + element.path[link_top_parent_path.length..])
-        .delete_prefix("/")
-      link_title_relative_xpaths << title_relative_xpath
+    neighbor_xpath = top_parent_relative_xpath + "/" + title_xpath_relative_to_top_parent
+    neighbor_xpaths << neighbor_xpath
+  end
+
+  only_true_positive_neighbor_xpaths = []
+  flaky_neighbor_xpaths_match_counts = []
+  neighbor_xpaths.each do |neighbor_xpath|
+    are_all_neighbor_titles_matching = true
+    match_count = 0
+    links_matching_feed.zip(eq_feed_titles).each do |link, eq_feed_title|
+      neighbor_element = link.element.xpath(neighbor_xpath).first
+      next unless neighbor_element
+
+      neighbor_element_title = normalize_title(element_title(neighbor_element))
+      if are_titles_roughly_equal(neighbor_element_title, eq_feed_title)
+        match_count += 1
+      else
+        are_all_neighbor_titles_matching = false
+      end
     end
 
-    link_title_relative_xpaths.each do |title_relative_xpath|
-      if title_counts_by_relative_xpath.key?(title_relative_xpath)
-        title_counts_by_relative_xpath[title_relative_xpath] += 1
-      else
-        title_counts_by_relative_xpath[title_relative_xpath] = 1
-      end
+    if are_all_neighbor_titles_matching
+      logger.info("Found good neighbor xpath: #{neighbor_xpath}")
+      only_true_positive_neighbor_xpaths << neighbor_xpath
+    elsif match_count > 0
+      logger.info("Found flaky neighbor xpath: #{neighbor_xpath}")
+      flaky_neighbor_xpaths_match_counts << [neighbor_xpath, match_count]
     end
   end
 
-  # Maximum matches and childmost xpaths go first
-  ordered_relative_xpaths = title_counts_by_relative_xpath
-    .sort_by { |relative_xpath, count| [-count, -relative_xpath.count("/")] }
-    .map { |relative_xpath, _| relative_xpath }
+  # Order by highest match count, then by least nested (shortest) xpath
+  ordered_flaky_neighbor_xpaths = flaky_neighbor_xpaths_match_counts
+    .sort_by { |neighbor_xpath, match_count| [-match_count, neighbor_xpath.length] }
+    .map(&:first)
 
-  ordered_relative_xpaths
+  matching_neighbor_xpaths = only_true_positive_neighbor_xpaths + ordered_flaky_neighbor_xpaths
+  return matching_neighbor_xpaths unless matching_neighbor_xpaths.empty?
+
+  logger.info("No good neighbor xpath, falling back on link text")
+  [""]
 end
 
 def populate_link_title(link, title_relative_xpaths)
   return nil unless link
+  return link unless title_relative_xpaths
 
   element = link.element
   title = nil
@@ -480,12 +605,11 @@ def populate_link_title(link, title_relative_xpaths)
         .to_a
     end
 
-    title = title_elements
-      .map(&:inner_text)
-      .first
-    title_xpath = title_relative_xpath
+    next if title_elements.empty?
 
-    break if title
+    title = element_title(title_elements.first)
+    title_xpath = title_relative_xpath
+    break
   end
 
   normalized_title = normalize_title(title)

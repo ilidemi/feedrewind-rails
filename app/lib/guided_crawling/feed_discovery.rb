@@ -33,8 +33,8 @@ def discover_feeds_at_url(start_url, crawl_ctx, http_client, logger)
       .document
       .xpath("/html/head/link[@rel='alternate']")
       .to_a
-      .filter { |link| %w[application/rss+xml application/atom+xml].include?(link.attributes["type"]&.value) }
-      .map { |link| [link.attributes["title"]&.value, link.attributes["href"]&.value] }
+      .filter { |link| %w[application/rss+xml application/atom+xml].include?(link["type"]) }
+      .map { |link| [link["title"], link["href"]] }
       .map { |title, url| [title, to_canonical_link(url, logger, start_link.uri)] }
       .filter { |_, link| link }
       .filter { |_, link| !link.url.end_with?("?alt=rss") }

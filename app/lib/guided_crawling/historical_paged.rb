@@ -30,8 +30,8 @@ PagedExtraction = Struct.new(
 BLOGSPOT_POSTS_BY_DATE_REGEX = /(\(date-outer\)\[)\d+(.+\(post-outer\)\[)\d+/
 
 def try_extract_page1(
-  page1_link, page1, page1_links, page_curis_set, feed_entry_links, feed_entry_curis_set, feed_titles_set,
-  feed_generator, curi_eq_cfg, logger
+  page1_link, page1, page1_links, page_curis_set, feed_entry_links, feed_entry_curis_titles_map,
+  feed_generator, extractions_by_masked_xpath_by_star_count, curi_eq_cfg, logger
 )
   link_pattern_to_page2 = find_link_to_page2(page1_links, page1, feed_generator, curi_eq_cfg, logger)
   return nil unless link_pattern_to_page2
@@ -53,7 +53,7 @@ def try_extract_page1(
     page1_links_grouped_by_date = page1_class_xpath_links
       .filter { |page_link| BLOGSPOT_POSTS_BY_DATE_REGEX.match(page_link.class_xpath) }
     page1_feed_links_grouped_by_date = page1_links_grouped_by_date
-      .filter { |page_link| feed_entry_curis_set.include?(page_link.curi) }
+      .filter { |page_link| feed_entry_curis_titles_map.include?(page_link.curi) }
 
     unless page1_feed_links_grouped_by_date.empty?
       page1_extractions_by_masked_xpath = {}
@@ -85,36 +85,32 @@ def try_extract_page1(
 
   # For all others, just extract all masked xpaths
   if page1_extractions_by_masked_xpath.nil?
-    page1_link_groupings_by_masked_xpath_one_star =
-      group_links_by_masked_xpath(page1_links, feed_entry_curis_set, feed_titles_set, :xpath, 1, logger)
-    page1_extractions_by_masked_xpath_one_star = page1_link_groupings_by_masked_xpath_one_star
-      .to_h do |masked_xpath, link_grouping|
+    page1_extractions_by_masked_xpath_one_star = extractions_by_masked_xpath_by_star_count[1]
+      .to_h do |masked_xpath, extraction|
       [
         masked_xpath,
         PagedExtraction.new(
-          links: link_grouping.links,
-          xpath_name: :xpath,
-          classless_masked_xpath: masked_xpath,
-          title_relative_xpaths: link_grouping.title_relative_xpaths
+          links: extraction.unfiltered_links,
+          xpath_name: extraction.xpath_name,
+          classless_masked_xpath: class_xpath_remove_classes(masked_xpath), # Just in case
+          title_relative_xpaths: extraction.title_relative_xpaths
         )
       ]
     end
 
-    page1_link_groupings_by_masked_xpath_two_stars = group_links_by_masked_xpath(
-      page1_links, feed_entry_curis_set, feed_titles_set, :class_xpath, 2, logger
-    )
-    page1_extractions_by_masked_xpath_two_stars = page1_link_groupings_by_masked_xpath_two_stars
-      .to_h do |masked_class_xpath, link_grouping|
+    page1_extractions_by_masked_xpath_two_stars = extractions_by_masked_xpath_by_star_count[2]
+      .to_h do |masked_xpath, extraction|
       [
-        masked_class_xpath,
+        masked_xpath,
         PagedExtraction.new(
-          links: link_grouping.links,
-          xpath_name: :class_xpath,
-          classless_masked_xpath: class_xpath_remove_classes(masked_class_xpath),
-          title_relative_xpaths: link_grouping.title_relative_xpaths
+          links: extraction.unfiltered_links,
+          xpath_name: extraction.xpath_name,
+          classless_masked_xpath: class_xpath_remove_classes(masked_xpath),
+          title_relative_xpaths: extraction.title_relative_xpaths
         )
       ]
     end
+
     page1_extractions_by_masked_xpath = page1_extractions_by_masked_xpath_one_star
       .merge(page1_extractions_by_masked_xpath_two_stars)
   end
@@ -431,8 +427,7 @@ def try_extract_next_page(page, paged_result, feed_entry_links, curi_eq_cfg, log
   return nil if link_to_next_page == :multiple
 
   next_entry_links = entry_links + page_xpath_links
-  next_known_entry_curis_set = (known_entry_curis_set.curis + page_xpath_links.map(&:curi))
-    .to_canonical_uri_set(curi_eq_cfg)
+  next_known_entry_curis_set = known_entry_curis_set.merge(page_xpath_links.map(&:curi))
   page_sizes = paged_state.page_sizes + [page_xpath_links.length]
 
   if link_to_next_page

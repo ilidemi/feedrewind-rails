@@ -23,9 +23,10 @@ File.open("urls.jsonl", "w") do |urls_f|
         link_elements = document.css('a').to_a + document.css('link').to_a
 
         link_elements.each do |element|
-          next unless element.attributes.key?('href')
+          next unless element.key?('href')
+          
           fetch_url = row["fetch_url"]
-          url = element.attributes['href'].to_s
+          url = element['href'].to_s
           if fetch_url.empty? && url.empty?
             puts "Skipping empty url for start link id #{row["start_link_id"]}"
             next

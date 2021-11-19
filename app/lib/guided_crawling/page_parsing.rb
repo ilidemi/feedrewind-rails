@@ -37,9 +37,9 @@ def html_element_to_link(
   element, fetch_uri, document, classes_by_xpath, redirects, logger, include_xpath = false,
   include_class_xpath = false
 )
-  return nil unless element.attributes.key?('href')
+  return nil unless element.key?('href')
 
-  url_attribute = element.attributes['href']
+  url_attribute = element['href']
   link = to_canonical_link(url_attribute.to_s, logger, fetch_uri)
   return nil if link.nil?
 
@@ -58,14 +58,13 @@ def html_element_to_link(
   link
 end
 
+XPATH_TOKEN_WITHOUT_INDEX_REGEX = Regexp.new("(/[^/^\\[^\\]]+)(?=/|$)")
+
 def to_canonical_xpath(xpath)
-  xpath
-    .split('/')[1..]
-    .map { |token| token.index("[") ? "/#{token}" : "/#{token}[1]" }
-    .join('')
+  xpath.gsub(XPATH_TOKEN_WITHOUT_INDEX_REGEX, '\1[1]')
 end
 
-CLASS_BLACKLIST_REGEX = /^post-\d+$/
+CLASS_BLACKLIST_REGEX = Regexp.new("^post-\\d+$")
 
 CLASS_SUBSTITUTIONS = {
   '/' => '%2F',
@@ -96,10 +95,9 @@ def to_class_xpath(xpath, document, fetch_uri, classes_by_xpath, logger)
         return nil
       end
 
-      ancestor_classes = ancestor.attributes['class']
+      ancestor_classes = ancestor["class"]
       if ancestor_classes
         classes = classes_by_xpath[prefix_xpath] = ancestor_classes
-          .value
           .split(' ')
           .filter { |klass| !klass.match?(CLASS_BLACKLIST_REGEX) }
           .map { |klass| klass.gsub(/[\/\[\]()]/, CLASS_SUBSTITUTIONS) }

@@ -44,7 +44,9 @@ def to_canonical_link(url, logger, fetch_uri = nil)
   if uri.scheme.nil? && !fetch_uri.nil? # Relative uri
     fetch_uri_classes = { 'http' => URI::HTTP, 'https' => URI::HTTPS }
     path = URI::join(fetch_uri, uri).path
-    uri = fetch_uri_classes[fetch_uri.scheme].build(host: fetch_uri.host, port: fetch_uri.port, path: path, query: uri.query)
+    uri = fetch_uri_classes[fetch_uri.scheme].build(
+      host: fetch_uri.host, port: fetch_uri.port, path: path, query: uri.query
+    )
   end
 
   return nil unless %w[http https].include? uri.scheme
@@ -148,7 +150,7 @@ def canonical_uri_same_path?(canonical_uri1, canonical_uri2)
   canonical_uri1.trimmed_path == canonical_uri2.trimmed_path
 end
 
-TUMBLR_PATH_REGEX = "^(/post/\\d+)(?:/[^/]+)?/?$"
+TUMBLR_PATH_REGEX = Regexp.new("^(/post/\\d+)(?:/[^/]+)?/?$")
 
 def canonical_uri_equal?(curi1, curi2, curi_eq_cfg)
   same_hosts = curi_eq_cfg.same_hosts
@@ -166,46 +168,93 @@ def canonical_uri_equal?(curi1, curi2, curi_eq_cfg)
   curi1.query == curi2.query
 end
 
+class CanonicalUriTitleMap
+  def initialize(links, curi_eq_cfg)
+    @curi_eq_cfg = curi_eq_cfg
+    @links = []
+    @titles_by_key = {}
+    @length = 0
+    links.each do |link|
+      add(link)
+    end
+  end
+
+  attr_reader :length, :links
+
+  def add(link)
+    key = canonical_uri_get_key(link.curi, @curi_eq_cfg)
+    return if @titles_by_key.include?(key)
+
+    @titles_by_key[key] = link.title
+    @links << link
+    @length += 1
+  end
+
+  def include?(curi)
+    key = canonical_uri_get_key(curi, @curi_eq_cfg)
+    @titles_by_key.include?(key)
+  end
+
+  def [](curi)
+    key = canonical_uri_get_key(curi, @curi_eq_cfg)
+    @titles_by_key[key]
+  end
+
+  def hash
+    @titles_by_key.hash
+  end
+
+  def eql?(other)
+    other.is_a?(CanonicalUriTitleMap) &&
+      @titles_by_key.eql?(other.instance_variable_get(:@titles_by_key))
+  end
+end
+
 class CanonicalUriSet
   def initialize(curis, curi_eq_cfg)
     @curi_eq_cfg = curi_eq_cfg
     @curis = []
-    @paths_queries_by_server = {}
+    @keys = Set.new
+    @length = 0
+    merge!(curis)
+  end
+
+  attr_reader :length, :curis
+
+  def update_equality_config(curi_eq_cfg)
+    curis = @curis
+    @curi_eq_cfg = curi_eq_cfg
+    @curis = []
+    @keys = Set.new
     @length = 0
     merge!(curis)
   end
 
   def add(curi)
-    server = (curi.host || "") + (curi.port || "")
-    server_key = @curi_eq_cfg.same_hosts.include?(server) ? :same_hosts : server
-    unless @paths_queries_by_server.key?(server_key)
-      @paths_queries_by_server[server_key] = {}
-    end
+    key = canonical_uri_get_key(curi, @curi_eq_cfg)
+    return if @keys.include?(key)
 
-    queries_by_trimmed_path = @paths_queries_by_server[server_key]
-    trimmed_path = trim_path(curi)
-    unless queries_by_trimmed_path.key?(trimmed_path)
-      queries_by_trimmed_path[trimmed_path] = Set.new
-    end
-
-    return if queries_by_trimmed_path[trimmed_path].include?(curi.query)
-
-    queries_by_trimmed_path[trimmed_path] << curi.query
+    @keys << key
     @curis << curi
     @length += 1
   end
 
-  def <<(item)
-    add(item)
+  def <<(curi)
+    add(curi)
   end
 
   def include?(curi)
-    server = (curi.host || "") + (curi.port || "")
-    server_key = @curi_eq_cfg.same_hosts.include?(server) ? :same_hosts : server
-    trimmed_path = trim_path(curi)
-    @paths_queries_by_server.key?(server_key) &&
-      @paths_queries_by_server[server_key].key?(trimmed_path) &&
-      @paths_queries_by_server[server_key][trimmed_path].include?(curi.query)
+    key = canonical_uri_get_key(curi, @curi_eq_cfg)
+    @keys.include?(key)
+  end
+
+  def merge(curis)
+    copy = CanonicalUriSet.new([], @curi_eq_cfg)
+    copy.instance_variable_set(:@curis, @curis.dup)
+    copy.instance_variable_set(:@keys, @keys.dup)
+    copy.instance_variable_set(:@length, @length.dup)
+    copy.merge!(curis)
+    copy
   end
 
   def merge!(curis)
@@ -214,36 +263,31 @@ class CanonicalUriSet
     end
   end
 
-  def update_equality_config(curi_eq_cfg)
-    curis = @curis
-    @curi_eq_cfg = curi_eq_cfg
-    @curis = []
-    @paths_queries_by_server = {}
-    @length = 0
-    merge!(curis)
-  end
-
   def hash
-    @paths_queries_by_server.hash
+    @keys.hash
   end
 
   def eql?(other)
-    other.is_a?(CanonicalUriSet) &&
-      @paths_queries_by_server.eql?(other.instance_variable_get(:@paths_queries_by_server))
+    other.is_a?(CanonicalUriSet) && @keys.eql?(other.instance_variable_get(:@keys))
   end
+end
 
-  attr_reader :length, :curis
+def canonical_uri_get_key(curi, curi_eq_cfg)
+  server = (curi.host || "") + (curi.port || "")
+  server_key = curi_eq_cfg.same_hosts.include?(server) ? ":same_hosts" : server
 
-  private
-
-  def trim_path(curi)
-    if @curi_eq_cfg.expect_tumblr_paths
-      tumblr_match = curi.path.match(TUMBLR_PATH_REGEX)
-      return tumblr_match[1] if tumblr_match
+  if curi_eq_cfg.expect_tumblr_paths
+    tumblr_match = curi.path.match(TUMBLR_PATH_REGEX)
+    if tumblr_match
+      trimmed_path = tumblr_match[1]
+    else
+      trimmed_path = curi.trimmed_path
     end
-
-    curi.trimmed_path
+  else
+    trimmed_path = curi.trimmed_path
   end
+
+  "#{server_key}/#{trimmed_path}?#{curi.query}"
 end
 
 module Enumerable

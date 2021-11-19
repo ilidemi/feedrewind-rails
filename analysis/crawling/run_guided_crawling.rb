@@ -16,13 +16,14 @@ GUIDED_CRAWLING_RESULT_COLUMNS = [
   [:feed_url, :boolean],
   [:feed_links, :boolean],
   [:duplicate_fetches, :neutral],
-  [:no_guided_regression, :neutral],
   [:historical_links_found, :boolean],
   [:historical_links_matching, :boolean],
   [:historical_links_pattern, :neutral_present],
   [:historical_links_count, :neutral_present],
-  [:historical_links_titles_matching, :neutral_present],
+  [:historical_links_titles_partially_matching, :neutral_present],
+  [:historical_links_titles_exactly_matching, :neutral_present],
   [:historical_links_titles_matching_feed, :neutral_present],
+  [:no_guided_regression, :neutral],
   [:main_url, :neutral_present],
   [:oldest_link, :neutral_present],
   [:extra, :neutral],
@@ -200,20 +201,24 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
           logger.info("Ground truth links not present")
         end
       else
-        link_mismatches = link_curis.zip(gt_curis).filter do |curi, gt_curi|
-          !canonical_uri_equal?(curi, gt_curi, guided_crawl_result.curi_eq_cfg)
-        end
-        if link_mismatches.empty?
-          result.historical_links_count_status = :success
-          result.historical_links_count = entries_count
-        else
-          historical_links_matching = false
-          result.historical_links_count_status = :failure
-          result.historical_links_count = "#{entries_count} (uri mismatch: #{link_mismatches.length})"
-          logger.info("Historical link mismatches (#{link_mismatches.length}):")
-          link_mismatches.each do |curi, gt_curi|
-            logger.info("#{curi.to_s} != #{gt_curi.to_s}")
+        if gt_curis
+          link_mismatches = link_curis.zip(gt_curis).filter do |curi, gt_curi|
+            !canonical_uri_equal?(curi, gt_curi, guided_crawl_result.curi_eq_cfg)
           end
+          if link_mismatches.empty?
+            result.historical_links_count_status = :success
+            result.historical_links_count = entries_count
+          else
+            historical_links_matching = false
+            result.historical_links_count_status = :failure
+            result.historical_links_count = "#{entries_count} (uri mismatch: #{link_mismatches.length})"
+            logger.info("Historical link mismatches (#{link_mismatches.length}):")
+            link_mismatches.each do |curi, gt_curi|
+              logger.info("#{curi.to_s} != #{gt_curi.to_s}")
+            end
+          end
+        else
+          result.historical_links_count_status = :neutral
         end
       end
 
@@ -242,27 +247,54 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       end
       if gt_titles.nil?
         logger.info("Ground truth titles not present")
-        result.historical_links_titles_matching_status = :neutral
+        result.historical_links_titles_partially_matching_status = :neutral
+        result.historical_links_titles_exactly_matching_status = :neutral
       elsif entries_count == gt_titles.length
-        mismatching_titles = link_titles.zip(gt_titles).filter { |title, gt_title| title != gt_title }
-        if mismatching_titles.empty?
-          result.historical_links_titles_matching_status = :success
-          result.historical_links_titles_matching = "#{link_titles.length}"
+        exact_mismatching_titles = link_titles
+          .zip(gt_titles)
+          .filter { |title, gt_title| !are_titles_equal(title, gt_title) }
+
+        if exact_mismatching_titles.empty?
+          result.historical_links_titles_partially_matching_status = :success
+          result.historical_links_titles_partially_matching = "#{link_titles.length}"
+          result.historical_links_titles_exactly_matching_status = :success
+          result.historical_links_titles_exactly_matching = "#{link_titles.length}"
         else
           historical_links_matching = false
-          result.historical_links_titles_matching_status = :failure
-          result.historical_links_titles_matching = "#{gt_titles.length - mismatching_titles.length} (#{gt_titles.length})"
-          logger.info("Mismatching titles (#{mismatching_titles.length}):")
-          mismatching_titles.each do |title, gt_title|
-            logger.info("\"#{title}\" != \"#{gt_title}\"")
+
+          partial_mismatching_titles = exact_mismatching_titles.filter do |title, gt_title|
+            equalized_title = equalize_title(title)
+            equalized_gt_title = equalize_title(gt_title)
+            !equalized_title.end_with?(equalized_gt_title) && !equalized_title.start_with?(equalized_gt_title)
+          end
+
+          if partial_mismatching_titles.empty?
+            result.historical_links_titles_partially_matching_status = :success
+            result.historical_links_titles_partially_matching = "#{link_titles.length}"
+          else
+            result.historical_links_titles_partially_matching_status = :failure
+            result.historical_links_titles_partially_matching = "#{gt_titles.length - partial_mismatching_titles.length} (#{gt_titles.length})"
+            logger.info("Partially mismatching titles (#{partial_mismatching_titles.length}):")
+            partial_mismatching_titles.each do |title, gt_title|
+              logger.info("Partial \"#{title}\" != GT \"#{gt_title}\"")
+            end
+          end
+
+          result.historical_links_titles_exactly_matching_status = :failure
+          result.historical_links_titles_exactly_matching = "#{gt_titles.length - exact_mismatching_titles.length} (#{gt_titles.length})"
+          logger.info("Exactly mismatching titles (#{exact_mismatching_titles.length}):")
+          exact_mismatching_titles.each do |title, gt_title|
+            logger.info("Exact \"#{title}\" != GT \"#{gt_title}\"")
           end
         end
       else
         gt_titles_set = gt_titles.to_set
         titles_matching_count = link_titles.count { |title| gt_titles_set.include?(title) }
         historical_links_matching = false
-        result.historical_links_titles_matching_status = :failure
-        result.historical_links_titles_matching = "#{titles_matching_count} (#{gt_titles.length})"
+        result.historical_links_titles_partially_matching_status = :failure
+        result.historical_links_titles_partially_matching = "#{titles_matching_count} (#{gt_titles.length})"
+        result.historical_links_titles_exactly_matching_status = :failure
+        result.historical_links_titles_exactly_matching = "#{titles_matching_count} (#{gt_titles.length})"
         logger.info("Ground truth titles:")
         gt_titles.each do |gt_title|
           logger.info(gt_title)
@@ -286,7 +318,8 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       result.no_guided_regression_status = :neutral
       result.historical_links_pattern = historical_result.pattern
       result.historical_links_count = entries_count
-      result.historical_links_titles_matching_status = :neutral
+      result.historical_links_titles_partially_matching_status = :neutral
+      result.historical_links_titles_exactly_matching_status = :neutral
       result.main_url = "<a href=\"#{historical_result.main_link.url}\">#{historical_result.main_link.curi.to_s}</a>"
       result.oldest_link = "<a href=\"#{oldest_link.url}\">#{oldest_link.curi}</a>"
     end

@@ -15,13 +15,13 @@ ArchivesCategoriesResult = Struct.new(
 CategoryResult = Struct.new(:links_maybe_dates, :xpath, :level, :curi, :fetch_uri, keyword_init: true)
 
 def try_extract_archives_categories(
-  page_link, page, page_curis_set, feed_entry_links, feed_entry_curis_set,
+  page_link, page, page_curis_set, feed_entry_links, feed_entry_curis_titles_map,
   extractions_by_masked_xpath_by_star_count, state, curi_eq_cfg, logger
 )
   return nil unless feed_entry_links.count_included(page_curis_set) >= 2
 
   # Assuming all links in the feed are unique for simpler merging of categories
-  return nil unless feed_entry_links.length == feed_entry_curis_set.length
+  return nil unless feed_entry_links.length == feed_entry_curis_titles_map.length
 
   logger.info("Trying to match archives categories")
 

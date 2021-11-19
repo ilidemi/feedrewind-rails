@@ -4,7 +4,7 @@ require_relative 'util'
 
 SortState = Struct.new(:dates_by_xpath_source, :page_titles)
 
-def historical_archives_sort_add(page, sort_state, logger)
+def historical_archives_sort_add(page, feed_generator, sort_state, logger)
   page_dates_xpaths_sources = []
 
   page.document.traverse do |element|
@@ -18,7 +18,7 @@ def historical_archives_sort_add(page, sort_state, logger)
     }
   end
 
-  page_title = page.document.title&.strip
+  page_title = get_page_title(page, feed_generator)
 
   if sort_state
     page_dates_by_xpath_source = page_dates_xpaths_sources.to_h do |xpath_date_source|

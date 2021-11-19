@@ -42,7 +42,7 @@ start_link_urls_sources.each do |id, start_url, _|
   feed_links = html
     .xpath("/html/head/link[@rel='alternate']")
     .to_a
-    .filter { |link| %w[application/rss+xml application/atom+xml].include?(link.attributes["type"]&.value) }
+    .filter { |link| %w[application/rss+xml application/atom+xml].include?(link["type"]) }
 
   if feed_links.empty?
     no_feed_ids << id
@@ -50,7 +50,7 @@ start_link_urls_sources.each do |id, start_url, _|
     single_feed_ids << id
   else
     feed_reasonable_urls = feed_links
-      .map { |link| link.attributes["href"]&.value }
+      .map { |link| link["href"] }
       .map { |url| to_canonical_link(url, logger, URI(start_url)).url }
       .filter { |url| !url&.end_with?("?alt=rss") }
       .filter { |url| !url&.end_with?("/comments/feed/") }

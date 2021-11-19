@@ -30,6 +30,12 @@ database_yml_output = %x[wsl cat #{database_yml_path}]
 database_yml_replaced_ip = /host: (\d+\.\d+\.\d+\.\d+)/.match(database_yml_output)[1]
 puts "database.yml IP: #{database_yml_replaced_ip}"
 
+dbnavigator_xml_path = "../../.idea/dbnavigator.xml"
+%x[wsl sudo sed -i "s/<host value=\\"[0-9]+\\\\.[0-9]+\\\\.[0-9]+\\\\.[0-9]+\\" \\/>/<host value=\\"#{ip}\\" \\/>/g" #{dbnavigator_xml_path}]
+dbnavigator_xml_output = %x[wsl cat #{dbnavigator_xml_path}]
+dbnavigator_xml_replaced_ip = /<host value="\d+.\d+.\d+.\d+" \/>/.match(dbnavigator_xml_output)[1]
+puts "dbnavigator.xml IP: #{dbnavigator_xml_replaced_ip}"
+
 if conf_replaced_ip == ip
   puts %x[wsl sudo service postgresql start]
 end
