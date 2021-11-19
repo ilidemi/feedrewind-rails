@@ -142,7 +142,7 @@ def guided_crawl(
         historical_result, parsed_feed.generator, crawl_ctx, http_client, progress_logger, logger
       )
       extra_newline = historical_result_with_titles.extra.empty? ? "" : "<br>"
-      historical_result_with_titles.extra += "#{extra_newline}title_xpaths: #{count_link_title_xpaths(historical_result_with_titles.links)}"
+      historical_result_with_titles.extra += "#{extra_newline}title_xpaths: #{count_link_title_sources(historical_result_with_titles.links)}"
       feed_links_matching_result = parsed_feed.entry_links.sequence_match(
         historical_result_with_titles.links.map(&:curi), curi_eq_cfg
       )
@@ -151,10 +151,11 @@ def guided_crawl(
         matching_titles, mismatching_titles = feed_links_matching_result
           .zip(historical_result_with_titles.links[...feed_links_matching_result.length])
           .partition do |feed_entry_link, result_link|
-          feed_entry_link.title.nil? || are_titles_roughly_equal(result_link.title, feed_entry_link.title)
+          feed_entry_link.title.nil? ||
+            result_link.title.equalized_value == feed_entry_link.title.equalized_value
         end
         mismatching_titles.each do |feed_entry_link, result_link|
-          logger.info("Title mismatch with feed: feed \"#{feed_entry_link.title}\", historical \"#{result_link.title}\" (#{result_link.title_xpath})")
+          logger.info("Title mismatch with feed: #{print_title(result_link.title)} != feed \"#{feed_entry_link.title}\"")
         end
         if matching_titles.length == feed_links_matching_result.length
           feed_result.feed_matching_titles = "#{matching_titles.length}"
@@ -877,10 +878,12 @@ def fetch_missing_titles(result, feed_generator, crawl_ctx, http_client, progres
     page = crawl_request(link, false, crawl_ctx, http_client, progress_logger, logger)
     if page.is_a?(Page) && page.document
       page_title = get_page_title(page, feed_generator)
-      links_with_titles << link_fill_title(link, page_title, :page_title)
+      title = create_link_title(page_title, :page_title)
+      links_with_titles << link_set_title(link, title)
     else
       logger.info("Couldn't fetch link title, going with url: #{page}")
-      links_with_titles << link_fill_title(link, link.url, :page_title)
+      title = create_link_title(link.url, :page_title)
+      links_with_titles << link_set_title(link, title)
     end
 
     fetched_titles_count += 1
@@ -899,13 +902,14 @@ def zero_to_nil(count)
   count == 0 ? nil : count
 end
 
-def count_link_title_xpaths(links)
+def count_link_title_sources(links)
   result = {}
   links.each do |link|
-    if result.key?(link.title_xpath)
-      result[link.title_xpath] += 1
+    source_str = link.title.source.to_s
+    if result.key?(source_str)
+      result[source_str] += 1
     else
-      result[link.title_xpath] = 1
+      result[source_str] = 1
     end
   end
 

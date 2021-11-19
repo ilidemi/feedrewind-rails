@@ -147,7 +147,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     oldest_link = historical_result.links.last
     logger.info("Historical links: #{entries_count}")
     historical_result.links.each do |historical_link|
-      logger.info("#{historical_link.title} (#{historical_link.url})")
+      logger.info("#{historical_link.title.value} #{historical_link.title.source} (#{historical_link.url})")
     end
     result.historical_links_titles_matching_feed = guided_crawl_result.feed_result.feed_matching_titles
     result.historical_links_titles_matching_feed_status =
@@ -241,7 +241,10 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       end
 
       if gt_row["titles"]
-        gt_titles = PG::TextDecoder::Array.new.decode(gt_row["titles"])
+        gt_titles = PG::TextDecoder::Array
+          .new
+          .decode(gt_row["titles"])
+          .map { |title_value| create_link_title(title_value, :ground_truth) }
       else
         gt_titles = nil
       end
@@ -252,7 +255,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       elsif entries_count == gt_titles.length
         exact_mismatching_titles = link_titles
           .zip(gt_titles)
-          .filter { |title, gt_title| !are_titles_equal(title, gt_title) }
+          .filter { |title, gt_title| title.equalized_value != gt_title.equalized_value }
 
         if exact_mismatching_titles.empty?
           result.historical_links_titles_partially_matching_status = :success
@@ -263,9 +266,8 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
           historical_links_matching = false
 
           partial_mismatching_titles = exact_mismatching_titles.filter do |title, gt_title|
-            equalized_title = equalize_title(title)
-            equalized_gt_title = equalize_title(gt_title)
-            !equalized_title.end_with?(equalized_gt_title) && !equalized_title.start_with?(equalized_gt_title)
+            !title.equalized_value.end_with?(gt_title.equalized_value) &&
+              !gt_title.equalized_value.start_with?(title.equalized_value)
           end
 
           if partial_mismatching_titles.empty?
@@ -276,7 +278,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
             result.historical_links_titles_partially_matching = "#{gt_titles.length - partial_mismatching_titles.length} (#{gt_titles.length})"
             logger.info("Partially mismatching titles (#{partial_mismatching_titles.length}):")
             partial_mismatching_titles.each do |title, gt_title|
-              logger.info("Partial \"#{title}\" != GT \"#{gt_title}\"")
+              logger.info("Partial #{print_title(title)} != GT \"#{gt_title.value}\"")
             end
           end
 
@@ -284,12 +286,13 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
           result.historical_links_titles_exactly_matching = "#{gt_titles.length - exact_mismatching_titles.length} (#{gt_titles.length})"
           logger.info("Exactly mismatching titles (#{exact_mismatching_titles.length}):")
           exact_mismatching_titles.each do |title, gt_title|
-            logger.info("Exact \"#{title}\" != GT \"#{gt_title}\"")
+            logger.info("Exact \"#{print_title(title)}\" != GT \"#{gt_title.value}\"")
           end
         end
       else
-        gt_titles_set = gt_titles.to_set
-        titles_matching_count = link_titles.count { |title| gt_titles_set.include?(title) }
+        eq_gt_title_values_set = gt_titles.map(&:equalized_value).to_set
+        titles_matching_count = link_titles
+          .count { |title| eq_gt_title_values_set.include?(title.equalized_value) }
         historical_links_matching = false
         result.historical_links_titles_partially_matching_status = :failure
         result.historical_links_titles_partially_matching = "#{titles_matching_count} (#{gt_titles.length})"
@@ -297,7 +300,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
         result.historical_links_titles_exactly_matching = "#{titles_matching_count} (#{gt_titles.length})"
         logger.info("Ground truth titles:")
         gt_titles.each do |gt_title|
-          logger.info(gt_title)
+          logger.info(gt_title.value)
         end
       end
 

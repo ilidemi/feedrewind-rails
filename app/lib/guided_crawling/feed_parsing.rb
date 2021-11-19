@@ -143,8 +143,8 @@ def parse_feed(feed_content, fetch_uri, logger)
     return nil unless entry[:url]
 
     link = to_canonical_link(entry[:url], logger, fetch_uri)
-    link.title = normalize_title(HTMLEntities.new.decode(entry[:title]))
-    link.title_xpath = :feed
+    link_title_value = normalize_title(HTMLEntities.new.decode(entry[:title]))
+    link.title = link_title_value ? create_link_title(link_title_value, :feed) : nil
     link
   end
   entry_dates = are_dates_certain ? sorted_entries.map { |entry| entry[:pub_date] } : nil

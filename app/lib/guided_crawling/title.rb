@@ -1,3 +1,20 @@
+LinkTitle = Struct.new(:value, :equalized_value, :source, :alternative_values_by_source)
+
+def create_link_title(value, source, alternative_values_by_source = nil)
+  raise "Link title value can't be null" unless value
+
+  LinkTitle.new(value, equalize_title(value), source, alternative_values_by_source)
+end
+
+def print_title(link_title)
+  if link_title.alternative_values_by_source
+    alternatives = ", alternatives: #{link_title.alternative_values_by_source}"
+  else
+    alternatives = ""
+  end
+  "\"#{link_title.value}\" (#{link_title.source}#{alternatives})"
+end
+
 def get_page_title(page, feed_generator)
   og_title = page.document.xpath("/html/head/meta[@property='og:title'][@content]").first
   if feed_generator != :tumblr && og_title
@@ -66,12 +83,14 @@ def are_titles_roughly_equal(title1, title2)
   end
 end
 
-def element_title(element)
+def get_element_title(element)
   return element.text if element.text?
 
   # Nokogiri's .inner_text concatenates nodes without spaces. Insert spaces manually instead.
-  element
+  raw_title = element
     .xpath('.//text() | text()')
     .map(&:inner_text)
     .join(' ')
+
+  normalize_title(raw_title)
 end

@@ -67,7 +67,8 @@ def try_extract_page1(
             links: [],
             xpath_name: :class_xpath,
             classless_masked_xpath: masked_xpath,
-            title_relative_xpaths: [""] # Link itself should have the good title
+            # Link itself should have the good title
+            title_relative_xpaths: [TitleRelativeXpath.new("", :blogger)]
           )
       end
       page1_links_grouped_by_date.each do |page_link|
@@ -76,8 +77,8 @@ def try_extract_page1(
           .sub(BLOGSPOT_POSTS_BY_DATE_REGEX, '\1*\2*')
         next unless page1_extractions_by_masked_xpath.key?(masked_class_xpath)
 
-        page_link.title = normalize_title(page_link.element.inner_text)
-        page_link.title_xpath = ""
+        page_link_title_value = get_element_title(page_link.element)
+        page_link.title = create_link_title(page_link_title_value, :blogger)
         page1_extractions_by_masked_xpath[masked_class_xpath].links << page_link
       end
     end
