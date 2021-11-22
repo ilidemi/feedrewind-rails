@@ -13,7 +13,7 @@ def get_extractions_by_masked_xpath_by_star_count(
   extractions_by_masked_xpath_by_star_count = {}
   star_count_xpath_names.each do |star_count, xpath_name|
     link_groupings_by_masked_xpath = group_links_by_masked_xpath(
-      page_links, feed_entry_curis_titles_map, xpath_name, star_count, logger
+      page_links, feed_entry_curis_titles_map, curi_eq_cfg, xpath_name, star_count, logger
     )
     logger.info("Masked xpaths with #{star_count} stars: #{link_groupings_by_masked_xpath.length}")
 
@@ -53,7 +53,9 @@ end
 
 MaskedXpathLinksGrouping = Struct.new(:links, :title_relative_xpaths, :xpath_name)
 
-def group_links_by_masked_xpath(page_links, feed_entry_curis_titles_map, xpath_name, star_count, logger)
+def group_links_by_masked_xpath(
+  page_links, feed_entry_curis_titles_map, curi_eq_cfg, xpath_name, star_count, logger
+)
   def xpath_to_segments(xpath)
     xpath.split("/")[1..].map do |token|
       match = token.match(/^([^\[]+)\[(\d+)\]$/)
@@ -187,14 +189,20 @@ def group_links_by_masked_xpath(page_links, feed_entry_curis_titles_map, xpath_n
     add_links_matching_subtree(masked_xpath_tree, page_link, xpath_segments, links_by_masked_xpath)
   end
 
+  filtered_links_by_masked_xpath = links_by_masked_xpath
+    .filter do |_, masked_xpath_links|
+    masked_xpath_links.map(&:curi).to_canonical_uri_set(curi_eq_cfg).length > 1
+  end
+    .to_h
+
   masked_xpath_link_groupings = []
-  links_by_masked_xpath.each do |masked_xpath, masked_xpath_links|
+  filtered_links_by_masked_xpath.each do |masked_xpath, masked_xpath_links|
     top_parent_distance, top_parent_relative_xpath = get_top_parent_distance_relative_xpath(masked_xpath)
     masked_xpath_links_matching_feed = masked_xpath_links
       .filter { |page_link| feed_entry_curis_titles_map.include?(page_link.curi) }
     title_relative_xpaths = extract_title_relative_xpaths(
-      masked_xpath_links_matching_feed, feed_entry_curis_titles_map, top_parent_distance,
-      top_parent_relative_xpath
+      masked_xpath_links_matching_feed, feed_entry_curis_titles_map, curi_eq_cfg, top_parent_distance,
+      top_parent_relative_xpath, logger
     )
     masked_xpath_titled_links = masked_xpath_links
       .map { |masked_xpath_link| populate_link_title(masked_xpath_link, title_relative_xpaths) }
@@ -459,26 +467,57 @@ class TitleRelativeXpath
 end
 
 def extract_title_relative_xpaths(
-  links_matching_feed, feed_entry_curis_titles_map, top_parent_distance, top_parent_relative_xpath
+  links_matching_feed, feed_entry_curis_titles_map, curi_eq_cfg, top_parent_distance,
+  top_parent_relative_xpath, logger
 )
   link_title_values = links_matching_feed.map { |link| get_element_title(link.element) }
   eq_link_title_values = link_title_values.map { |title_value| equalize_title(title_value) }
   feed_titles = links_matching_feed.map { |link| feed_entry_curis_titles_map[link.curi] }
 
   # See if the link inner text just matches
-  are_link_titles_exactly_matching = eq_link_title_values
-    .zip(feed_titles)
-    .all? do |eq_link_title_value, feed_title|
-    feed_title && eq_link_title_value == feed_title.equalized_value
+  link_titles_not_exactly_matching = links_matching_feed
+    .zip(eq_link_title_values, feed_titles)
+    .filter do |_, eq_link_title_value, feed_title|
+    !(feed_title && eq_link_title_value == feed_title.equalized_value)
   end
-  return [TitleRelativeXpath.new("", :self)] if are_link_titles_exactly_matching
+
+  def get_allowed_mismatch_count(links_count)
+    if links_count <= 8
+      0
+    elsif links_count <= 52
+      2
+    else
+      3
+    end
+  end
+
+  # Title relative xpaths are discovered before collapsing links. If a link has multiple parts, the title
+  # of each part won't match feed, but we should count it as one mismatch and not multiple.
+  unique_mismatch_count = link_titles_not_exactly_matching
+    .map(&:first)
+    .map(&:curi)
+    .to_canonical_uri_set(curi_eq_cfg)
+    .length
+  unique_links_count = links_matching_feed
+    .map(&:curi)
+    .to_canonical_uri_set(curi_eq_cfg)
+    .length
+
+  if unique_mismatch_count > get_allowed_mismatch_count(unique_links_count) && unique_mismatch_count != unique_links_count
+    logger.info("Titles not exactly matching: #{link_titles_not_exactly_matching.length}/#{feed_titles.length} (#{100 * link_titles_not_exactly_matching.length / feed_titles.length}%)")
+    if link_titles_not_exactly_matching.length <= 3
+      link_titles_not_exactly_matching.each do |_, eq_link_title_value, feed_title|
+        logger.info("Eq link title: \"#{eq_link_title_value}\", feed title: \"#{feed_title&.value}\"")
+      end
+    end
+  end
+
+  return [TitleRelativeXpath.new("", :self)] if unique_mismatch_count <= get_allowed_mismatch_count(unique_links_count)
 
   def find_title_match(element, feed_title, child_xpath_to_skip = nil)
     return nil unless feed_title
 
     element.children.each do |child|
-      next unless child.element?
-
       child_title_value = get_element_title(child)
       next unless child_title_value
 
@@ -488,7 +527,10 @@ def extract_title_relative_xpaths(
       end
       next if child_xpath == child_xpath_to_skip
 
-      if equalize_title(child_title_value).include?(feed_title.equalized_value)
+      eq_child_title_value = equalize_title(child_title_value)
+      return child_xpath if eq_child_title_value == feed_title.equalized_value
+
+      if eq_child_title_value.include?(feed_title.equalized_value)
         grandchild_xpath = find_title_match(child, feed_title)
         return child_xpath + "/" + grandchild_xpath if grandchild_xpath
       end
@@ -498,19 +540,19 @@ def extract_title_relative_xpaths(
   end
 
   # See if there is a child element that matches
-  all_links_have_matching_children = eq_link_title_values
+  titles_without_matching_children = eq_link_title_values
     .zip(feed_titles)
-    .all? do |eq_link_title_value, feed_title|
-    feed_title && eq_link_title_value&.include?(feed_title.equalized_value)
+    .filter do |eq_link_title_value, feed_title|
+    !(feed_title && eq_link_title_value&.include?(feed_title.equalized_value))
   end
 
-  if all_links_have_matching_children
-    child_xpaths = links_matching_feed
-      .zip(feed_titles)
-      .map { |link, feed_title| find_title_match(link.element, feed_title) }
-      .to_set
+  if titles_without_matching_children.empty?
+    child_xpaths_set = Set.new
+    links_matching_feed.zip(feed_titles).each do |link, feed_title|
+      child_xpaths_set << find_title_match(link.element, feed_title)
+    end
 
-    child_xpaths.each do |child_xpath|
+    child_xpaths_set.each do |child_xpath|
       next unless child_xpath
 
       are_all_child_titles_matching = links_matching_feed
@@ -554,7 +596,7 @@ def extract_title_relative_xpaths(
       next unless neighbor_element
 
       eq_neighbor_title_value = equalize_title(get_element_title(neighbor_element))
-      if eq_neighbor_title_value == feed_title.equalized_value
+      if feed_title && (eq_neighbor_title_value == feed_title.equalized_value)
         match_count += 1
       else
         are_all_neighbor_titles_matching = false
@@ -576,10 +618,10 @@ def extract_title_relative_xpaths(
     .sort_by { |flaky_neighbor_xpath, match_count| [-match_count, flaky_neighbor_xpath.xpath.length] }
     .map(&:first)
 
-  matching_neighbor_xpaths = only_true_positive_neighbor_xpaths + ordered_flaky_neighbor_xpaths
+  matching_neighbor_xpaths = only_true_positive_neighbor_xpaths # + ordered_flaky_neighbor_xpaths
   return matching_neighbor_xpaths unless matching_neighbor_xpaths.empty?
 
-  [TitleRelativeXpath.new("", :self_fallback)]
+  nil
 end
 
 def populate_link_title(link, title_relative_xpaths)

@@ -135,7 +135,7 @@ def parse_feed(feed_content, fetch_uri, logger)
   if is_str_nil_or_empty(feed_title)
     feed_title = fetch_uri.host
   else
-    feed_title = normalize_title(HTMLEntities.new.decode(feed_title))
+    feed_title = normalize_title(decode_feed_title(feed_title))
   end
   root_link = root_url ? to_canonical_link(root_url, logger, fetch_uri) : nil
 
@@ -143,13 +143,20 @@ def parse_feed(feed_content, fetch_uri, logger)
     return nil unless entry[:url]
 
     link = to_canonical_link(entry[:url], logger, fetch_uri)
-    link_title_value = normalize_title(HTMLEntities.new.decode(entry[:title]))
+    link_title_value = normalize_title(decode_feed_title(entry[:title]))
     link.title = link_title_value ? create_link_title(link_title_value, :feed) : nil
     link
   end
   entry_dates = are_dates_certain ? sorted_entries.map { |entry| entry[:pub_date] } : nil
   entry_links = FeedEntryLinks.from_links_dates(entry_links, entry_dates)
   ParsedFeed.new(feed_title, root_link, entry_links, generator)
+end
+
+def decode_feed_title(feed_title)
+  HTMLEntities
+    .new
+    .decode(feed_title)
+    .gsub(/<br\/?>/, "\n")
 end
 
 def get_atom_url(linkable, has_feedburner_namespace)

@@ -162,7 +162,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       "($1, $2, $3, $4, $5, $6::text[], $7::text[])",
       [
         start_link_id, historical_result.pattern, entries_count, historical_result.main_link.curi.to_s,
-        oldest_link.curi.to_s, PG::TextEncoder::Array.new.encode(link_titles),
+        oldest_link.curi.to_s, PG::TextEncoder::Array.new.encode(link_titles.map(&:value)),
         PG::TextEncoder::Array.new.encode(link_curis.map(&:to_s))
       ]
     )
@@ -286,7 +286,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
           result.historical_links_titles_exactly_matching = "#{gt_titles.length - exact_mismatching_titles.length} (#{gt_titles.length})"
           logger.info("Exactly mismatching titles (#{exact_mismatching_titles.length}):")
           exact_mismatching_titles.each do |title, gt_title|
-            logger.info("Exact \"#{print_title(title)}\" != GT \"#{gt_title.value}\"")
+            logger.info("Exact #{print_title(title)} != GT \"#{gt_title.value}\"")
           end
         end
       else

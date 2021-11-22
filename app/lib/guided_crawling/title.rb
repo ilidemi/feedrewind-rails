@@ -52,7 +52,7 @@ def equalize_title(title)
     title = title.gsub(from, to)
   end
 
-  title
+  title.downcase
 end
 
 def are_titles_equal(title1, title2)
@@ -83,14 +83,25 @@ def are_titles_roughly_equal(title1, title2)
   end
 end
 
+TAGS_WITHOUT_SURROUNDING_SPACES = %w[span code i b em]
+
 def get_element_title(element)
-  return element.text if element.text?
+  # Nokogiri's .inner_text removes <br> without inserting any whitespace. Insert newlines manually instead.
+  def get_element_inner_text(element)
+    return element.inner_text if element.text?
 
-  # Nokogiri's .inner_text concatenates nodes without spaces. Insert spaces manually instead.
-  raw_title = element
-    .xpath('.//text() | text()')
-    .map(&:inner_text)
-    .join(' ')
+    tokens = []
+    element.children.each do |child|
+      if child.element? && child.name == "br"
+        tokens << "\n"
+      else
+        tokens << get_element_inner_text(child)
+      end
+    end
 
+    tokens.join("")
+  end
+
+  raw_title = get_element_inner_text(element)
   normalize_title(raw_title)
 end

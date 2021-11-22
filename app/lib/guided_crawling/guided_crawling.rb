@@ -115,6 +115,8 @@ def guided_crawl(
     crawl_ctx.pptr_fetched_curis.update_equality_config(curi_eq_cfg)
     guided_crawl_result.curi_eq_cfg = curi_eq_cfg
 
+    feed_entry_curis_titles_map = CanonicalUriTitleMap.new(parsed_feed.entry_links.to_a, curi_eq_cfg)
+
     historical_error = nil
     if parsed_feed.entry_links.length >= 101
       logger.info("Feed is long with #{parsed_feed.entry_links.length} entries")
@@ -128,8 +130,8 @@ def guided_crawl(
     else
       begin
         historical_result = guided_crawl_historical(
-          start_page, parsed_feed.entry_links, parsed_feed.generator, crawl_ctx, curi_eq_cfg, http_client,
-          puppeteer_client, progress_logger, logger
+          start_page, parsed_feed.entry_links, feed_entry_curis_titles_map, parsed_feed.generator, crawl_ctx,
+          curi_eq_cfg, http_client, puppeteer_client, progress_logger, logger
         )
       rescue => e
         historical_result = nil
@@ -138,24 +140,25 @@ def guided_crawl(
     end
 
     if historical_result
-      historical_result_with_titles = fetch_missing_titles(
-        historical_result, parsed_feed.generator, crawl_ctx, http_client, progress_logger, logger
+      historical_result.links = fetch_missing_titles(
+        historical_result.links, feed_entry_curis_titles_map, parsed_feed.generator, crawl_ctx, http_client,
+        progress_logger, logger
       )
-      extra_newline = historical_result_with_titles.extra.empty? ? "" : "<br>"
-      historical_result_with_titles.extra += "#{extra_newline}title_xpaths: #{count_link_title_sources(historical_result_with_titles.links)}"
+      extra_newline = historical_result.extra.empty? ? "" : "<br>"
+      historical_result.extra += "#{extra_newline}title_xpaths: #{count_link_title_sources(historical_result.links)}"
       feed_links_matching_result = parsed_feed.entry_links.sequence_match(
-        historical_result_with_titles.links.map(&:curi), curi_eq_cfg
+        historical_result.links.map(&:curi), curi_eq_cfg
       )
       feed_titles_present = parsed_feed.entry_links.to_a.all?(&:title)
       if feed_links_matching_result && feed_titles_present
         matching_titles, mismatching_titles = feed_links_matching_result
-          .zip(historical_result_with_titles.links[...feed_links_matching_result.length])
+          .zip(historical_result.links[...feed_links_matching_result.length])
           .partition do |feed_entry_link, result_link|
           feed_entry_link.title.nil? ||
             result_link.title.equalized_value == feed_entry_link.title.equalized_value
         end
         mismatching_titles.each do |feed_entry_link, result_link|
-          logger.info("Title mismatch with feed: #{print_title(result_link.title)} != feed \"#{feed_entry_link.title}\"")
+          logger.info("Title mismatch with feed: #{print_title(result_link.title)} != feed \"#{feed_entry_link.title.value}\"")
         end
         if matching_titles.length == feed_links_matching_result.length
           feed_result.feed_matching_titles = "#{matching_titles.length}"
@@ -168,11 +171,10 @@ def guided_crawl(
         feed_result.feed_matching_titles_status = :neutral
       end
     else
-      historical_result_with_titles = nil
       feed_result.feed_matching_titles_status = :neutral
     end
 
-    guided_crawl_result.historical_result = historical_result_with_titles
+    guided_crawl_result.historical_result = historical_result
     guided_crawl_result.historical_error = historical_error
     guided_crawl_result
   rescue => e
@@ -214,8 +216,8 @@ ARCHIVES_REGEX = "/(?:(?:[a-z]+-)?archives?|posts?|all(?:-[a-z]+)?)(?:\\.[a-z]+)
 MAIN_PAGE_REGEX = "/(?:blog|articles|writing|journal|essays)(?:\\.[a-z]+)?$"
 
 def guided_crawl_historical(
-  start_page, feed_entry_links, feed_generator, crawl_ctx, curi_eq_cfg, http_client, puppeteer_client,
-  progress_logger, logger
+  start_page, feed_entry_links, feed_entry_curis_titles_map, feed_generator, crawl_ctx, curi_eq_cfg,
+  http_client, puppeteer_client, progress_logger, logger
 )
   archives_queue = []
   main_page_queue = []
@@ -228,8 +230,6 @@ def guided_crawl_historical(
   )
   start_page_allowed_hosts_links = start_page_all_links
     .filter { |link| allowed_hosts.include?(link.uri.host) }
-
-  feed_entry_curis_titles_map = CanonicalUriTitleMap.new(feed_entry_links.to_a, curi_eq_cfg)
 
   archives_categories_state = ArchivesCategoriesState.new
 
@@ -859,43 +859,71 @@ def compare_with_feed(sorted_links, feed_entry_links, curi_eq_cfg, logger)
   false
 end
 
-def fetch_missing_titles(result, feed_generator, crawl_ctx, http_client, progress_logger, logger)
+def fetch_missing_titles(
+  links, feed_entry_curis_titles_map, feed_generator, crawl_ctx, http_client, progress_logger, logger
+)
   logger.info("Fetch missing titles start")
-  present_titles_count = result.links.count(&:title)
-  missing_titles_count = result.links.length - present_titles_count
-  progress_logger.log_and_save_count(zero_to_nil(present_titles_count))
+  missing_titles_count = links.count { |link| !link.title }
+
+  links_with_feed_titles = []
+  links.each do |link|
+    if link.title
+      links_with_feed_titles << link
+      next
+    end
+
+    if feed_entry_curis_titles_map.include?(link.curi)
+      feed_title = feed_entry_curis_titles_map[link.curi]
+      links_with_feed_titles << link_set_title(link, feed_title)
+      next
+    end
+
+    links_with_feed_titles << link
+  end
+
+  feed_present_titles_count = links_with_feed_titles.count(&:title)
+  feed_missing_titles_count = links_with_feed_titles.length - feed_present_titles_count
+  if missing_titles_count != feed_missing_titles_count
+    logger.info("Filled #{missing_titles_count - feed_missing_titles_count}/#{missing_titles_count} missing titles from feeds")
+  end
+
+  if feed_missing_titles_count == 0
+    crawl_ctx.title_requests_made = 0
+    return links_with_feed_titles
+  end
+
+  progress_logger.log_and_save_count(zero_to_nil(feed_present_titles_count))
   requests_made_start = crawl_ctx.requests_made
 
   links_with_titles = []
   fetched_titles_count = 0
-  result.links.each do |link|
+  links_with_feed_titles.each do |link|
     if link.title
       links_with_titles << link
       next
     end
 
     # Always making a request may produce some duplicate requests, but hopefully not too many
-    page = crawl_request(link, false, crawl_ctx, http_client, progress_logger, logger)
-    if page.is_a?(Page) && page.document
-      page_title = get_page_title(page, feed_generator)
+    response = crawl_request(link, false, crawl_ctx, http_client, progress_logger, logger)
+    if response.is_a?(Page) && response.document
+      page_title = get_page_title(response, feed_generator)
       title = create_link_title(page_title, :page_title)
       links_with_titles << link_set_title(link, title)
     else
-      logger.info("Couldn't fetch link title, going with url: #{page}")
+      logger.info("Couldn't fetch link title, going with url: #{response}")
       title = create_link_title(link.url, :page_title)
       links_with_titles << link_set_title(link, title)
     end
 
     fetched_titles_count += 1
     progress_logger.log_and_save_postprocessing_counts(
-      present_titles_count + fetched_titles_count, missing_titles_count - fetched_titles_count
+      feed_present_titles_count + fetched_titles_count, feed_missing_titles_count - fetched_titles_count
     )
   end
 
   logger.info("Fetch missing titles finish")
   crawl_ctx.title_requests_made = crawl_ctx.requests_made - requests_made_start
-  result.links = links_with_titles
-  result
+  links_with_titles
 end
 
 def zero_to_nil(count)
