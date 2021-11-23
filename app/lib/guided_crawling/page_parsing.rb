@@ -26,11 +26,27 @@ def extract_links(
   links
 end
 
-def nokogiri_html5(content)
-  html = Nokogiri::HTML5(content, max_attributes: -1, max_tree_depth: -1)
+def parse_html5(content, logger)
+  document = Nokogiri::HTML5(content, max_attributes: -1, max_tree_depth: -1)
   #noinspection RubyResolve
-  html.remove_namespaces!
-  html
+  document.remove_namespaces!
+
+  # Remove links with empty content as some bloggers hide links this way in favor of other links,
+  # which messes up the layout
+  # E.g. search for 'wikipedia' on https://maryrosecook.com/blog/archive
+  removed_links_count = 0
+  document.xpath("//a").each do |link_element|
+    if link_element.children.empty? && is_str_nil_or_empty(link_element["aria-label"])
+      link_element.unlink
+      removed_links_count += 1
+    end
+  end
+
+  if removed_links_count > 0
+    logger.info("Removed #{removed_links_count} empty links")
+  end
+
+  document
 end
 
 def html_element_to_link(

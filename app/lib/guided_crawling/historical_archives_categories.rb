@@ -9,8 +9,7 @@ class ArchivesCategoriesState
 end
 
 ArchivesCategoriesResult = Struct.new(
-  :main_link, :pattern, :links_maybe_dates, :speculative_count, :count, :extra,
-  keyword_init: true
+  :main_link, :pattern, :links_maybe_dates, :speculative_count, :count, :extra,  keyword_init: true
 )
 CategoryResult = Struct.new(:links_maybe_dates, :xpath, :level, :curi, :fetch_uri, keyword_init: true)
 

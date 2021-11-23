@@ -50,7 +50,7 @@ def guided_crawl(
 
       start_page_link = to_canonical_link(discovered_start_page.url, logger)
       start_page_final_link = to_canonical_link(discovered_start_page.final_url, logger)
-      start_page_document = nokogiri_html5(discovered_start_page.content)
+      start_page_document = parse_html5(discovered_start_page.content, logger)
       start_page = Page.new(
         start_page_final_link.curi,
         start_page_final_link.uri,
@@ -141,8 +141,8 @@ def guided_crawl(
 
     if historical_result
       historical_result.links = fetch_missing_titles(
-        historical_result.links, feed_entry_curis_titles_map, parsed_feed.generator, crawl_ctx, http_client,
-        progress_logger, logger
+        historical_result.links, parsed_feed.entry_links.length, feed_entry_curis_titles_map,
+        parsed_feed.generator, crawl_ctx, http_client, progress_logger, logger
       )
       extra_newline = historical_result.extra.empty? ? "" : "<br>"
       historical_result.extra += "#{extra_newline}title_xpaths: #{count_link_title_sources(historical_result.links)}"
@@ -421,16 +421,12 @@ def guided_crawl_fetch_loop(
     else
       raise "Neither link nor page in the queue: #{link_or_page}"
     end
-
-    if is_puppeteer_match(page)
-      # Without puppeteer match, it's better to check for historical, then save a colored rectangle
-      # With puppeteer match, there will be more waits so log a simple rectangle before that
-      progress_logger.save_status
-    end
+    progress_logger.save_status
 
     pptr_page = crawl_with_puppeteer_if_match(
       page, feed_entry_curis_titles_map, puppeteer_client, crawl_ctx, progress_logger, logger
     )
+    progress_logger.save_status
 
     page_all_links = extract_links(
       pptr_page.document, pptr_page.fetch_uri, nil, crawl_ctx.redirects, logger, true, true
@@ -459,9 +455,8 @@ def guided_crawl_fetch_loop(
       .to_canonical_uri_set(curi_eq_cfg)
     page_results = try_extract_historical(
       link, pptr_page, page_all_links, page_curis_set, feed_entry_links, feed_entry_curis_titles_map,
-      feed_generator, curi_eq_cfg, archives_categories_state, progress_logger, logger
+      feed_generator, curi_eq_cfg, archives_categories_state, logger
     )
-    progress_logger.save_status
     page_results.each do |page_result|
       insert_sorted_result(page_result, sorted_results)
     end
@@ -498,7 +493,7 @@ end
 
 def try_extract_historical(
   page_link, page, page_links, page_curis_set, feed_entry_links, feed_entry_curis_titles_map, feed_generator,
-  curi_eq_cfg, archives_categories_state, progress_logger, logger
+  curi_eq_cfg, archives_categories_state, logger
 )
   logger.info("Trying to extract historical from #{page.fetch_uri}")
   results = []
@@ -527,8 +522,6 @@ def try_extract_historical(
     feed_generator, extractions_by_masked_xpath_by_star_count, curi_eq_cfg, logger
   )
   results << page1_result if page1_result
-
-  progress_logger.log_historical unless results.empty?
 
   results
 end
@@ -860,42 +853,58 @@ def compare_with_feed(sorted_links, feed_entry_links, curi_eq_cfg, logger)
 end
 
 def fetch_missing_titles(
-  links, feed_entry_curis_titles_map, feed_generator, crawl_ctx, http_client, progress_logger, logger
+  links, feed_length, feed_entry_curis_titles_map, feed_generator, crawl_ctx, http_client, progress_logger,
+  logger
 )
   logger.info("Fetch missing titles start")
-  missing_titles_count = links.count { |link| !link.title }
+  present_titles_count = links.count(&:title)
+  missing_titles_count = links.length - present_titles_count
 
-  links_with_feed_titles = []
-  links.each do |link|
-    if link.title
-      links_with_feed_titles << link
-      next
-    end
-
-    if feed_entry_curis_titles_map.include?(link.curi)
-      feed_title = feed_entry_curis_titles_map[link.curi]
-      links_with_feed_titles << link_set_title(link, feed_title)
-      next
-    end
-
-    links_with_feed_titles << link
-  end
-
-  feed_present_titles_count = links_with_feed_titles.count(&:title)
-  feed_missing_titles_count = links_with_feed_titles.length - feed_present_titles_count
-  if missing_titles_count != feed_missing_titles_count
-    logger.info("Filled #{missing_titles_count - feed_missing_titles_count}/#{missing_titles_count} missing titles from feeds")
-  end
-
-  if feed_missing_titles_count == 0
+  if missing_titles_count == 0
+    logger.info("Fetch missing titles finish - no-op")
     crawl_ctx.title_requests_made = 0
-    return links_with_feed_titles
+    return links
+  end
+
+  if links.length <= feed_length
+    links_with_feed_titles = []
+    links.each do |link|
+      if link.title
+        links_with_feed_titles << link
+        next
+      end
+
+      if feed_entry_curis_titles_map.include?(link.curi)
+        feed_title = feed_entry_curis_titles_map[link.curi]
+        links_with_feed_titles << link_set_title(link, feed_title)
+        next
+      end
+
+      links_with_feed_titles << link
+    end
+
+    feed_present_titles_count = links_with_feed_titles.count(&:title)
+    feed_missing_titles_count = links_with_feed_titles.length - feed_present_titles_count
+    if missing_titles_count != feed_missing_titles_count
+      logger.info("Filled #{missing_titles_count - feed_missing_titles_count}/#{missing_titles_count} missing titles from feeds")
+    end
+
+    if feed_missing_titles_count == 0
+      logger.info("Fetch missing titles finish")
+      crawl_ctx.title_requests_made = 0
+      return links_with_feed_titles
+    end
+  else
+    links_with_feed_titles = links
+    feed_present_titles_count = present_titles_count
+    feed_missing_titles_count = missing_titles_count
   end
 
   progress_logger.log_and_save_count(zero_to_nil(feed_present_titles_count))
   requests_made_start = crawl_ctx.requests_made
 
   links_with_titles = []
+  page_titles = []
   fetched_titles_count = 0
   links_with_feed_titles.each do |link|
     if link.title
@@ -907,11 +916,12 @@ def fetch_missing_titles(
     response = crawl_request(link, false, crawl_ctx, http_client, progress_logger, logger)
     if response.is_a?(Page) && response.document
       page_title = get_page_title(response, feed_generator)
+      page_titles << page_title
       title = create_link_title(page_title, :page_title)
       links_with_titles << link_set_title(link, title)
     else
       logger.info("Couldn't fetch link title, going with url: #{response}")
-      title = create_link_title(link.url, :page_title)
+      title = create_link_title(link.url, :page_url)
       links_with_titles << link_set_title(link, title)
     end
 
@@ -919,6 +929,102 @@ def fetch_missing_titles(
     progress_logger.log_and_save_postprocessing_counts(
       feed_present_titles_count + fetched_titles_count, feed_missing_titles_count - fetched_titles_count
     )
+  end
+
+  # Find out if page titles have a common prefix/suffix that needs to be removed
+  first_page_title = page_titles.first
+  #noinspection RubyNilAnalysis
+  prefix_length = suffix_length = first_page_title.length
+  page_titles.drop(1).each do |page_title|
+    prefix_length = [page_title.length, prefix_length].min
+    (0...prefix_length).each do |i|
+      if page_title[i] != first_page_title[i]
+        prefix_length = i
+        break
+      end
+    end
+
+    suffix_length = [page_title.length, suffix_length].min
+    (1..suffix_length).each do |i|
+      if page_title[-i] != first_page_title[-i]
+        suffix_length = i - 1
+        break
+      end
+    end
+  end
+
+  prefix = first_page_title[...prefix_length]
+  suffix = suffix_length > 0 ? first_page_title[-suffix_length..] : ""
+  if suffix.start_with?("...")
+    suffix = suffix[3..]
+    suffix_length -= 3
+  elsif suffix.start_with?("…")
+    suffix = suffix[1..]
+    suffix_length -= 1
+  end
+
+  if prefix_length + suffix_length >= page_titles.map(&:length).min
+    prefix_length = suffix_length = 0
+    prefix = suffix = ""
+  end
+
+  def validate_first_link_title_prefix_suffix(
+    first_link, prefix, suffix, links_count, feed_entry_curis_titles_map, feed_generator, crawl_ctx,
+    http_client, progress_logger, logger
+  )
+    is_first_link_title_clean = first_link.title &&
+      first_link.title.source != :feed &&
+      feed_entry_curis_titles_map.include?(first_link.curi) &&
+      first_link.title.equalized_value == feed_entry_curis_titles_map[first_link.curi].equalized_value
+
+    unless is_first_link_title_clean
+      logger.info("First link title is not clean, can't resolve page title prefixes/suffixes")
+      return nil
+    end
+
+    progress_logger.log_and_save_postprocessing_counts(links_count, 1)
+    response = crawl_request(first_link, false, crawl_ctx, http_client, progress_logger, logger)
+    progress_logger.log_and_save_postprocessing_counts(links_count, 0)
+
+    unless response.is_a?(Page) && response.document
+      logger.info("Couldn't fetch first link title")
+      return nil
+    end
+
+    first_link_page_title = get_page_title(response, feed_generator)
+    unless first_link_page_title.start_with?(prefix)
+      logger.info("First link prefix doesn't check out")
+      return nil
+    end
+    unless first_link_page_title.end_with?(suffix)
+      logger.info("First link suffix doesn't check out")
+      return nil
+    end
+
+    logger.info("Checks out?")
+    true
+  end
+
+  if prefix_length > 0 || suffix_length > 0
+    logger.info("Found common prefix for page titles: #{prefix}") if prefix_length > 0
+    logger.info("Found common suffix for page titles: #{suffix}") if suffix_length > 0
+    if page_titles.length == links.length
+      are_prefix_suffix_valid = true
+    else
+      first_link = links.first
+      are_prefix_suffix_valid = validate_first_link_title_prefix_suffix(
+        first_link, prefix, suffix, links.length, feed_entry_curis_titles_map, feed_generator, crawl_ctx,
+        http_client, progress_logger, logger
+      )
+    end
+
+    if are_prefix_suffix_valid
+      links_with_titles.each do |link|
+        next unless link.title.source == :page_title
+
+        link.title = create_link_title(link.title.value[prefix_length..-suffix_length - 1], link.title.source)
+      end
+    end
   end
 
   logger.info("Fetch missing titles finish")

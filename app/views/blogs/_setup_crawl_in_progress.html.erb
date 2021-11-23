@@ -24,11 +24,6 @@
         border-color: gray;
     }
 
-    .progress_highlighted {
-        background-color: lightsalmon;
-        border-color: darksalmon;
-    }
-
     .progress_finishing {
         background-color: tomato;
         border-color: orangered;
@@ -62,19 +57,14 @@
             if (data.status && (!status_epoch || data.status_epoch > status_epoch)) {
                 status_epoch = data.status_epoch;
                 let rects = [];
-                let tokens = [...data.status.matchAll(/hH|p+H?|hF\d*|h/g)];
+                let tokens = [...data.status.matchAll(/p+|hF\d*|h/g)];
                 for (let index in tokens) {
                     let token = tokens[index];
                     if (token[0] === "h") {
                         rects.push(createRect("progress_page progress_regular"));
-                    } else if (token[0] === "hH") {
-                        rects.push(createRect("progress_page progress_highlighted"));
                     } else if (token[0].startsWith("p")) {
-                        let classes = token[0].endsWith("H")
-                            ? "progress_long_page progress_highlighted"
-                            : "progress_long_page progress_regular";
                         (token[0].match(/p/g) || []).forEach(() => {
-                            rects.push(createRect(classes));
+                            rects.push(createRect("progress_long_page progress_regular"));
                         });
                     } else if (token[0].startsWith("hF")) {
                         rects.push(createRect("progress_page progress_finishing"));

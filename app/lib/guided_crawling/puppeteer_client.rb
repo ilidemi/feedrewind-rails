@@ -84,7 +84,7 @@ class PuppeteerClient
 
           if match_curis_set
             initial_content = pptr_page.content
-            initial_document = nokogiri_html5(initial_content)
+            initial_document = parse_html5(initial_content, logger)
             initial_links = extract_links(initial_document, uri, nil, nil, logger, false, false)
             is_scrolling_allowed = initial_links.any? { |page_link| match_curis_set.include?(page_link.curi) }
           else

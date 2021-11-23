@@ -21,18 +21,12 @@ end
 
 PERMANENT_ERROR_CODES = %w[400 401 402 403 404 405 406 407 410 411 412 413 414 415 416 417 418 451]
 
-AlreadySeenLink = Struct.new(:link)
 BadRedirection = Struct.new(:url)
 
 def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progress_logger, logger)
   link = initial_link
   seen_urls = [link.url]
   link = follow_cached_redirects(link, crawl_ctx.redirects, seen_urls)
-  if !link.equal?(initial_link) && crawl_ctx.fetched_curis.include?(link.curi)
-    logger.info("Cached redirect #{initial_link.url} -> #{link.url} (already fetched)")
-    return AlreadySeenLink.new(link)
-  end
-
   http_errors_count = 0
 
   loop do
@@ -42,10 +36,18 @@ def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progre
     crawl_ctx.requests_made += 1
     progress_logger.log_html
 
+    if crawl_ctx.fetched_curis.include?(link.curi)
+      duplicate_fetch_log = " (duplicate fetch)"
+      crawl_ctx.duplicate_fetches += 1
+    else
+      duplicate_fetch_log = ""
+    end
+
     if resp.code.start_with?('3')
       redirection_url = resp.location
       redirection_link_or_result = process_redirect(
-        redirection_url, initial_link, link, resp.code, request_ms, seen_urls, crawl_ctx, logger
+        redirection_url, initial_link, link, resp.code, request_ms, duplicate_fetch_log, seen_urls, crawl_ctx,
+        logger
       )
 
       if redirection_link_or_result.is_a?(Link)
@@ -75,7 +77,7 @@ def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progre
 
       if content_type == "text/html"
         content = body
-        document = nokogiri_html5(content)
+        document = parse_html5(content, logger)
       elsif is_feed_expected && is_feed(body, logger)
         content = body
         document = nil
@@ -89,28 +91,24 @@ def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progre
         meta_refresh_match = meta_refresh_content.match(/(\d+); *(?:URL|url)=(.+)/)
         if meta_refresh_match
           interval_str = meta_refresh_match[1]
-          redirection_url = meta_refresh_match[2]
+          meta_redirection_url = meta_refresh_match[2]
           log_code = "#{resp.code}_meta_refresh_#{interval_str}"
-
-          redirection_link_or_result = process_redirect(
-            redirection_url, initial_link, link, log_code, request_ms, seen_urls, crawl_ctx, logger
+          meta_redirection_link_or_result = process_redirect(
+            meta_redirection_url, initial_link, link, log_code, request_ms, duplicate_fetch_log, seen_urls,
+            crawl_ctx, logger
           )
 
-          if redirection_link_or_result.is_a?(Link)
-            link = redirection_link_or_result
+          if meta_redirection_link_or_result.is_a?(Link)
+            link = meta_redirection_link_or_result
             next
           else
-            return redirection_link_or_result
+            return meta_redirection_link_or_result
           end
         end
       end
 
-      if !crawl_ctx.fetched_curis.include?(link.curi)
-        crawl_ctx.fetched_curis << link.curi
-        logger.info("#{resp.code} #{content_type} #{request_ms}ms #{link.url}")
-      else
-        logger.info("#{resp.code} #{content_type} #{request_ms}ms #{link.url} - canonical uri already fetched")
-      end
+      crawl_ctx.fetched_curis << link.curi
+      logger.info("#{resp.code} #{content_type} #{request_ms}ms #{link.url}#{duplicate_fetch_log}")
 
       return Page.new(link.curi, link.uri, content, document)
     elsif resp.code == "SSLError"
@@ -142,7 +140,8 @@ def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progre
 end
 
 def process_redirect(
-  redirection_url, initial_link, request_link, code, request_ms, seen_urls, crawl_ctx, logger
+  redirection_url, initial_link, request_link, code, request_ms, duplicate_fetch_log, seen_urls, crawl_ctx,
+  logger
 )
   redirection_link = to_canonical_link(redirection_url, logger, request_link.uri)
 
@@ -158,15 +157,10 @@ def process_redirect(
   crawl_ctx.redirects[request_link.url] = redirection_link
   redirection_link = follow_cached_redirects(redirection_link, crawl_ctx.redirects, seen_urls)
 
-  if crawl_ctx.fetched_curis.include?(redirection_link.curi)
-    logger.info("#{code} #{request_ms}ms #{request_link.url} -> #{redirection_link.url} (already fetched)")
-    return AlreadySeenLink.new(request_link)
-  end
+  # Not marking intermediate canonical urls as fetched because Medium redirect key is a query param trimmed
+  # from canonical url
 
-  # Not marking canonical url as fetched because redirect key is a fetch url which may be different for the
-  # same canonical url
-
-  logger.info("#{code} #{request_ms}ms #{request_link.url} -> #{redirection_link.url}")
+  logger.info("#{code} #{request_ms}ms #{request_link.url}#{duplicate_fetch_log} -> #{redirection_link.url}")
   redirection_link
 end
 
@@ -240,6 +234,6 @@ def crawl_with_puppeteer_if_match(page, match_curis_set, puppeteer_client, crawl
     logger.info("Puppeteer page saved - canonical uri already seen")
   end
 
-  pptr_document = nokogiri_html5(pptr_content)
+  pptr_document = parse_html5(pptr_content, logger)
   Page.new(page.curi, page.fetch_uri, pptr_content, pptr_document)
 end

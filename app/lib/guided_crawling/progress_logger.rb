@@ -13,10 +13,6 @@ class ProgressLogger
     @progress_saver.save_status(@status_str)
   end
 
-  def log_historical
-    @status_str << 'H'
-  end
-
   def log_and_save_postprocessing
     @status_str << 'F'
     @progress_saver.save_status(@status_str)

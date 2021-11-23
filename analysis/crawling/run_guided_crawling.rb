@@ -15,7 +15,6 @@ GUIDED_CRAWLING_RESULT_COLUMNS = [
   [:gt_pattern, :neutral],
   [:feed_url, :boolean],
   [:feed_links, :boolean],
-  [:duplicate_fetches, :neutral],
   [:historical_links_found, :boolean],
   [:historical_links_matching, :boolean],
   [:historical_links_pattern, :neutral_present],
@@ -30,6 +29,7 @@ GUIDED_CRAWLING_RESULT_COLUMNS = [
   [:total_requests, :neutral],
   [:total_pages, :neutral],
   [:total_network_requests, :neutral],
+  [:duplicate_fetches, :neutral],
   [:title_requests, :neutral],
   [:total_time, :neutral]
 ]

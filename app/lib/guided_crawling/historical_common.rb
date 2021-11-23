@@ -503,16 +503,9 @@ def extract_title_relative_xpaths(
     .to_canonical_uri_set(curi_eq_cfg)
     .length
 
-  if unique_mismatch_count > get_allowed_mismatch_count(unique_links_count) && unique_mismatch_count != unique_links_count
-    logger.info("Titles not exactly matching: #{link_titles_not_exactly_matching.length}/#{feed_titles.length} (#{100 * link_titles_not_exactly_matching.length / feed_titles.length}%)")
-    if link_titles_not_exactly_matching.length <= 3
-      link_titles_not_exactly_matching.each do |_, eq_link_title_value, feed_title|
-        logger.info("Eq link title: \"#{eq_link_title_value}\", feed title: \"#{feed_title&.value}\"")
-      end
-    end
+  if unique_mismatch_count <= get_allowed_mismatch_count(unique_links_count)
+    return [TitleRelativeXpath.new("", :self)]
   end
-
-  return [TitleRelativeXpath.new("", :self)] if unique_mismatch_count <= get_allowed_mismatch_count(unique_links_count)
 
   def find_title_match(element, feed_title, child_xpath_to_skip = nil)
     return nil unless feed_title

@@ -44,7 +44,7 @@ class GuidedCrawlingJob < ApplicationJob
             blog.posts.new(
               link: link.url,
               order: -post_index,
-              title: link.title,
+              title: link.title.value,
               date: nil,
               is_published: false
             )

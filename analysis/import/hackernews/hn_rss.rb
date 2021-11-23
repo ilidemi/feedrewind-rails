@@ -79,7 +79,7 @@ def hn_rss(input_rows, throttler, logger)
                 break
               end
 
-              page_doc = nokogiri_html5(resp.body)
+              page_doc = parse_html5(resp.body, logger)
               feed_links = find_feed_links(
                 page_doc, prefix_uri, throttler, http, http_host, http_port, logger
               )
