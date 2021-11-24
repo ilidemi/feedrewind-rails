@@ -19,6 +19,10 @@ module BlogsHelper
     "/blogs/#{blog.id}/schedule"
   end
 
+  def BlogsHelper.blog_url(blog)
+    "https://rss-catchup.herokuapp.com/blogs/#{blog.id}"
+  end
+
   def BlogsHelper.blog_path(blog)
     "/blogs/#{blog.id}"
   end

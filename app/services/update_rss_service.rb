@@ -92,9 +92,9 @@ module UpdateRssService
     link << post.link
     item << link
 
-    blog_path = BlogsHelper.blog_path(blog)
+    blog_url = BlogsHelper.blog_url(blog)
     description = Ox::Element.new("description")
-    description << "<a href=\"#{blog_path}\">Manage</a>"
+    description << "<a href=\"#{blog_url}\">Manage</a>"
     item << description
 
     item
@@ -107,13 +107,13 @@ module UpdateRssService
     post_title << "#{blog.name} added to Feeduler"
     item << post_title
 
-    blog_path = BlogsHelper.blog_path(blog)
+    blog_url = BlogsHelper.blog_url(blog)
     link = Ox::Element.new("link")
-    link << blog_path
+    link << blog_url
     item << link
 
     description = Ox::Element.new("description")
-    description << "<a href=\"#{blog_path}\">Manage</a>"
+    description << "<a href=\"#{blog_url}\">Manage</a>"
     item << description
 
     item
