@@ -20,6 +20,7 @@ module BlogsHelper
   end
 
   def BlogsHelper.blog_url(blog)
+    # TODO: this should become feeduler.com
     "https://rss-catchup.herokuapp.com/blogs/#{blog.id}"
   end
 
