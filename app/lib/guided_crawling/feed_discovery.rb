@@ -67,8 +67,13 @@ end
 
 def get_start_feed(title, page, link, logger)
   begin
-    feed_links = parse_feed(page.content, link.uri, logger)
-    return DiscoveredStartFeed.new(title || feed_links.title, link.url, page.fetch_uri.to_s, page.content)
+    parsed_feed = parse_feed(page.content, link.uri, logger)
+    if parsed_feed.generator == :medium
+      feed_title = parsed_feed.title
+    else
+      feed_title = title || parsed_feed.title
+    end
+    return DiscoveredStartFeed.new(feed_title, link.url, page.fetch_uri.to_s, page.content)
   rescue => e
     logger.info("Extract feed links exception")
     print_nice_error(e).each do |line|
