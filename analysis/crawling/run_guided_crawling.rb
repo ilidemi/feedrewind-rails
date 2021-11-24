@@ -147,7 +147,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     oldest_link = historical_result.links.last
     logger.info("Historical links: #{entries_count}")
     historical_result.links.each do |historical_link|
-      logger.info("#{historical_link.title.value} #{historical_link.title.source} (#{historical_link.url})")
+      logger.info("#{historical_link.title.value} #{print_title_source(historical_link.title.source)} (#{historical_link.url})")
     end
     result.historical_links_titles_matching_feed = guided_crawl_result.feed_result.feed_matching_titles
     result.historical_links_titles_matching_feed_status =

@@ -6,6 +6,7 @@ require_relative 'historical_archives_categories'
 require_relative 'historical_archives_sort'
 require_relative 'historical_common'
 require_relative 'historical_paged'
+require_relative 'historical_tumblr'
 require_relative 'http_client'
 require_relative 'page_parsing'
 require_relative 'progress_logger'
@@ -16,7 +17,6 @@ require_relative 'util'
 
 GuidedCrawlResult = Struct.new(:feed_result, :start_url, :curi_eq_cfg, :historical_result, :historical_error)
 FeedResult = Struct.new(:feed_url, :feed_links, :feed_matching_titles, :feed_matching_titles_status)
-HistoricalResult = Struct.new(:main_link, :pattern, :links, :count, :extra, keyword_init: true)
 
 class GuidedCrawlError < StandardError
   def initialize(message, partial_result)
@@ -118,7 +118,23 @@ def guided_crawl(
     feed_entry_curis_titles_map = CanonicalUriTitleMap.new(parsed_feed.entry_links.to_a, curi_eq_cfg)
 
     historical_error = nil
-    if parsed_feed.entry_links.length >= 101
+    if parsed_feed.entry_links.length <= 100
+      begin
+        if parsed_feed.generator != :tumblr
+          historical_result = guided_crawl_historical(
+            start_page, parsed_feed.entry_links, feed_entry_curis_titles_map, parsed_feed.generator,
+            crawl_ctx, curi_eq_cfg, http_client, puppeteer_client, progress_logger, logger
+          )
+        else
+          historical_result = get_tumblr_historical(
+            parsed_feed.root_link.uri.hostname, crawl_ctx, http_client, progress_logger, logger
+          )
+        end
+      rescue => e
+        historical_result = nil
+        historical_error = e
+      end
+    else
       logger.info("Feed is long with #{parsed_feed.entry_links.length} entries")
       historical_result = HistoricalResult.new(
         main_link: feed_link,
@@ -127,16 +143,6 @@ def guided_crawl(
         count: parsed_feed.entry_links.length,
         extra: ""
       )
-    else
-      begin
-        historical_result = guided_crawl_historical(
-          start_page, parsed_feed.entry_links, feed_entry_curis_titles_map, parsed_feed.generator, crawl_ctx,
-          curi_eq_cfg, http_client, puppeteer_client, progress_logger, logger
-        )
-      rescue => e
-        historical_result = nil
-        historical_error = e
-      end
     end
 
     if historical_result

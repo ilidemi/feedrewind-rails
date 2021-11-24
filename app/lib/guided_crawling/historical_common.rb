@@ -1,6 +1,8 @@
 require 'set'
 require_relative 'title'
 
+HistoricalResult = Struct.new(:main_link, :pattern, :links, :count, :extra, keyword_init: true)
+
 def get_extractions_by_masked_xpath_by_star_count(
   page_links, feed_entry_links, feed_entry_curis_titles_map, curi_eq_cfg, almost_match_threshold, logger
 )
@@ -503,7 +505,8 @@ def extract_title_relative_xpaths(
     .to_canonical_uri_set(curi_eq_cfg)
     .length
 
-  if unique_mismatch_count <= get_allowed_mismatch_count(unique_links_count)
+  allowed_mismatch_count = get_allowed_mismatch_count(unique_links_count)
+  if unique_mismatch_count <= allowed_mismatch_count
     return [TitleRelativeXpath.new("", :self)]
   end
 
@@ -533,13 +536,19 @@ def extract_title_relative_xpaths(
   end
 
   # See if there is a child element that matches
-  titles_without_matching_children = eq_link_title_values
-    .zip(feed_titles)
-    .filter do |eq_link_title_value, feed_title|
+  titles_without_matching_children = links_matching_feed
+    .zip(eq_link_title_values, feed_titles)
+    .filter do |_, eq_link_title_value, feed_title|
     !(feed_title && eq_link_title_value&.include?(feed_title.equalized_value))
   end
 
-  if titles_without_matching_children.empty?
+  unique_child_mismatch_count = titles_without_matching_children
+    .map(&:first)
+    .map(&:curi)
+    .to_canonical_uri_set(curi_eq_cfg)
+    .length
+
+  if unique_child_mismatch_count <= allowed_mismatch_count
     child_xpaths_set = Set.new
     links_matching_feed.zip(feed_titles).each do |link, feed_title|
       child_xpaths_set << find_title_match(link.element, feed_title)
@@ -548,14 +557,16 @@ def extract_title_relative_xpaths(
     child_xpaths_set.each do |child_xpath|
       next unless child_xpath
 
-      are_all_child_titles_matching = links_matching_feed
+      child_xpath_title_mismatch_count = links_matching_feed
         .zip(feed_titles)
-        .all? do |link, feed_title|
+        .count do |link, feed_title|
         child_element = link.element.xpath(child_xpath).first
-        child_element && equalize_title(get_element_title(child_element)) == feed_title.equalized_value
+        !child_element || equalize_title(get_element_title(child_element)) != feed_title.equalized_value
       end
 
-      return [TitleRelativeXpath.new(child_xpath, :child)] if are_all_child_titles_matching
+      if child_xpath_title_mismatch_count <= allowed_mismatch_count
+        return [TitleRelativeXpath.new(child_xpath, :child)]
+      end
     end
   end
 
@@ -580,38 +591,25 @@ def extract_title_relative_xpaths(
   end
 
   only_true_positive_neighbor_xpaths = []
-  flaky_neighbor_xpaths_match_counts = []
   neighbor_xpaths.each do |neighbor_xpath|
     are_all_neighbor_titles_matching = true
-    match_count = 0
     links_matching_feed.zip(feed_titles).each do |link, feed_title|
       neighbor_element = link.element.xpath(neighbor_xpath).first
       next unless neighbor_element
 
       eq_neighbor_title_value = equalize_title(get_element_title(neighbor_element))
-      if feed_title && (eq_neighbor_title_value == feed_title.equalized_value)
-        match_count += 1
-      else
+      unless feed_title && (eq_neighbor_title_value == feed_title.equalized_value)
         are_all_neighbor_titles_matching = false
+        break
       end
     end
 
     if are_all_neighbor_titles_matching
       only_true_positive_neighbor_xpaths << TitleRelativeXpath.new(neighbor_xpath, :true_neighbor)
-    elsif match_count > 0
-      flaky_neighbor_xpaths_match_counts << [
-        TitleRelativeXpath.new(neighbor_xpath, :flaky_neighbor),
-        match_count
-      ]
     end
   end
 
-  # Order by highest match count, then by least nested (shortest) xpath
-  ordered_flaky_neighbor_xpaths = flaky_neighbor_xpaths_match_counts
-    .sort_by { |flaky_neighbor_xpath, match_count| [-match_count, flaky_neighbor_xpath.xpath.length] }
-    .map(&:first)
-
-  matching_neighbor_xpaths = only_true_positive_neighbor_xpaths # + ordered_flaky_neighbor_xpaths
+  matching_neighbor_xpaths = only_true_positive_neighbor_xpaths
   return matching_neighbor_xpaths unless matching_neighbor_xpaths.empty?
 
   nil

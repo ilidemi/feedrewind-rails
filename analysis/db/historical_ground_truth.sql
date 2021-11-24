@@ -26,7 +26,8 @@ create type pattern as enum (
     'long_feed',
     'archives_almost_feed', -- deprecated
     'archives_feed_almost',
-    'archives_long_feed'
+    'archives_long_feed',
+    'tumblr'
     );
 
 create table historical_ground_truth

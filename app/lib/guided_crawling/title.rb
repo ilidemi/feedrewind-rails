@@ -6,13 +6,21 @@ def create_link_title(value, source, alternative_values_by_source = nil)
   LinkTitle.new(value, equalize_title(value), source, alternative_values_by_source)
 end
 
+def print_title_source(title_source)
+  if title_source.is_a?(Symbol)
+    ":#{title_source}"
+  else
+    title_source.to_s
+  end
+end
+
 def print_title(link_title)
   if link_title.alternative_values_by_source
     alternatives = ", alternatives: #{link_title.alternative_values_by_source}"
   else
     alternatives = ""
   end
-  "\"#{link_title.value}\" (#{link_title.source}#{alternatives})"
+  "\"#{link_title.value}\" (#{print_title_source(link_title.source)}#{alternatives})"
 end
 
 def get_page_title(page, feed_generator)
@@ -32,7 +40,7 @@ def normalize_title(title)
 
   stripped_title
     .gsub(/\u00A0/, " ") # Non-breaking space
-    .gsub(/\n/, " ")
+    .gsub(/\r\n|\r|\n/, " ")
     .gsub(/ +/, " ")
 end
 
