@@ -122,7 +122,7 @@ class BlogsController < ApplicationController
 
       UpdateRssService.init(@blog)
 
-      if DateService.now.hour < 5
+      if DateService.now.hour < 30 # TODO: 5
         # People setting up a blog just after midnight should still get it in the morning
         UpdateRssJob.perform_later(@blog.id)
         @blog.is_added_past_midnight = true

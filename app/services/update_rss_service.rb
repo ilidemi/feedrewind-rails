@@ -5,7 +5,7 @@ module UpdateRssService
 
   def UpdateRssService.init(blog)
     welcome_item = generate_welcome_item(blog)
-    rss_document = generate_rss(blog, [], [], welcome_item, nil, nil)
+    rss_document = generate_rss(blog, [], [], welcome_item)
     rss_text = Ox.dump(rss_document)
     current_rss = CurrentRss.new(blog_id: blog.id, body: rss_text)
     current_rss.save!
@@ -24,11 +24,6 @@ module UpdateRssService
       .order(order: :desc)
       .limit(POSTS_IN_RSS - posts_to_publish.length)
       .reverse
-    total_published_posts = blog
-      .posts
-      .where(is_published: true)
-      .count
-    total_posts = blog.posts.count
 
     if posts_to_publish.length + posts_last_published.length < POSTS_IN_RSS
       welcome_item = generate_welcome_item(blog)
@@ -36,9 +31,7 @@ module UpdateRssService
       welcome_item = nil
     end
 
-    rss_document = generate_rss(
-      blog, posts_to_publish, posts_last_published, welcome_item, total_published_posts, total_posts
-    )
+    rss_document = generate_rss(blog, posts_to_publish, posts_last_published, welcome_item)
     rss_text = Ox.dump(rss_document)
 
     CurrentRss.transaction do
@@ -53,9 +46,7 @@ module UpdateRssService
     end
   end
 
-  def self.generate_rss(
-    blog, posts_to_publish, posts_last_published, welcome_item, total_published_posts, total_posts
-  )
+  def self.generate_rss(blog, posts_to_publish, posts_last_published, welcome_item)
     document = Ox::Document.new
 
     instruct = Ox::Instruct.new(:xml)
@@ -73,14 +64,12 @@ module UpdateRssService
     channel_title << "#{blog.name} · Feeduler"
     channel << channel_title
 
-    posts_to_publish.to_enum.with_index.reverse_each do |post, post_index|
-      post_number = total_published_posts + post_index + 1
-      channel << generate_post_rss(post, post_number, total_posts)
+    posts_to_publish.to_enum.reverse_each do |post|
+      channel << generate_post_rss(blog, post)
     end
 
-    posts_last_published.to_enum.with_index.reverse_each do |post, post_index|
-      post_number = total_published_posts - posts_last_published.length + post_index + 1
-      channel << generate_post_rss(post, post_number, total_posts)
+    posts_last_published.to_enum.reverse_each do |post|
+      channel << generate_post_rss(blog, post)
     end
 
     if welcome_item
@@ -92,7 +81,7 @@ module UpdateRssService
     document
   end
 
-  def self.generate_post_rss(post, post_number, total_posts)
+  def self.generate_post_rss(blog, post)
     item = Ox::Element.new("item")
 
     post_title = Ox::Element.new("title")
@@ -103,8 +92,9 @@ module UpdateRssService
     link << post.link
     item << link
 
+    blog_path = BlogsHelper.blog_path(blog)
     description = Ox::Element.new("description")
-    description << "#{post_number}/#{total_posts}"
+    description << "<a href=\"#{blog_path}\">Manage</a>"
     item << description
 
     item
