@@ -3,7 +3,7 @@ require_relative 'canonical_link'
 require_relative 'historical_common'
 require_relative 'util'
 
-def get_tumblr_historical(hostname, crawl_ctx, http_client, progress_logger, logger)
+def get_tumblr_api_historical(hostname, crawl_ctx, http_client, progress_logger, logger)
   logger.info("Get Tumblr historical start")
   api_key = "REDACTED_TUMBLR_API_KEY"
 

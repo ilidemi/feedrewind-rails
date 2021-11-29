@@ -15,7 +15,7 @@ def get_extractions_by_masked_xpath_by_star_count(
   extractions_by_masked_xpath_by_star_count = {}
   star_count_xpath_names.each do |star_count, xpath_name|
     link_groupings_by_masked_xpath = group_links_by_masked_xpath(
-      page_links, feed_entry_curis_titles_map, curi_eq_cfg, xpath_name, star_count, logger
+      page_links, feed_entry_curis_titles_map, curi_eq_cfg, xpath_name, star_count
     )
     logger.info("Masked xpaths with #{star_count} stars: #{link_groupings_by_masked_xpath.length}")
 
@@ -24,7 +24,7 @@ def get_extractions_by_masked_xpath_by_star_count(
         masked_xpath,
         get_masked_xpath_extraction(
           masked_xpath, link_grouping, star_count, feed_entry_links, feed_entry_curis_titles_map, curi_eq_cfg,
-          almost_match_threshold, logger
+          almost_match_threshold
         )
       ]
     end
@@ -53,11 +53,9 @@ def pretty_print_xpath_tree_node(xpath_tree_node, depth = 0)
   lines.join("\n")
 end
 
-MaskedXpathLinksGrouping = Struct.new(:links, :title_relative_xpaths, :xpath_name)
+MaskedXpathLinksGrouping = Struct.new(:links, :title_relative_xpaths, :xpath_name, :log_lines)
 
-def group_links_by_masked_xpath(
-  page_links, feed_entry_curis_titles_map, curi_eq_cfg, xpath_name, star_count, logger
-)
+def group_links_by_masked_xpath(page_links, feed_entry_curis_titles_map, curi_eq_cfg, xpath_name, star_count)
   def xpath_to_segments(xpath)
     xpath.split("/")[1..].map do |token|
       match = token.match(/^([^\[]+)\[(\d+)\]$/)
@@ -109,14 +107,14 @@ def group_links_by_masked_xpath(
   end
 
   def add_masked_xpaths_segments(
-    start_node, start_xpath_segments_suffix, stars_remaining, masked_xpaths_segments
+    start_node, start_xpath_segments_suffix, stars_remaining, page_feed_masked_xpaths_segments
   )
     ancestor_node = start_node.parent
     xpath_segments_suffix = start_xpath_segments_suffix
     while ancestor_node
       child_tag, child_index = start_node.xpath_segments[ancestor_node.xpath_segments.length]
       masked_xpath_segments = ancestor_node.xpath_segments + [[child_tag, :star]] + xpath_segments_suffix
-      if stars_remaining > 1 || !masked_xpaths_segments.include?(masked_xpath_segments)
+      if stars_remaining > 1 || !page_feed_masked_xpaths_segments.include?(masked_xpath_segments)
         found_another_link = false
         ancestor_node.children.each do |child_key, current_child_node|
           next unless child_key[0] == child_tag && child_key[1] != child_index
@@ -139,27 +137,24 @@ def group_links_by_masked_xpath(
 
         if found_another_link
           if stars_remaining == 1
-            masked_xpaths_segments << masked_xpath_segments
+            page_feed_masked_xpaths_segments << masked_xpath_segments
           else
             next_xpath_segments_suffix = [[child_tag, :star]] + xpath_segments_suffix
             add_masked_xpaths_segments(
-              ancestor_node, next_xpath_segments_suffix, stars_remaining - 1, masked_xpaths_segments
+              ancestor_node, next_xpath_segments_suffix, stars_remaining - 1, page_feed_masked_xpaths_segments
             )
           end
         end
       end
 
-      xpath_segments_suffix = [start_node.xpath_segments[ancestor_node.xpath_segments.length]] +
-        xpath_segments_suffix
+      xpath_segments_suffix.prepend(start_node.xpath_segments[ancestor_node.xpath_segments.length])
       ancestor_node = ancestor_node.parent
     end
   end
 
   page_feed_masked_xpaths_segments = Set.new
   traverse_xpath_tree_feed_links(xpath_tree) do |link_node|
-    add_masked_xpaths_segments(
-      link_node, [], star_count, page_feed_masked_xpaths_segments
-    )
+    add_masked_xpaths_segments(link_node, [], star_count, page_feed_masked_xpaths_segments)
   end
 
   masked_xpath_tree = build_xpath_tree(
@@ -201,16 +196,17 @@ def group_links_by_masked_xpath(
   filtered_links_by_masked_xpath.each do |masked_xpath, masked_xpath_links|
     top_parent_distance, top_parent_relative_xpath = get_top_parent_distance_relative_xpath(masked_xpath)
     masked_xpath_links_matching_feed = masked_xpath_links
-      .filter { |page_link| feed_entry_curis_titles_map.include?(page_link.curi) }
+      .filter { |link| feed_entry_curis_titles_map.include?(link.curi) }
+    log_lines = []
     title_relative_xpaths = extract_title_relative_xpaths(
       masked_xpath_links_matching_feed, feed_entry_curis_titles_map, curi_eq_cfg, top_parent_distance,
-      top_parent_relative_xpath, logger
+      top_parent_relative_xpath, log_lines
     )
     masked_xpath_titled_links = masked_xpath_links
       .map { |masked_xpath_link| populate_link_title(masked_xpath_link, title_relative_xpaths) }
     masked_xpath_link_groupings << [
       masked_xpath,
-      MaskedXpathLinksGrouping.new(masked_xpath_titled_links, title_relative_xpaths, xpath_name)
+      MaskedXpathLinksGrouping.new(masked_xpath_titled_links, title_relative_xpaths, xpath_name, log_lines)
     ]
   end
 
@@ -249,11 +245,12 @@ MaskedXpathExtraction = Struct.new(
 
 def get_masked_xpath_extraction(
   masked_xpath, link_grouping, star_count, feed_entry_links, feed_entry_curis_titles_map, curi_eq_cfg,
-  almost_match_threshold, logger
+  almost_match_threshold
 )
   links = link_grouping.links
   title_relative_xpaths = link_grouping.title_relative_xpaths
   xpath_name = link_grouping.xpath_name
+  log_lines = link_grouping.log_lines.clone
 
   collapsed_links = []
   links.length.times do |index|
@@ -280,7 +277,6 @@ def get_masked_xpath_extraction(
     end
   end
 
-  log_lines = []
   if links.length != collapsed_links.length
     log_lines << "collapsed #{links.length} -> #{collapsed_links.length}"
   end
@@ -301,7 +297,8 @@ def get_masked_xpath_extraction(
   distance_to_top_parent, relative_xpath_to_top_parent = get_top_parent_distance_relative_xpath(masked_xpath)
 
   matching_maybe_markup_dates = extract_maybe_markup_dates(
-    collapsed_links, links_matching_feed, distance_to_top_parent, relative_xpath_to_top_parent, false, logger
+    collapsed_links, links_matching_feed, distance_to_top_parent, relative_xpath_to_top_parent, false,
+    log_lines
   )
 
   if matching_maybe_markup_dates
@@ -349,7 +346,8 @@ def get_masked_xpath_extraction(
 
   if unique_links_matching_feed_count == feed_entry_links.length - 1
     maybe_medium_markup_dates = extract_maybe_markup_dates(
-      collapsed_links, links_matching_feed, distance_to_top_parent, relative_xpath_to_top_parent, true, logger
+      collapsed_links, links_matching_feed, distance_to_top_parent, relative_xpath_to_top_parent, true,
+      log_lines
     )
 
     if maybe_medium_markup_dates && maybe_medium_markup_dates.all? { |date| date != nil }
@@ -396,7 +394,7 @@ def get_top_parent_distance_relative_xpath(masked_xpath)
 end
 
 def extract_maybe_markup_dates(
-  links, links_matching_feed, distance_to_top_parent, relative_xpath_to_top_parent, guess_year, logger
+  links, links_matching_feed, distance_to_top_parent, relative_xpath_to_top_parent, guess_year, log_lines
 )
   date_relative_xpaths_sources = []
   links_matching_feed.each_with_index do |link, index|
@@ -436,20 +434,20 @@ def extract_maybe_markup_dates(
   end
 
   maybe_dates = links.map do |link|
-    link_dates = link
+    dates = link
       .element
       .xpath(date_relative_xpath)
       .to_a
       .filter_map { |element| try_extract_element_date(element, guess_year) }
       .map { |date_source| date_source[:date] }
-    next if link_dates.empty?
+    next if dates.empty?
 
-    if link_dates.length > 1
-      logger.info("Multiple dates found for #{link.xpath} + #{date_relative_xpath}: #{link_dates}")
+    if dates.length > 1
+      log_lines << "multiple dates for #{date_relative_xpath} and guess_year=#{guess_year}: #{dates.map(&:to_s)}"
       next
     end
 
-    link_dates.first
+    dates.first
   end
 
   maybe_dates
@@ -470,7 +468,7 @@ end
 
 def extract_title_relative_xpaths(
   links_matching_feed, feed_entry_curis_titles_map, curi_eq_cfg, top_parent_distance,
-  top_parent_relative_xpath, logger
+  top_parent_relative_xpath, log_lines
 )
   link_title_values = links_matching_feed.map { |link| get_element_title(link.element) }
   eq_link_title_values = link_title_values.map { |title_value| equalize_title(title_value) }
@@ -507,6 +505,8 @@ def extract_title_relative_xpaths(
 
   allowed_mismatch_count = get_allowed_mismatch_count(unique_links_count)
   if unique_mismatch_count <= allowed_mismatch_count
+    almost_log = unique_mismatch_count == 0 ? "exactly" : "almost"
+    log_lines << "titles #{almost_log} matching"
     return [TitleRelativeXpath.new("", :self)]
   end
 
@@ -565,6 +565,8 @@ def extract_title_relative_xpaths(
       end
 
       if child_xpath_title_mismatch_count <= allowed_mismatch_count
+        almost_log = child_xpath_title_mismatch_count == 0 ? "exactly" : "almost"
+        log_lines << "child titles #{almost_log} matching at #{child_xpath}"
         return [TitleRelativeXpath.new(child_xpath, :child)]
       end
     end
@@ -610,8 +612,12 @@ def extract_title_relative_xpaths(
   end
 
   matching_neighbor_xpaths = only_true_positive_neighbor_xpaths
-  return matching_neighbor_xpaths unless matching_neighbor_xpaths.empty?
+  unless matching_neighbor_xpaths.empty?
+    log_lines << "neighbor titles matching at #{matching_neighbor_xpaths}"
+    return matching_neighbor_xpaths
+  end
 
+  log_lines << "titles not matching"
   nil
 end
 
@@ -648,4 +654,12 @@ def populate_link_title(link, title_relative_xpaths)
 
   title = create_link_title(title_value, source, alternative_values_by_source)
   link_set_title(link, title)
+end
+
+def join_log_lines(log_lines)
+  if log_lines.empty?
+    ""
+  else
+    " (#{log_lines.join(", ")})"
+  end
 end

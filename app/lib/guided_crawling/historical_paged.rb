@@ -11,7 +11,7 @@ PagedResult = Struct.new(
   :main_link, :pattern, :links, :speculative_count, :count, :extra, keyword_init: true
 )
 PartialPagedResult = Struct.new(
-  :link_to_next_page, :next_page_number, :links, :speculative_count, :count, :paged_state, keyword_init: true
+  :main_link, :link_to_next_page, :next_page_number, :links, :speculative_count, :count, :paged_state, keyword_init: true
 )
 
 Page2State = Struct.new(
@@ -360,6 +360,7 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
     .to_canonical_uri_set(curi_eq_cfg)
 
   PartialPagedResult.new(
+    main_link: page2_state.main_link,
     link_to_next_page: link_to_page3,
     next_page_number: 3,
     links: entry_links,
@@ -433,6 +434,7 @@ def try_extract_next_page(page, paged_result, feed_entry_links, curi_eq_cfg, log
 
   if link_to_next_page
     PartialPagedResult.new(
+      main_link: paged_state.main_link,
       link_to_next_page: link_to_next_page,
       next_page_number: next_page_number,
       links: next_entry_links,

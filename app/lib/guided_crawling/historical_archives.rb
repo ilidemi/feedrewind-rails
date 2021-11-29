@@ -365,14 +365,6 @@ def try_extract_sorted(
   end
 end
 
-def join_log_lines(log_lines)
-  if log_lines.empty?
-    ""
-  else
-    " (#{log_lines.join(", ")})"
-  end
-end
-
 def try_extract_sorted_highlight_first_link(
   extractions_by_masked_xpath, feed_entry_links, feed_entry_curis_titles_map, curi_eq_cfg, page_curis_set,
   star_count, fewer_stars_curis, min_links_count, main_link, logger

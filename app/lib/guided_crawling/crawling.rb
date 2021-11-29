@@ -187,15 +187,6 @@ def is_buttondown(page)
   page.document.at_xpath(BUTTONDOWN_TWITTER_XPATH)
 end
 
-def is_puppeteer_match(page)
-  return false unless page.document
-
-  is_load_more(page) ||
-    is_medium_list(page) ||
-    is_substack_archive(page) ||
-    is_buttondown(page)
-end
-
 def crawl_with_puppeteer_if_match(page, match_curis_set, puppeteer_client, crawl_ctx, progress_logger, logger)
   return page unless puppeteer_client && page.document
 
