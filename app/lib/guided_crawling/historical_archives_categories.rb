@@ -9,9 +9,11 @@ class ArchivesCategoriesState
 end
 
 ArchivesCategoriesResult = Struct.new(
-  :main_link, :pattern, :links_maybe_dates, :speculative_count, :count, :extra,  keyword_init: true
+  :main_link, :pattern, :links_maybe_dates, :speculative_count, :count, :extra, keyword_init: true
 )
-CategoryResult = Struct.new(:links_maybe_dates, :xpath, :level, :curi, :fetch_uri, keyword_init: true)
+CategoryResult = Struct.new(
+  :links_maybe_dates, :xpath, :level, :curi, :fetch_uri, :log_str, keyword_init: true
+)
 
 def try_extract_archives_categories(
   page_link, page, page_curis_set, feed_entry_links, feed_entry_curis_titles_map,
@@ -27,6 +29,7 @@ def try_extract_archives_categories(
   best_links_maybe_dates = nil
   best_feed_matching_curis_set = nil
   best_xpath = nil
+  best_log_str = nil
 
   extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
     logger.info("Trying category match with #{star_count} stars")
@@ -47,11 +50,13 @@ def try_extract_archives_categories(
       next unless feed_matching_curis_set.length <= feed_entry_links.length - 2
 
       maybe_dates = extraction
-        .maybe_url_dates
-        .zip(extraction.some_markup_dates || [])
+        .maybe_url_dates_extraction.dates
+        .zip(extraction.some_markup_dates_extraction.dates || [])
         .map { |maybe_url_date, maybe_markup_date| maybe_url_date || maybe_markup_date }
       links_maybe_dates = links.zip(maybe_dates)
-      log_lines = extraction.log_lines.clone
+      log_lines = extraction.log_lines +
+        extraction.maybe_url_dates_extraction.log_lines +
+        extraction.some_markup_dates_extraction.log_lines
       if links_extraction.curis.length != links_extraction.curis_set.length
         dedup_links_maybe_dates = []
         dedup_curis_set = CanonicalUriSet.new([], curi_eq_cfg)
@@ -69,7 +74,9 @@ def try_extract_archives_categories(
       best_links_maybe_dates = dedup_links_maybe_dates
       best_feed_matching_curis_set = feed_matching_curis_set
       best_xpath = masked_xpath
-      logger.info("Masked xpath looks like a category: #{masked_xpath}#{join_log_lines(log_lines)} (#{feed_matching_curis_set.length} links matching feed, #{dedup_links_maybe_dates.length} total)")
+      log_lines << "#{feed_matching_curis_set.length} links matching feed"
+      best_log_str = join_log_lines(log_lines)
+      logger.info("Masked xpath looks like a category: #{masked_xpath}#{best_log_str}")
     end
   end
 
@@ -88,7 +95,8 @@ def try_extract_archives_categories(
       xpath: best_xpath,
       level: level,
       curi: page.curi,
-      fetch_uri: page.fetch_uri
+      fetch_uri: page.fetch_uri,
+      log_str: best_log_str
     )
   end
 
@@ -167,28 +175,26 @@ def try_combination(
     unique_links_maybe_dates << [link, maybe_date]
   end
 
-  log_lines = []
+  total_log_lines = []
   if merged_links_maybe_dates.length != unique_links_maybe_dates.length
-    log_lines << "dedup #{merged_links_maybe_dates.length} -> #{unique_links_maybe_dates.length}"
+    total_log_lines << "dedup #{merged_links_maybe_dates.length} -> #{unique_links_maybe_dates.length}"
   end
-  logger.info("Found match with #{categories.length} categories#{join_log_lines(log_lines)} (#{unique_links_maybe_dates.length} links total)")
-  feed_matching_curis_sets_categories.each_with_index do |feed_matching_curis_set_category, index|
-    feed_matching_curis_set, category = feed_matching_curis_set_category
-    logger.info("Category #{index + 1}: url #{category.curi}, masked xpath #{category.xpath}, feed count #{feed_matching_curis_set.length}, total count #{category.links_maybe_dates.length}")
+  total_log_lines << "#{unique_links_maybe_dates.length} links total"
+  total_log_str = join_log_lines(total_log_lines)
+  logger.info("Found match with #{categories.length} categories#{total_log_str}")
+  categories.each_with_index do |category, index|
+    logger.info("Category #{index + 1}: url #{category.curi}, masked xpath #{category.xpath}#{category.log_str}")
   end
   logger.info("Missing links: #{missing_links_maybe_dates.length}")
   logger.info("Combinations checked: #{combinations_count}")
 
   extra_lines = []
-  feed_matching_curis_sets_categories.each_with_index do |feed_matching_curis_set_category, index|
-    feed_matching_curis_set, category = feed_matching_curis_set_category
+  categories.each_with_index do |category, index|
     extra_lines << "cat#{index + 1}_url: <a href=\"#{category.fetch_uri}\">#{category.curi}</a>"
-    extra_lines << "cat#{index + 1}_xpath: #{category.xpath}"
-    extra_lines << "cat#{index + 1}_feed_count: #{feed_matching_curis_set.length}"
-    extra_lines << "cat#{index + 1}_total_count: #{category.links_maybe_dates.length}"
-
+    extra_lines << "cat#{index + 1}_xpath: #{category.xpath}#{category.log_str}"
   end
   extra_lines << "missing_count: #{missing_links_maybe_dates.length}"
+  extra_lines << "total:#{total_log_str}"
 
   ArchivesCategoriesResult.new(
     main_link: main_link,

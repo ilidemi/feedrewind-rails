@@ -5,6 +5,7 @@ require_relative 'util'
 SortState = Struct.new(:dates_by_xpath_source, :page_titles)
 
 def historical_archives_sort_add(page, feed_generator, sort_state, logger)
+  logger.info("Archives sort add start")
   page_dates_xpaths_sources = []
 
   page.document.traverse do |element|
@@ -36,22 +37,26 @@ def historical_archives_sort_add(page, feed_generator, sort_state, logger)
     new_sort_state = SortState.new(dates_by_xpath_source, [page_title])
   end
 
+  logger.info("Sort state after #{page.fetch_uri}: #{new_sort_state.dates_by_xpath_source.keys} (#{new_sort_state.page_titles.length} total)")
+
   if new_sort_state.dates_by_xpath_source.empty?
-    logger.info("Pages don't have a common date path after #{page.curi.to_s}:")
     if sort_state
+      logger.info("Pages don't have a common date path after #{page.fetch_uri}:")
       sort_state.dates_by_xpath_source.each do |xpath_source, dates|
         logger.info("#{xpath_source} -> #{dates.map { |date| date.strftime("%Y-%m-%d") }}")
       end
     else
-      logger.info("(no prior sort state)")
+      logger.info("Page doesn't have a date at #{page.fetch_uri}")
     end
     return nil
   end
 
+  logger.info("Archives sort add finish")
   new_sort_state
 end
 
 def historical_archives_sort_finish(links_with_known_dates, links, sort_state, logger)
+  logger.info("Archives sort finish start")
   if sort_state
     sort_state.dates_by_xpath_source ||= {}
     dates_by_xpath_from_time = sort_state
@@ -64,32 +69,40 @@ def historical_archives_sort_finish(links_with_known_dates, links, sort_state, l
       logger.info("Good shuffled date xpath_source: #{xpath_source}")
     elsif dates_by_xpath_from_time.length == 1
       xpath, dates = dates_by_xpath_from_time.first
+      xpath_source = [xpath, :time]
       logger.info("Good shuffled date xpath from time: #{xpath}")
     else
       logger.info("Couldn't sort links: #{sort_state}")
       return nil
     end
 
+    title_count = 0
     titled_links = links.zip(sort_state.page_titles).map do |link, page_title|
       next link if link.title
 
       title = create_link_title(page_title, :page_title)
+      title_count += 1
       link_set_title(link, title)
     end
+    logger.info("Set #{title_count} link titles from page titles")
 
     links_dates = links_with_known_dates + titled_links.zip(dates)
   else
     links_dates = links_with_known_dates
+    xpath_source = "Ø"
   end
 
   sorted_links_dates = sort_links_dates(links_dates)
   sorted_links = sorted_links_dates.map(&:first)
-  sorted_links
+
+  logger.info("Archives sort finish finish")
+  [sorted_links, xpath_source]
 end
 
 def historical_archives_medium_sort_finish(
   pinned_entry_link, pinned_entry_page_links, other_links_dates, curi_eq_cfg
 )
+  logger.info("Archives medium sort finish start")
   pinned_entry_date = nil
   pinned_entry_page_links.each do |link|
     next unless canonical_uri_equal?(pinned_entry_link.curi, link.curi, curi_eq_cfg)
@@ -113,6 +126,8 @@ def historical_archives_medium_sort_finish(
   links_dates = [pinned_entry_link_date] + other_links_dates
   sorted_links_dates = sort_links_dates(links_dates)
   sorted_links = sorted_links_dates.map { |link, _| link }
+
+  logger.info("Archives medium sort finish finish")
   sorted_links
 end
 

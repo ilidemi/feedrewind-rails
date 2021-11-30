@@ -732,7 +732,7 @@ def postprocess_archives_shuffled_results(
   best_result = nil
   sorted_tentative_results.each do |tentative_result|
     logger.info("Postprocessing archives shuffled result of #{tentative_result.speculative_count}")
-    sorted_links, is_matching_feed = postprocess_sort_links_maybe_dates(
+    sorted_links = postprocess_sort_links_maybe_dates(
       tentative_result.links_maybe_dates, feed_entry_links, feed_generator, curi_eq_cfg,
       pages_by_canonical_url, crawl_ctx, http_client, progress_logger, logger
     )
@@ -744,11 +744,11 @@ def postprocess_archives_shuffled_results(
     best_result = PostprocessedResult.new(
       main_link: shuffled_results.main_link,
       pattern: tentative_result.pattern,
-      links: sorted_links,
-      speculative_count: sorted_links.length,
-      count: sorted_links.length,
-      is_matching_feed: is_matching_feed,
-      extra: tentative_result.extra
+      links: sorted_links.links,
+      speculative_count: sorted_links.links.length,
+      count: sorted_links.links.length,
+      is_matching_feed: sorted_links.are_matching_feed,
+      extra: tentative_result.extra + "<br>sort_date_source: #{sorted_links.date_source}<br>are_matching_feed: #{sorted_links.are_matching_feed}"
     )
   end
 
@@ -761,7 +761,7 @@ def postprocess_archives_categories_result(
   progress_logger, logger
 )
   logger.info("Postprocess archives categories results start")
-  sorted_links, is_matching_feed = postprocess_sort_links_maybe_dates(
+  sorted_links = postprocess_sort_links_maybe_dates(
     archives_categories_result.links_maybe_dates, feed_entry_links, feed_generator, curi_eq_cfg, {},
     crawl_ctx, http_client, progress_logger, logger
   )
@@ -774,11 +774,11 @@ def postprocess_archives_categories_result(
   PostprocessedResult.new(
     main_link: archives_categories_result.main_link,
     pattern: archives_categories_result.pattern,
-    links: sorted_links,
-    speculative_count: sorted_links.length,
-    count: sorted_links.length,
-    is_matching_feed: is_matching_feed,
-    extra: archives_categories_result.extra
+    links: sorted_links.links,
+    speculative_count: sorted_links.links.length,
+    count: sorted_links.links.length,
+    is_matching_feed: sorted_links.are_matching_feed,
+    extra: archives_categories_result.extra + "<br>sort_date_source: #{sorted_links.date_source}<br>are_matching_feed: #{sorted_links.are_matching_feed}"
   )
 end
 
@@ -833,6 +833,8 @@ def postprocess_paged_result(
   paged_result
 end
 
+SortedLinks = Struct.new(:links, :are_matching_feed, :date_source)
+
 def postprocess_sort_links_maybe_dates(
   links_maybe_dates, feed_entry_links, feed_generator, curi_eq_cfg, pages_by_canonical_url, crawl_ctx,
   http_client, progress_logger, logger
@@ -882,14 +884,18 @@ def postprocess_sort_links_maybe_dates(
     pages_by_canonical_url[page.curi.to_s] = page
   end
 
-  sorted_links = historical_archives_sort_finish(links_with_dates, links_without_dates, sort_state, logger)
+  sorted_links, date_source = historical_archives_sort_finish(
+    links_with_dates, links_without_dates, sort_state, logger
+  )
   unless sorted_links
     logger.info("Postprocess sort links, maybe dates failed during finish")
     return nil
   end
 
+  are_matching_feed = compare_with_feed(sorted_links, feed_entry_links, curi_eq_cfg, logger)
+
   logger.info("Postprocess sort links, maybe dates finish")
-  [sorted_links, compare_with_feed(sorted_links, feed_entry_links, curi_eq_cfg, logger)]
+  SortedLinks.new(sorted_links, are_matching_feed, date_source)
 end
 
 def canonical_uri_without_query(curi)
@@ -906,7 +912,9 @@ def compare_with_feed(sorted_links, feed_entry_links, curi_eq_cfg, logger)
   return true if is_matching_feed
 
   logger.info("Sorted links")
-  logger.info("#{sorted_curis.map(&:to_s)}")
+  sorted_links_trimmed_by_feed = sorted_curis.take(present_feed_entry_links.length).map(&:to_s)
+  sorted_links_ellipsis = sorted_curis.length > present_feed_entry_links.length ? " ..." : ""
+  logger.info("#{sorted_links_trimmed_by_feed}#{sorted_links_ellipsis}")
   logger.info("are not matching filtered feed:")
   logger.info(present_feed_entry_links)
   false
@@ -1097,15 +1105,20 @@ def zero_to_nil(count)
 end
 
 def count_link_title_sources(links)
-  result = {}
+  counts_by_source = {}
   links.each do |link|
     source_str = link.title.source.to_s
-    if result.key?(source_str)
-      result[source_str] += 1
+    if counts_by_source.key?(source_str)
+      counts_by_source[source_str] += 1
     else
-      result[source_str] = 1
+      counts_by_source[source_str] = 1
     end
   end
 
-  result
+  tokens = counts_by_source.map do |source_str, count|
+    quote = source_str.start_with?("[") ? '' : '"'
+    "#{quote}#{source_str}#{quote} => #{count}"
+  end
+
+  "{#{tokens.join(", ")}}"
 end
