@@ -999,6 +999,14 @@ def fetch_missing_titles(
     )
   end
 
+  crawl_ctx.title_requests_made = crawl_ctx.requests_made - requests_made_start
+
+  if page_titles.empty?
+    logger.info("Page titles are empty, skipped the prefix/suffix discovery")
+    logger.info("Fetch missing titles finish")
+    return links_with_titles
+  end
+
   # Find out if page titles have a common prefix/suffix that needs to be removed
   first_page_title = page_titles.first
   #noinspection RubyNilAnalysis
@@ -1090,13 +1098,14 @@ def fetch_missing_titles(
       links_with_titles.each do |link|
         next unless link.title.source == :page_title
 
-        link.title = create_link_title(link.title.value[prefix_length..-suffix_length - 1], link.title.source)
+        link.title = create_link_title(
+          link.title.value[prefix_length..-suffix_length - 1], link.title.source
+        )
       end
     end
   end
 
   logger.info("Fetch missing titles finish")
-  crawl_ctx.title_requests_made = crawl_ctx.requests_made - requests_made_start
   links_with_titles
 end
 
