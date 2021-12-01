@@ -27,5 +27,34 @@ module RssCatchupRails
     Delayed::Worker.raise_signal_exceptions = :term
 
     Rails.autoloaders.main.ignore(Rails.root.join('app/lib'))
+
+    def session_data(request)
+      session_key = config.session_options[:key]
+      request
+        .cookie_jar
+        .signed_or_encrypted[session_key] || {}
+    end
+
+    def session_id
+      lambda do |request|
+        begin
+          value = session_data(request)["session_id"] || ""
+          "S#{value[...8]}"
+        rescue
+          nil
+        end
+      end
+    end
+
+    def user_id
+      lambda do |request|
+        begin
+          value = session_data(request)["user_id"] || ""
+          "U#{value[...8]}"
+        rescue
+          nil
+        end
+      end
+    end
   end
 end
