@@ -1,8 +1,3 @@
-# Make Zeitwerk happy
-module ApplicationCableHack
-  class ApplicationCableHack
-  end
-end
 
 module ApplicationCable
   class Channel < ActionCable::Channel::Base
@@ -17,5 +12,9 @@ module ApplicationCable
       super
       after_confirmation_sent if subscription_confirmation_sent?
     end
+  end
+
+  # Make Zeitwerk happy
+  class ApplicationCableHack
   end
 end
