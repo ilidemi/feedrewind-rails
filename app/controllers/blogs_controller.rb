@@ -44,6 +44,77 @@ class BlogsController < ApplicationController
     if @current_user.nil?
       cookies[:unfinished_blog] = @blog.id
     end
+
+    if @blog.status == "crawl_in_progress"
+      @client_token_value = nil
+      client_token = BlogCrawlClientToken.find_by(blog_id: @blog.id)
+      unless client_token
+        client_token_value = SecureRandom.random_bytes(8).unpack('h*').first
+        begin
+          BlogCrawlClientToken.create(blog_id: @blog.id, value: client_token_value)
+          @client_token_value = client_token_value
+        rescue ActiveRecord::RecordNotUnique
+          # Keep the value nil
+        end
+      end
+
+      @blog_crawl_progress = BlogCrawlProgress.find(@blog.id)
+    end
+  end
+
+  def submit_progress_times
+    fill_current_user
+
+    client_token = BlogCrawlClientToken.find(params[:id])
+    if params[:client_token] != client_token.value
+      Rails.logger.info("Client token mismatch: incoming #{params[:client_token]}, expected #{client_token.value}")
+      return nil
+    end
+
+    blog_crawl_progress = BlogCrawlProgress.find(params[:id])
+    Rails.logger.info("Server: #{blog_crawl_progress.epoch_times}")
+    Rails.logger.info("Client: #{params[:epoch_durations]}")
+    server_epoch_durations = blog_crawl_progress
+      .epoch_times
+      .split(";")
+      .map(&:to_f)
+    client_epoch_durations = params[:epoch_durations]
+      .split(";")
+      .map(&:to_f)
+    if client_epoch_durations.length != server_epoch_durations.length
+      Rails.logger.info("Epoch count mismatch: client #{client_epoch_durations.length}, server #{server_epoch_durations.length}")
+      return nil
+    end
+
+    avg_difference = client_epoch_durations
+      .zip(server_epoch_durations)
+      .map { |client_duration, server_duration| (client_duration - server_duration).abs }
+      .sum / blog_crawl_progress.epoch
+    Rails.logger.info("Avg full difference: #{avg_difference.round(3)}")
+
+    client_epoch_durations_without_initial_load = client_epoch_durations
+      .drop(1)
+      .drop_while { |client_duration| client_duration == 0 }
+      .drop(1)
+    server_epoch_durations_without_initial_load =
+      server_epoch_durations.last(client_epoch_durations_without_initial_load.length)
+
+    avg_difference_without_initial_load = client_epoch_durations_without_initial_load
+      .zip(server_epoch_durations_without_initial_load)
+      .map { |client_duration, server_duration| (client_duration - server_duration).abs }
+      .sum / blog_crawl_progress.epoch
+    Rails.logger.info("Avg difference without initial load: #{avg_difference_without_initial_load.round(3)}")
+
+    client_epoch_durations_initial_load = client_epoch_durations.take(
+      client_epoch_durations.length - client_epoch_durations_without_initial_load.length
+    )
+    server_epoch_durations_initial_load = server_epoch_durations.take(
+      client_epoch_durations_initial_load.length
+    )
+    initial_load_duration = server_epoch_durations_initial_load.sum - client_epoch_durations_initial_load.last
+    Rails.logger.info("Initial load duration: #{initial_load_duration.round(3)}")
+
+    nil
   end
 
   def posts
@@ -122,7 +193,7 @@ class BlogsController < ApplicationController
 
       UpdateRssService.init(@blog)
 
-      if DateService.now.hour < 30 # TODO: 5
+      if DateService.now.hour < 5
         # People setting up a blog just after midnight should still get it in the morning
         UpdateRssJob.perform_later(@blog.id)
         @blog.is_added_past_midnight = true

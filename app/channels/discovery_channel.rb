@@ -1,30 +1,35 @@
 class DiscoveryChannel < ApplicationCable::Channel
   def subscribed
     stream_from "discovery_#{params[:blog_id]}"
+  end
 
+  def after_confirmation_sent
     transmit_status
-    sleep(1)
-    transmit_status
+    10.times do
+      sleep(0.1)
+      transmit_status
+    end
   end
 
   private
 
   def transmit_status
-    Blog.uncached do
-      blog = Blog.find_by(id: params[:blog_id])
-      return unless blog
+    BlogCrawlProgress.uncached do
+      blog_crawl_progress = BlogCrawlProgress.find_by(blog_id: params[:blog_id])
+      return unless blog_crawl_progress
 
-      if blog.status == "crawl_in_progress"
-        transmit(
-          {
-            status: blog.fetch_progress,
-            status_epoch: blog.fetch_progress_epoch,
-            count: blog.fetch_count,
-            count_epoch: blog.fetch_count_epoch
-          }
-        )
-      elsif %w[crawled crawl_failed].include?(blog.status)
-        transmit({ done: true })
+      Blog.uncached do
+        if blog_crawl_progress.blog.status == "crawl_in_progress"
+          transmit(
+            {
+              epoch: blog_crawl_progress.epoch,
+              status: blog_crawl_progress.progress,
+              count: blog_crawl_progress.count
+            }
+          )
+        elsif %w[crawled crawl_failed].include?(blog_crawl_progress.blog.status)
+          transmit({ done: true })
+        end
       end
     end
   end

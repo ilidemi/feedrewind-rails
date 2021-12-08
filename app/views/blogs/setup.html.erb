@@ -6,7 +6,14 @@
 <h1><%= @blog.name %></h1>
 <div style="overflow-wrap: break-word">
   <% if @blog.status == "crawl_in_progress" %>
-    <%= render partial: "setup_crawl_in_progress", locals: { blog: @blog } %>
+    <%=
+      render partial: "setup_crawl_in_progress",
+             locals: {
+               blog: @blog,
+               client_token: @client_token_value,
+               blog_crawl_progress: @blog_crawl_progress
+             }
+    %>
   <% elsif @blog.status == "crawl_failed" %>
     <%= render partial: "setup_failed", locals: { blog: @blog } %>
   <% elsif @blog.status == "crawled" %>

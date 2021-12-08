@@ -40,9 +40,10 @@ module BlogsHelper
       blog.name = name
       blog.url = start_feed_url
       blog.status = "crawl_in_progress"
-      blog.fetch_progress_epoch = 0
-      blog.fetch_count_epoch = 0
       blog.save!
+
+      blog_crawl_progress = BlogCrawlProgress.new(blog_id: blog.id, epoch: 0)
+      blog_crawl_progress.save!
 
       GuidedCrawlingJob.perform_later(
         blog.id, GuidedCrawlingJobArgs.new(start_page_id, start_feed_id).to_json
@@ -58,54 +59,70 @@ module BlogsHelper
   class ProgressSaver
     def initialize(blog_id)
       @blog_id = blog_id
+      @last_epoch_timestamp = Time.now.utc
     end
 
     def save_status_and_count(status_str, count)
-      Blog.transaction do
+      BlogCrawlProgress.transaction do
         #noinspection RailsChecklist05
-        blog = Blog.find_by_id(@blog_id)
-        raise BlogDeletedError unless blog
+        blog_crawl_progress = BlogCrawlProgress.find(@blog_id)
+        raise BlogDeletedError unless blog_crawl_progress
 
-        blog.update_column(:fetch_progress, status_str)
-        blog.update_column(:fetch_count, count)
-        new_progress_epoch = blog.fetch_progress_epoch + 1
-        new_count_epoch = blog.fetch_count_epoch + 1
-        blog.update_column(:fetch_progress_epoch, new_progress_epoch)
-        blog.update_column(:fetch_count_epoch, new_count_epoch)
+        blog_crawl_progress.update_column(:progress, status_str)
+        blog_crawl_progress.update_column(:count, count)
+        new_epoch = blog_crawl_progress.epoch + 1
+        blog_crawl_progress.update_column(:epoch, new_epoch)
+        update_epoch_times(blog_crawl_progress)
         ActionCable.server.broadcast(
           "discovery_#{@blog_id}",
-          { status: status_str, status_epoch: new_progress_epoch, count: count, count_epoch: new_count_epoch }
+          { epoch: new_epoch, status: status_str, count: count }
         )
-        Rails.logger.info("discovery_#{@blog_id} status: #{status_str} status_epoch: #{new_progress_epoch} count: #{count} count_epoch: #{new_count_epoch}")
+        Rails.logger.info("discovery_#{@blog_id} epoch: #{new_epoch} status: #{status_str} count: #{count}")
       end
     end
 
     def save_status(status_str)
-      Blog.transaction do
+      BlogCrawlProgress.transaction do
         #noinspection RailsChecklist05
-        blog = Blog.find_by_id(@blog_id)
-        raise BlogDeletedError unless blog
+        blog_crawl_progress = BlogCrawlProgress.find(@blog_id)
+        raise BlogDeletedError unless blog_crawl_progress
 
-        blog.update_column(:fetch_progress, status_str)
-        new_epoch = blog.fetch_progress_epoch + 1
-        blog.update_column(:fetch_progress_epoch, new_epoch)
-        ActionCable.server.broadcast("discovery_#{@blog_id}", { status: status_str, status_epoch: new_epoch })
-        Rails.logger.info("discovery_#{@blog_id} status: #{status_str} status_epoch: #{new_epoch}")
+        blog_crawl_progress.update_column(:progress, status_str)
+        new_epoch = blog_crawl_progress.epoch + 1
+        blog_crawl_progress.update_column(:epoch, new_epoch)
+        update_epoch_times(blog_crawl_progress)
+        ActionCable.server.broadcast("discovery_#{@blog_id}", { epoch: new_epoch, status: status_str })
+        Rails.logger.info("discovery_#{@blog_id} epoch: #{new_epoch} status: #{status_str}")
       end
     end
 
     def save_count(count)
-      Blog.transaction do
+      BlogCrawlProgress.transaction do
         #noinspection RailsChecklist05
-        blog = Blog.find_by_id(@blog_id)
-        raise BlogDeletedError unless blog
+        blog_crawl_progress = BlogCrawlProgress.find(@blog_id)
+        raise BlogDeletedError unless blog_crawl_progress
 
-        blog.update_column(:fetch_count, count)
-        new_epoch = blog.fetch_count_epoch + 1
-        blog.update_column(:fetch_count_epoch, new_epoch)
-        ActionCable.server.broadcast("discovery_#{@blog_id}", { count: count, count_epoch: new_epoch })
-        Rails.logger.info("discovery_#{@blog_id} count: #{count} count_epoch: #{new_epoch}")
+        blog_crawl_progress.update_column(:count, count)
+        new_epoch = blog_crawl_progress.epoch + 1
+        blog_crawl_progress.update_column(:epoch, new_epoch)
+        update_epoch_times(blog_crawl_progress)
+        ActionCable.server.broadcast("discovery_#{@blog_id}", { epoch: new_epoch, count: count })
+        Rails.logger.info("discovery_#{@blog_id} epoch: #{new_epoch} count: #{count}")
       end
+    end
+
+    private
+
+    def update_epoch_times(blog_crawl_progress)
+      new_epoch_timestamp = Time.now.utc
+      new_epoch_time = (new_epoch_timestamp - @last_epoch_timestamp).round(3)
+      if blog_crawl_progress.epoch_times
+        new_epoch_times = "#{blog_crawl_progress.epoch_times};#{new_epoch_time}"
+      else
+        new_epoch_times = "#{new_epoch_time}"
+      end
+      blog_crawl_progress.update_column(:epoch_times, new_epoch_times)
+      @last_epoch_timestamp = new_epoch_timestamp
     end
   end
 end

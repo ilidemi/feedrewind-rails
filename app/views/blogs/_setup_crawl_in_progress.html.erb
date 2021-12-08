@@ -44,8 +44,16 @@
 
 <script>
     {
-        let status_epoch;
-        let count_epoch;
+        <% if client_token %>
+        // noinspection JSAnnotator
+        let clientToken = "<%= client_token %>";
+        <% else %>
+        // noinspection JSAnnotator
+        let clientToken = null;
+        <% end %>
+        let epoch;
+        let epochTimestamp;
+        let epochDurations = [];
 
         function createRect(classes) {
             let rect = document.createElement("div");
@@ -54,46 +62,77 @@
         }
 
         function displayProgress(data) {
-            if (data.status && (!status_epoch || data.status_epoch > status_epoch)) {
-                status_epoch = data.status_epoch;
-                let rects = [];
-                let tokens = [...data.status.matchAll(/p+|hF\d*|h/g)];
-                for (let index in tokens) {
-                    let token = tokens[index];
-                    if (token[0] === "h") {
-                        rects.push(createRect("progress_page progress_regular"));
-                    } else if (token[0].startsWith("p")) {
-                        (token[0].match(/p/g) || []).forEach(() => {
-                            rects.push(createRect("progress_long_page progress_regular"));
-                        });
-                    } else if (token[0].startsWith("hF")) {
-                        rects.push(createRect("progress_page progress_finishing"));
-                        if (parseInt(index) === tokens.length - 1) {
-                            let remainingCountMatch = token[0].match(/\d+$/g);
-                            if (remainingCountMatch) {
-                                let remainingCount = parseInt(remainingCountMatch[0]);
-                                for (let i = 0; i < remainingCount; i++) {
-                                    rects.push(createRect("progress_page_remaining"));
-                                }
-                            }
-                        }
+            if (data.hasOwnProperty("epoch") && (!epoch || data.epoch > epoch)) {
+                epoch = data.epoch;
+                let newEpochTimestamp = Date.now() / 1000;
+                if (epoch > 0) {
+                    if (epochTimestamp) {
+                        epochDurations.push(newEpochTimestamp - epochTimestamp);
                     } else {
-                        console.warn(`Unknown progress token: ${token} (${data})`);
+                        epochDurations.push(0);
                     }
                 }
-                document.getElementById("progress_rects").replaceChildren(...rects);
-            }
+                epochTimestamp = newEpochTimestamp;
+                while (epochDurations.length < epoch) {
+                    epochDurations.push(0);
+                }
 
-            if (data.hasOwnProperty("count") && (!count_epoch || data.count_epoch > count_epoch)) {
-                count_epoch = data.count_epoch;
-                if (data.count) {
-                    document.getElementById("progress_count").innerHTML = `Discovering posts: ${data.count}`;
-                } else {
-                    document.getElementById("progress_count").innerHTML = "Discovering posts...";
+                if (data.hasOwnProperty("status")) {
+                    let rects = [];
+                    let tokens = [...data.status.matchAll(/p+|hF\d*|h/g)];
+                    for (let index in tokens) {
+                        let token = tokens[index];
+                        if (token[0] === "h") {
+                            rects.push(createRect("progress_page progress_regular"));
+                        } else if (token[0].startsWith("p")) {
+                            (token[0].match(/p/g) || []).forEach(() => {
+                                rects.push(createRect("progress_long_page progress_regular"));
+                            });
+                        } else if (token[0].startsWith("hF")) {
+                            rects.push(createRect("progress_page progress_finishing"));
+                            if (parseInt(index) === tokens.length - 1) {
+                                let remainingCountMatch = token[0].match(/\d+$/g);
+                                if (remainingCountMatch) {
+                                    let remainingCount = parseInt(remainingCountMatch[0]);
+                                    for (let i = 0; i < remainingCount; i++) {
+                                        rects.push(createRect("progress_page_remaining"));
+                                    }
+                                }
+                            }
+                        } else {
+                            console.warn(`Unknown progress token: ${token} (${data})`);
+                        }
+                    }
+                    document.getElementById("progress_rects").replaceChildren(...rects);
+                }
+
+                if (data.hasOwnProperty("count")) {
+                    if (data.count) {
+                        document.getElementById("progress_count").innerHTML = `Discovering posts: ${data.count}`;
+                    } else {
+                        document.getElementById("progress_count").innerHTML = "Discovering posts...";
+                    }
                 }
             }
 
             if (data.done) {
+                let epochDurationsStr = epochDurations
+                    .map(t => t.toFixed(3))
+                    .join(";");
+                let formData = new FormData();
+                formData.append(
+                    document.querySelector('meta[name="csrf-param"]').content,
+                    document.querySelector('meta[name="csrf-token"]').content
+                );
+                formData.append("client_token", clientToken);
+                formData.append("epoch_durations", epochDurationsStr);
+                fetch(
+                    "./submit_progress_times", {
+                        method: "POST",
+                        body: formData
+                    }
+                );
+
                 // Reload the page
                 Turbolinks.visit(window.location);
             }
@@ -109,23 +148,20 @@
 </script>
 
 <div id="progress_count">
-  <% unless blog.fetch_count %>
+  <% unless blog_crawl_progress.count %>
     Discovering posts...
   <% end %>
 </div>
-<% if blog.fetch_count %>
-  <script>displayProgress({
-      count: <%= blog.fetch_count %>,
-      count_epoch: <%= blog.fetch_count_epoch %>
-  })</script>
-<% end %>
 <span id="progress_rects"></span>
-<% if blog.fetch_progress %>
-  <script>displayProgress({
-      status: "<%= blog.fetch_progress %>",
-      status_epoch: <%= blog.fetch_progress_epoch %>
-  })</script>
-<% end %>
+<script>displayProgress({
+    <% if blog_crawl_progress.count %>
+    count: "<%= blog_crawl_progress.count %>",
+    <% end %>
+    <% if blog_crawl_progress.progress %>
+    status: "<%= blog_crawl_progress.progress %>",
+    <% end %>
+    epoch: <%= blog_crawl_progress.epoch %>
+})</script>
 <br>
 <br>
 <%= button_to "Cancel", blog_path(blog),

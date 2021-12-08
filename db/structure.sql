@@ -69,6 +69,33 @@ CREATE TABLE public.ar_internal_metadata (
 
 
 --
+-- Name: blog_crawl_client_tokens; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_crawl_client_tokens (
+    blog_id bigint NOT NULL,
+    value character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: blog_crawl_progresses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_crawl_progresses (
+    blog_id bigint NOT NULL,
+    progress character varying,
+    count integer,
+    epoch integer NOT NULL,
+    epoch_times character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
 -- Name: blogs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -80,11 +107,7 @@ CREATE TABLE public.blogs (
     url character varying,
     is_paused boolean,
     user_id uuid,
-    fetch_progress character varying,
-    fetch_count integer,
     status public.blog_status NOT NULL,
-    fetch_progress_epoch integer NOT NULL,
-    fetch_count_epoch integer NOT NULL,
     is_added_past_midnight boolean,
     looks_wrong boolean,
     discarded_at timestamp without time zone
@@ -398,6 +421,22 @@ ALTER TABLE ONLY public.ar_internal_metadata
 
 
 --
+-- Name: blog_crawl_client_tokens blog_crawl_client_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_crawl_client_tokens
+    ADD CONSTRAINT blog_crawl_client_tokens_pkey PRIMARY KEY (blog_id);
+
+
+--
+-- Name: blog_crawl_progresses blog_crawl_progresses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_crawl_progresses
+    ADD CONSTRAINT blog_crawl_progresses_pkey PRIMARY KEY (blog_id);
+
+
+--
 -- Name: blogs blogs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -521,6 +560,22 @@ ALTER TABLE ONLY public.blogs
 
 
 --
+-- Name: blog_crawl_client_tokens fk_rails_922e796af4; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_crawl_client_tokens
+    ADD CONSTRAINT fk_rails_922e796af4 FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
+
+
+--
+-- Name: blog_crawl_progresses fk_rails_cbc997d879; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_crawl_progresses
+    ADD CONSTRAINT fk_rails_cbc997d879 FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
+
+
+--
 -- Name: current_rsses fk_rails_d38bb5745b; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -591,6 +646,9 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20211022194206'),
 ('20211022194540'),
 ('20211025203926'),
-('20211025210217');
+('20211025210217'),
+('20211207204405'),
+('20211207205421'),
+('20211208011458');
 
 
