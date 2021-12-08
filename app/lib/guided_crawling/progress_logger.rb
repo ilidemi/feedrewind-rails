@@ -8,8 +8,13 @@ class ProgressLogger
     @status_str << 'h'
   end
 
-  def log_and_save_puppeteer
+  def log_and_save_puppeteer_start
     @status_str << 'p'
+    @progress_saver.save_status(@status_str)
+  end
+
+  def log_and_save_puppeteer
+    @status_str << 'P'
     @progress_saver.save_status(@status_str)
   end
 

@@ -79,6 +79,7 @@ class PuppeteerClient
             %w[image font].include?(request.resource_type) ? request.abort : request.continue
           end
           pptr_page.enable_request_tracking
+          progress_logger.log_and_save_puppeteer_start
           pptr_page.goto(uri.to_s, wait_until: "networkidle0")
           progress_logger.log_and_save_puppeteer
 
@@ -96,12 +97,14 @@ class PuppeteerClient
               load_more_button = find_load_more_button.call(pptr_page)
               while load_more_button do
                 logger.info("Clicking load more button")
+                progress_logger.log_and_save_puppeteer_start
                 pptr_page.wait_and_scroll(logger) { load_more_button.click }
                 progress_logger.log_and_save_puppeteer
                 load_more_button = find_load_more_button.call(pptr_page)
               end
             else
               logger.info("Scrolling")
+              progress_logger.log_and_save_puppeteer_start
               pptr_page.wait_and_scroll(logger)
               progress_logger.log_and_save_puppeteer
             end

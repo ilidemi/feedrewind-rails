@@ -19,6 +19,20 @@
         margin-right: 2px;
     }
 
+    .progress_long_page_start {
+        width: calc(1.5em + 6px); /* include gaps and borders */
+        height: 1em;
+        border-width: 1px;
+        border-style: solid;
+        border-image-slice: 1;
+        border-image-source: linear-gradient(to right, gray, #80808000);
+        background: linear-gradient(to right, silver, #c0c0c000);
+        background-origin: border-box;
+        display: inline-block;
+        margin-left: 2px;
+        margin-right: 2px;
+    }
+
     .progress_regular {
         background-color: silver;
         border-color: gray;
@@ -79,15 +93,15 @@
 
                 if (data.hasOwnProperty("status")) {
                     let rects = [];
-                    let tokens = [...data.status.matchAll(/p+|hF\d*|h/g)];
+                    let tokens = [...data.status.matchAll(/pP|p|hF\d*|h/g)];
                     for (let index in tokens) {
                         let token = tokens[index];
                         if (token[0] === "h") {
                             rects.push(createRect("progress_page progress_regular"));
-                        } else if (token[0].startsWith("p")) {
-                            (token[0].match(/p/g) || []).forEach(() => {
-                                rects.push(createRect("progress_long_page progress_regular"));
-                            });
+                        } else if (token[0] === "p") {
+                            rects.push(createRect("progress_long_page_start"));
+                        } else if (token[0] === "pP") {
+                            rects.push(createRect("progress_long_page progress_regular"));
                         } else if (token[0].startsWith("hF")) {
                             rects.push(createRect("progress_page progress_finishing"));
                             if (parseInt(index) === tokens.length - 1) {

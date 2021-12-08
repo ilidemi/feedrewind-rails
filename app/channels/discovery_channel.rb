@@ -1,3 +1,5 @@
+require_relative 'application_cable/application_cable_hack'
+
 class DiscoveryChannel < ApplicationCable::Channel
   def subscribed
     stream_from "discovery_#{params[:blog_id]}"

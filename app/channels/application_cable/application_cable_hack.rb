@@ -1,4 +1,3 @@
-
 module ApplicationCable
   class Channel < ActionCable::Channel::Base
     # This prevents race conditions so that any initial message is transmitted after websocket is established
