@@ -178,7 +178,7 @@
 })</script>
 <br>
 <br>
-<%= button_to "Cancel", blog_path(blog),
+<%= button_to "Cancel", subscription_path(subscription),
               method: :delete,
-              data: { confirm: "Cancel adding #{blog.name}? Progress in discovering posts will be lost." }
+              data: { confirm: "Cancel adding #{subscription.name}?" }
 %>

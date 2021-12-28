@@ -1,61 +1,40 @@
 class Blog < ApplicationRecord
-  default_scope { where(discarded_at: nil) }
-  scope :discarded, -> { where.not(discarded_at: nil) }
+  LATEST_VERSION = 1000000
 
-  before_create :generate_random_id
+  include RandomId
 
-  belongs_to :user, optional: true
-  has_many :posts, dependent: :destroy
-  has_many :schedules, dependent: :destroy
-  has_one :current_rss, dependent: :destroy
-  has_one :blog_crawl_progress, dependent: :destroy
   has_one :blog_crawl_client_token, dependent: :destroy
-  validates :name, presence: true
-  validates :url, presence: true
+  has_one :blog_crawl_progress, dependent: :destroy
+  has_many :blog_crawl_votes, dependent: :destroy
+  has_many :blog_posts, dependent: :destroy
 
-  def generate_random_id
-    new_id = generate_random_bigint
-    while Blog.exists?(new_id)
-      new_id = generate_random_bigint
+  def destroy_recursively!
+    Blog.transaction do
+      Blog.uncached do
+        blog_crawl_client_token.destroy!
+        blog_crawl_progress.destroy!
+        blog_crawl_votes.destroy_all
+
+        subscriptions = Subscription.with_discarded.where(blog_id: id)
+        subscription_posts_relations = subscriptions
+          .includes(:subscription_posts)
+          .map(&:subscription_posts)
+
+        subscription_posts_count = subscription_posts_relations.map(&:length).sum
+        Rails.logger.info("Destroying #{subscription_posts_count} subscription posts")
+        subscription_posts_relations.each do |subscription_posts|
+          subscription_posts.destroy_all
+        end
+
+        Rails.logger.info("Destroying #{subscriptions.length} subscriptions")
+        subscriptions.each do |subscription|
+          subscription.discard!
+          subscription.destroy_discarded!
+        end
+
+        blog_posts.destroy_all
+        destroy!
+      end
     end
-
-    # Race condition may happen if two instances generate the same id at the same time, which is highly
-    # unlikely
-    self.id = new_id
-  end
-
-  def discarded?
-    self.discarded_at.present?
-  end
-
-  def discard!
-    return false if discarded?
-    update_attribute(:discarded_at, Time.current)
-  end
-
-  def destroy
-    raise "Soft delete is enabled. Use .discard! or .destroy_discarded"
-  end
-
-  def destroy!
-    raise "Soft delete is enabled. Use .discard! or .destroy_discarded!"
-  end
-
-  def destroy_discarded
-    return false unless discarded?
-
-    method(:destroy).super_method.call
-  end
-
-  def destroy_discarded!
-    raise ActiveRecord::RecordNotDestroyed.new unless discarded?
-
-    method(:destroy).super_method.call
-  end
-
-  private
-
-  def generate_random_bigint
-    SecureRandom.random_bytes(8).unpack("q").first & ((1 << 63) - 1)
   end
 end

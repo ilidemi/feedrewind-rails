@@ -1,6 +1,6 @@
 class User < ApplicationRecord
   has_secure_password
-  has_many :blogs
+  has_many :subscriptions
   validates_uniqueness_of :email
   before_create { generate_token(:auth_token) }
 

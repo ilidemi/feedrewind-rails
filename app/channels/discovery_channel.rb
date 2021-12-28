@@ -18,10 +18,15 @@ class DiscoveryChannel < ApplicationCable::Channel
   def transmit_status
     BlogCrawlProgress.uncached do
       blog_crawl_progress = BlogCrawlProgress.find_by(blog_id: params[:blog_id])
-      return unless blog_crawl_progress
+      unless blog_crawl_progress
+        Rails.logger.info("Blog #{params[:blog_id]} crawl progress not found")
+        return
+      end
 
       Blog.uncached do
-        if blog_crawl_progress.blog.status == "crawl_in_progress"
+        blog_status = blog_crawl_progress.blog.status
+        if blog_status == "crawl_in_progress"
+          Rails.logger.info("Blog #{params[:blog_id]} crawl in progress (epoch #{blog_crawl_progress.epoch})")
           transmit(
             {
               epoch: blog_crawl_progress.epoch,
@@ -29,8 +34,11 @@ class DiscoveryChannel < ApplicationCable::Channel
               count: blog_crawl_progress.count
             }
           )
-        elsif %w[crawled crawl_failed].include?(blog_crawl_progress.blog.status)
+        elsif %w[crawled_voting crawl_failed].include?(blog_status)
+          Rails.logger.info("Blog #{params[:blog_id]} crawl done")
           transmit({ done: true })
+        else
+          Rails.logger.info("Unexpected blog status: #{blog_status}")
         end
       end
     end

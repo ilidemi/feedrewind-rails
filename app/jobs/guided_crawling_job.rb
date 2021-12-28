@@ -16,7 +16,7 @@ class GuidedCrawlingJob < ApplicationJob
       crawl_ctx = CrawlContext.new
       http_client = HttpClient.new
       puppeteer_client = PuppeteerClient.new
-      progress_saver = BlogsHelper::ProgressSaver.new(blog_id)
+      progress_saver = SubscriptionsHelper::ProgressSaver.new(blog_id)
       begin
         guided_crawl_result = guided_crawl(
           start_page, start_feed, crawl_ctx, http_client, puppeteer_client, progress_saver, Rails.logger
@@ -40,16 +40,15 @@ class GuidedCrawlingJob < ApplicationJob
         Rails.logger.info("Guided crawling job succeeded, saving blog")
         Blog.transaction do
           blog = Blog.find(blog_id)
+          posts_count = guided_crawl_result.historical_result.links.length
           guided_crawl_result.historical_result.links.each_with_index do |link, post_index|
-            blog.posts.new(
-              link: link.url,
-              order: -post_index,
+            blog.blog_posts.new(
+              url: link.url,
+              index: posts_count - post_index - 1,
               title: link.title.value,
-              date: nil,
-              is_published: false
             )
           end
-          blog.status = "crawled"
+          blog.status = "crawled_voting"
           blog.save!
         end
       else

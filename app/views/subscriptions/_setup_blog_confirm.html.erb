@@ -1,0 +1,18 @@
+<div>
+  Discovered <%= subscription.blog.blog_posts.length %> posts (oldest to newest):
+  <br>
+
+  <%= render partial: "posts", locals: { subscription: subscription } %>
+
+  <div id="confirm_section">
+    <br>
+    <div style="display: flex; gap: 1em;">
+      <%= button_to "Continue", SubscriptionsHelper.confirm_path(subscription), method: :post %>
+      <%= button_to "Looks wrong",
+                    SubscriptionsHelper.mark_wrong_path(subscription),
+                    method: :post,
+                    remote: true
+      %>
+    </div>
+  </div>
+</div>

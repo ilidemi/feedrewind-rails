@@ -6,7 +6,7 @@
       <%= feed.url %>
     </span>
     <span>
-      <%= button_to "Discover posts", blogs_path, action: :post, params: {
+      <%= button_to "Continue", subscriptions_path, action: :post, params: {
         start_page_id: feeds.start_page_id,
         start_feed_id: feed.id,
         start_feed_final_url: feed.final_url,

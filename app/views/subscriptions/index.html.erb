@@ -1,0 +1,49 @@
+<div>
+  Logged in as <%= current_user.email %>.
+  <%= link_to "Log Out", logout_path %>
+</div>
+
+<h1>Dashboard</h1>
+
+<% if @subscriptions.length.zero? %>
+  <p>Nothing here. Want to add some?</p>
+<% end %>
+
+<% @subscriptions.each do |subscription| %>
+  <% total_count = subscription.subscription_posts.count %>
+  <% published_count = subscription.subscription_posts.group(:is_published).count[true] || 0 %>
+  <div style="display:flex; justify-content:space-between;">
+    <span>
+      <% if subscription.status == "live" %>
+        <%= link_to subscription.name,
+                    subscription,
+                    { style: "overflow-wrap: break-word;" }
+        %>
+      <% else %>
+        <%= link_to subscription.name,
+                    SubscriptionsHelper.setup_path(subscription),
+                    { style: "overflow-wrap: break-word;" }
+        %>
+        <% if subscription.blog.status == "crawl_failed" %>
+          (❌)
+        <% else %>
+          (⏳)
+        <% end %>
+      <% end %>
+    </span>
+
+    <span style="white-space: nowrap;">
+      <span style="margin-right: 1em">
+        <% if subscription.status == "live" %>
+          <% verb = subscription.is_paused ? "published, paused" : "published" %>
+          <%= published_count %>/<%= total_count %> <%= verb %>
+        <% end %>
+      </span>
+      <%= link_to "Delete", subscription_path(subscription),
+                  method: :delete,
+                  data: { confirm: "Delete #{subscription.name}?" } %>
+    </span>
+  </div>
+<% end %>
+
+<%= link_to "Add", subscriptions_add_path %>

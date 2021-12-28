@@ -1,9 +1,12 @@
 <div>
-  <%= form_with url: BlogsHelper.schedule_path(blog), method: :post do |form| %>
+  <%= form_with url: SubscriptionsHelper.schedule_path(subscription), method: :post do %>
     <div>
     <%= label_tag :name %>
-    <%= text_field_tag :name, blog.name %>
+    <%= text_field_tag :name, subscription.name %>
     </div>
+    <br>
+
+    TODO: list of posts somewhere here
     <br>
 
     <script>

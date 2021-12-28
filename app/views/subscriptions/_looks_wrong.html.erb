@@ -1,0 +1,9 @@
+<p>
+  Apologies for the inconvenience! Feeduler supports over 80% of blogs, but unfortunately not this one.
+</p>
+<p>Would you like to continue with these posts?</p>
+
+<div style="display: flex; gap: 1em;">
+  <%= button_to "Continue", SubscriptionsHelper.continue_with_wrong_path(subscription), method: :post %>
+  <%= button_to "Discard", subscription_path(subscription), method: :delete %>
+</div>

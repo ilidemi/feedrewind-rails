@@ -1,0 +1,60 @@
+<%= link_to "← Dashboard", subscriptions_path %>
+<h1><%= @subscription.name %></h1>
+<div>URL: <a href="<%= @subscription.blog.feed_url %>"><%= @subscription.blog.feed_url %></a></div>
+<div>Private feed:
+  <a
+    data-turbolinks="false"
+    href="<%= SubscriptionsHelper.feed_url(request, @subscription) %>"
+  ><%= SubscriptionsHelper.feed_url(request, @subscription) %></a>
+  <button id="copy_button">Copy</button>
+  <script>
+      document.getElementById("copy_button").addEventListener("click", () => {
+          navigator.clipboard.writeText("<%= SubscriptionsHelper.feed_url(request, @subscription) %>");
+      });
+  </script>
+</div>
+<% total_count = @subscription.subscription_posts.count %>
+<% published_count = @subscription.subscription_posts.group(:is_published).count[true] || 0 %>
+<div>Published: <%= published_count %>/<%= total_count %></div>
+<div>
+  Status:
+  <% if published_count < total_count %>
+    <% if @subscription.is_paused %>
+      Paused
+      <%= button_to "Activate", method: :post, action: :unpause %>
+    <% else %>
+      Active
+      <%= button_to "Pause", method: :post, action: :pause %>
+    <% end %>
+  <% else %>
+    All done
+  <% end %>
+</div>
+<br>
+
+<% if published_count < total_count %>
+  <%= form_tag(
+        { :controller => :subscriptions, :action => :update, :id => @subscription.id },
+        { :method => :put }
+      ) do %>
+    <script>
+        function onValidateSchedule(isValid) {
+            let saveButton = document.getElementById("save");
+            saveButton.disabled = !isValid;
+        }
+    </script>
+    <%= render partial: "schedule", locals: {
+      sun_count: @subscription.schedules.find_by(day_of_week: "sun").count,
+      mon_count: @subscription.schedules.find_by(day_of_week: "mon").count,
+      tue_count: @subscription.schedules.find_by(day_of_week: "tue").count,
+      wed_count: @subscription.schedules.find_by(day_of_week: "wed").count,
+      thu_count: @subscription.schedules.find_by(day_of_week: "thu").count,
+      fri_count: @subscription.schedules.find_by(day_of_week: "fri").count,
+      sat_count: @subscription.schedules.find_by(day_of_week: "sat").count,
+      js_validate_callback: "onValidateSchedule"
+    }
+    %>
+
+    <%= submit_tag "Save", id: "save" %>
+  <% end %>
+<% end %>

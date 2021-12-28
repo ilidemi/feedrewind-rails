@@ -8,21 +8,24 @@ Rails.application.routes.draw do
   resources :users
   resources :sessions, only: [:new, :create, :destroy]
 
-  resources :blogs, only: [:index, :create, :update, :destroy], param: :id
-  get "/blogs/add", to: "onboarding#add"
-  post "/blogs/add", to: "onboarding#add_landing"
-  post "/blogs/discover_feeds", to: "onboarding#discover_feeds"
+  resources :subscriptions, only: [:index, :create, :update, :destroy], param: :id
+  get "/subscriptions/add", to: "onboarding#add"
+  post "/subscriptions/add", to: "onboarding#add_landing"
+  post "/subscriptions/discover_feeds", to: "onboarding#discover_feeds"
 
-  get "/blogs/:id", to: "blogs#show" # Should come after /add so that it doesn't get treated as id
-  get "/blogs/:id/setup", to: "blogs#setup"
-  post "/blogs/:id/submit_progress_times", to: "blogs#submit_progress_times"
-  post "/blogs/:id/posts", to: "blogs#posts" # all js should be post for redirects to work
-  post "/blogs/:id/confirm", to: "blogs#confirm"
-  post "/blogs/:id/mark_wrong", to: "blogs#mark_wrong"
-  post "/blogs/:id/schedule", to: "blogs#schedule"
-  post "/blogs/:id/pause", to: "blogs#pause"
-  post "/blogs/:id/unpause", to: "blogs#unpause"
-  get "/blogs/:id/feed", to: "rss#show"
+  get "/subscriptions/:id", to: "subscriptions#show" # Should come after /add so that it doesn't get treated as id
+  get "/subscriptions/:id/setup", to: "subscriptions#setup"
+  post "/subscriptions/:id/submit_progress_times", to: "subscriptions#submit_progress_times"
+  post "/subscriptions/:id/all_posts", to: "subscriptions#all_posts" # all js should be post for redirects to work
+  post "/subscriptions/:id/confirm", to: "subscriptions#confirm"
+  post "/subscriptions/:id/mark_wrong", to: "subscriptions#mark_wrong"
+  post "/subscriptions/:id/continue_with_wrong", to: "subscriptions#continue_with_wrong"
+  post "/subscriptions/:id/schedule", to: "subscriptions#schedule"
+  post "/subscriptions/:id/pause", to: "subscriptions#pause"
+  post "/subscriptions/:id/unpause", to: "subscriptions#unpause"
+  get "/subscriptions/:id/feed", to: "rss#show"
+
+  get "/blogs/:id/unsupported", to: "blogs#unsupported"
 
   mount ActionCable.server => "/cable"
 end

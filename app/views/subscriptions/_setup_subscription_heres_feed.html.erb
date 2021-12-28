@@ -1,24 +1,27 @@
 Here's your private feed. Add it to your feed reader and you're all set!
 <br>
-<a data-turbolinks="false" href="<%= BlogsHelper.feed_url(request, blog) %>"><%= BlogsHelper.feed_url(request, blog) %></a>
+<a
+  data-turbolinks="false"
+  href="<%= SubscriptionsHelper.feed_url(request, subscription) %>"
+><%= SubscriptionsHelper.feed_url(request, subscription) %></a>
 <button id="copy_button">Copy</button>
 <script>
     document.getElementById("copy_button").addEventListener("click", () => {
-        navigator.clipboard.writeText("<%= BlogsHelper.feed_url(request, blog) %>");
+        navigator.clipboard.writeText("<%= SubscriptionsHelper.feed_url(request, subscription) %>");
     });
 </script>
 
 <br>
 <br>
 <%
-  enabled_days_of_week = Schedule
-    .where(blog_id: blog.id)
+  enabled_days_of_week = subscription
+    .schedules
     .where("count > 0")
     .order(:day_of_week)
     .map(&:day_of_week)
   days_of_week = %w[sun mon tue wed thu fri sat]
   today_index = days_of_week.index(DateService.day_of_week)
-  if blog.is_added_past_midnight
+  if subscription.is_added_past_midnight
     days_of_week_from_next_schedule = days_of_week.rotate(today_index)
   else
     days_of_week_from_next_schedule = days_of_week.rotate((today_index + 1) % 7)
@@ -29,5 +32,5 @@ Here's your private feed. Add it to your feed reader and you're all set!
 %>
 First post will arrive on <%= next_enabled_day_of_week_str %>.
 <br>
-<%= link_to "Manage", blog_path %>
-<%= link_to "Dashboard", blogs_path %>
+<%= link_to "Manage", subscription_path %>
+<%= link_to "Dashboard", subscriptions_path %>

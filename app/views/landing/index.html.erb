@@ -1,20 +1,20 @@
 <h1>Feeduler</h1>
 <% if current_user %>
-  <%= link_to "Dashboard", blogs_path %>
+  <%= link_to "Dashboard", subscriptions_path %>
 <% else %>
   <%= link_to "Sign Up", signup_path %> or
   <%= link_to "Log In", login_path %>
 <% end %>
 <p>Feeduler is great and you should use it!</p>
 Try it out:
-<% if @blog %>
+<% if @subscription %>
   <div>
-    <%= link_to "Continue with #{@blog.name}", BlogsHelper.setup_path(@blog) %>
+    <%= link_to "Continue with #{@subscription.name}", SubscriptionsHelper.setup_path(@subscription) %>
     or
     <%= link_to "discard", "/discard", method: :post %>
   </div>
 <% else %>
-  <%= form_with url: "blogs/add", method: :post do |form| %>
+  <%= form_with url: "subscriptions/add", method: :post do |form| %>
     <div>
       <%= form.url_field :start_url, placeholder: "Feed or blog link" %>
       <%= form.submit "Go" %>

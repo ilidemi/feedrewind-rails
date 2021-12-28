@@ -1,6 +1,0 @@
-<% ordered_posts = blog.posts.sort_by(&:order) %>
-<% ordered_posts.each do |post| %>
-  <div style="margin-top: 0.2em;">
-    <a href="<%= post.link %>"><%= post.title %></a>
-  </div>
-<% end %>

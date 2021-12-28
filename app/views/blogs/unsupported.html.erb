@@ -1,0 +1,19 @@
+<% if @current_user %>
+  <%= link_to "← Dashboard", subscriptions_path %>
+<% else %>
+  <%= link_to "← Main page", root_path %>
+<% end %>
+<h1><%= @blog.name %></h1>
+<p>
+  Feeduler supports over 80% of blogs, but unfortunately not this one.
+</p>
+<p>Would you like to try another blog?</p>
+
+<div style="display: flex; gap: 1em;">
+  <%= link_to "Try another", "/subscriptions/add" %>
+  <% if current_user %>
+    <%= link_to "Go back", "/subscriptions" %>
+  <% else %>
+    <%= link_to "Go back", "/" %>
+  <% end %>
+</div>

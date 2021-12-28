@@ -24,15 +24,24 @@ COMMENT ON EXTENSION pgcrypto IS 'cryptographic functions';
 
 
 --
+-- Name: blog_crawl_vote_value; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.blog_crawl_vote_value AS ENUM (
+    'confirmed',
+    'looks_wrong'
+);
+
+
+--
 -- Name: blog_status; Type: TYPE; Schema: public; Owner: -
 --
 
 CREATE TYPE public.blog_status AS ENUM (
     'crawl_in_progress',
-    'crawled',
-    'confirmed',
-    'live',
     'crawl_failed',
+    'crawled_voting',
+    'crawled_confirmed',
     'crawled_looks_wrong'
 );
 
@@ -49,6 +58,31 @@ CREATE TYPE public.day_of_week AS ENUM (
     'fri',
     'sat',
     'sun'
+);
+
+
+--
+-- Name: old_blog_status; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.old_blog_status AS ENUM (
+    'crawl_in_progress',
+    'crawled',
+    'confirmed',
+    'live',
+    'crawl_failed',
+    'crawled_looks_wrong'
+);
+
+
+--
+-- Name: subscription_status; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.subscription_status AS ENUM (
+    'waiting_for_blog',
+    'setup',
+    'live'
 );
 
 
@@ -73,10 +107,11 @@ CREATE TABLE public.ar_internal_metadata (
 --
 
 CREATE TABLE public.blog_crawl_client_tokens (
-    blog_id bigint NOT NULL,
+    old_blog_id bigint,
     value character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    blog_id bigint NOT NULL
 );
 
 
@@ -85,14 +120,82 @@ CREATE TABLE public.blog_crawl_client_tokens (
 --
 
 CREATE TABLE public.blog_crawl_progresses (
-    blog_id bigint NOT NULL,
+    old_blog_id bigint,
     progress character varying,
     count integer,
     epoch integer NOT NULL,
     epoch_times character varying,
     created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    blog_id bigint NOT NULL
+);
+
+
+--
+-- Name: blog_crawl_votes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_crawl_votes (
+    id bigint NOT NULL,
+    user_id uuid,
+    blog_id bigint NOT NULL,
+    value public.blog_crawl_vote_value NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
 );
+
+
+--
+-- Name: blog_crawl_votes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.blog_crawl_votes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: blog_crawl_votes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.blog_crawl_votes_id_seq OWNED BY public.blog_crawl_votes.id;
+
+
+--
+-- Name: blog_posts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_posts (
+    id bigint NOT NULL,
+    blog_id bigint NOT NULL,
+    index integer NOT NULL,
+    url character varying NOT NULL,
+    title character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: blog_posts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.blog_posts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: blog_posts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.blog_posts_id_seq OWNED BY public.blog_posts.id;
 
 
 --
@@ -101,16 +204,13 @@ CREATE TABLE public.blog_crawl_progresses (
 
 CREATE TABLE public.blogs (
     id bigint NOT NULL,
-    name character varying,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL,
-    url character varying,
-    is_paused boolean,
-    user_id uuid,
+    name character varying NOT NULL,
+    feed_url character varying NOT NULL,
     status public.blog_status NOT NULL,
-    is_added_past_midnight boolean,
-    looks_wrong boolean,
-    discarded_at timestamp without time zone
+    status_updated_at timestamp without time zone NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -139,10 +239,11 @@ ALTER SEQUENCE public.blogs_id_seq OWNED BY public.blogs.id;
 
 CREATE TABLE public.current_rsses (
     id bigint NOT NULL,
-    blog_id bigint NOT NULL,
-    body text,
+    old_blog_id bigint,
+    body text NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    subscription_id bigint NOT NULL
 );
 
 
@@ -205,10 +306,48 @@ ALTER SEQUENCE public.delayed_jobs_id_seq OWNED BY public.delayed_jobs.id;
 
 
 --
--- Name: posts; Type: TABLE; Schema: public; Owner: -
+-- Name: old_blogs; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.posts (
+CREATE TABLE public.old_blogs (
+    id bigint NOT NULL,
+    name character varying,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    url character varying,
+    is_paused boolean,
+    user_id uuid,
+    status public.old_blog_status NOT NULL,
+    is_added_past_midnight boolean,
+    looks_wrong boolean,
+    discarded_at timestamp without time zone
+);
+
+
+--
+-- Name: old_blogs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.old_blogs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: old_blogs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.old_blogs_id_seq OWNED BY public.old_blogs.id;
+
+
+--
+-- Name: old_posts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.old_posts (
     id bigint NOT NULL,
     blog_id bigint NOT NULL,
     link character varying,
@@ -222,10 +361,10 @@ CREATE TABLE public.posts (
 
 
 --
--- Name: posts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: old_posts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.posts_id_seq
+CREATE SEQUENCE public.old_posts_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -234,10 +373,10 @@ CREATE SEQUENCE public.posts_id_seq
 
 
 --
--- Name: posts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: old_posts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.posts_id_seq OWNED BY public.posts.id;
+ALTER SEQUENCE public.old_posts_id_seq OWNED BY public.old_posts.id;
 
 
 --
@@ -246,11 +385,12 @@ ALTER SEQUENCE public.posts_id_seq OWNED BY public.posts.id;
 
 CREATE TABLE public.schedules (
     id bigint NOT NULL,
-    blog_id bigint NOT NULL,
+    old_blog_id bigint,
     day_of_week public.day_of_week NOT NULL,
     count integer NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    subscription_id bigint NOT NULL
 );
 
 
@@ -350,6 +490,77 @@ ALTER SEQUENCE public.start_pages_id_seq OWNED BY public.start_pages.id;
 
 
 --
+-- Name: subscription_posts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.subscription_posts (
+    id bigint NOT NULL,
+    blog_post_id bigint NOT NULL,
+    subscription_id bigint NOT NULL,
+    is_published boolean NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: subscription_posts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.subscription_posts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: subscription_posts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.subscription_posts_id_seq OWNED BY public.subscription_posts.id;
+
+
+--
+-- Name: subscriptions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.subscriptions (
+    id bigint NOT NULL,
+    user_id uuid,
+    blog_id bigint NOT NULL,
+    name character varying NOT NULL,
+    status public.subscription_status NOT NULL,
+    is_paused boolean,
+    is_added_past_midnight boolean,
+    last_post_index integer,
+    discarded_at timestamp without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: subscriptions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.subscriptions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: subscriptions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.subscriptions_id_seq OWNED BY public.subscriptions.id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -361,6 +572,20 @@ CREATE TABLE public.users (
     auth_token character varying,
     id uuid DEFAULT public.gen_random_uuid() NOT NULL
 );
+
+
+--
+-- Name: blog_crawl_votes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_crawl_votes ALTER COLUMN id SET DEFAULT nextval('public.blog_crawl_votes_id_seq'::regclass);
+
+
+--
+-- Name: blog_posts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_posts ALTER COLUMN id SET DEFAULT nextval('public.blog_posts_id_seq'::regclass);
 
 
 --
@@ -385,10 +610,17 @@ ALTER TABLE ONLY public.delayed_jobs ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
--- Name: posts id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: old_blogs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.posts ALTER COLUMN id SET DEFAULT nextval('public.posts_id_seq'::regclass);
+ALTER TABLE ONLY public.old_blogs ALTER COLUMN id SET DEFAULT nextval('public.old_blogs_id_seq'::regclass);
+
+
+--
+-- Name: old_posts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.old_posts ALTER COLUMN id SET DEFAULT nextval('public.old_posts_id_seq'::regclass);
 
 
 --
@@ -410,6 +642,20 @@ ALTER TABLE ONLY public.start_feeds ALTER COLUMN id SET DEFAULT nextval('public.
 --
 
 ALTER TABLE ONLY public.start_pages ALTER COLUMN id SET DEFAULT nextval('public.start_pages_id_seq'::regclass);
+
+
+--
+-- Name: subscription_posts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscription_posts ALTER COLUMN id SET DEFAULT nextval('public.subscription_posts_id_seq'::regclass);
+
+
+--
+-- Name: subscriptions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscriptions ALTER COLUMN id SET DEFAULT nextval('public.subscriptions_id_seq'::regclass);
 
 
 --
@@ -437,6 +683,22 @@ ALTER TABLE ONLY public.blog_crawl_progresses
 
 
 --
+-- Name: blog_crawl_votes blog_crawl_votes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_crawl_votes
+    ADD CONSTRAINT blog_crawl_votes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blog_posts blog_posts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_posts
+    ADD CONSTRAINT blog_posts_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: blogs blogs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -461,11 +723,19 @@ ALTER TABLE ONLY public.delayed_jobs
 
 
 --
--- Name: posts posts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: old_blogs old_blogs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.posts
-    ADD CONSTRAINT posts_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.old_blogs
+    ADD CONSTRAINT old_blogs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: old_posts old_posts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.old_posts
+    ADD CONSTRAINT old_posts_pkey PRIMARY KEY (id);
 
 
 --
@@ -501,6 +771,22 @@ ALTER TABLE ONLY public.start_pages
 
 
 --
+-- Name: subscription_posts subscription_posts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscription_posts
+    ADD CONSTRAINT subscription_posts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: subscriptions subscriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscriptions
+    ADD CONSTRAINT subscriptions_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -516,31 +802,38 @@ CREATE INDEX delayed_jobs_priority ON public.delayed_jobs USING btree (priority,
 
 
 --
--- Name: index_blogs_on_user_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_blogs_on_feed_url_and_version; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_blogs_on_user_id ON public.blogs USING btree (user_id);
-
-
---
--- Name: index_current_rsses_on_blog_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_current_rsses_on_blog_id ON public.current_rsses USING btree (blog_id);
+CREATE UNIQUE INDEX index_blogs_on_feed_url_and_version ON public.blogs USING btree (feed_url, version);
 
 
 --
--- Name: index_posts_on_blog_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_current_rsses_on_old_blog_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_posts_on_blog_id ON public.posts USING btree (blog_id);
+CREATE INDEX index_current_rsses_on_old_blog_id ON public.current_rsses USING btree (old_blog_id);
 
 
 --
--- Name: index_schedules_on_blog_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_old_blogs_on_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_schedules_on_blog_id ON public.schedules USING btree (blog_id);
+CREATE INDEX index_old_blogs_on_user_id ON public.old_blogs USING btree (user_id);
+
+
+--
+-- Name: index_old_posts_on_blog_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_old_posts_on_blog_id ON public.old_posts USING btree (blog_id);
+
+
+--
+-- Name: index_schedules_on_old_blog_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_schedules_on_old_blog_id ON public.schedules USING btree (old_blog_id);
 
 
 --
@@ -548,15 +841,31 @@ CREATE INDEX index_schedules_on_blog_id ON public.schedules USING btree (blog_id
 --
 
 ALTER TABLE ONLY public.schedules
-    ADD CONSTRAINT fk_rails_3274095898 FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
+    ADD CONSTRAINT fk_rails_3274095898 FOREIGN KEY (old_blog_id) REFERENCES public.old_blogs(id);
 
 
 --
--- Name: blogs fk_rails_40ebb3948d; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: old_blogs fk_rails_40ebb3948d; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.blogs
+ALTER TABLE ONLY public.old_blogs
     ADD CONSTRAINT fk_rails_40ebb3948d FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: current_rsses fk_rails_647dccf03a; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.current_rsses
+    ADD CONSTRAINT fk_rails_647dccf03a FOREIGN KEY (subscription_id) REFERENCES public.subscriptions(id);
+
+
+--
+-- Name: blog_crawl_votes fk_rails_6d5d61b810; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_crawl_votes
+    ADD CONSTRAINT fk_rails_6d5d61b810 FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
 
 
 --
@@ -564,7 +873,71 @@ ALTER TABLE ONLY public.blogs
 --
 
 ALTER TABLE ONLY public.blog_crawl_client_tokens
-    ADD CONSTRAINT fk_rails_922e796af4 FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
+    ADD CONSTRAINT fk_rails_922e796af4 FOREIGN KEY (old_blog_id) REFERENCES public.old_blogs(id);
+
+
+--
+-- Name: subscriptions fk_rails_933bdff476; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscriptions
+    ADD CONSTRAINT fk_rails_933bdff476 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: blog_posts fk_rails_9d677c923b; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_posts
+    ADD CONSTRAINT fk_rails_9d677c923b FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
+
+
+--
+-- Name: blog_crawl_votes fk_rails_a04f6fad36; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_crawl_votes
+    ADD CONSTRAINT fk_rails_a04f6fad36 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: schedules fk_rails_b2b9b40998; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schedules
+    ADD CONSTRAINT fk_rails_b2b9b40998 FOREIGN KEY (subscription_id) REFERENCES public.subscriptions(id);
+
+
+--
+-- Name: subscription_posts fk_rails_b5e611fa3d; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscription_posts
+    ADD CONSTRAINT fk_rails_b5e611fa3d FOREIGN KEY (subscription_id) REFERENCES public.subscriptions(id);
+
+
+--
+-- Name: blog_crawl_client_tokens fk_rails_blogs; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_crawl_client_tokens
+    ADD CONSTRAINT fk_rails_blogs FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
+
+
+--
+-- Name: blog_crawl_progresses fk_rails_blogs; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_crawl_progresses
+    ADD CONSTRAINT fk_rails_blogs FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
+
+
+--
+-- Name: subscriptions fk_rails_c6353e971b; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscriptions
+    ADD CONSTRAINT fk_rails_c6353e971b FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
 
 
 --
@@ -572,7 +945,7 @@ ALTER TABLE ONLY public.blog_crawl_client_tokens
 --
 
 ALTER TABLE ONLY public.blog_crawl_progresses
-    ADD CONSTRAINT fk_rails_cbc997d879 FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
+    ADD CONSTRAINT fk_rails_cbc997d879 FOREIGN KEY (old_blog_id) REFERENCES public.old_blogs(id);
 
 
 --
@@ -580,15 +953,23 @@ ALTER TABLE ONLY public.blog_crawl_progresses
 --
 
 ALTER TABLE ONLY public.current_rsses
-    ADD CONSTRAINT fk_rails_d38bb5745b FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
+    ADD CONSTRAINT fk_rails_d38bb5745b FOREIGN KEY (old_blog_id) REFERENCES public.old_blogs(id);
 
 
 --
--- Name: posts fk_rails_dda555d01f; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: subscription_posts fk_rails_d857bf4496; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.posts
-    ADD CONSTRAINT fk_rails_dda555d01f FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
+ALTER TABLE ONLY public.subscription_posts
+    ADD CONSTRAINT fk_rails_d857bf4496 FOREIGN KEY (blog_post_id) REFERENCES public.blog_posts(id);
+
+
+--
+-- Name: old_posts fk_rails_dda555d01f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.old_posts
+    ADD CONSTRAINT fk_rails_dda555d01f FOREIGN KEY (blog_id) REFERENCES public.old_blogs(id);
 
 
 --
@@ -649,6 +1030,8 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20211025210217'),
 ('20211207204405'),
 ('20211207205421'),
-('20211208011458');
+('20211208011458'),
+('20211209232909'),
+('20211222010540');
 
 

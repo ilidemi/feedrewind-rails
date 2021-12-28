@@ -1,0 +1,7 @@
+<div>
+  Feeduler couldn't discover posts in this blog. We support over 80% of blogs, but unfortunately not this one.
+</div>
+<div style="display: flex; gap: 1em;">
+  <%= button_to "Try another", subscription_path(subscription), method: :delete, params: { redirect: :add } %>
+  <%= button_to "Discard", subscription_path(subscription), method: :delete %>
+</div>

@@ -1,0 +1,9 @@
+<div>
+  This blog has <%= subscription.blog.blog_posts.length %> posts (oldest to newest):
+  <br>
+
+  <%= render partial: "posts", locals: { subscription: subscription } %>
+
+  <br>
+  <%= link_to "Continue", signup_path %>
+</div>

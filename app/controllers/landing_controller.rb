@@ -1,14 +1,14 @@
 class LandingController < ApplicationController
   def index
-    if cookies[:unfinished_blog]
-      @blog = Blog.find_by(id: cookies[:unfinished_blog], user_id: nil)
+    if cookies[:anonymous_subscription]
+      @subscription = Subscription.find_by(id: cookies[:anonymous_subscription], user_id: nil)
     else
-      @blog = nil
+      @subscription = nil
     end
   end
 
   def discard
-    cookies.delete(:unfinished_blog)
+    cookies.delete(:anonymous_subscription)
     redirect_to action: "index"
   end
 end

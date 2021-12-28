@@ -7,19 +7,19 @@ class SessionsController < ApplicationController
     if user && user.authenticate(params[:password])
       session[:user_id] = user.id
 
-      if cookies[:unfinished_blog]
-        blog = Blog.find_by(id: cookies[:unfinished_blog], user_id: nil)
-        cookies.delete(:unfinished_blog)
+      if cookies[:anonymous_subscription]
+        subscription = Subscription.find_by(id: cookies[:anonymous_subscription], user_id: nil)
+        cookies.delete(:anonymous_subscription)
       else
-        blog = nil
+        subscription = nil
       end
 
-      if blog
-        blog.user_id = user.id
-        blog.save!
-        redirect_to BlogsHelper.setup_path(blog), notice: "Logged in!"
+      if subscription
+        subscription.user_id = user.id
+        subscription.save!
+        redirect_to SubscriptionsHelper.setup_path(subscription), notice: "Logged in!"
       else
-        redirect_to blogs_path, notice: "Logged in!"
+        redirect_to subscriptions_path, notice: "Logged in!"
       end
     else
       flash.now.alert = "Email or password is invalid"

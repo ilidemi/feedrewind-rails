@@ -9,19 +9,19 @@ class UsersController < ApplicationController
     if @user.save
       session[:user_id] = @user.id
 
-      if cookies[:unfinished_blog]
-        blog = Blog.find_by(id: cookies[:unfinished_blog], user_id: nil)
-        cookies.delete(:unfinished_blog)
+      if cookies[:anonymous_subscription]
+        subscription = Subscription.find_by(id: cookies[:anonymous_subscription], user_id: nil)
+        cookies.delete(:anonymous_subscription)
       else
-        blog = nil
+        subscription = nil
       end
 
-      if blog
-        blog.user_id = @user.id
-        blog.save!
-        redirect_to BlogsHelper.setup_path(blog), notice: "Thank you for signing up!"
+      if subscription
+        subscription.user_id = @user.id
+        subscription.save!
+        redirect_to SubscriptionsHelper.setup_path(subscription), notice: "Thank you for signing up!"
       else
-        redirect_to blogs_path, notice: "Thank you for signing up!"
+        redirect_to subscriptions_path, notice: "Thank you for signing up!"
       end
     else
       render :new

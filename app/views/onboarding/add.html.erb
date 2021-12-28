@@ -1,10 +1,10 @@
 <% if @current_user %>
-  <%= link_to "← Dashboard", blogs_path %>
+  <%= link_to "← Dashboard", subscriptions_path %>
 <% else %>
   <%= link_to "← Main page", root_path %>
 <% end %>
 <h1>Add Blog</h1>
-<%= form_with url: "/blogs/discover_feeds", method: :post, local: false do |form| %>
+<%= form_with url: "/subscriptions/discover_feeds", method: :post, local: false do |form| %>
   <div>
     <%= form.url_field :start_url, value: @start_url, placeholder: "Feed or blog link" %>
     <%= form.submit "Go" %>
