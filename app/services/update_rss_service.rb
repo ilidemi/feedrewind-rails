@@ -24,7 +24,7 @@ module UpdateRssService
       .limit(to_publish_count)
     blog_posts_to_publish = subscription_blog_posts_to_publish.map(&:blog_post)
     blog_posts_last_published = subscription_blog_posts
-      .where(is_published: false)
+      .where(is_published: true)
       .order("blog_posts.index desc")
       .limit(POSTS_IN_RSS - blog_posts_to_publish.length)
       .map(&:blog_post)
@@ -45,7 +45,7 @@ module UpdateRssService
         subscription_post.save!
       end
 
-      current_rss = CurrentRss.find_or_initialize_by(blog_id: blog.id)
+      current_rss = CurrentRss.find_or_initialize_by(subscription_id: subscription_id)
       current_rss.body = rss_text
       current_rss.save!
     end
