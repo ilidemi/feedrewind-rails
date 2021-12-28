@@ -1,4 +1,5 @@
-require "ox"
+require 'htmlentities'
+require 'ox'
 
 module UpdateRssService
   POSTS_IN_RSS = 15
@@ -65,7 +66,7 @@ module UpdateRssService
     channel = Ox::Element.new("channel")
 
     channel_title = Ox::Element.new("title")
-    channel_title << "#{subscription.name} · Feeduler"
+    channel_title << "#{HTMLEntities.new.encode(subscription.name)} · Feeduler"
     channel << channel_title
 
     blog_posts_to_publish.to_enum.reverse_each do |blog_post|
@@ -89,11 +90,11 @@ module UpdateRssService
     item = Ox::Element.new("item")
 
     post_title = Ox::Element.new("title")
-    post_title << blog_post.title
+    post_title << HTMLEntities.new.encode(blog_post.title)
     item << post_title
 
     link = Ox::Element.new("link")
-    link << blog_post.url
+    link << HTMLEntities.new.encode(blog_post.url)
     item << link
 
     subscription_url = SubscriptionsHelper.subscription_url(subscription)
@@ -108,7 +109,7 @@ module UpdateRssService
     item = Ox::Element.new("item")
 
     post_title = Ox::Element.new("title")
-    post_title << "#{subscription.name} added to Feeduler"
+    post_title << "#{HTMLEntities.new.encode(subscription.name)} added to Feeduler"
     item << post_title
 
     subscription_url = SubscriptionsHelper.subscription_url(subscription)
