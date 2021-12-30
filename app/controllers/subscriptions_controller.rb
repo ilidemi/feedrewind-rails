@@ -161,7 +161,7 @@ class SubscriptionsController < ApplicationController
 
     blog = subscription.blog
     unless subscription.status == "waiting_for_blog" &&
-      %w[crawled_voting crawled_confirmed crawled_looks_wrong].include?(blog.status)
+      %w[crawled_voting crawled_confirmed crawled_looks_wrong manually_inserted].include?(blog.status)
 
       return redirect_to action: "setup", id: subscription.id
     end
@@ -204,7 +204,7 @@ class SubscriptionsController < ApplicationController
 
     blog = @subscription.blog
     unless @subscription.status == "waiting_for_blog" &&
-      %w[crawled_voting crawled_confirmed crawled_looks_wrong].include?(blog.status)
+      %w[crawled_voting crawled_confirmed crawled_looks_wrong manually_inserted].include?(blog.status)
 
       return redirect_to action: "setup", id: @subscription.id
     end
@@ -232,7 +232,7 @@ class SubscriptionsController < ApplicationController
 
     blog = @subscription.blog
     if @subscription.status == "waiting_for_blog" &&
-      %w[crawled_voting crawled_confirmed crawled_looks_wrong].include?(blog.status)
+      %w[crawled_voting crawled_confirmed crawled_looks_wrong manually_inserted].include?(blog.status)
 
       @subscription.status = "setup"
       @subscription.save!

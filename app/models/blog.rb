@@ -11,8 +11,8 @@ class Blog < ApplicationRecord
   def destroy_recursively!
     Blog.transaction do
       Blog.uncached do
-        blog_crawl_client_token.destroy!
-        blog_crawl_progress.destroy!
+        blog_crawl_client_token.destroy! if blog_crawl_client_token
+        blog_crawl_progress.destroy! if blog_crawl_progress
         blog_crawl_votes.destroy_all
 
         subscriptions = Subscription.with_discarded.where(blog_id: id)

@@ -83,4 +83,6 @@ Rails.application.configure do
   config.logger = ActiveSupport::TaggedLogging.new(logger)
   config.log_level = :info
   config.log_tags = [ user_id, session_id, :request_id, :referer ]
+
+  config.admin_user_id = "96e1c115-d862-4ff7-be4f-2e318376b295"
 end

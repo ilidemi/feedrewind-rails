@@ -18,7 +18,9 @@
       %>
     <% elsif @subscription.blog.status == "crawl_failed" %>
       <%= render partial: "setup_blog_failed", locals: { subscription: @subscription } %>
-    <% elsif %w[crawled_voting crawled_confirmed crawled_looks_wrong].include?(@subscription.blog.status) %>
+    <% elsif %w[crawled_voting crawled_confirmed crawled_looks_wrong manually_inserted].include?(
+      @subscription.blog.status
+    ) %>
       <%= render partial: "setup_blog_confirm", locals: { subscription: @subscription } %>
     <% else %>
       <%= raise "Unexpected blog status: #{@subscription.blog.status}" %>

@@ -11,6 +11,12 @@ class ApplicationController < ActionController::Base
     redirect_to login_path, alert: "Not authorized" if current_user.nil?
   end
 
+  def authorize_admin
+    unless current_user.id == Rails.configuration.admin_user_id
+      raise ActionController::RoutingError.new('Not Found')
+    end
+  end
+
   def fill_current_user
     current_user
   end
@@ -46,12 +52,12 @@ class ApplicationController < ActionController::Base
       end
     end
 
-    if blog.status == "crawled_confirmed"
+    if %w[crawled_confirmed manually_inserted].include?(blog.status)
       Subscription.transaction do
         subscription = Subscription.create!(
           user_id: current_user&.id,
           blog_id: blog.id,
-          name: name,
+          name: blog.name,
           status: "setup"
         )
 

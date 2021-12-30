@@ -1,0 +1,22 @@
+<h1>Admin: Add Blog</h1>
+
+<%= form_with url: "/admin/post_blog", method: :post do |form| %>
+  <%= form.label :name %>
+  <%= form.text_field :name %>
+  <br>
+
+  <%= form.label :feed_url %>
+  <%= form.url_field :feed_url %>
+  <br>
+
+  <%= form.label :direction %>
+  <%= form.select :direction, %w[newest_first oldest_first], selected: "newest_first" %>
+  <br>
+
+  <%= form.label :posts %> (one per line, https://post-1 Post 1)
+  <br>
+  <%= form.text_area :posts, rows: 20, cols: 80 %>
+  <br>
+
+  <%= form.submit "Save" %>
+<% end %>
