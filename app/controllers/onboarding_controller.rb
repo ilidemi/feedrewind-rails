@@ -62,11 +62,11 @@ class OnboardingController < ApplicationController
       )
       start_feed.save!
 
-      subscription_or_blog_looks_wrong = create_subscription(
+      subscription_or_blog_not_supported = create_subscription(
         nil, start_feed.id, start_feed.final_url, discover_feeds_result.start_feed.title, user
       )
 
-      subscription_or_blog_looks_wrong
+      subscription_or_blog_not_supported
     else
       start_page = StartPage.new(
         url: discover_feeds_result.start_page.url,
