@@ -118,5 +118,5 @@ Rails.application.configure do
   # config.active_record.database_resolver = ActiveRecord::Middleware::DatabaseSelector::Resolver
   # config.active_record.database_resolver_context = ActiveRecord::Middleware::DatabaseSelector::Resolver::Session
 
-  config.admin_user_id = "0f3d85b2-fdff-47d1-899e-6ac37e19d1ee"
+  config.admin_user_id = "ee2cbac1-ecd7-4eee-8d22-632f35073d75"
 end
