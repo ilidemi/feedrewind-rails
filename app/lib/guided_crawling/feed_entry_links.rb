@@ -7,7 +7,7 @@ class FeedEntryLinks
     @is_order_certain = is_order_certain
   end
 
-  attr_reader :length, :is_order_certain
+  attr_reader :link_buckets, :length, :is_order_certain
 
   def self.from_links_dates(links, dates)
     if dates
@@ -141,26 +141,48 @@ class FeedEntryLinks
     return false unless start_bucket_index
 
     start_bucket = @link_buckets[start_bucket_index]
-    seq_offset = 1
+    start_bucket_matching_links = []
+    seq_offset = 0
     loop do
       break unless seq_offset < seq_curis.length
-      break unless start_bucket.any? do |link|
+      matching_link = start_bucket.find do |link|
         canonical_uri_equal?(link.curi, seq_curis[seq_offset], curi_eq_cfg)
       end
+      break unless matching_link
 
       seq_offset += 1
+      start_bucket_matching_links << matching_link
     end
 
     prefix_length =
       @link_buckets[...start_bucket_index].map(&:length).sum +
         (start_bucket.length - seq_offset)
 
-    is_match = subsequence_match(seq_curis[seq_offset..], prefix_length + seq_offset, curi_eq_cfg)
-    if is_match
-      [is_match, prefix_length]
+    matching_links_except_start_bucket = subsequence_match(
+      seq_curis[seq_offset..], prefix_length + seq_offset, curi_eq_cfg
+    )
+    if matching_links_except_start_bucket
+      matching_links = start_bucket_matching_links + matching_links_except_start_bucket
+      [matching_links, prefix_length]
     else
-      [false, nil]
+      [nil, nil]
     end
+  end
+
+  def except(curis_set)
+    new_link_buckets = []
+    @link_buckets.each do |link_bucket|
+      new_link_bucket = []
+      link_bucket.each do |link|
+        next if curis_set.include?(link.curi)
+
+        new_link_bucket << link
+      end
+
+      new_link_buckets << new_link_bucket unless new_link_bucket.empty?
+    end
+
+    FeedEntryLinks.new(new_link_buckets, @is_order_certain)
   end
 
   def to_a

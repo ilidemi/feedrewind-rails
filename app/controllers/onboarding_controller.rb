@@ -62,9 +62,10 @@ class OnboardingController < ApplicationController
       )
       start_feed.save!
 
-      subscription_or_blog_not_supported = create_subscription(
-        nil, start_feed.id, start_feed.final_url, discover_feeds_result.start_feed.title, user
+      updated_blog = Blog::create_or_update(
+        nil, start_feed.id, start_feed.final_url, discover_feeds_result.start_feed.title
       )
+      subscription_or_blog_not_supported = Subscription::create_for_blog(updated_blog, user)
 
       subscription_or_blog_not_supported
     else

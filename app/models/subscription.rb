@@ -1,9 +1,5 @@
 class Subscription < ApplicationRecord
-  include RandomId
-
-  default_scope { where(discarded_at: nil) }
-  scope :discarded, -> { unscoped.where.not(discarded_at: nil) }
-  scope :with_discarded, -> { unscoped }
+  include RandomId, Discardable
 
   belongs_to :user, optional: true
   belongs_to :blog
@@ -11,32 +7,37 @@ class Subscription < ApplicationRecord
   has_many :schedules, dependent: :destroy
   has_one :current_rss, dependent: :destroy
 
-  def discarded?
-    self.discarded_at.present?
-  end
+  BlogNotSupported = Struct.new(:blog)
 
-  def discard!
-    return false if discarded?
-    update_attribute(:discarded_at, Time.current)
-  end
+  def Subscription::create_for_blog(blog, current_user)
+    if %w[crawled_confirmed manually_inserted].include?(blog.status)
+      Subscription.transaction do
+        subscription = Subscription.create!(
+          user_id: current_user&.id,
+          blog_id: blog.id,
+          name: blog.name,
+          status: "setup"
+        )
 
-  def destroy
-    raise "Soft delete is enabled. Use .discard or .destroy_discarded"
-  end
+        blog.blog_posts.each do |blog_post|
+          SubscriptionPost.create!(
+            subscription_id: subscription.id,
+            blog_post_id: blog_post.id,
+            is_published: false
+          )
+        end
 
-  def destroy!
-    raise "Soft delete is enabled. Use .discard! or .destroy_discarded!"
-  end
-
-  def destroy_discarded
-    return false unless discarded?
-
-    method(:destroy).super_method.call
-  end
-
-  def destroy_discarded!
-    raise ActiveRecord::RecordNotDestroyed.new unless discarded?
-
-    method(:destroy).super_method.call
+        subscription
+      end
+    elsif %w[crawl_failed crawled_looks_wrong].include?(blog.status)
+      BlogNotSupported.new(blog)
+    else
+      Subscription.create!(
+        user_id: current_user&.id,
+        blog_id: blog.id,
+        name: blog.name,
+        status: "waiting_for_blog"
+      )
+    end
   end
 end

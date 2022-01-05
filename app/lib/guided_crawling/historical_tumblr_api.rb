@@ -3,6 +3,10 @@ require_relative 'canonical_link'
 require_relative 'historical_common'
 require_relative 'util'
 
+TumblrHistoricalResult = Struct.new(
+  :main_link, :pattern, :links, :count, :extra, keyword_init: true
+)
+
 def get_tumblr_api_historical(hostname, crawl_ctx, http_client, progress_logger, logger)
   logger.info("Get Tumblr historical start")
   api_key = "REDACTED_TUMBLR_API_KEY"
@@ -73,7 +77,7 @@ def get_tumblr_api_historical(hostname, crawl_ctx, http_client, progress_logger,
   raise "Tumblr posts are not sorted" unless are_timestamps_sorted
 
   logger.info("Get Tumblr historical finish")
-  HistoricalResult.new(
+  TumblrHistoricalResult.new(
     main_link: blog_link,
     pattern: "tumblr",
     links: links,

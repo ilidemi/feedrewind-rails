@@ -18,5 +18,14 @@
   <%= form.text_area :posts, rows: 20, cols: 80 %>
   <br>
 
+  <%= form.label :same_hosts %> (one per line)
+  <br>
+  <%= form.text_area :same_hosts %>
+  <br>
+
+  <%= form.label :expect_tumblr_paths %>
+  <%= form.check_box :expect_tumblr_paths %>
+  <br>
+
   <%= form.submit "Save" %>
 <% end %>

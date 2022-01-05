@@ -540,8 +540,10 @@ def try_extract_sorted_2xpaths(
     # In 1+*(*(*)) sorted links are deduped to pick the oldest occurrence of each, haven't had a real example
     # here
 
-    is_suffix, target_prefix_length = feed_entry_links.sequence_is_suffix?(suffix_curis, curi_eq_cfg)
-    next unless is_suffix
+    suffix_matching_links, target_prefix_length = feed_entry_links.sequence_is_suffix?(
+      suffix_curis, curi_eq_cfg
+    )
+    next unless suffix_matching_links
     next unless target_prefix_length + suffix_links.length >= feed_entry_links.length
     next unless feed_prefix_xpaths_by_length.key?(target_prefix_length)
 

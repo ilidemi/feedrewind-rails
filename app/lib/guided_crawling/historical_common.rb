@@ -1,8 +1,6 @@
 require 'set'
 require_relative 'title'
 
-HistoricalResult = Struct.new(:main_link, :pattern, :links, :count, :extra, keyword_init: true)
-
 def get_extractions_by_masked_xpath_by_star_count(
   page_links, feed_entry_links, feed_entry_curis_titles_map, curi_eq_cfg, almost_match_threshold, logger
 )

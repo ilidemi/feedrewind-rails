@@ -17,6 +17,9 @@ require_relative 'util'
 
 GuidedCrawlResult = Struct.new(:feed_result, :start_url, :curi_eq_cfg, :historical_result, :historical_error)
 FeedResult = Struct.new(:feed_url, :feed_links, :feed_matching_titles, :feed_matching_titles_status)
+HistoricalResult = Struct.new(
+  :main_link, :pattern, :links, :count, :discarded_feed_entry_urls, :extra, keyword_init: true
+)
 
 class GuidedCrawlError < StandardError
   def initialize(message, partial_result)
@@ -120,14 +123,37 @@ def guided_crawl(
     if parsed_feed.entry_links.length <= 100
       begin
         if parsed_feed.generator != :tumblr
-          historical_result = guided_crawl_historical(
+          crawl_historical_result = guided_crawl_historical(
             start_page, parsed_feed.entry_links, feed_entry_curis_titles_map, parsed_feed.generator,
             crawl_ctx, curi_eq_cfg, http_client, puppeteer_client, progress_logger, logger
           )
         else
-          historical_result = get_tumblr_api_historical(
+          crawl_historical_result = get_tumblr_api_historical(
             parsed_feed.root_link.uri.hostname, crawl_ctx, http_client, progress_logger, logger
           )
+        end
+
+        if crawl_historical_result
+          historical_curis_set = crawl_historical_result
+            .links
+            .map(&:curi)
+            .to_canonical_uri_set(curi_eq_cfg)
+          discarded_feed_entry_urls = parsed_feed
+            .entry_links
+            .to_a
+            .filter { |entry_link| !historical_curis_set.include?(entry_link.curi) }
+            .map(&:url)
+
+          historical_result = HistoricalResult.new(
+            main_link: crawl_historical_result.main_link,
+            pattern: crawl_historical_result.pattern,
+            links: crawl_historical_result.links,
+            count: crawl_historical_result.count,
+            discarded_feed_entry_urls: discarded_feed_entry_urls,
+            extra: crawl_historical_result.extra
+          )
+        else
+          historical_result = nil
         end
       rescue => e
         historical_result = nil
@@ -140,6 +166,7 @@ def guided_crawl(
         pattern: "long_feed",
         links: parsed_feed.entry_links.to_a,
         count: parsed_feed.entry_links.length,
+        discarded_feed_entry_urls: [],
         extra: ""
       )
     end

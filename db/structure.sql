@@ -104,6 +104,38 @@ CREATE TABLE public.ar_internal_metadata (
 
 
 --
+-- Name: blog_canonical_equality_configs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_canonical_equality_configs (
+    blog_id bigint NOT NULL,
+    same_hosts text[],
+    expect_tumblr_paths boolean NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: blog_canonical_equality_configs_blog_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.blog_canonical_equality_configs_blog_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: blog_canonical_equality_configs_blog_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.blog_canonical_equality_configs_blog_id_seq OWNED BY public.blog_canonical_equality_configs.blog_id;
+
+
+--
 -- Name: blog_crawl_client_tokens; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -161,6 +193,68 @@ CREATE SEQUENCE public.blog_crawl_votes_id_seq
 --
 
 ALTER SEQUENCE public.blog_crawl_votes_id_seq OWNED BY public.blog_crawl_votes.id;
+
+
+--
+-- Name: blog_discarded_feed_entries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_discarded_feed_entries (
+    id bigint NOT NULL,
+    blog_id bigint NOT NULL,
+    url character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: blog_discarded_feed_entries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.blog_discarded_feed_entries_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: blog_discarded_feed_entries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.blog_discarded_feed_entries_id_seq OWNED BY public.blog_discarded_feed_entries.id;
+
+
+--
+-- Name: blog_post_locks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_post_locks (
+    blog_id bigint NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: blog_post_locks_blog_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.blog_post_locks_blog_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: blog_post_locks_blog_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.blog_post_locks_blog_id_seq OWNED BY public.blog_post_locks.blog_id;
 
 
 --
@@ -498,10 +592,31 @@ CREATE TABLE public.users (
 
 
 --
+-- Name: blog_canonical_equality_configs blog_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_canonical_equality_configs ALTER COLUMN blog_id SET DEFAULT nextval('public.blog_canonical_equality_configs_blog_id_seq'::regclass);
+
+
+--
 -- Name: blog_crawl_votes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.blog_crawl_votes ALTER COLUMN id SET DEFAULT nextval('public.blog_crawl_votes_id_seq'::regclass);
+
+
+--
+-- Name: blog_discarded_feed_entries id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_discarded_feed_entries ALTER COLUMN id SET DEFAULT nextval('public.blog_discarded_feed_entries_id_seq'::regclass);
+
+
+--
+-- Name: blog_post_locks blog_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_locks ALTER COLUMN blog_id SET DEFAULT nextval('public.blog_post_locks_blog_id_seq'::regclass);
 
 
 --
@@ -576,6 +691,14 @@ ALTER TABLE ONLY public.ar_internal_metadata
 
 
 --
+-- Name: blog_canonical_equality_configs blog_canonical_equality_configs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_canonical_equality_configs
+    ADD CONSTRAINT blog_canonical_equality_configs_pkey PRIMARY KEY (blog_id);
+
+
+--
 -- Name: blog_crawl_client_tokens blog_crawl_client_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -597,6 +720,22 @@ ALTER TABLE ONLY public.blog_crawl_progresses
 
 ALTER TABLE ONLY public.blog_crawl_votes
     ADD CONSTRAINT blog_crawl_votes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blog_discarded_feed_entries blog_discarded_feed_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_discarded_feed_entries
+    ADD CONSTRAINT blog_discarded_feed_entries_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blog_post_locks blog_post_locks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_locks
+    ADD CONSTRAINT blog_post_locks_pkey PRIMARY KEY (blog_id);
 
 
 --
@@ -718,11 +857,27 @@ ALTER TABLE ONLY public.blog_crawl_votes
 
 
 --
+-- Name: blog_discarded_feed_entries fk_rails_76729800cc; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_discarded_feed_entries
+    ADD CONSTRAINT fk_rails_76729800cc FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
+
+
+--
 -- Name: subscriptions fk_rails_933bdff476; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.subscriptions
     ADD CONSTRAINT fk_rails_933bdff476 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: blog_canonical_equality_configs fk_rails_9b3fd3910a; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_canonical_equality_configs
+    ADD CONSTRAINT fk_rails_9b3fd3910a FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
 
 
 --
@@ -771,6 +926,14 @@ ALTER TABLE ONLY public.blog_crawl_client_tokens
 
 ALTER TABLE ONLY public.blog_crawl_progresses
     ADD CONSTRAINT fk_rails_blogs FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
+
+
+--
+-- Name: blog_post_locks fk_rails_c1a166e65f; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_locks
+    ADD CONSTRAINT fk_rails_c1a166e65f FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
 
 
 --
@@ -851,6 +1014,9 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20211209232909'),
 ('20211222010540'),
 ('20211230004345'),
-('20211230014420');
+('20211230014420'),
+('20220103221937'),
+('20220105004242'),
+('20220105210334');
 
 

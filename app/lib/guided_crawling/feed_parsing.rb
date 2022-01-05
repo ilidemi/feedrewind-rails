@@ -5,6 +5,7 @@ require 'set'
 require_relative 'canonical_link'
 require_relative 'feed_entry_links'
 require_relative 'title'
+require_relative 'util'
 
 def is_feed(page_content, logger)
   return false if page_content.nil?
@@ -204,6 +205,7 @@ def parse_feed(feed_content, fetch_uri, logger)
   logger.info("Feed entries: #{entry_links.length}")
   logger.info("Feed entry titles present: #{entry_title_count}")
   logger.info("Feed entry titles needed HTML decoding: #{entry_title_needs_decoding_count}")
+  logger.info("Feed entry order certain: #{entry_links.is_order_certain}")
   ParsedFeed.new(normalized_feed_title, root_link, entry_links, generator)
 end
 

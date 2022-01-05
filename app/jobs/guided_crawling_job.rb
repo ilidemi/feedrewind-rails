@@ -38,19 +38,16 @@ class GuidedCrawlingJob < ApplicationJob
 
       if guided_crawl_result&.historical_result
         Rails.logger.info("Guided crawling job succeeded, saving blog")
-        Blog.transaction do
-          blog = Blog.find(blog_id)
-          posts_count = guided_crawl_result.historical_result.links.length
-          guided_crawl_result.historical_result.links.each_with_index do |link, post_index|
-            blog.blog_posts.new(
-              url: link.url,
-              index: posts_count - post_index - 1,
-              title: link.title.value,
-            )
-          end
-          blog.status = "crawled_voting"
-          blog.save!
+        urls_titles = guided_crawl_result.historical_result.links.map do |link|
+          { url: link.url, title: link.title.value }
         end
+        curi_eq_cfg_hash = {
+          same_hosts: guided_crawl_result.curi_eq_cfg.same_hosts.to_a,
+          expect_tumblr_paths: guided_crawl_result.curi_eq_cfg.expect_tumblr_paths
+        }
+        discarded_feed_entry_urls = guided_crawl_result.historical_result.discarded_feed_entry_urls
+        blog = Blog.find(blog_id)
+        blog.init_crawled(urls_titles, discarded_feed_entry_urls, curi_eq_cfg_hash)
       else
         Rails.logger.info("Historical links not found")
         Blog.transaction do

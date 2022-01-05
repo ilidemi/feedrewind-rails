@@ -65,6 +65,19 @@ def discover_feeds_at_url(start_url, crawl_ctx, http_client, logger)
   end
 end
 
+def fetch_feed_at_url(feed_url, crawl_ctx, http_client, logger)
+  mock_progress_logger = ProgressLogger.new(MockProgressSaver.new(logger))
+
+  feed_link = to_canonical_link(feed_url, logger)
+  raise "Bad feed url: #{feed_url}" if feed_link.nil?
+
+  crawl_result = crawl_request(feed_link, true, crawl_ctx, http_client, mock_progress_logger, logger)
+  raise "Unexpected crawl result: #{crawl_result}" unless crawl_result.is_a?(Page) && crawl_result.content
+  raise "Page is not a feed: #{crawl_result}" unless is_feed(crawl_result.content, logger)
+
+  parse_feed(crawl_result.content, feed_link.uri, logger)
+end
+
 def get_start_feed(title, page, link, logger)
   begin
     parsed_feed = parse_feed(page.content, link.uri, logger)
@@ -75,7 +88,7 @@ def get_start_feed(title, page, link, logger)
     end
     return DiscoveredStartFeed.new(feed_title, link.url, page.fetch_uri.to_s, page.content)
   rescue => e
-    logger.info("Extract feed links exception")
+    logger.info("Parse feed exception")
     print_nice_error(e).each do |line|
       logger.info(line)
     end

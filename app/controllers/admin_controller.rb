@@ -1,3 +1,7 @@
+require_relative '../lib/guided_crawling/feed_discovery'
+require_relative '../lib/guided_crawling/canonical_link'
+require_relative '../lib/guided_crawling/crawling'
+
 class AdminController < ApplicationController
   before_action :authorize_admin
 
@@ -16,7 +20,7 @@ class AdminController < ApplicationController
       direction = params[:direction]
 
       posts_text = params[:posts]
-      post_lines = posts_text.split("\n")
+      post_lines = posts_text.split("\n").map(&:strip)
       post_lines.each do |post_line|
         unless %w[http:// https://].any? { |prefix| post_line.start_with?(prefix) }
           raise "Line doesn't start with a full url: #{post_line}"
@@ -26,8 +30,35 @@ class AdminController < ApplicationController
         end
       end
       post_lines.reverse! if direction == "newest_first"
+      post_urls_titles = post_lines.map do |line|
+        url, _, title = line.partition(" ")
+        { url: url, title: title }
+      end
+
+      same_hosts = params[:same_hosts].split("\n").map(&:strip)
+      expect_tumblr_paths = params[:expect_tumblr_paths]
+      curi_eq_cfg = CanonicalEqualityConfig.new(same_hosts.to_set, expect_tumblr_paths)
+
+      crawl_ctx = CrawlContext.new
+      http_client = HttpClient.new(false)
+      parsed_feed = fetch_feed_at_url(feed_url, crawl_ctx, http_client, Rails.logger)
+      post_curis_set = post_urls_titles
+        .map { |url_title| to_canonical_link(url_title[:url], Rails.logger) }
+        .map(&:curi)
+        .to_canonical_uri_set(curi_eq_cfg)
+      discarded_feed_entry_urls = parsed_feed
+        .entry_links
+        .to_a
+        .filter { |entry_link| !post_curis_set.include?(entry_link.curi) }
+        .map(&:url)
 
       Blog.transaction do
+        old_blog = Blog.find_by(feed_url: feed_url, version: Blog::LATEST_VERSION)
+        if old_blog
+          old_blog.version = Blog::get_downgrade_version(feed_url)
+          old_blog.save!
+        end
+
         blog = Blog.create!(
           name: name,
           feed_url: feed_url,
@@ -36,13 +67,27 @@ class AdminController < ApplicationController
           version: Blog::LATEST_VERSION
         )
 
-        post_lines.each_with_index do |line, index|
-          post_url, _, post_title = line.partition(" ")
+        post_urls_titles.each_with_index do |url_title, index|
           BlogPost.create!(
             blog_id: blog.id,
             index: index,
-            url: post_url,
-            title: post_title
+            url: url_title[:url],
+            title: url_title[:title]
+          )
+        end
+
+        BlogPostLock.create!(blog_id: blog.id)
+
+        BlogCanonicalEqualityConfig.create!(
+          blog_id: blog.id,
+          same_hosts: same_hosts,
+          expect_tumblr_paths: expect_tumblr_paths
+        )
+
+        discarded_feed_entry_urls.each do |url|
+          BlogDiscardedFeedEntry.create!(
+            blog_id: blog.id,
+            url: url
           )
         end
 
