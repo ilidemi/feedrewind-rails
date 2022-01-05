@@ -551,7 +551,6 @@ CREATE TABLE public.subscriptions (
     status public.subscription_status NOT NULL,
     is_paused boolean,
     is_added_past_midnight boolean,
-    last_post_index integer,
     discarded_at timestamp without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
@@ -1017,6 +1016,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20211230014420'),
 ('20220103221937'),
 ('20220105004242'),
-('20220105210334');
+('20220105210334'),
+('20220105233450');
 
 

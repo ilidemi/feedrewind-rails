@@ -12,14 +12,12 @@ module UpdateRssService
     current_rss.save!
   end
 
-  def UpdateRssService.update_rss(subscription_id, to_publish_count)
-    subscription = Subscription.find(subscription_id)
+  def UpdateRssService.update_rss(subscription, to_publish_count)
     subscription_blog_posts = subscription
       .subscription_posts
       .includes(:blog_post)
     subscription_blog_posts_to_publish = subscription_blog_posts
       .where(is_published: false)
-      .where(["blog_posts.index <= ?", subscription.last_post_index])
       .order("blog_posts.index asc")
       .limit(to_publish_count)
     blog_posts_to_publish = subscription_blog_posts_to_publish.map(&:blog_post)
@@ -45,7 +43,7 @@ module UpdateRssService
         subscription_post.save!
       end
 
-      current_rss = CurrentRss.find_or_initialize_by(subscription_id: subscription_id)
+      current_rss = CurrentRss.find_or_initialize_by(subscription_id: subscription.id)
       current_rss.body = rss_text
       current_rss.save!
     end
