@@ -23,6 +23,11 @@ module SubscriptionsHelper
     "/subscriptions/#{subscription.id}/schedule"
   end
 
+  def SubscriptionsHelper.subscription_add_url
+    # TODO: this should become feeduler.com
+    "https://rss-catchup.herokuapp.com/subscriptions/add"
+  end
+
   def SubscriptionsHelper.subscription_url(subscription)
     # TODO: this should become feeduler.com
     "https://rss-catchup.herokuapp.com/subscriptions/#{subscription.id}"
