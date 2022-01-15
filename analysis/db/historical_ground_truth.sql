@@ -37,7 +37,6 @@ create table historical_ground_truth
     entries_count              integer not null,
     main_page_canonical_url    text    not null,
     oldest_entry_canonical_url text    not null,
-    last_page_canonical_url    text,
     titles                     text[],
     links                      text[]
 );

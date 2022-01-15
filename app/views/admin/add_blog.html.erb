@@ -27,5 +27,8 @@
   <%= form.check_box :expect_tumblr_paths %>
   <br>
 
+  <%= form.label :update_action %>
+  <%= form.select :update_action, %w[update_from_feed_or_fail no_op fail recrawl] %>
+
   <%= form.submit "Save" %>
 <% end %>

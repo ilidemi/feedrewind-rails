@@ -43,7 +43,20 @@ CREATE TYPE public.blog_status AS ENUM (
     'crawled_voting',
     'crawled_confirmed',
     'crawled_looks_wrong',
-    'manually_inserted'
+    'manually_inserted',
+    'update_from_feed_failed'
+);
+
+
+--
+-- Name: blog_update_action; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.blog_update_action AS ENUM (
+    'recrawl',
+    'update_from_feed_or_fail',
+    'no_op',
+    'fail'
 );
 
 
@@ -303,7 +316,8 @@ CREATE TABLE public.blogs (
     status_updated_at timestamp without time zone NOT NULL,
     version integer NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    update_action public.blog_update_action NOT NULL
 );
 
 
@@ -1017,6 +1031,8 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220103221937'),
 ('20220105004242'),
 ('20220105210334'),
-('20220105233450');
+('20220105233450'),
+('20220114233334'),
+('20220115001649');
 
 

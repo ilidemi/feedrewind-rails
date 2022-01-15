@@ -21,7 +21,7 @@ class OnboardingController < ApplicationController
       @start_url = params[:start_url]
       @feeds = subscription_or_feeds_or_blog_not_supported
       render "add"
-    elsif subscription_or_feeds_or_blog_not_supported.is_a?(BlogNotSupported)
+    elsif subscription_or_feeds_or_blog_not_supported.is_a?(Subscription::BlogNotSupported)
       redirect_to BlogsHelper.unsupported_path(subscription_or_feeds_or_blog_not_supported.blog)
     else
       raise "Unexpected result from discover_feeds_internal: #{subscription_or_feeds_or_blog_not_supported}"
@@ -37,7 +37,7 @@ class OnboardingController < ApplicationController
       respond_to do |format|
         format.js
       end
-    elsif subscription_or_feeds_or_blog_not_supported.is_a?(BlogNotSupported)
+    elsif subscription_or_feeds_or_blog_not_supported.is_a?(Subscription::BlogNotSupported)
       redirect_to BlogsHelper.unsupported_path(subscription_or_feeds_or_blog_not_supported.blog)
     else
       raise "Unexpected result from discover_feeds_internal: #{subscription_or_feeds_or_blog_not_supported}"

@@ -29,7 +29,7 @@ class Subscription < ApplicationRecord
 
         subscription
       end
-    elsif %w[crawl_failed crawled_looks_wrong].include?(blog.status)
+    elsif %w[crawl_failed crawled_looks_wrong update_from_feed_failed].include?(blog.status)
       BlogNotSupported.new(blog)
     else
       Subscription.create!(

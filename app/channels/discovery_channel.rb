@@ -39,6 +39,7 @@ class DiscoveryChannel < ApplicationCable::Channel
           transmit({ done: true })
         else
           Rails.logger.info("Unexpected blog status: #{blog_status}")
+          transmit({ done: true })
         end
       end
     end

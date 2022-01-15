@@ -43,7 +43,7 @@ def parse_feed(feed_content, fetch_uri, logger)
       pub_dates = item.xpath("pubDate")
       if pub_dates.length == 1
         begin
-          pub_date = DateTime.rfc822(pub_dates[0].inner_text).to_date
+          pub_date = DateTime.rfc822(pub_dates[0].inner_text)
         rescue Date::Error
           logger.info("Invalid pubDate: #{pub_dates[0].inner_text}")
           pub_date = nil
@@ -124,7 +124,7 @@ def parse_feed(feed_content, fetch_uri, logger)
 
       if published_dates.length == 1
         begin
-          published_date = DateTime.iso8601(published_dates[0].inner_text).to_date
+          published_date = DateTime.iso8601(published_dates[0].inner_text)
         rescue Date::Error
           logger.info("Invalid published: #{published_dates[0].inner_text}")
           published_date = nil

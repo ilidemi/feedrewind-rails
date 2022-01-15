@@ -39,6 +39,8 @@ class AdminController < ApplicationController
       expect_tumblr_paths = params[:expect_tumblr_paths]
       curi_eq_cfg = CanonicalEqualityConfig.new(same_hosts.to_set, expect_tumblr_paths)
 
+      update_action = params[:update_action]
+
       crawl_ctx = CrawlContext.new
       http_client = HttpClient.new(false)
       parsed_feed = fetch_feed_at_url(feed_url, crawl_ctx, http_client, Rails.logger)
@@ -64,7 +66,8 @@ class AdminController < ApplicationController
           feed_url: feed_url,
           status: "manually_inserted",
           status_updated_at: DateTime.now,
-          version: Blog::LATEST_VERSION
+          version: Blog::LATEST_VERSION,
+          update_action: update_action
         )
 
         post_urls_titles.each_with_index do |url_title, index|
