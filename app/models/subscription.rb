@@ -19,13 +19,17 @@ class Subscription < ApplicationRecord
           status: "setup"
         )
 
-        blog.blog_posts.each do |blog_post|
-          SubscriptionPost.create!(
+        now = Time.current
+        subscription_posts_fields = blog.blog_posts.map do |blog_post|
+          {
             subscription_id: subscription.id,
             blog_post_id: blog_post.id,
-            is_published: false
-          )
+            is_published: false,
+            created_at: now,
+            updated_at: now
+          }
         end
+        SubscriptionPost.insert_all!(subscription_posts_fields)
 
         subscription
       end
