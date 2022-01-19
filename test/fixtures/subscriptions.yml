@@ -1,0 +1,9 @@
+test:
+  id: 1
+  user_id: 00000000-0000-0000-0000-000000000000
+  blog_id: 1
+  name: Test Subscription
+  status: live
+  is_paused: false
+  is_added_past_midnight: false
+  discarded_at: null

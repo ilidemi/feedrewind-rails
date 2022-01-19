@@ -20,6 +20,9 @@ module UpdateRssService
       .where(is_published: false)
       .order("blog_posts.index asc")
       .limit(to_publish_count)
+    subscription_blog_posts_unpublished_count = subscription_blog_posts
+      .where(is_published: false)
+      .length
     blog_posts_to_publish = subscription_blog_posts_to_publish.map(&:blog_post)
     blog_posts_last_published = subscription_blog_posts
       .where(is_published: true)
@@ -34,7 +37,7 @@ module UpdateRssService
       welcome_item = nil
     end
 
-    if blog_posts_to_publish.length + blog_posts_last_published.length >= subscription_blog_posts.length
+    if blog_posts_to_publish.length == subscription_blog_posts_unpublished_count
       final_item = generate_final_item(subscription)
     else
       final_item = nil
