@@ -61,7 +61,11 @@ def discover_feeds_at_url(start_url, crawl_ctx, http_client, logger)
       end
     end
 
-    DiscoverFeedsResult.new(start_page, start_feeds, unsupported_start_feeds)
+    if start_feeds.length == 1
+      SingleFeedResult.new(start_feeds.first)
+    else
+      DiscoverFeedsResult.new(start_page, start_feeds, unsupported_start_feeds)
+    end
   end
 end
 

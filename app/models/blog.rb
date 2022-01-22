@@ -171,13 +171,13 @@ class Blog < ApplicationRecord
         )
       end
 
-      self.blog_canonical_equality_config.create!(
+      BlogCanonicalEqualityConfig.create!(
         blog_id: self.id,
         same_hosts: curi_eq_cfg_hash[:same_hosts],
         expect_tumblr_paths: curi_eq_cfg_hash[:expect_tumblr_paths]
       )
       discarded_feed_urls.each do |discarded_feed_url|
-        self.blog_discarded_feed_entries.create!(
+        BlogDiscardedFeedEntry.create!(
           blog_id: self.id,
           url: discarded_feed_url
         )
