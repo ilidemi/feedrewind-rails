@@ -3,7 +3,7 @@
 <% else %>
   <%= link_to "← Main page", root_path %>
 <% end %>
-<h1><%= @subscription.name %></h1>
+<h1 class="break-word"><%= @subscription.name %></h1>
 <div style="overflow-wrap: break-word">
   <% if @subscription.status == "waiting_for_blog" %>
     <% if @subscription.blog.status == "crawl_in_progress" %>

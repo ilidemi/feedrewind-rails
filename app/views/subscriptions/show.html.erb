@@ -1,5 +1,5 @@
 <%= link_to "← Dashboard", subscriptions_path %>
-<h1><%= @subscription.name %></h1>
+<h1 class="break-word"><%= @subscription.name %></h1>
 <div>URL: <a href="<%= @subscription.blog.feed_url %>"><%= @subscription.blog.feed_url %></a></div>
 <div>Private feed:
   <a
