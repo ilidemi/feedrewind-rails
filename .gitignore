@@ -42,3 +42,5 @@ yarn-debug.log*
 .idea/datasources*.xml
 .idea/rss-catchup-rails.iml
 .idea/dataSources
+/app/assets/builds/*
+!/app/assets/builds/.keep
