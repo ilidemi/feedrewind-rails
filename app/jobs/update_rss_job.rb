@@ -6,7 +6,7 @@ class UpdateRssJob < ApplicationJob
     return unless subscription
 
     day_of_week = DateService.day_of_week
-    schedule = subscription.schedules.where(day_of_week: day_of_week)
+    schedule = subscription.schedules.find_by(day_of_week: day_of_week)
     if !subscription.is_paused && schedule && schedule.count > 0
       UpdateRssService.update_rss(subscription, schedule.count)
     end
