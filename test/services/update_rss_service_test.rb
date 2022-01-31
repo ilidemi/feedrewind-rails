@@ -9,9 +9,9 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Test Subscription · Feeduler</title>
+    <title>Test Subscription · FeedRewind</title>
     <item>
-      <title>Test Subscription added to Feeduler</title>
+      <title>Test Subscription added to FeedRewind</title>
       <link>https://rss-catchup.herokuapp.com/subscriptions/1</link>
       <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
     </item>
@@ -47,14 +47,14 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Test Subscription · Feeduler</title>
+    <title>Test Subscription · FeedRewind</title>
     <item>
       <title>Post 1</title>
       <link>https://blog/1</link>
       <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
     </item>
     <item>
-      <title>Test Subscription added to Feeduler</title>
+      <title>Test Subscription added to FeedRewind</title>
       <link>https://rss-catchup.herokuapp.com/subscriptions/1</link>
       <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
     </item>
@@ -90,7 +90,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Test Subscription · Feeduler</title>
+    <title>Test Subscription · FeedRewind</title>
     <item>
       <title>Post 3</title>
       <link>https://blog/3</link>
@@ -107,7 +107,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
       <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
     </item>
     <item>
-      <title>Test Subscription added to Feeduler</title>
+      <title>Test Subscription added to FeedRewind</title>
       <link>https://rss-catchup.herokuapp.com/subscriptions/1</link>
       <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
     </item>
@@ -143,7 +143,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Test Subscription · Feeduler</title>
+    <title>Test Subscription · FeedRewind</title>
     <item>
       <title>Post 2</title>
       <link>https://blog/2</link>
@@ -155,7 +155,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
       <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
     </item>
     <item>
-      <title>Test Subscription added to Feeduler</title>
+      <title>Test Subscription added to FeedRewind</title>
       <link>https://rss-catchup.herokuapp.com/subscriptions/1</link>
       <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
     </item>
@@ -191,7 +191,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Test Subscription · Feeduler</title>
+    <title>Test Subscription · FeedRewind</title>
     <item>
       <title>Post 16</title>
       <link>https://blog/16</link>
@@ -299,7 +299,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Test Subscription · Feeduler</title>
+    <title>Test Subscription · FeedRewind</title>
     <item>
       <title>You're all caught up with Test Subscription</title>
       <link>https://rss-catchup.herokuapp.com/subscriptions/1</link>
@@ -376,7 +376,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
       <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
     </item>
     <item>
-      <title>Test Subscription added to Feeduler</title>
+      <title>Test Subscription added to FeedRewind</title>
       <link>https://rss-catchup.herokuapp.com/subscriptions/1</link>
       <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
     </item>
@@ -412,7 +412,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Test Subscription · Feeduler</title>
+    <title>Test Subscription · FeedRewind</title>
     <item>
       <title>You're all caught up with Test Subscription</title>
       <link>https://rss-catchup.herokuapp.com/subscriptions/1</link>
@@ -525,7 +525,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Test Subscription · Feeduler</title>
+    <title>Test Subscription · FeedRewind</title>
     <item>
       <title>You're all caught up with Test Subscription</title>
       <link>https://rss-catchup.herokuapp.com/subscriptions/1</link>

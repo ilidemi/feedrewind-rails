@@ -24,12 +24,12 @@ module SubscriptionsHelper
   end
 
   def SubscriptionsHelper.subscription_add_url
-    # TODO: this should become feeduler.com
+    # TODO: this should become feedrewind.com
     "https://rss-catchup.herokuapp.com/subscriptions/add"
   end
 
   def SubscriptionsHelper.subscription_url(subscription)
-    # TODO: this should become feeduler.com
+    # TODO: this should become feedrewind.com
     "https://rss-catchup.herokuapp.com/subscriptions/#{subscription.id}"
   end
 

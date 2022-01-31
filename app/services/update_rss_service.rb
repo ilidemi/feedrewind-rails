@@ -77,7 +77,7 @@ module UpdateRssService
     channel = Ox::Element.new("channel")
 
     channel_title = Ox::Element.new("title")
-    channel_title << "#{HTMLEntities.new.encode(subscription.name)} · Feeduler"
+    channel_title << "#{HTMLEntities.new.encode(subscription.name)} · FeedRewind"
     channel << channel_title
 
     if final_item
@@ -124,7 +124,7 @@ module UpdateRssService
     item = Ox::Element.new("item")
 
     post_title = Ox::Element.new("title")
-    post_title << "#{HTMLEntities.new.encode(subscription.name)} added to Feeduler"
+    post_title << "#{HTMLEntities.new.encode(subscription.name)} added to FeedRewind"
     item << post_title
 
     subscription_url = SubscriptionsHelper.subscription_url(subscription)
