@@ -8,7 +8,8 @@ module.exports = {
   ],
   theme: {
     screens: {
-      '2xs': '380px',
+      '3xs': '340px',
+      '2xs': '420px',
       'xs': '480px',
       'sm': '640px',
       'md': '768px',
