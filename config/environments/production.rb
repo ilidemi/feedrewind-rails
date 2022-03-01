@@ -119,4 +119,6 @@ Rails.application.configure do
   # config.active_record.database_resolver_context = ActiveRecord::Middleware::DatabaseSelector::Resolver::Session
 
   config.admin_user_id = "ee2cbac1-ecd7-4eee-8d22-632f35073d75"
+
+  config.assets.css_compressor = nil
 end
