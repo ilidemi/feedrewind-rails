@@ -23,6 +23,14 @@ module SubscriptionsHelper
     "/subscriptions/#{subscription.id}/schedule"
   end
 
+  def SubscriptionsHelper.pause_path(subscription)
+    "/subscriptions/#{subscription.id}/pause"
+  end
+
+  def SubscriptionsHelper.unpause_path(subscription)
+    "/subscriptions/#{subscription.id}/unpause"
+  end
+
   def SubscriptionsHelper.subscription_add_url
     # TODO: this should become feedrewind.com
     "https://rss-catchup.herokuapp.com/subscriptions/add"

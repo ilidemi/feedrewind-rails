@@ -66,7 +66,6 @@ class OnboardingController < ApplicationController
         nil, start_feed.id, start_feed.final_url, discover_feeds_result.start_feed.title
       )
       subscription_or_blog_not_supported = Subscription::create_for_blog(updated_blog, user)
-
       subscription_or_blog_not_supported
     else
       start_page = StartPage.new(

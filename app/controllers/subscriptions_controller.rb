@@ -6,6 +6,7 @@ class SubscriptionsController < ApplicationController
     :create, :setup, :submit_progress_times, :all_posts, :confirm, :mark_wrong, :destroy
   ]
 
+  DAYS_OF_WEEK = %w[sun mon tue wed thu fri sat]
   DAY_COUNT_NAMES = [:sun_count, :mon_count, :tue_count, :wed_count, :thu_count, :fri_count, :sat_count]
 
   def index
@@ -18,6 +19,12 @@ class SubscriptionsController < ApplicationController
     if @subscription.schedules.empty?
       redirect_to action: "setup", id: @subscription.id
     end
+
+    @current_counts_by_day = @subscription
+      .schedules
+      .to_h { |schedule| [schedule.day_of_week, schedule.count] }
+    @other_sub_names_by_day = get_other_sub_names_by_day(@subscription.id)
+    @days_of_week = DAYS_OF_WEEK
   end
 
   def create
@@ -71,6 +78,11 @@ class SubscriptionsController < ApplicationController
       end
 
       @blog_crawl_progress = BlogCrawlProgress.find(@subscription.blog_id)
+    end
+
+    if @subscription.status == "setup" && @current_user
+      @other_sub_names_by_day = get_other_sub_names_by_day(nil)
+      @days_of_week = DAYS_OF_WEEK
     end
   end
 
@@ -376,5 +388,27 @@ class SubscriptionsController < ApplicationController
     blog.status_updated_at = DateTime.now
 
     blog.save!
+  end
+
+  def get_other_sub_names_by_day(current_sub_id)
+    other_active_subs = Subscription
+      .includes(:subscription_posts)
+      .includes(:schedules)
+      .where(user_id: @current_user.id)
+      .where(status: "live")
+      .order("created_at desc")
+      .filter { |sub| sub.id != current_sub_id }
+      .filter { |sub| (sub.subscription_posts.count(&:is_published) || 0) > 0 }
+
+    other_sub_names_by_day = DAYS_OF_WEEK.to_h { |day| [day, []] }
+    other_active_subs.each do |sub|
+      sub.schedules.each do |schedule|
+        schedule.count.times do
+          other_sub_names_by_day[schedule.day_of_week] << sub.name
+        end
+      end
+    end
+
+    other_sub_names_by_day
   end
 end

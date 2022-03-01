@@ -3,19 +3,41 @@
 <head>
   <title>FeedRewind</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="turbolinks-cache-control" content="no-cache">
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
-    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+  <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
 
   <%= stylesheet_link_tag 'application', media: 'all' %>
   <%= javascript_pack_tag 'application', 'data-turbolinks-track': 'reload' %>
 </head>
 
-<body>
-<div>
-    <main class="container mx-auto mt-28 px-5">
+<body class="container mx-auto max-w-screen-md">
+<div class="min-h-screen p-6 flex flex-col gap-6">
+  <header class="flex flex-row flex-wrap gap-x-6 gap-y-1 justify-between items-center">
+    <h1 class="text-4xl">
+      <a href="/" class="hover:cursor-pointer">FeedRewind</a>
+    </h1>
+    <% if current_user %>
+      <div class="text-sm flex flex-row items-baseline gap-2">
+        <span>Logged in as <%= current_user.email %></span>
+        <%= link_to "Sign out", logout_path, class: "btn-secondary" %>
+      </div>
+    <% end %>
+  </header>
+  <main class="flex-1">
     <%= yield %>
-    </main>
+  </main>
+  <footer class="flex flex-row">
+    <div class="flex-grow">
+      <a href="mailto:support@feedrewind.com" class="link">support@feedrewind.com</a>
+    </div>
+    <div class="text-sm flex flex-row gap-6">
+      <a href="mailto:contact@feedrewind.com" class="link-secondary">Contact</a>
+      <a href="/terms" class="link-secondary">Terms</a>
+      <a href="/privacy" class="link-secondary">Privacy</a>
+    </div>
+  </footer>
 </div>
 </body>
 </html>

@@ -1,28 +1,49 @@
-<% if @current_user %>
-  <%= link_to "← Dashboard", subscriptions_path %>
-<% else %>
-  <%= link_to "← Main page", root_path %>
-<% end %>
-<h1>Add Blog</h1>
-<%= form_with url: "/subscriptions/discover_feeds", method: :post, local: false do |form| %>
-  <div>
-    <%= form.url_field :start_url, value: @start_url, placeholder: "Feed or blog link" %>
-    <%= form.submit "Go" %>
+<div class="flex flex-col gap-6 mb-6">
+  <div class="flex flex-col gap-1">
+    <div>
+      <% if @current_user %>
+        <%= link_to "← Dashboard",
+                    subscriptions_path,
+                    class: "text-sm link-secondary"
+        %>
+      <% else %>
+        <%= link_to "← Main page",
+                    root_path,
+                    class: "text-sm link-secondary"
+        %>
+      <% end %>
+    </div>
+
+    <h2>Add Blog</h2>
   </div>
-<% end %>
-<br>
-<div id="feeds">
-  <% if @feeds %>
-    <%= render partial: "feeds", locals: { feeds: @feeds } %>
+
+  <%= form_with url: "/subscriptions/discover_feeds", method: :post, local: false do |form| %>
+    <div class="flex flex-row w-full">
+      <%= form.url_field :start_url,
+                         value: @start_url,
+                         placeholder: "Feed or blog link",
+                         autocomplete: "off",
+                         class: "border border-slate-700 rounded-l-md w-full focus:ring-transparent focus:shadow-none"
+      %>
+      <%= form.submit "Go",
+                      class: "btn rounded-l-none border border-slate-700 rounded-r-md hover:disabled:cursor-default"
+      %>
+    </div>
   <% end %>
+  <br>
+  <div id="feeds">
+    <% if @feeds %>
+      <%= render partial: "feeds", locals: { feeds: @feeds } %>
+    <% end %>
+  </div>
+  <script>
+      {
+          let start_url_field = document.getElementById("start_url");
+          let feeds = document.getElementById("feeds");
+          document.addEventListener('turbolinks:before-render', () => {
+              start_url_field.value = "";
+              feeds.innerHTML = "";
+          });
+      }
+  </script>
 </div>
-<script>
-    {
-        let start_url_field = document.getElementById("start_url");
-        let feeds = document.getElementById("feeds");
-        document.addEventListener('turbolinks:before-render', () => {
-            start_url_field.value = "";
-            feeds.innerHTML = "";
-        });
-    }
-</script>

@@ -1,5 +1,7 @@
-<% ordered_blog_posts.each do |post| %>
-  <div style="margin-top: 0.2em;">
-    <a href="<%= post.url %>"><%= post.title %></a>
-  </div>
-<% end %>
+<div class="flex flex-col leading-relaxed">
+  <% ordered_blog_posts.each do |post| %>
+    <div>
+      <a href="<%= post.url %>" class="link"><%= post.title %></a>
+    </div>
+  <% end %>
+</div>

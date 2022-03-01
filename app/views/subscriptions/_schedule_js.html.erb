@@ -1,0 +1,98 @@
+<script>
+    {
+        let daysOfWeek = ["<%= raw days_of_week.join('", "') %>"];
+
+        function validateSchedule() {
+            let totalCount = 0;
+            daysOfWeek.forEach(day => {
+                totalCount += parseInt(document.getElementById(`${day}_count`).value);
+            });
+            let isValid = totalCount > 0;
+            <%= js_validate_callback %>(isValid);
+            if (isValid) {
+                document
+                    .getElementById("schedule_empty_error")
+                    .classList
+                    .add("hidden");
+            } else {
+                document
+                    .getElementById("schedule_empty_error")
+                    .classList
+                    .remove("hidden");
+            }
+        }
+
+        daysOfWeek.forEach(day => {
+            let dayField = document.getElementById(`${day}_count`);
+            let dayPosts = document.getElementById(`${day}_posts`);
+            let dayPostsMobile = document.getElementById(`${day}_posts_mobile`);
+
+            function remove() {
+                dayField.value = parseInt(dayField.value) - 1;
+                document.getElementsByName(`${day}_remove`)[0].remove();
+                document.getElementsByName(`${day}_remove_mobile`)[0].remove();
+                validateSchedule();
+            }
+
+            function createRemoveButton() {
+                let button = document
+                    .getElementById(`${day}_template`)
+                    .cloneNode(true);
+                button.removeAttribute("id");
+                button.setAttribute("name", `${day}_remove`);
+                button.classList.remove("hidden");
+                button.addEventListener("click", remove);
+                return button;
+            }
+
+            function createRemoveButtonMobile() {
+                let button = document
+                    .getElementById(`${day}_template_mobile`)
+                    .cloneNode(true);
+                button.removeAttribute("id");
+                button.setAttribute("name", `${day}_remove_mobile`);
+                button.classList.remove("hidden");
+                button.addEventListener("click", remove);
+                return button;
+            }
+
+            function insertAdd() {
+                let removeButton = createRemoveButton();
+                dayPosts.appendChild(removeButton);
+
+                let removeButtonMobile = createRemoveButtonMobile();
+                dayPostsMobile.prepend(removeButtonMobile);
+            }
+
+            let initialDayCount = parseInt(dayField.value);
+            for (let i = 0; i < initialDayCount; i++) {
+                insertAdd();
+            }
+
+            document
+                .getElementById(`${day}_add`)
+                .addEventListener("click", () => {
+                    dayField.value = parseInt(dayField.value) + 1;
+                    insertAdd();
+                    validateSchedule();
+                });
+
+            document
+                .getElementById(`${day}_add_mobile`)
+                .addEventListener("click", () => {
+                    dayField.value = parseInt(dayField.value) + 1;
+                    insertAdd();
+                    validateSchedule();
+                });
+        });
+
+        validateSchedule();
+
+        <%= js_set_name_change_callback %>((newName) => {
+            let elems = document.getElementsByClassName("schedule-sub-name");
+            for (let elem of elems) {
+                elem.innerText = newName;
+            }
+        });
+    }
+</script>

@@ -1,18 +1,21 @@
-<div>
-  Discovered <%= subscription.blog.blog_posts.length %> posts (oldest to newest):
-  <br>
+<div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-1">
+    Discovered <%= subscription.blog.blog_posts.length %> posts (oldest to newest):
 
-  <%= render partial: "posts", locals: { subscription: subscription } %>
+    <%= render partial: "posts", locals: { subscription: subscription } %>
+  </div>
 
-  <div id="confirm_section">
-    <br>
-    <div style="display: flex; gap: 1em;">
-      <%= button_to "Continue", SubscriptionsHelper.confirm_path(subscription), method: :post %>
-      <%= button_to "Looks wrong",
-                    SubscriptionsHelper.mark_wrong_path(subscription),
-                    method: :post,
-                    remote: true
-      %>
-    </div>
+  <div id="confirm_section" class="flex flex-row items-baseline gap-4">
+    <%= button_to "Continue",
+                  SubscriptionsHelper.confirm_path(subscription),
+                  method: :post,
+                  class: "btn"
+    %>
+    <%= button_to "Looks wrong?",
+                  SubscriptionsHelper.mark_wrong_path(subscription),
+                  method: :post,
+                  remote: true,
+                  class: "link-secondary text-sm"
+    %>
   </div>
 </div>

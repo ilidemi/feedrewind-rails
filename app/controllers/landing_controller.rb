@@ -1,5 +1,11 @@
 class LandingController < ApplicationController
   def index
+    fill_current_user
+
+    if @current_user
+      return redirect_to "/subscriptions"
+    end
+
     if cookies[:anonymous_subscription]
       @subscription = Subscription.find_by(id: cookies[:anonymous_subscription], user_id: nil)
     else

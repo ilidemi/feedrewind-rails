@@ -1,22 +1,24 @@
-<div id="posts">
+<div id="posts" class="flex flex-col leading-relaxed">
   <% ordered_blog_posts = subscription.blog.blog_posts.sort_by(&:index) %>
   <% if ordered_blog_posts.length <= 11 %>
     <%= render partial: "all_posts", locals: { ordered_blog_posts: ordered_blog_posts } %>
   <% else %>
     <% ordered_blog_posts[...5].each do |blog_post| %>
-      <div style="margin-top: 0.2em;">
-        <a href="<%= blog_post.url %>"><%= blog_post.title %></a>
+      <div>
+        <a href="<%= blog_post.url %>" class="link"><%= blog_post.title %></a>
       </div>
     <% end %>
-    <div style="margin-top: 0.2em;">
+    <div>
       (<%= link_to "#{ordered_blog_posts.length - 10} more",
                    SubscriptionsHelper.all_posts_path(subscription),
                    method: :post,
-                   remote: true %>)
+                   remote: true,
+                   class: "link"
+      %>)
     </div>
     <% ordered_blog_posts[-5..].each do |blog_post| %>
-      <div style="margin-top: 0.2em;">
-        <a href="<%= blog_post.url %>"><%= blog_post.title %></a>
+      <div>
+        <a href="<%= blog_post.url %>" class="link"><%= blog_post.title %></a>
       </div>
     <% end %>
   <% end %>

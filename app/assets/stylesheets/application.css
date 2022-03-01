@@ -13,20 +13,3 @@
  *= require_tree .
  *= require_self
  */
-
-body {
-    margin: 40px auto;
-    max-width: 600px;
-    line-height: 1.6;
-    font-size: 16px;
-    padding: 0 10px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-}
-
-h1, h2, h3 {
-    line-height: 1.2
-}
-
-.break-word {
-    word-break: break-word;
-}

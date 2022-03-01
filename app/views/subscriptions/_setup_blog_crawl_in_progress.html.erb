@@ -1,61 +1,3 @@
-<style>
-    .progress_page {
-        width: 1em;
-        height: 1em;
-        border-width: 1px;
-        border-style: solid;
-        display: inline-block;
-        margin-left: 2px;
-        margin-right: 2px;
-    }
-
-    .progress_long_page {
-        width: calc(3em + 12px); /* include gaps and borders */
-        height: 1em;
-        border-width: 1px;
-        border-style: solid;
-        display: inline-block;
-        margin-left: 2px;
-        margin-right: 2px;
-    }
-
-    .progress_long_page_start {
-        width: calc(1.5em + 6px); /* include gaps and borders */
-        height: 1em;
-        border-width: 1px;
-        border-style: solid;
-        border-image-slice: 1;
-        border-image-source: linear-gradient(to right, gray, #80808000);
-        background: linear-gradient(to right, silver, #c0c0c000);
-        background-origin: border-box;
-        display: inline-block;
-        margin-left: 2px;
-        margin-right: 2px;
-    }
-
-    .progress_regular {
-        background-color: silver;
-        border-color: gray;
-    }
-
-    .progress_finishing {
-        background-color: tomato;
-        border-color: orangered;
-    }
-
-    .progress_page_remaining {
-        width: 1em;
-        height: 1em;
-        border-width: 1px;
-        border-style: solid;
-        border-color: transparent;
-        display: inline-block;
-        background-color: whitesmoke;
-        margin-left: 2px;
-        margin-right: 2px;
-    }
-</style>
-
 <script>
     {
         <% if client_token %>
@@ -93,28 +35,54 @@
 
                 if (data.hasOwnProperty("status")) {
                     let rects = [];
-                    let tokens = [...data.status.matchAll(/pP|p|hF\d*|h/g)];
+                    let matches = [...data.status.matchAll(/pP|p|hF\d*|h/g)];
+                    let tokens = matches.map(match => match[0]);
+                    let firstDarkIndex = tokens.length;
+                    for (let index = tokens.length - 1; index >= 0; index--) {
+                        if (!tokens[index].startsWith("hF")) break;
+                        firstDarkIndex = index;
+                    }
+                    let needsTrailingLoader = true;
+                    let trailingLoaderIsDark = false;
                     for (let index in tokens) {
                         let token = tokens[index];
-                        if (token[0] === "h") {
-                            rects.push(createRect("progress_page progress_regular"));
-                        } else if (token[0] === "p") {
-                            rects.push(createRect("progress_long_page_start"));
-                        } else if (token[0] === "pP") {
-                            rects.push(createRect("progress_long_page progress_regular"));
-                        } else if (token[0].startsWith("hF")) {
-                            rects.push(createRect("progress_page progress_finishing"));
-                            if (parseInt(index) === tokens.length - 1) {
-                                let remainingCountMatch = token[0].match(/\d+$/g);
-                                if (remainingCountMatch) {
-                                    let remainingCount = parseInt(remainingCountMatch[0]);
-                                    for (let i = 0; i < remainingCount; i++) {
-                                        rects.push(createRect("progress_page_remaining"));
+                        if (token === "h") {
+                            rects.push(createRect("w-5 h-5 rounded-sm bg-slate-400"));
+                        } else if (token === "p") {
+                            rects.push(createRect("w-[4.25rem] h-5 rounded-sm border border-slate-400 loader-41"));
+                            needsTrailingLoader = false;
+                        } else if (token === "pP") {
+                            rects.push(createRect("w-[4.25rem] h-5 rounded-sm bg-slate-400"));
+                        } else if (token.startsWith("hF")) {
+                            if (index >= firstDarkIndex) {
+                                rects.push(createRect("w-5 h-5 rounded-sm bg-slate-600"));
+                                if (parseInt(index) === tokens.length - 1) {
+                                    let remainingCountMatch = token.match(/\d+$/g);
+                                    if (remainingCountMatch) {
+                                        needsTrailingLoader = false;
+                                        let remainingCount = parseInt(remainingCountMatch[0]);
+                                        if (remainingCount >= 1) {
+                                            rects.push(createRect("w-5 h-5 rounded-sm border border-slate-600 loader-41-dark"))
+                                        }
+                                        for (let i = 1; i < remainingCount; i++) {
+                                            rects.push(createRect("w-5 h-5 rounded-sm border border-slate-600"));
+                                        }
                                     }
+                                } else {
+                                    trailingLoaderIsDark = true;
                                 }
+                            } else {
+                                rects.push(createRect("w-5 h-5 rounded-sm bg-slate-400"));
                             }
                         } else {
                             console.warn(`Unknown progress token: ${token} (${data})`);
+                        }
+                    }
+                    if (needsTrailingLoader) {
+                        if (trailingLoaderIsDark) {
+                            rects.push(createRect("w-5 h-5 rounded-sm border border-slate-600 loader-41-dark"));
+                        } else {
+                            rects.push(createRect("w-5 h-5 rounded-sm border border-slate-400 loader-41"));
                         }
                     }
                     document.getElementById("progress_rects").replaceChildren(...rects);
@@ -161,24 +129,32 @@
     }
 </script>
 
-<div id="progress_count">
-  <% unless blog_crawl_progress.count %>
-    Discovering posts...
-  <% end %>
+<div class="flex flex-col gap-8">
+  <div class="flex flex-col gap-2">
+    <div id="progress_count">
+      <% unless blog_crawl_progress.count %>
+        Discovering posts...
+      <% end %>
+    </div>
+
+    <span id="progress_rects" class="flex flex-row flex-wrap gap-1"></span>
+  </div>
+
+  <script>
+      displayProgress({
+          <% if blog_crawl_progress.count %>
+          count: "<%= blog_crawl_progress.count %>",
+          <% end %>
+          <% if blog_crawl_progress.progress %>
+          status: "<%= blog_crawl_progress.progress %>",
+          <% end %>
+          epoch: <%= blog_crawl_progress.epoch %>
+      })
+  </script>
+
+  <%= button_to "Cancel", subscription_path(subscription),
+                method: :delete,
+                data: { confirm: "Cancel adding #{subscription.name}?" },
+                class: "btn-secondary-red"
+  %>
 </div>
-<span id="progress_rects"></span>
-<script>displayProgress({
-    <% if blog_crawl_progress.count %>
-    count: "<%= blog_crawl_progress.count %>",
-    <% end %>
-    <% if blog_crawl_progress.progress %>
-    status: "<%= blog_crawl_progress.progress %>",
-    <% end %>
-    epoch: <%= blog_crawl_progress.epoch %>
-})</script>
-<br>
-<br>
-<%= button_to "Cancel", subscription_path(subscription),
-              method: :delete,
-              data: { confirm: "Cancel adding #{subscription.name}?" }
-%>

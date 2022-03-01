@@ -1,19 +1,35 @@
-<% if @current_user %>
-  <%= link_to "← Dashboard", subscriptions_path %>
-<% else %>
-  <%= link_to "← Main page", root_path %>
-<% end %>
-<h1 class="break-word"><%= @blog.name %></h1>
-<p>
-  FeedRewind supports over 80% of blogs, but unfortunately not this one.
-</p>
-<p>Would you like to try another blog?</p>
+<div class="flex flex-col gap-6 mb-6">
+  <div class="flex flex-col gap-1">
+    <% if @current_user %>
+      <%= link_to "← Dashboard",
+                  subscriptions_path,
+                  class: "text-sm link-secondary"
+      %>
+    <% else %>
+      <%= link_to "← Main page",
+                  root_path,
+                  class: "text-sm link-secondary"
+      %>
+    <% end %>
 
-<div style="display: flex; gap: 1em;">
-  <%= link_to "Try another", "/subscriptions/add" %>
-  <% if current_user %>
-    <%= link_to "Go back", "/subscriptions" %>
-  <% else %>
-    <%= link_to "Go back", "/" %>
-  <% end %>
+    <h2 class="break-word"><%= @blog.name %></h2>
+  </div>
+
+  <div>
+    <p>
+      FeedRewind supports over 80% of blogs, but unfortunately not this one.
+    </p>
+    <p>Would you like to try another blog?</p>
+  </div>
+
+  <div class="flex flex-row gap-4">
+    <%= link_to "Try another",
+                "/subscriptions/add",
+                class: "btn"
+    %>
+    <%= link_to "Go back",
+                @current_user ? "/subscriptions" : "/",
+                class: "btn"
+    %>
+  </div>
 </div>

@@ -1,0 +1,79 @@
+<div class="flex flex-col gap-6">
+  <h1 class="text-4xl text-center">
+    <a href="/" class="hover:cursor-pointer">FeedRewind</a>
+  </h1>
+  <div class="text-2xl text-center">Sign in to FeedRewind</div>
+
+  <%= form_tag login_path, id: "login_form", novalidate: true do %>
+    <div class="flex flex-col gap-2">
+      <% if @errors.any? %>
+        <div class="bg-red-100 text-red-800 rounded-md w-full p-3 mb-5">
+          <%= @errors.first %>
+        </div>
+      <% end %>
+
+      <div class="flex flex-col gap-1">
+        <%= label_tag :email %>
+        <div class="flex flex-col">
+          <%= email_field_tag :email,
+                              nil,
+                              placeholder: "your@email.com",
+                              class: "rounded-md border border-gray-300 placeholder:text-gray-400",
+                              autocomplete: "username",
+                              required: true
+          %>
+          <span id="email_error"
+                class="invisible self-end text-sm font-semibold text-red-600"
+                aria-live="polite"
+          >
+            No error
+          </span>
+        </div>
+      </div>
+      <div class="flex flex-col gap-1">
+        <%= label_tag "current-password", "Password" %>
+        <div class="flex flex-col">
+          <%= password_field_tag "current-password",
+                                 nil,
+                                 placeholder: "correct horse battery staple",
+                                 class: "rounded-md border border-gray-300 placeholder:text-gray-400",
+                                 autocomplete: "current-password",
+                                 required: true
+          %>
+          <span id="password_error"
+                class="invisible self-end text-sm font-semibold text-red-600"
+                aria-live="polite"
+          >
+            No error
+          </span>
+        </div>
+      </div>
+      <%= submit_tag "Sign in", class: "btn" %>
+    </div>
+  <% end %>
+
+  <%= render partial: "signup_login/validation",
+             locals: {
+               email_input_id: "email",
+               email_error_id: "email_error",
+               password_input_id: "current-password",
+               password_error_id: "password_error",
+               form_id: "login_form"
+             }
+  %>
+
+  <div class="flex flex-col gap-5">
+    <div class="text-sm text-gray-500 text-center">
+      Need an account?
+      <%= link_to "Sign up",
+                  signup_path,
+                  class: "btn-secondary"
+      %>
+    </div>
+
+    <div class="text-sm text-gray-500 text-center">
+      Forgot your password?
+      <a href="/support" class="underline decoration-from-font hover:cursor-pointer">Contact support</a>
+    </div>
+  </div>
+</div>

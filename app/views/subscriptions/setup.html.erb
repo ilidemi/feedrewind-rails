@@ -1,39 +1,60 @@
-<% if @current_user %>
-  <%= link_to "← Dashboard", subscriptions_path %>
-<% else %>
-  <%= link_to "← Main page", root_path %>
-<% end %>
-<h1 class="break-word"><%= @subscription.name %></h1>
-<div style="overflow-wrap: break-word">
-  <% if @subscription.status == "waiting_for_blog" %>
-    <% if @subscription.blog.status == "crawl_in_progress" %>
-      <%=
-        render partial: "setup_blog_crawl_in_progress",
-               locals: {
-                 subscription: @subscription,
-                 blog: @subscription.blog,
-                 client_token: @client_token_value,
-                 blog_crawl_progress: @blog_crawl_progress
-               }
-      %>
-    <% elsif @subscription.blog.status == "crawl_failed" %>
-      <%= render partial: "setup_blog_failed", locals: { subscription: @subscription } %>
-    <% elsif %w[crawled_voting crawled_confirmed crawled_looks_wrong manually_inserted].include?(
-      @subscription.blog.status
-    ) %>
-      <%= render partial: "setup_blog_confirm", locals: { subscription: @subscription } %>
+<div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-1">
+    <div>
+      <% if @current_user %>
+        <%= link_to "← Dashboard",
+                    subscriptions_path,
+                    class: "text-sm link-secondary"
+        %>
+      <% else %>
+        <%= link_to "← Main page",
+                    root_path,
+                    class: "text-sm link-secondary"
+        %>
+      <% end %>
+    </div>
+
+    <h2 class="break-word" id="name_header"><%= @subscription.name %></h2>
+  </div>
+
+  <div style="overflow-wrap: break-word">
+    <% if @subscription.status == "waiting_for_blog" %>
+      <% if @subscription.blog.status == "crawl_in_progress" %>
+        <%=
+          render partial: "setup_blog_crawl_in_progress",
+                 locals: {
+                   subscription: @subscription,
+                   blog: @subscription.blog,
+                   client_token: @client_token_value,
+                   blog_crawl_progress: @blog_crawl_progress
+                 }
+        %>
+      <% elsif @subscription.blog.status == "crawl_failed" %>
+        <%= render partial: "setup_blog_failed", locals: { subscription: @subscription } %>
+      <% elsif %w[crawled_voting crawled_confirmed crawled_looks_wrong manually_inserted].include?(
+        @subscription.blog.status
+      ) %>
+        <%= render partial: "setup_blog_confirm", locals: { subscription: @subscription } %>
+      <% else %>
+        <%= raise "Unexpected blog status: #{@subscription.blog.status}" %>
+      <% end %>
+    <% elsif @subscription.status == "setup" %>
+      <% if @current_user %>
+        <%= render partial: "setup_subscription_set_schedule",
+                   locals: {
+                     subscription: @subscription,
+                     other_sub_names_by_day: @other_sub_names_by_day,
+                     days_of_week: @days_of_week,
+                     name_header_id: "name_header"
+                   }
+        %>
+      <% else %>
+        <%= render partial: "setup_subscription_presenting_goods", locals: { subscription: @subscription } %>
+      <% end %>
+    <% elsif @subscription.status == "live" %>
+      <%= render partial: "setup_subscription_heres_feed", locals: { subscription: @subscription } %>
     <% else %>
-      <%= raise "Unexpected blog status: #{@subscription.blog.status}" %>
+      <%= raise "Unexpected subscription status: #{@subscription.status}" %>
     <% end %>
-  <% elsif @subscription.status == "setup" %>
-    <% if @current_user %>
-      <%= render partial: "setup_subscription_set_schedule", locals: { subscription: @subscription } %>
-    <% else %>
-      <%= render partial: "setup_subscription_presenting_goods", locals: { subscription: @subscription } %>
-    <% end %>
-  <% elsif @subscription.status == "live" %>
-    <%= render partial: "setup_subscription_heres_feed", locals: { subscription: @subscription } %>
-  <% else %>
-    <%= raise "Unexpected subscription status: #{@subscription.status}" %>
-  <% end %>
+  </div>
 </div>

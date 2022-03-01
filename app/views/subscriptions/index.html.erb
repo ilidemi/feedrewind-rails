@@ -1,65 +1,86 @@
-<style>
-    .subs {
-        display: grid;
-        grid-template-columns: 1fr auto auto;
-        grid-column-gap: 1em;
-        grid-row-gap: 0.1em;
-        align-items: center;
-    }
+<div class="flex flex-col gap-7">
+  <h2>Dashboard</h2>
 
-    .sub-name {
-        justify-self: start;
-        word-break: break-word;
-    }
+  <span><%= link_to "+ Add", subscriptions_add_path, class: "btn" %></span>
 
-    .sub-status {
-        justify-self: end;
-    }
+  <% if @subscriptions.length.zero? %>
+    <p>Nothing here. Want to add some?</p>
+  <% else %>
+    <div class="flex flex-col gap-7">
+      <% setting_up_subscriptions = @subscriptions.filter { |sub| sub.status != "live" } %>
+      <% if setting_up_subscriptions.length > 0 %>
+        <div class="flex flex-col gap-1">
+          <div class="flex flex-col gap-0.5">
+            <div class="text-lg font-semibold">
+              Setting Up
+            </div>
+            <div class="w-full h-px bg-slate-300"></div>
+          </div>
+          <div class="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 items-center">
+            <% setting_up_subscriptions.each do |subscription| %>
+              <%= link_to subscription.name,
+                          SubscriptionsHelper.setup_path(subscription),
+                          class: "justify-self-start break-word text-base font-semibold leading-relaxed underline"
+              %>
+              <%= link_to "Remove", subscription_path(subscription),
+                          method: :delete,
+                          data: { confirm: "Delete #{subscription.name}?" },
+                          class: "justify-self-end btn-secondary-red"
+              %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
 
-    .add-button {
-        margin-top: 0.1em;
-    }
-</style>
+      <% active_subscriptions = @subscriptions.filter do |sub|
+        sub.status == "live" && sub.subscription_posts.count { |post| !post.is_published } > 0
+      end %>
+      <% if active_subscriptions.length > 0 %>
+        <div class="flex flex-col gap-0.5">
+          <div class="text-lg font-semibold">
+            Reading
+          </div>
+          <div class="w-full h-px bg-slate-300"></div>
+          <div class="grid grid-cols-[1fr_auto] gap-x-4 gap-y-0.5 items-center">
+            <% active_subscriptions.each do |subscription| %>
+              <% total_count = subscription.subscription_posts.count %>
+              <% published_count = subscription.subscription_posts.count(&:is_published) || 0 %>
+              <%= link_to subscription.name,
+                          subscription,
+                          class: "justify-self-start break-word text-base font-semibold leading-relaxed underline"
+              %>
+              <span class="justify-self-end text-sm text-gray-500">
+                <% verb = subscription.is_paused ? "published, paused" : "published" %>
+                <%= published_count %>/<%= total_count %> <%= verb %>
+              </span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
 
-<div>
-  Logged in as <%= current_user.email %>.
-  <%= link_to "Log Out", logout_path %>
+      <% done_subscriptions = @subscriptions.filter do |sub|
+        sub.status == "live" && sub.subscription_posts.count { |post| !post.is_published } == 0
+      end %>
+      <% if done_subscriptions.length > 0 %>
+        <div class="flex flex-col gap-0.5">
+          <div class="text-lg font-semibold">
+            Done
+          </div>
+          <div class="w-full h-px bg-slate-300"></div>
+          <div class="grid grid-cols-[1fr_auto] gap-x-4 gap-y-0.5 items-center">
+            <% done_subscriptions.each do |subscription| %>
+              <% published_count = subscription.subscription_posts.count(&:is_published) || 0 %>
+              <%= link_to subscription.name,
+                          subscription,
+                          class: "justify-self-start break-word text-base font-semibold leading-relaxed underline"
+              %>
+              <span class="justify-self-end text-sm text-gray-500">
+                <%= published_count %> published
+              </span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
 </div>
-
-<h1>Dashboard</h1>
-
-<% if @subscriptions.length.zero? %>
-  <p>Nothing here. Want to add some?</p>
-<% else %>
-  <div class="subs">
-    <% @subscriptions.each do |subscription| %>
-      <% total_count = subscription.subscription_posts.count %>
-      <% published_count = subscription.subscription_posts.group(:is_published).count[true] || 0 %>
-      <span class="sub-name">
-        <% if subscription.status == "live" %>
-          <%= link_to subscription.name, subscription %>
-        <% else %>
-          <%= link_to subscription.name, SubscriptionsHelper.setup_path(subscription) %>
-          <% if subscription.blog.status == "crawl_failed" %>
-            (❌)
-          <% else %>
-            (⏳)
-          <% end %>
-        <% end %>
-      </span>
-      <span class="sub-status">
-        <% if subscription.status == "live" %>
-          <% verb = subscription.is_paused ? "published, paused" : "published" %>
-          <%= published_count %>/<%= total_count %> <%= verb %>
-        <% end %>
-      </span>
-      <span>
-        <%= link_to "Delete", subscription_path(subscription),
-                    method: :delete,
-                    data: { confirm: "Delete #{subscription.name}?" } %>
-      </span>
-    <% end %>
-  </div>
-<% end %>
-
-<%= link_to "Add", subscriptions_add_path, class: "add-button" %>

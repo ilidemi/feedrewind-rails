@@ -1,11 +1,14 @@
 class UsersController < ApplicationController
+  layout "login_signup"
+
   def new
     @user = User.new
+    render "signup_login/signup"
   end
 
   def create
-    user_params = params.require(:user).permit(:email, :password, :password_confirmation)
-    @user = User.new(user_params)
+    user_params = params.permit(:email, "new-password")
+    @user = User.new({ email: user_params["email"], password: user_params["new-password"] })
     if @user.save
       session[:user_id] = @user.id
 
@@ -24,7 +27,7 @@ class UsersController < ApplicationController
         redirect_to subscriptions_path, notice: "Thank you for signing up!"
       end
     else
-      render :new
+      render "signup_login/signup"
     end
   end
 end

@@ -1,9 +1,11 @@
-<div>
-  This blog has <%= subscription.blog.blog_posts.length %> posts (oldest to newest):
-  <br>
+<div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-1">
+    This blog has <%= subscription.blog.blog_posts.length %> posts (oldest to newest):
 
-  <%= render partial: "posts", locals: { subscription: subscription } %>
+    <%= render partial: "posts", locals: { subscription: subscription } %>
+  </div>
 
-  <br>
-  <%= link_to "Continue", signup_path %>
+  <div>
+    <%= link_to "Continue", signup_path, class: "btn" %>
+  </div>
 </div>

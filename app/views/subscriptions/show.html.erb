@@ -1,60 +1,106 @@
-<%= link_to "← Dashboard", subscriptions_path %>
-<h1 class="break-word"><%= @subscription.name %></h1>
-<div>URL: <a href="<%= @subscription.blog.feed_url %>"><%= @subscription.blog.feed_url %></a></div>
-<div>Private feed:
-  <a
-    data-turbolinks="false"
-    href="<%= SubscriptionsHelper.feed_url(request, @subscription) %>"
-  ><%= SubscriptionsHelper.feed_url(request, @subscription) %></a>
-  <button id="copy_button">Copy</button>
-  <script>
-      document.getElementById("copy_button").addEventListener("click", () => {
-          navigator.clipboard.writeText("<%= SubscriptionsHelper.feed_url(request, @subscription) %>");
-      });
-  </script>
-</div>
-<% total_count = @subscription.subscription_posts.count %>
-<% published_count = @subscription.subscription_posts.group(:is_published).count[true] || 0 %>
-<div>Published: <%= published_count %>/<%= total_count %></div>
-<div>
-  Status:
+<div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-1">
+    <div>
+      <%= link_to "← Dashboard",
+                  subscriptions_path,
+                  class: "text-sm link-secondary" %>
+    </div>
+
+    <h2 class="break-word" id="name_header">
+      <%= @subscription.name %>
+      <a class="w-5 h-5 inline-flex link -ml-1" href="<%= @subscription.blog.feed_url %>">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+        </svg>
+      </a>
+    </h2>
+  </div>
+
+  <div class="flex flex-col gap-1">
+    <p class="font-semibold">Private feed link</p>
+    <div>
+      <%= render partial: "copy_feed_link",
+                 locals: {
+                   request: request,
+                   subscription: @subscription
+                 } %>
+    </div>
+  </div>
+  <% total_count = @subscription.subscription_posts.count %>
+  <% published_count = @subscription.subscription_posts.group(:is_published).count[true] || 0 %>
+  <div>
+    <span class="font-semibold">Published:</span>
+    <span><%= published_count %>/<%= total_count %></span>
+  </div>
+  <div>
+    <span class="font-semibold">Status:</span>
+    <span>
+      <% if published_count < total_count %>
+        <% if @subscription.is_paused %>
+          Paused
+          <%= button_to SubscriptionsHelper.unpause_path(@subscription),
+                        { method: :post },
+                        form_class: "btn w-min inline" do %>
+            <div class="inline-flex flex-row gap-1 mt-1 items-center text-sm rounded-md border border-gray-300 text-gray-700 bg-gray-50 hover:bg-gray-100 hover:cursor-pointer px-2 py-1 font-semibold">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Resume
+            </div>
+          <% end %>
+        <% else %>
+          Active
+          <%= button_to SubscriptionsHelper.pause_path(@subscription),
+                        { method: :post } do %>
+            <div class="inline-flex flex-row gap-1 mt-1 items-center text-sm rounded-md border border-gray-300 text-gray-700 bg-gray-50 hover:bg-gray-100 hover:cursor-pointer px-2 py-1 font-semibold">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Pause
+            </div>
+          <% end %>
+        <% end %>
+      <% else %>
+        All done
+      <% end %>
+    </span>
+  </div>
+
   <% if published_count < total_count %>
-    <% if @subscription.is_paused %>
-      Paused
-      <%= button_to "Activate", method: :post, action: :unpause %>
-    <% else %>
-      Active
-      <%= button_to "Pause", method: :post, action: :pause %>
+    <%= form_tag(
+          { :controller => :subscriptions, :action => :update, :id => @subscription.id },
+          { :method => :put }
+        ) do %>
+      <div class="flex flex-col gap-6">
+        <%= render partial: "schedule", locals: {
+          subscription_name: @subscription.name,
+          current_counts_by_day: @current_counts_by_day,
+          other_sub_names_by_day: @other_sub_names_by_day,
+          days_of_week: @days_of_week
+        }
+        %>
+
+        <div>
+          <%= submit_tag "Save", id: "save", class: "btn" %>
+        </div>
+      </div>
+
+      <script>
+          function onValidateSchedule(isValid) {
+              let saveButton = document.getElementById("save");
+              saveButton.disabled = !isValid;
+          }
+
+          function setNameChangeScheduleCallback(callback) {
+          }
+      </script>
+
+      <%= render partial: "schedule_js", locals: {
+        days_of_week: @days_of_week,
+        js_validate_callback: "onValidateSchedule",
+        js_set_name_change_callback: "setNameChangeScheduleCallback"
+      } %>
     <% end %>
-  <% else %>
-    All done
   <% end %>
 </div>
-<br>
-
-<% if published_count < total_count %>
-  <%= form_tag(
-        { :controller => :subscriptions, :action => :update, :id => @subscription.id },
-        { :method => :put }
-      ) do %>
-    <script>
-        function onValidateSchedule(isValid) {
-            let saveButton = document.getElementById("save");
-            saveButton.disabled = !isValid;
-        }
-    </script>
-    <%= render partial: "schedule", locals: {
-      sun_count: @subscription.schedules.find_by(day_of_week: "sun").count,
-      mon_count: @subscription.schedules.find_by(day_of_week: "mon").count,
-      tue_count: @subscription.schedules.find_by(day_of_week: "tue").count,
-      wed_count: @subscription.schedules.find_by(day_of_week: "wed").count,
-      thu_count: @subscription.schedules.find_by(day_of_week: "thu").count,
-      fri_count: @subscription.schedules.find_by(day_of_week: "fri").count,
-      sat_count: @subscription.schedules.find_by(day_of_week: "sat").count,
-      js_validate_callback: "onValidateSchedule"
-    }
-    %>
-
-    <%= submit_tag "Save", id: "save" %>
-  <% end %>
-<% end %>
