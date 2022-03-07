@@ -34,11 +34,14 @@ RSpec.describe "extract_new_posts_from_feed" do
 
   it "should handle feed without updates" do
     existing_post_urls = %w[https://blog/post1 https://blog/post2 https://blog/post3]
+    existing_post_curis = existing_post_urls.map { |url| to_canonical_link(url, logger).curi }
     feed_content = create_feed(
       existing_post_urls,
       %w[post1 post2 post3]
     )
-    expect(extract_new_posts_from_feed(feed_content, feed_uri, existing_post_urls, curi_eq_cfg, logger))
+    expect(extract_new_posts_from_feed(
+             feed_content, feed_uri, existing_post_curis, [], curi_eq_cfg, logger, logger
+           ))
       .to eq []
   end
 
@@ -48,7 +51,10 @@ RSpec.describe "extract_new_posts_from_feed" do
       %w[post1 post2 post3 post4]
     )
     existing_post_urls = %w[https://blog/post3 https://blog/post4 https://blog/post5]
-    expect(extract_new_posts_from_feed(feed_content, feed_uri, existing_post_urls, curi_eq_cfg, logger))
+    existing_post_curis = existing_post_urls.map { |url| to_canonical_link(url, logger).curi }
+    expect(extract_new_posts_from_feed(
+             feed_content, feed_uri, existing_post_curis, [], curi_eq_cfg, logger, logger
+           ))
       .to be_nil
   end
 
@@ -58,7 +64,10 @@ RSpec.describe "extract_new_posts_from_feed" do
       %w[post4 post3 post2 post1]
     )
     existing_post_urls = %w[https://blog/post2 https://blog/post3 https://blog/post4 https://blog/post5]
-    expect(extract_new_posts_from_feed(feed_content, feed_uri, existing_post_urls, curi_eq_cfg, logger))
+    existing_post_curis = existing_post_urls.map { |url| to_canonical_link(url, logger).curi }
+    expect(extract_new_posts_from_feed(
+             feed_content, feed_uri, existing_post_curis, [], curi_eq_cfg, logger, logger
+           ))
       .to be_nil
   end
 
@@ -68,11 +77,14 @@ RSpec.describe "extract_new_posts_from_feed" do
       %w[post5 post1 post2 post3 post4]
     )
     existing_post_urls = %w[https://blog/post2 https://blog/post3 https://blog/post4 https://blog/post5]
-    expect(extract_new_posts_from_feed(feed_content, feed_uri, existing_post_urls, curi_eq_cfg, logger))
+    existing_post_curis = existing_post_urls.map { |url| to_canonical_link(url, logger).curi }
+    expect(extract_new_posts_from_feed(
+             feed_content, feed_uri, existing_post_curis, [], curi_eq_cfg, logger, logger
+           ))
       .to be_nil
   end
 
-  it "should bail on feed with duplicate dates for new posts" do
+  it "should handle feed with duplicate dates for new posts" do
     feed_content = %{
       <rss>
         <channel>
@@ -105,8 +117,11 @@ RSpec.describe "extract_new_posts_from_feed" do
       </rss>
     }
     existing_post_urls = %w[https://blog/post3 https://blog/post4 https://blog/post5]
-    expect(extract_new_posts_from_feed(feed_content, feed_uri, existing_post_urls, curi_eq_cfg, logger))
-      .to be_nil
+    existing_post_curis = existing_post_urls.map { |url| to_canonical_link(url, logger).curi }
+    expect(extract_new_posts_from_feed(
+             feed_content, feed_uri, existing_post_curis, [], curi_eq_cfg, logger, logger
+           ))
+      .to match_urls_titles(%w[https://blog/post1 https://blog/post2], %w[post1 post2])
   end
 
   it "should handle feed with duplicate dates for the oldest new post and the newest old post" do
@@ -142,7 +157,10 @@ RSpec.describe "extract_new_posts_from_feed" do
       </rss>
     }
     existing_post_urls = %w[https://blog/post3 https://blog/post4 https://blog/post5]
-    expect(extract_new_posts_from_feed(feed_content, feed_uri, existing_post_urls, curi_eq_cfg, logger))
+    existing_post_curis = existing_post_urls.map { |url| to_canonical_link(url, logger).curi }
+    expect(extract_new_posts_from_feed(
+             feed_content, feed_uri, existing_post_curis, [], curi_eq_cfg, logger, logger
+           ))
       .to match_urls_titles(%w[https://blog/post1 https://blog/post2], %w[post1 post2])
   end
 
@@ -179,7 +197,10 @@ RSpec.describe "extract_new_posts_from_feed" do
       </rss>
     }
     existing_post_urls = %w[https://blog/post3 https://blog/post4 https://blog/post5]
-    expect(extract_new_posts_from_feed(feed_content, feed_uri, existing_post_urls, curi_eq_cfg, logger))
+    existing_post_curis = existing_post_urls.map { |url| to_canonical_link(url, logger).curi }
+    expect(extract_new_posts_from_feed(
+             feed_content, feed_uri, existing_post_curis, [], curi_eq_cfg, logger, logger
+           ))
       .to match_urls_titles(%w[https://blog/post1 https://blog/post2], %w[post1 post2])
   end
 
@@ -189,7 +210,10 @@ RSpec.describe "extract_new_posts_from_feed" do
       %w[post1 post2 post3 post4 post5 post6]
     )
     existing_post_urls = %w[https://blog/post4 https://blog/post5 https://blog/post6]
-    expect(extract_new_posts_from_feed(feed_content, feed_uri, existing_post_urls, curi_eq_cfg, logger))
+    existing_post_curis = existing_post_urls.map { |url| to_canonical_link(url, logger).curi }
+    expect(extract_new_posts_from_feed(
+             feed_content, feed_uri, existing_post_curis, [], curi_eq_cfg, logger, logger
+           ))
       .to match_urls_titles(
             %w[https://blog/post1 https://blog/post2 https://blog/post3], %w[post1 post2 post3]
           )

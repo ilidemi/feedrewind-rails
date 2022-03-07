@@ -1,3 +1,8 @@
+<div id="copied_popup"
+     class="hidden fixed top-0 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-b-lg border-x border-b border-gray-300 shadow-md">
+  Copied!
+</div>
+
 <div class="flex flex-row text-sm">
   <span class="truncate border border-gray-300 text-gray-500 rounded-l-md px-2 py-1 focus-visible:outline-0 select-all">
     <%= SubscriptionsHelper.feed_url(request, subscription) %>
@@ -6,13 +11,28 @@
           class="inline-flex flex-row gap-0.5 items-center rounded-r-md border-y border-r border-gray-300 text-gray-700 bg-gray-50 hover:bg-gray-100 hover:cursor-pointer px-2 py-1 font-semibold"
           type="button">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
     </svg>
     Copy
   </button>
   <script>
-      document.getElementById("copy_button").addEventListener("click", () => {
-          navigator.clipboard.writeText("<%= SubscriptionsHelper.feed_url(request, subscription) %>");
-      });
+      {
+          let copiedPopup = document.getElementById("copied_popup");
+          copiedPopup.addEventListener("animationend", (event) => {
+              if (event.animationName === "popup-disappear") {
+                  copiedPopup.classList.remove("popup");
+                  copiedPopup.classList.add("hidden");
+              }
+          });
+          document.getElementById("copy_button").addEventListener("click", () => {
+              navigator.clipboard.writeText("<%= SubscriptionsHelper.feed_url(request, subscription) %>");
+
+              copiedPopup.classList.add("hidden");
+              copiedPopup.classList.remove("popup");
+              void copiedPopup.offsetWidth;
+              copiedPopup.classList.remove("hidden");
+              copiedPopup.classList.add("popup");
+          });
+      }
   </script>
 </div>

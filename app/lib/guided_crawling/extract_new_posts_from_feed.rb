@@ -39,20 +39,5 @@ def extract_new_posts_from_feed(
     return nil
   end
 
-  # If there are 3 new posts and the feed buckets are [1] [2] [3 4], we only need to ensure [1] and [2] are
-  # solitary, [3] can be inferred
-  are_new_posts_orderable = feed_entry_links
-    .link_buckets[...new_posts_count - 1]
-    .all? { |link_bucket| link_bucket.length == 1 }
-  unless are_new_posts_orderable
-    logger.info("Can't update from feed because the new links are not orderable")
-    return nil
-  end
-
-  # Resolve the [3 4] situation
-  last_new_post_link = feed_entry_links
-    .link_buckets[new_posts_count - 1]
-    .find { |feed_link| !existing_post_curis_set.include?(feed_link.curi) }
-
-  feed_entry_links_list[...new_posts_count - 1] + [last_new_post_link]
+  feed_entry_links_list[...new_posts_count]
 end
