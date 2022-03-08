@@ -118,11 +118,17 @@
         <%= submit_tag "Save schedule", id: "save_schedule", class: "hidden" %>
 
         <script>
+            let scheduleSavedTimeoutId = null;
+
             function onValidateSchedule(isValid, hasSomethingChanged) {
                 if (isValid && hasSomethingChanged) {
                     let version = document.getElementById("version")
                     version.value = parseInt(version.value) + 1;
                     document.getElementById("save_schedule").click();
+                }
+
+                if (!isValid && scheduleSavedTimeoutId) {
+                    clearTimeout(scheduleSavedTimeoutId);
                 }
             }
 
@@ -134,14 +140,17 @@
                 triggerRefreshPopup();
             }
 
-            let scheduleSavedTimeoutId = null;
 
             function onScheduleSaved() {
                 if (scheduleSavedTimeoutId) {
                     clearTimeout(scheduleSavedTimeoutId);
                 }
                 scheduleSavedTimeoutId = setTimeout(
-                    () => triggerInfoPopup("Schedule saved"),
+                    () =>  {
+                        if (isScheduleValid) {
+                            triggerInfoPopup("Schedule saved");
+                        }
+                    },
                     1000
                 );
             }
