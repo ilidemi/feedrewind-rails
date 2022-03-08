@@ -1,0 +1,46 @@
+<div id="delete_popup_background<%= id_suffix %>" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75"></div>
+<div id="delete_popup<%= id_suffix %>"
+     class="hidden fixed top-0 left-1/2 -translate-x-1/2 px-4 py-4 rounded-b-3xl border-x border-b border-gray-300 bg-white shadow-md flex flex-col gap-4"
+>
+  <div class="break-word">
+    <%= prompt_prefix %><span class="font-semibold"><%= subscription.name %></span><%= prompt_suffix %>
+  </div>
+  <div class="flex flex-row gap-3 justify-end">
+    <button id="popup_cancel_button<%= id_suffix %>" class="btn"><%= keep_label %></button>
+    <%= link_to delete_label, subscription_path(subscription),
+                method: :delete,
+                class: "btn-red"
+    %>
+  </div>
+</div>
+
+<script>
+    {
+        let deletePopup = document.getElementById("delete_popup<%= id_suffix %>");
+        let deleteBackground = document.getElementById("delete_popup_background<%= id_suffix %>");
+        document.getElementById("<%= trigger_button_id %>").addEventListener("click", () => {
+            deletePopup.classList.add("hidden");
+            deletePopup.classList.remove("popup-appear");
+            void deletePopup.offsetWidth; // trigger reflow
+            deletePopup.classList.remove("hidden");
+            deletePopup.classList.add("popup-appear");
+            deleteBackground.classList.remove("hidden");
+        });
+        document.getElementById("popup_cancel_button<%= id_suffix %>").addEventListener("click", () => {
+            deletePopup.classList.remove("popup-appear");
+            deletePopup.classList.add("popup-disappear");
+            deleteBackground.classList.add("hidden");
+        });
+        deleteBackground.addEventListener("click", () => {
+            deletePopup.classList.remove("popup-appear");
+            deletePopup.classList.add("popup-disappear");
+            deleteBackground.classList.add("hidden");
+        });
+        deletePopup.addEventListener("animationend", (event) => {
+            if (event.animationName === "popup-disappear") {
+                deletePopup.classList.remove("popup-disappear");
+                deletePopup.classList.add("hidden");
+            }
+        });
+    }
+</script>

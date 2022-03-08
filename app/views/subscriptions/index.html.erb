@@ -22,10 +22,19 @@
                           SubscriptionsHelper.setup_path(subscription),
                           class: "justify-self-start break-word text-base font-semibold leading-relaxed underline"
               %>
-              <%= link_to "Remove", subscription_path(subscription),
-                          method: :delete,
-                          data: { confirm: "Delete #{subscription.name}?" },
-                          class: "justify-self-end btn-secondary-red"
+              <button id="delete_button_<%= subscription.id %>" class="justify-self-end btn-secondary-red">
+                Delete
+              </button>
+              <%= render partial: "delete_subscription_popup",
+                         locals: {
+                           trigger_button_id: "delete_button_#{subscription.id}",
+                           id_suffix: "_#{subscription.id}",
+                           prompt_prefix: "Delete ",
+                           prompt_suffix: "? This cannot be undone.",
+                           keep_label: "Keep",
+                           delete_label: "Delete",
+                           subscription: subscription
+                         }
               %>
             <% end %>
           </div>

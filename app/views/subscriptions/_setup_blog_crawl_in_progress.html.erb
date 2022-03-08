@@ -152,9 +152,21 @@
       })
   </script>
 
-  <%= button_to "Cancel", subscription_path(subscription),
-                method: :delete,
-                data: { confirm: "Cancel adding #{subscription.name}?" },
-                class: "btn-secondary-red"
+  <div>
+    <button id="cancel_button" class="btn-secondary-red">
+      Cancel
+    </button>
+  </div>
+
+  <%= render partial: "delete_subscription_popup",
+             locals: {
+               trigger_button_id: "cancel_button",
+               id_suffix: "",
+               prompt_prefix: "Cancel adding ",
+               prompt_suffix: "?",
+               keep_label: "Keep",
+               delete_label: "Cancel",
+               subscription: subscription
+             }
   %>
 </div>
