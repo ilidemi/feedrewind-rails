@@ -1,0 +1,32 @@
+<div id="info_popup"
+     class="hidden fixed top-0 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-b-lg border-x border-b border-gray-300 bg-white shadow-lg"
+>
+</div>
+
+<script>
+    {
+        let infoPopup = document.getElementById("info_popup");
+        infoPopup.addEventListener("animationend", (event) => {
+            if (event.animationName === "popup-disappear") {
+                infoPopup.classList.remove("popup");
+                infoPopup.classList.add("hidden");
+            }
+        });
+    }
+
+    function triggerInfoPopup(message) {
+        let infoPopup = document.getElementById("info_popup");
+        infoPopup.classList.add("hidden");
+        infoPopup.classList.remove("popup");
+        infoPopup.innerText = message;
+        void infoPopup.offsetWidth; // trigger reflow
+        infoPopup.classList.remove("hidden");
+        infoPopup.classList.add("popup");
+    }
+
+    function hideInfoPopup() {
+        let infoPopup = document.getElementById("info_popup");
+        infoPopup.classList.remove("popup");
+        infoPopup.classList.add("hidden");
+    }
+</script>

@@ -1,9 +1,3 @@
-<div id="copied_popup"
-     class="hidden fixed top-0 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-b-lg border-x border-b border-gray-300 bg-white shadow-md"
->
-  Copied!
-</div>
-
 <div class="flex flex-row text-sm">
   <span class="truncate border border-gray-300 text-gray-500 rounded-l-md px-2 py-1 focus-visible:outline-0 select-all">
     <%= SubscriptionsHelper.feed_url(request, subscription) %>
@@ -18,23 +12,9 @@
     Copy
   </button>
   <script>
-      {
-          let copiedPopup = document.getElementById("copied_popup");
-          copiedPopup.addEventListener("animationend", (event) => {
-              if (event.animationName === "popup-disappear") {
-                  copiedPopup.classList.remove("popup");
-                  copiedPopup.classList.add("hidden");
-              }
-          });
-          document.getElementById("copy_button").addEventListener("click", () => {
-              navigator.clipboard.writeText("<%= SubscriptionsHelper.feed_url(request, subscription) %>");
-
-              copiedPopup.classList.add("hidden");
-              copiedPopup.classList.remove("popup");
-              void copiedPopup.offsetWidth; // trigger reflow
-              copiedPopup.classList.remove("hidden");
-              copiedPopup.classList.add("popup");
-          });
-      }
+      document.getElementById("copy_button").addEventListener("click", () => {
+          navigator.clipboard.writeText("<%= SubscriptionsHelper.feed_url(request, subscription) %>");
+          <%= js_trigger_popup %>("Copied!");
+      });
   </script>
 </div>

@@ -2,13 +2,13 @@
     {
         let daysOfWeek = ["<%= raw days_of_week.join('", "') %>"];
 
-        function validateSchedule() {
+        function validateSchedule(hasSomethingChanged) {
             let totalCount = 0;
             daysOfWeek.forEach(day => {
                 totalCount += parseInt(document.getElementById(`${day}_count`).value);
             });
             let isValid = totalCount > 0;
-            <%= js_validate_callback %>(isValid);
+            <%= js_validate_callback %>(isValid, hasSomethingChanged);
             if (isValid) {
                 document
                     .getElementById("schedule_empty_error")
@@ -31,7 +31,7 @@
                 dayField.value = parseInt(dayField.value) - 1;
                 document.getElementsByName(`${day}_remove`)[0].remove();
                 document.getElementsByName(`${day}_remove_mobile`)[0].remove();
-                validateSchedule();
+                validateSchedule(true);
             }
 
             function createRemoveButton() {
@@ -74,7 +74,7 @@
                 .addEventListener("click", () => {
                     dayField.value = parseInt(dayField.value) + 1;
                     insertAdd();
-                    validateSchedule();
+                    validateSchedule(true);
                 });
 
             document
@@ -82,11 +82,11 @@
                 .addEventListener("click", () => {
                     dayField.value = parseInt(dayField.value) + 1;
                     insertAdd();
-                    validateSchedule();
+                    validateSchedule(true);
                 });
         });
 
-        validateSchedule();
+        validateSchedule(false);
 
         <%= js_set_name_change_callback %>((newName) => {
             let elems = document.getElementsByClassName("schedule-sub-name");

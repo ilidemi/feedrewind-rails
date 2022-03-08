@@ -288,6 +288,7 @@ class SubscriptionsController < ApplicationController
 
       @subscription.name = schedule_params[:name]
       @subscription.status = "live"
+      @subscription.version = 1
       @subscription.save!
     end
 
@@ -315,10 +316,21 @@ class SubscriptionsController < ApplicationController
   end
 
   def update
-    update_params = params.permit(:id, *DAY_COUNT_NAMES)
+    update_params = params.permit(:id, :version, *DAY_COUNT_NAMES)
     @subscription = @current_user.subscriptions.find_by(id: update_params[:id])
     return redirect_from_not_found unless @subscription
     return if @subscription.status != "live"
+
+    new_version = update_params[:version].to_i
+
+    if @subscription.version >= new_version
+      @is_conflict = true
+      return respond_to do |format|
+        format.js
+      end
+    end
+
+    @is_conflict = false
 
     total_count = DAY_COUNT_NAMES
       .map { |day_count_name| update_params[day_count_name].to_i }
@@ -333,9 +345,14 @@ class SubscriptionsController < ApplicationController
         schedule.count = day_count
         schedule.save!
       end
+
+      @subscription.version = new_version
+      @subscription.save!
     end
 
-    redirect_to action: "show", id: @subscription.id
+    respond_to do |format|
+      format.js
+    end
   end
 
   def destroy

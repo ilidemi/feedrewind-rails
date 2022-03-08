@@ -16,7 +16,8 @@ class Subscription < ApplicationRecord
           user_id: current_user&.id,
           blog_id: blog.id,
           name: blog.name,
-          status: "setup"
+          status: "setup",
+          version: 0
         )
 
         now = Time.current
@@ -40,7 +41,8 @@ class Subscription < ApplicationRecord
         user_id: current_user&.id,
         blog_id: blog.id,
         name: blog.name,
-        status: "waiting_for_blog"
+        status: "waiting_for_blog",
+        version: 0
       )
     end
   end

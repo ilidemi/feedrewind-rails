@@ -1,3 +1,4 @@
+<%= render partial: "info_popup" %>
 <div class="flex flex-col gap-6">
   <div class="flex flex-col gap-1">
     <p>Here's your private feed link. Add it to your feed reader and you're all set!</p>
@@ -5,7 +6,8 @@
       <%= render partial: "copy_feed_link",
                  locals: {
                    request: request,
-                   subscription: subscription
+                   subscription: subscription,
+                   js_trigger_popup: "triggerInfoPopup"
                  }
       %>
     </div>
