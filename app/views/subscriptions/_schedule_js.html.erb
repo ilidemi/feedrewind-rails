@@ -1,6 +1,4 @@
 <script>
-    let isScheduleValid;
-
     {
         let daysOfWeek = ["<%= raw days_of_week.join('", "') %>"];
 
@@ -9,19 +7,8 @@
             daysOfWeek.forEach(day => {
                 totalCount += parseInt(document.getElementById(`${day}_count`).value);
             });
-            isScheduleValid = totalCount > 0;
-            <%= js_validate_callback %>(isScheduleValid, hasSomethingChanged);
-            if (isScheduleValid) {
-                document
-                    .getElementById("schedule_empty_error")
-                    .classList
-                    .add("hidden");
-            } else {
-                document
-                    .getElementById("schedule_empty_error")
-                    .classList
-                    .remove("hidden");
-            }
+            let isValid = totalCount > 0;
+            <%= js_validate_callback %>(isValid, hasSomethingChanged);
         }
 
         daysOfWeek.forEach(day => {

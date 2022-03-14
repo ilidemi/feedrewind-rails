@@ -1,7 +1,7 @@
 require 'pg'
 
 def connect_db
-  PG.connect(host: "172.18.28.165", dbname: 'rss_catchup_analysis', user: "postgres")
+  PG.connect(host: "172.23.156.55", dbname: 'rss_catchup_analysis', user: "postgres")
 end
 
 def unescape_bytea(bytea)

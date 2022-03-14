@@ -1,12 +1,10 @@
 <%= render partial: "info_popup" %>
 
-<div id="refresh_popup_background" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75"></div>
+<div id="refresh_popup_background" class="hidden z-10 fixed inset-0 bg-gray-500 bg-opacity-75"></div>
 <div id="refresh_popup"
-     class="hidden fixed top-0 left-1/2 -translate-x-1/2 px-4 py-4 rounded-b-3xl border-x border-b border-gray-300 bg-white shadow-md flex flex-col gap-4"
+     class="hidden z-10 fixed top-0 left-1/2 -translate-x-1/2 px-4 py-4 rounded-b-3xl border-x border-b border-gray-300 bg-white shadow-md flex flex-col gap-4"
 >
-  <div class="break-word">
-    Schedule is out of date. Please refresh the page.
-  </div>
+  <div id="refresh_popup_message" class="break-word"></div>
   <div class="flex flex-row justify-end">
     <button id="popup_refresh_button" class="btn">Refresh</button>
   </div>
@@ -15,7 +13,9 @@
 <script>
     document.getElementById("popup_refresh_button").addEventListener("click", () => window.location.reload());
 
-    function triggerRefreshPopup() {
+    function triggerRefreshPopup(message) {
+        let refreshPopupMessage = document.getElementById("refresh_popup_message");
+        refreshPopupMessage.innerText = message;
         let refreshPopup = document.getElementById("refresh_popup");
         refreshPopup.classList.remove("hidden");
         refreshPopup.classList.add("popup-appear");
@@ -102,55 +102,124 @@
             remote: true,
             id: "schedule_form"
           ) do %>
+        <div class="flex flex-col gap-1">
+          <div class="sticky top-0 bg-white py-1">
+            <div id="schedule_header" class="flex flex-row gap-[0.3125rem] items-center flex-wrap">
+              <div class="font-semibold self-baseline">Weekly schedule</div>
+              <div id="schedule_save_spinner_container">
+                <div id="schedule_save_spinner" class="spinner hidden"></div>
+              </div>
+              <div class="flex-1"></div>
+              <div id="schedule_empty_error" class="invisible text-red-600 self-baseline text-sm">Select at
+                least some days
+              </div>
+            </div>
+          </div>
 
-        <%= render partial: "schedule", locals: {
-          subscription_name: @subscription.name,
-          current_counts_by_day: @current_counts_by_day,
-          other_sub_names_by_day: @other_sub_names_by_day,
-          days_of_week: @days_of_week
-        }
-        %>
+          <%= render partial: "schedule", locals: {
+            subscription_name: @subscription.name,
+            current_counts_by_day: @current_counts_by_day,
+            other_sub_names_by_day: @other_sub_names_by_day,
+            days_of_week: @days_of_week
+          }
+          %>
+        </div>
 
         <%= number_field_tag "version", @subscription.version, id: "version", class: "hidden" %>
 
         <%= submit_tag "Save schedule", id: "save_schedule", class: "hidden" %>
 
         <script>
-            let scheduleSavedTimeoutId = null;
+            function getScheduleVersion() {
+                let version = document.getElementById("version");
+                return parseInt(version.value);
+            }
 
-            function onValidateSchedule(isValid, hasSomethingChanged) {
-                if (isValid && hasSomethingChanged) {
-                    let version = document.getElementById("version")
-                    version.value = parseInt(version.value) + 1;
-                    document.getElementById("save_schedule").click();
+            let scheduleRequestsInFlight = 0;
+            let isScheduleValid = true;
+            let maxSeenVersion = getScheduleVersion();
+
+            function showSpinner() {
+                scheduleRequestsInFlight++;
+                let spinner = document.getElementById("schedule_save_spinner");
+                spinner.classList.remove("hidden");
+                void spinner.offsetWidth; // trigger reflow
+            }
+
+            function maybeHideSpinner() {
+                scheduleRequestsInFlight--;
+                if (scheduleRequestsInFlight === 0) {
+                    let spinner = document.getElementById("schedule_save_spinner");
+                    spinner.classList.add("hidden");
+                }
+            }
+
+            async function onValidateSchedule(isValid, hasSomethingChanged) {
+                isScheduleValid = isValid;
+
+                const scheduleHeader = document.getElementById("schedule_header");
+                const scheduleError = document.getElementById("schedule_empty_error");
+                const scheduleSpinnerContainer = document.getElementById("schedule_save_spinner_container");
+                const scheduleMobileGrid = document.getElementById("schedule_mobile_grid");
+                if (isValid) {
+                    scheduleError.classList.add("invisible");
+                    scheduleSpinnerContainer.classList.remove("hidden");
+                } else {
+                    scheduleSpinnerContainer.classList.add("hidden");
+                    const scheduleMobileGridStyle = window.getComputedStyle(scheduleMobileGrid);
+                    if (scheduleMobileGridStyle.display !== "none") {
+                        scheduleHeader.style.maxWidth = scheduleMobileGridStyle.width;
+                    } else {
+                        scheduleHeader.style.maxWidth = null;
+                    }
+                    scheduleError.classList.remove("invisible");
                 }
 
-                if (!isValid && scheduleSavedTimeoutId) {
-                    clearTimeout(scheduleSavedTimeoutId);
+                if (isValid && hasSomethingChanged) {
+                    showSpinner();
+                    maxSeenVersion = getScheduleVersion() + 1;
+                    const requestVersion = maxSeenVersion;
+                    document.getElementById("version").value = maxSeenVersion;
+
+                    const abortController = new AbortController();
+                    const timeoutId = setTimeout(() => abortController.abort(), 30000);
+                    const body = new URLSearchParams(new FormData(document.getElementById("schedule_form")));
+                    try {
+                        const response = await fetch(
+                            window.location, {
+                                method: "post",
+                                headers: {
+                                    "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+                                },
+                                body: body,
+                                signal: abortController.signal
+                            }
+                        );
+                        clearTimeout(timeoutId);
+                        maybeHideSpinner();
+
+                        if (response.status === 200) {
+                            // Do nothing
+                        } else if (response.status === 409) {
+                            if (response.version > maxSeenVersion) {
+                                triggerRefreshPopup("Schedule is out of date. Please refresh the page.");
+                            }
+                            // If the version is older, we're expecting some other request to succeed
+                        } else {
+                            if (requestVersion === maxSeenVersion) {
+                                triggerRefreshPopup("Something went wrong. Please refresh the page.");
+                            }
+                            // If the version is older, we're expecting some other request to succeed
+                        }
+                    } catch (err) {
+                        // Timeout
+                        maybeHideSpinner();
+                        triggerRefreshPopup("Something went wrong. Please refresh the page.");
+                    }
                 }
             }
 
             function setNameChangeScheduleCallback(callback) {
-            }
-
-            // Called from update.js.erb
-            function onScheduleVersionConflict() {
-                triggerRefreshPopup();
-            }
-
-
-            function onScheduleSaved() {
-                if (scheduleSavedTimeoutId) {
-                    clearTimeout(scheduleSavedTimeoutId);
-                }
-                scheduleSavedTimeoutId = setTimeout(
-                    () => {
-                        if (isScheduleValid) {
-                            triggerInfoPopup("Schedule saved");
-                        }
-                    },
-                    1000
-                );
             }
         </script>
 

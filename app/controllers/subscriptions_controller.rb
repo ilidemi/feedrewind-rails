@@ -322,15 +322,9 @@ class SubscriptionsController < ApplicationController
     return if @subscription.status != "live"
 
     new_version = update_params[:version].to_i
-
     if @subscription.version >= new_version
-      @is_conflict = true
-      return respond_to do |format|
-        format.js
-      end
+      return render status: :conflict, json: { version: @subscription.version }
     end
-
-    @is_conflict = false
 
     total_count = DAY_COUNT_NAMES
       .map { |day_count_name| update_params[day_count_name].to_i }
@@ -350,9 +344,7 @@ class SubscriptionsController < ApplicationController
       @subscription.save!
     end
 
-    respond_to do |format|
-      format.js
-    end
+    render head: :ok
   end
 
   def destroy
