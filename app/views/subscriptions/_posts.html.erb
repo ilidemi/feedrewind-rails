@@ -1,3 +1,5 @@
+<%= render partial: "refresh_popup" %>
+
 <div id="posts" class="flex flex-col leading-relaxed">
   <% ordered_blog_posts = subscription.blog.blog_posts.sort_by(&:index) %>
   <% if ordered_blog_posts.length <= 11 %>
@@ -8,18 +10,67 @@
         <a href="<%= blog_post.url %>" class="link"><%= blog_post.title %></a>
       </div>
     <% end %>
-    <div>
-      (<%= link_to "#{ordered_blog_posts.length - 10} more",
-                   SubscriptionsHelper.all_posts_path(subscription),
-                   method: :post,
-                   remote: true,
-                   class: "link"
-      %>)
+    <div class="flex flex-row gap-[0.3125rem] items-center">
+      <span>(<a id="more_posts" class="link"><%= ordered_blog_posts.length - 10 %> more</a>)</span>
+      <div id="more_posts_spinner" class="spinner hidden"></div>
     </div>
     <% ordered_blog_posts[-5..].each do |blog_post| %>
       <div>
         <a href="<%= blog_post.url %>" class="link"><%= blog_post.title %></a>
       </div>
     <% end %>
+
+    <script>
+        let spinnerTimeoutId = null;
+
+        function showSpinner() {
+            let spinner = document.getElementById("more_posts_spinner");
+            spinnerTimeoutId = setTimeout(() => {
+                spinner.classList.remove("hidden");
+                void spinner.offsetWidth; // trigger reflow
+            }, 200);
+        }
+
+        function hideSpinner() {
+            if (spinnerTimeoutId) {
+                clearTimeout(spinnerTimeoutId);
+            }
+            let spinner = document.getElementById("more_posts_spinner");
+            spinner.classList.add("hidden");
+        }
+
+        document.getElementById("more_posts").addEventListener("click", async () => {
+            showSpinner();
+            try {
+                const abortController = new AbortController();
+                const timeoutId = setTimeout(() => abortController.abort(), 1000);
+                const response = await fetch(
+                    "<%= SubscriptionsHelper.all_posts_path(subscription) %>",
+                    {
+                        method: "post",
+                        headers: {
+                            "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        signal: abortController.signal
+                    }
+                );
+
+                if (response.status === 200) {
+                    const postsContent = await response.text();
+                    clearTimeout(timeoutId);
+                    hideSpinner();
+                    document.getElementById("posts").innerHTML = postsContent;
+                } else {
+                    clearTimeout(timeoutId);
+                    hideSpinner();
+                    triggerRefreshPopup("Something went wrong. Please refresh the page.");
+                }
+            } catch (err) {
+                // Timeout
+                hideSpinner();
+                triggerRefreshPopup("Something went wrong. Please refresh the page.");
+            }
+        });
+    </script>
   <% end %>
 </div>

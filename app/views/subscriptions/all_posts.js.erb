@@ -1,6 +1,3 @@
-{
-    let posts = document.getElementById("posts");
-    posts.innerHTML = "<%= j render partial: "all_posts",
-                                    locals: { ordered_blog_posts: @ordered_blog_posts }
-                       %>";
-}
+<%= render partial: "all_posts",
+           locals: { ordered_blog_posts: @ordered_blog_posts }
+%>

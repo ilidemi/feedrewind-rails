@@ -1,28 +1,5 @@
 <%= render partial: "info_popup" %>
-
-<div id="refresh_popup_background" class="hidden z-10 fixed inset-0 bg-gray-500 bg-opacity-75"></div>
-<div id="refresh_popup"
-     class="hidden z-10 fixed top-0 left-1/2 -translate-x-1/2 px-4 py-4 rounded-b-3xl border-x border-b border-gray-300 bg-white shadow-md flex flex-col gap-4"
->
-  <div id="refresh_popup_message" class="break-word"></div>
-  <div class="flex flex-row justify-end">
-    <button id="popup_refresh_button" class="btn">Refresh</button>
-  </div>
-</div>
-
-<script>
-    document.getElementById("popup_refresh_button").addEventListener("click", () => window.location.reload());
-
-    function triggerRefreshPopup(message) {
-        let refreshPopupMessage = document.getElementById("refresh_popup_message");
-        refreshPopupMessage.innerText = message;
-        let refreshPopup = document.getElementById("refresh_popup");
-        refreshPopup.classList.remove("hidden");
-        refreshPopup.classList.add("popup-appear");
-        document.getElementById("refresh_popup_background").classList.remove("hidden");
-    }
-</script>
-
+<%= render partial: "refresh_popup" %>
 
 <div class="flex flex-col gap-12">
   <div class="flex flex-col gap-6">
@@ -181,12 +158,13 @@
                     const requestVersion = maxSeenVersion;
                     document.getElementById("version").value = maxSeenVersion;
 
-                    const abortController = new AbortController();
-                    const timeoutId = setTimeout(() => abortController.abort(), 30000);
-                    const body = new URLSearchParams(new FormData(document.getElementById("schedule_form")));
                     try {
+                        const abortController = new AbortController();
+                        const timeoutId = setTimeout(() => abortController.abort(), 30000);
+                        const body = new URLSearchParams(new FormData(document.getElementById("schedule_form")));
                         const response = await fetch(
-                            window.location, {
+                            window.location,
+                            {
                                 method: "post",
                                 headers: {
                                     "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
@@ -195,17 +173,21 @@
                                 signal: abortController.signal
                             }
                         );
-                        clearTimeout(timeoutId);
-                        maybeHideSpinner();
 
                         if (response.status === 200) {
-                            // Do nothing
+                            clearTimeout(timeoutId);
+                            maybeHideSpinner();
                         } else if (response.status === 409) {
-                            if (response.version > maxSeenVersion) {
+                            const json = await response.json();
+                            clearTimeout(timeoutId);
+                            maybeHideSpinner();
+                            if (json.version > maxSeenVersion) {
                                 triggerRefreshPopup("Schedule is out of date. Please refresh the page.");
                             }
                             // If the version is older, we're expecting some other request to succeed
                         } else {
+                            clearTimeout(timeoutId);
+                            maybeHideSpinner();
                             if (requestVersion === maxSeenVersion) {
                                 triggerRefreshPopup("Something went wrong. Please refresh the page.");
                             }

@@ -5,7 +5,7 @@
     <%= render partial: "posts", locals: { subscription: subscription } %>
   </div>
 
-  <div id="confirm_section" class="flex flex-row items-baseline gap-4">
+  <div id="confirm_section" class="flex flex-row items-baseline gap-4 mb-8">
     <%= button_to "Continue",
                   SubscriptionsHelper.confirm_path(subscription),
                   method: :post,

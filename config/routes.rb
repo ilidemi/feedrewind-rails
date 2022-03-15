@@ -15,8 +15,10 @@ Rails.application.routes.draw do
 
   get "/subscriptions/:id", to: "subscriptions#show" # Should come after /add so that it doesn't get treated as id
   get "/subscriptions/:id/setup", to: "subscriptions#setup"
+
+  # all js should be post for CSRF to work
   post "/subscriptions/:id/submit_progress_times", to: "subscriptions#submit_progress_times"
-  post "/subscriptions/:id/all_posts", to: "subscriptions#all_posts" # all js should be post for redirects to work
+  post "/subscriptions/:id/all_posts", to: "subscriptions#all_posts"
   post "/subscriptions/:id/confirm", to: "subscriptions#confirm"
   post "/subscriptions/:id/mark_wrong", to: "subscriptions#mark_wrong"
   post "/subscriptions/:id/continue_with_wrong", to: "subscriptions#continue_with_wrong"

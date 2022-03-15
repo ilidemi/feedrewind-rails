@@ -1,5 +1,5 @@
 <div class="flex flex-col leading-relaxed">
-  <% ordered_blog_posts.each do |post| %>
+  <% @ordered_blog_posts.each do |post| %>
     <div>
       <a href="<%= post.url %>" class="link"><%= post.title %></a>
     </div>
