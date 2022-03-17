@@ -1,3 +1,5 @@
+<%= render partial: "common/refresh_popup" %>
+
 <div class="flex flex-col gap-6 mb-6">
   <div class="flex flex-col gap-1">
     <div>
@@ -17,7 +19,11 @@
     <h2>Add Blog</h2>
   </div>
 
-  <%= form_with url: "/subscriptions/discover_feeds", method: :post, local: false do |form| %>
+  <%= form_with url: "/subscriptions/discover_feeds",
+                method: :post,
+                local: false,
+                id: "discover_form" do |form|
+  %>
     <div class="flex flex-row w-full">
       <%= form.url_field :start_url,
                          value: @start_url,
@@ -25,9 +31,80 @@
                          autocomplete: "off",
                          class: "border border-slate-700 rounded-l-md w-full focus:ring-transparent focus:shadow-none"
       %>
-      <%= form.submit "Go",
-                      class: "btn rounded-l-none border border-slate-700 rounded-r-md hover:disabled:cursor-default"
-      %>
+      <button id="discover_go"
+              type="submit"
+              class="btn rounded-l-none border border-slate-700 rounded-r-md relative"
+      >
+        <div id="discover_go_label" class="">Go</div>
+        <div id="discover_spinner" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 hidden">
+          <div class="spinner"></div>
+        </div>
+      </button>
+      <script>
+          function showSpinner() {
+              const button = document.getElementById("discover_go");
+              button.classList.add("disabled");
+              const label = document.getElementById("discover_go_label");
+              label.classList.add("invisible");
+              const spinner = document.getElementById("discover_spinner");
+              spinner.classList.remove("hidden");
+              void spinner.offsetWidth; // trigger reflow
+          }
+
+          function hideSpinner() {
+              const button = document.getElementById("discover_go");
+              button.classList.remove("disabled");
+              const label = document.getElementById("discover_go_label");
+              label.classList.remove("invisible");
+              const spinner = document.getElementById("discover_spinner");
+              spinner.classList.add("hidden");
+          }
+
+          document.getElementById("discover_go").addEventListener("click", async (event) => {
+              event.preventDefault();
+              showSpinner();
+
+              try {
+                  const abortController = new AbortController();
+                  const timeoutId = setTimeout(() => abortController.abort(), 10000);
+                  const form = document.getElementById("discover_form");
+                  const body = new URLSearchParams(new FormData(form));
+                  const response = await fetch(
+                      form.action,
+                      {
+                          method: "post",
+                          headers: {
+                              "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+                          },
+                          body: body,
+                          redirect: "manual",
+                          signal: abortController.signal
+                      }
+                  );
+
+                  if (response.status === 200) {
+                      const text = await response.text();
+                      clearTimeout(timeoutId);
+                      if (text.startsWith("http") || text.startsWith("/")) {
+                          // No need to hide spinner as we're navigating away
+                          // fetch api doesn't expose redirects so doing a manual one
+                          window.location = text;
+                      } else {
+                          hideSpinner();
+                          document.getElementById("feeds").innerHTML = text;
+                      }
+                  } else {
+                      clearTimeout(timeoutId);
+                      hideSpinner();
+                      triggerRefreshPopup("Something went wrong. Please refresh the page.");
+                  }
+              } catch (err) {
+                  // Timeout
+                  hideSpinner();
+                  triggerRefreshPopup("Something went wrong. Please refresh the page.");
+              }
+          });
+      </script>
     </div>
   <% end %>
   <br>

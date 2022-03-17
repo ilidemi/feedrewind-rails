@@ -1,4 +1,4 @@
-<%= render partial: "refresh_popup" %>
+<%= render partial: "common/refresh_popup" %>
 
 <div id="posts" class="flex flex-col leading-relaxed">
   <% ordered_blog_posts = subscription.blog.blog_posts.sort_by(&:index) %>
@@ -21,20 +21,13 @@
     <% end %>
 
     <script>
-        let spinnerTimeoutId = null;
-
         function showSpinner() {
             let spinner = document.getElementById("more_posts_spinner");
-            spinnerTimeoutId = setTimeout(() => {
-                spinner.classList.remove("hidden");
-                void spinner.offsetWidth; // trigger reflow
-            }, 200);
+            spinner.classList.remove("hidden");
+            void spinner.offsetWidth; // trigger reflow
         }
 
         function hideSpinner() {
-            if (spinnerTimeoutId) {
-                clearTimeout(spinnerTimeoutId);
-            }
             let spinner = document.getElementById("more_posts_spinner");
             spinner.classList.add("hidden");
         }
@@ -43,7 +36,7 @@
             showSpinner();
             try {
                 const abortController = new AbortController();
-                const timeoutId = setTimeout(() => abortController.abort(), 1000);
+                const timeoutId = setTimeout(() => abortController.abort(), 30000);
                 const response = await fetch(
                     "<%= SubscriptionsHelper.all_posts_path(subscription) %>",
                     {
