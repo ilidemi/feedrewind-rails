@@ -35,7 +35,7 @@
                     epochDurations.push(0);
                 }
 
-                if (data.hasOwnProperty("status")) {
+                if (data.hasOwnProperty("status") && data.status !== null) {
                     let rects = [];
                     let matches = [...data.status.matchAll(/pP|p|hF\d*|h/g)];
                     let tokens = matches.map(match => match[0]);
@@ -90,7 +90,7 @@
                     document.getElementById("progress_rects").replaceChildren(...rects);
                 }
 
-                if (data.hasOwnProperty("count")) {
+                if (data.hasOwnProperty("count") && data.coutn !== null) {
                     if (data.count) {
                         document.getElementById("progress_count").innerHTML = `Discovering posts: ${data.count}`;
                     } else {
@@ -122,9 +122,31 @@
             }
         }
 
+        let hasWebsocketStarted = false;
         let [subscription, monitor] = window.discoverySubscribe("<%= blog.id %>", data => {
+            hasWebsocketStarted = true;
             displayProgress(data);
         });
+
+        async function pollTillWebsocketStarts() {
+            if (hasWebsocketStarted) return;
+
+            const response = await fetch(
+                "<%= SubscriptionsHelper.progress_path(subscription) %>",
+                {
+                    method: "post",
+                    headers: {
+                        "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+                    }
+                }
+            );
+            const body = await response.json();
+            console.log(`Poll: ${JSON.stringify(body)}`);
+            displayProgress(body);
+
+            setTimeout(() => pollTillWebsocketStarts(), 100);
+        }
+        pollTillWebsocketStarts();
 
         function secondsSince(time) {
             return (new Date().getTime() - time) / 1e3;
@@ -138,7 +160,6 @@
                 stalenessTimeoutId = setTimeout(() => checkConnectionStaleness(), 1000);
             }
         }
-
         checkConnectionStaleness();
 
         document.addEventListener('turbolinks:before-render', () => {

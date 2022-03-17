@@ -188,6 +188,34 @@ class Blog < ApplicationRecord
     end
   end
 
+  def Blog::crawl_progress_json(blog_id)
+    BlogCrawlProgress.uncached do
+      blog_crawl_progress = BlogCrawlProgress.find_by(blog_id: blog_id)
+      unless blog_crawl_progress
+        Rails.logger.info("Blog #{blog_id} crawl progress not found")
+        return
+      end
+
+      Blog.uncached do
+        blog_status = blog_crawl_progress.blog.status
+        if blog_status == "crawl_in_progress"
+          Rails.logger.info("Blog #{blog_id} crawl in progress (epoch #{blog_crawl_progress.epoch})")
+          {
+            epoch: blog_crawl_progress.epoch,
+            status: blog_crawl_progress.progress,
+            count: blog_crawl_progress.count
+          }
+        elsif %w[crawled_voting crawl_failed].include?(blog_status)
+          Rails.logger.info("Blog #{blog_id} crawl done")
+          { done: true }
+        else
+          Rails.logger.info("Unexpected blog status: #{blog_status}")
+          { done: true }
+        end
+      end
+    end
+  end
+
   def destroy_recursively!
     Blog.transaction do
       Blog.uncached do
@@ -221,7 +249,6 @@ class Blog < ApplicationRecord
   end
 
   private
-
 
   def Blog::create_with_crawling(start_page_id, start_feed_id, start_feed_url, name)
     blog = Blog.create!(

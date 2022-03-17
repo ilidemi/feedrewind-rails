@@ -86,6 +86,19 @@ class SubscriptionsController < ApplicationController
     end
   end
 
+  def progress
+    fill_current_user
+
+    subscription = Subscription.find(params[:id])
+    return nil unless subscription.user_id == @current_user&.id
+
+    result = Blog::crawl_progress_json(subscription.blog_id)
+
+    respond_to do |format|
+      format.json { render json: result }
+    end
+  end
+
   def submit_progress_times
     fill_current_user
 

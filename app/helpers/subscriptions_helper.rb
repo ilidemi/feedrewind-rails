@@ -3,6 +3,10 @@ module SubscriptionsHelper
     "/subscriptions/#{subscription.id}/setup"
   end
 
+  def SubscriptionsHelper.progress_path(subscription)
+    "/subscriptions/#{subscription.id}/progress"
+  end
+
   def SubscriptionsHelper.all_posts_path(subscription)
     "/subscriptions/#{subscription.id}/all_posts"
   end

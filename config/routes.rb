@@ -17,6 +17,7 @@ Rails.application.routes.draw do
   get "/subscriptions/:id/setup", to: "subscriptions#setup"
 
   # all js should be post for CSRF to work
+  post "/subscriptions/:id/progress", to: "subscriptions#progress"
   post "/subscriptions/:id/submit_progress_times", to: "subscriptions#submit_progress_times"
   post "/subscriptions/:id/all_posts", to: "subscriptions#all_posts"
   post "/subscriptions/:id/confirm", to: "subscriptions#confirm"
