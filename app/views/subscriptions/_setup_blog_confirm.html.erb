@@ -11,11 +11,53 @@
                   method: :post,
                   class: "btn"
     %>
-    <%= button_to "Looks wrong?",
-                  SubscriptionsHelper.mark_wrong_path(subscription),
-                  method: :post,
-                  remote: true,
-                  class: "link-secondary text-sm"
-    %>
+    <button id="looks_wrong_button" class="link-secondary text-sm">
+      Looks wrong?
+    </button>
   </div>
+
+  <div id="looks_wrong_section" class="flex flex-col gap-6 hidden">
+    <p>
+      Apologies for the inconvenience! FeedRewind supports over 80% of blogs, but unfortunately not this one.
+    </p>
+
+    <p>Would you like to continue with these posts?</p>
+
+    <div class="flex flex-row gap-4">
+      <%= button_to SubscriptionsHelper.continue_with_wrong_path(subscription),
+                    method: :post,
+                    class: "btn flex flex-row gap-1 items-center" do
+      %>
+        Continue
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-5" fill="none" viewBox="6 0 12 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      <% end %>
+      <%= button_to "Discard",
+                    subscription_path(subscription),
+                    method: :delete,
+                    class: "btn bg-red-700 hover:bg-red-900"
+      %>
+    </div>
+  </div>
+
+  <script>
+      document.getElementById("looks_wrong_button").addEventListener("click", () => {
+          // Fire and forget
+          fetch(
+              "<%= SubscriptionsHelper.mark_wrong_path(subscription) %>",
+              {
+                  method: "post",
+                  headers: {
+                      "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+                  }
+              }
+          );
+
+          const confirmSection = document.getElementById("confirm_section");
+          confirmSection.classList.add("hidden");
+          const looksWrongSection = document.getElementById("looks_wrong_section");
+          looksWrongSection.classList.remove("hidden");
+      })
+  </script>
 </div>

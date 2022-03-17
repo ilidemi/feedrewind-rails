@@ -1,3 +1,5 @@
+<%= render partial: "common/refresh_popup" %>
+
 <script>
     {
         <% if client_token %>
@@ -120,10 +122,29 @@
             }
         }
 
-        let subscription = window.discoverySubscribe("<%= blog.id %>", data => {
+        let [subscription, monitor] = window.discoverySubscribe("<%= blog.id %>", data => {
             displayProgress(data);
         });
+
+        function secondsSince(time) {
+            return (new Date().getTime() - time) / 1e3;
+        }
+
+        let stalenessTimeoutId = undefined;
+        function checkConnectionStaleness() {
+            if (secondsSince(monitor.pingedAt ? monitor.pingedAt : monitor.startedAt) >= 30) {
+                triggerRefreshPopup("Connection was lost. Please refresh the page.");
+            } else {
+                stalenessTimeoutId = setTimeout(() => checkConnectionStaleness(), 1000);
+            }
+        }
+
+        checkConnectionStaleness();
+
         document.addEventListener('turbolinks:before-render', () => {
+            if (stalenessTimeoutId) {
+                clearTimeout(stalenessTimeoutId);
+            }
             window.discoveryUnsubscribe(subscription)
         });
     }
