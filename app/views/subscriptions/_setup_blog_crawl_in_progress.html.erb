@@ -122,14 +122,14 @@
             }
         }
 
-        let hasWebsocketStarted = false;
+        let shouldLoopPoll = false;
         let [subscription, monitor] = window.discoverySubscribe("<%= blog.id %>", data => {
-            hasWebsocketStarted = true;
+            shouldLoopPoll = true;
             displayProgress(data);
         });
 
         async function pollTillWebsocketStarts() {
-            if (hasWebsocketStarted) return;
+            if (shouldLoopPoll) return;
 
             const response = await fetch(
                 "<%= SubscriptionsHelper.progress_path(subscription) %>",
@@ -166,7 +166,8 @@
             if (stalenessTimeoutId) {
                 clearTimeout(stalenessTimeoutId);
             }
-            window.discoveryUnsubscribe(subscription)
+            window.discoveryUnsubscribe(subscription);
+            shouldLoopPoll = false;
         });
     }
 </script>
