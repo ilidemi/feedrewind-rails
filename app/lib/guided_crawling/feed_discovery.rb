@@ -110,7 +110,22 @@ def discover_feeds_at_url(start_url, crawl_ctx, http_client, logger)
     if dedup_feeds.length == 0
       :discovered_no_feeds
     elsif dedup_feeds.length == 1
-      DiscoveredSingleFeed.new(start_page, dedup_feeds.first)
+      #noinspection RubyNilAnalysis
+      single_feed_result = fetch_feed_at_url(dedup_feeds.first.url, logger)
+      if single_feed_result.is_a?(Page)
+        #noinspection RubyNilAnalysis
+        fetched_feed = DiscoveredFetchedFeed.new(
+          dedup_feeds.first.title,
+          dedup_feeds.first.url,
+          single_feed_result.fetch_uri.to_s,
+          single_feed_result.content
+        )
+        DiscoveredSingleFeed.new(start_page, fetched_feed)
+      elsif single_feed_result == :discovered_bad_feed
+        return :discovered_bad_feed
+      else
+        raise "Unexpected result from fetch_feed_at_url: #{single_feed_result}"
+      end
     else
       DiscoveredMultipleFeeds.new(start_page, dedup_feeds)
     end
