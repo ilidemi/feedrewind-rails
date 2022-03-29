@@ -15,7 +15,7 @@ class User < ApplicationRecord
   end
 
   def email_uniqueness
-    if User.where(:email => self.email).exists?
+    if User.where(["email = ? and password_digest is not null", self.email]).exists?
       self.errors.add(:base, "We already have an account registered with that email address.")
     end
   end

@@ -8,7 +8,14 @@ class UsersController < ApplicationController
 
   def create
     user_params = params.permit(:email, "new-password")
-    @user = User.new({ email: user_params["email"], password: user_params["new-password"] })
+    existing_user = User.find_by(email: user_params["email"])
+    if existing_user && existing_user.password_digest.nil?
+      @user = existing_user
+      @user.password = user_params["new-password"]
+    else
+      @user = User.new({ email: user_params["email"], password: user_params["new-password"] })
+    end
+
     if @user.save
       session[:user_id] = @user.id
 
