@@ -12,6 +12,7 @@
         let epoch;
         let epochTimestamp;
         let epochDurations = [];
+        let isDone = false;
 
         function createRect(classes) {
             let rect = document.createElement("div");
@@ -90,7 +91,7 @@
                     document.getElementById("progress_rects").replaceChildren(...rects);
                 }
 
-                if (data.hasOwnProperty("count") && data.coutn !== null) {
+                if (data.hasOwnProperty("count") && data.count !== null) {
                     if (data.count) {
                         document.getElementById("progress_count").innerHTML = `Discovering posts: ${data.count}`;
                     } else {
@@ -100,6 +101,9 @@
             }
 
             if (data.done) {
+                if (isDone) return;
+
+                isDone = true;
                 let epochDurationsStr = epochDurations
                     .map(t => t.toFixed(3))
                     .join(";");
@@ -117,19 +121,18 @@
                     }
                 );
 
-                // Reload the page
-                Turbolinks.visit(window.location);
+                window.location.reload();
             }
         }
 
-        let shouldLoopPoll = false;
+        let shouldPollProgress = true;
         let [subscription, monitor] = window.discoverySubscribe("<%= blog.id %>", data => {
-            shouldLoopPoll = true;
+            shouldPollProgress = false;
             displayProgress(data);
         });
 
-        async function pollTillWebsocketStarts() {
-            if (shouldLoopPoll) return;
+        async function pollProgressTillWebsocketStarts() {
+            if (shouldPollProgress) return;
 
             const response = await fetch(
                 "<%= SubscriptionsHelper.progress_path(subscription) %>",
@@ -144,15 +147,17 @@
             console.log(`Poll: ${JSON.stringify(body)}`);
             displayProgress(body);
 
-            setTimeout(() => pollTillWebsocketStarts(), 100);
+            setTimeout(() => pollProgressTillWebsocketStarts(), 100);
         }
-        pollTillWebsocketStarts();
+
+        pollProgressTillWebsocketStarts();
 
         function secondsSince(time) {
             return (new Date().getTime() - time) / 1e3;
         }
 
         let stalenessTimeoutId = undefined;
+
         function checkConnectionStaleness() {
             if (secondsSince(monitor.pingedAt ? monitor.pingedAt : monitor.startedAt) >= 30) {
                 triggerRefreshPopup("Connection was lost. Please refresh the page.");
@@ -160,6 +165,7 @@
                 stalenessTimeoutId = setTimeout(() => checkConnectionStaleness(), 1000);
             }
         }
+
         checkConnectionStaleness();
 
         document.addEventListener('turbolinks:before-render', () => {
@@ -167,7 +173,7 @@
                 clearTimeout(stalenessTimeoutId);
             }
             window.discoveryUnsubscribe(subscription);
-            shouldLoopPoll = false;
+            shouldPollProgress = false;
         });
     }
 </script>

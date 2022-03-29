@@ -10,7 +10,7 @@ class GuidedCrawlingJob < ApplicationJob
   def perform(blog_id, args_json)
     begin
       args = JSON.parse(args_json, object_class: GuidedCrawlingJobArgs)
-      if !args.start_page_id && !args.start_page_id.empty?
+      if args.start_page_id && !args.start_page_id.empty?
         start_page = StartPage.find(args.start_page_id)
       else
         start_page = nil
