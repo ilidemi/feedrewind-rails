@@ -26,7 +26,7 @@
   %>
     <div class="flex flex-row w-full">
       <%= form.url_field :start_url,
-                         value: @start_url,
+                         value: @feeds_data&.start_url,
                          placeholder: "Feed or blog link",
                          autocomplete: "off",
                          class: "border border-slate-700 rounded-l-md w-full focus:ring-transparent focus:shadow-none"
@@ -194,10 +194,6 @@
                       const timeoutId = setTimeout(() => abortController.abort(), 30000);
                       let formData = new FormData();
                       formData.append("start_feed_id", button.dataset.start_feed_id);
-                      // TODO: remove these fields
-                      formData.append("start_page_id", button.dataset.start_page_id);
-                      formData.append("start_feed_final_url", button.dataset.start_feed_final_url);
-                      formData.append("name", button.dataset.name);
                       const body = new URLSearchParams(formData);
                       const response = await fetch(
                           "<%= subscriptions_path %>",

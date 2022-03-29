@@ -22,21 +22,21 @@ class Blog < ApplicationRecord
   # Invariant for a given feed_url + version:
   # Either status is crawl_in_progress/crawl_failed/crawled_looks_wrong or blog posts are filled out
 
-  def Blog::create_or_update(start_page_id, start_feed_id, start_feed_url, name)
-    blog = Blog.find_by(feed_url: start_feed_url, version: Blog::LATEST_VERSION)
+  def Blog::create_or_update(start_feed)
+    blog = Blog.find_by(feed_url: start_feed.final_url, version: Blog::LATEST_VERSION)
 
     unless blog
       begin
-        Rails.logger.info("Creating a new blog for feed_url #{start_feed_url}")
+        Rails.logger.info("Creating a new blog for feed_url #{start_feed.final_url}")
         Blog.transaction do
-          blog = Blog::create_with_crawling(start_page_id, start_feed_id, start_feed_url, name)
+          blog = Blog::create_with_crawling(start_feed)
         end
         return blog
       rescue ActiveRecord::RecordNotUnique
         # Another writer must've created the record at the same time, let's use that
-        blog = Blog.find_by(feed_url: start_feed_url, version: Blog::LATEST_VERSION)
+        blog = Blog.find_by(feed_url: start_feed.final_url, version: Blog::LATEST_VERSION)
         unless blog
-          raise "Blog #{start_feed_url} with latest version didn't exist, then existed, now doesn't exist"
+          raise "Blog #{start_feed.final_url} with latest version didn't exist, then existed, now doesn't exist"
         end
       end
     end
@@ -47,7 +47,6 @@ class Blog < ApplicationRecord
     return blog if %w[crawl_in_progress crawl_failed crawled_looks_wrong].include?(blog.status)
 
     # Update blog from feed
-    start_feed = StartFeed.find(start_feed_id)
     blog_post_urls = blog
       .blog_posts
       .sort_by { |blog_post| -blog_post.index }
@@ -62,35 +61,35 @@ class Blog < ApplicationRecord
       .blog_discarded_feed_entries
       .map(&:url)
     new_links = extract_new_posts_from_feed(
-      start_feed.content, URI(start_feed_url), blog_post_curis, discarded_feed_entry_urls, curi_eq_cfg,
+      start_feed.content, URI(start_feed.final_url), blog_post_curis, discarded_feed_entry_urls, curi_eq_cfg,
       Rails.logger, Rails.logger
     )
 
     if new_links == []
-      Rails.logger.info("Blog #{start_feed_url} doesn't need updating")
+      Rails.logger.info("Blog #{start_feed.final_url} doesn't need updating")
       return blog
     end
 
     if blog.update_action == "recrawl"
       begin
-        Rails.logger.info("Blog #{start_feed_url} is marked to recrawl on update")
+        Rails.logger.info("Blog #{start_feed.final_url} is marked to recrawl on update")
         Blog.transaction do
           old_blog = blog
-          old_blog.version = Blog::get_downgrade_version(start_feed_url)
+          old_blog.version = Blog::get_downgrade_version(start_feed.final_url)
           old_blog.save!
-          return Blog::create_with_crawling(start_page_id, start_feed_id, start_feed_url, name)
+          return Blog::create_with_crawling(start_feed)
         end
       rescue ActiveRecord::RecordNotUnique
         # Another writer deprecated this blog at the same time
-        blog = Blog.find_by(feed_url: start_feed_url, version: Blog::LATEST_VERSION)
+        blog = Blog.find_by(feed_url: start_feed.final_url, version: Blog::LATEST_VERSION)
         unless blog
-          raise "Blog #{start_feed_url} with latest version was deprecated by another request but the latest version still doesn't exist"
+          raise "Blog #{start_feed.final_url} with latest version was deprecated by another request but the latest version still doesn't exist"
         end
         blog
       end
     elsif blog.update_action == "update_from_feed_or_fail"
       if new_links
-        Rails.logger.info("Updating blog #{start_feed_url} from feed with #{new_links.length} new links")
+        Rails.logger.info("Updating blog #{start_feed.final_url} from feed with #{new_links.length} new links")
         begin
           blog.blog_post_lock.with_lock("for update nowait") do
             index_offset = blog.blog_posts.maximum(:index) + 1
@@ -105,7 +104,7 @@ class Blog < ApplicationRecord
           end
           blog.reload
         rescue ActiveRecord::LockWaitTimeout
-          Rails.logger.info("Someone else is updating the blog posts for #{start_feed_url}, just waiting till they're done")
+          Rails.logger.info("Someone else is updating the blog posts for #{start_feed.final_url}, just waiting till they're done")
           blog.blog_post_lock.with_lock do
             # Just wait till the other writer is done
           end
@@ -122,18 +121,18 @@ class Blog < ApplicationRecord
 
         blog
       else
-        Rails.logger.info("Couldn't update blog #{start_feed_url} from feed, marking as failed")
+        Rails.logger.info("Couldn't update blog #{start_feed.final_url} from feed, marking as failed")
         blog.status = "update_from_feed_failed"
         blog.save!
         blog
       end
     elsif blog.update_action == "fail"
-      Rails.logger.info("Blog #{start_feed_url} is marked to fail on update")
+      Rails.logger.info("Blog #{start_feed.final_url} is marked to fail on update")
       blog.status = "update_from_feed_failed"
       blog.save!
       blog
     elsif blog.update_action == "no_op"
-      Rails.logger.info("Blog #{start_feed_url} is marked to never update")
+      Rails.logger.info("Blog #{start_feed.final_url} is marked to never update")
       blog
     else
       raise "Unexpected blog update action: #{blog.update_action}"
@@ -251,10 +250,10 @@ class Blog < ApplicationRecord
 
   private
 
-  def Blog::create_with_crawling(start_page_id, start_feed_id, start_feed_url, name)
+  def Blog::create_with_crawling(start_feed)
     blog = Blog.create!(
-      name: name,
-      feed_url: start_feed_url,
+      name: start_feed.title,
+      feed_url: start_feed.final_url,
       status: "crawl_in_progress",
       status_updated_at: DateTime.now,
       version: Blog::LATEST_VERSION,
@@ -264,7 +263,7 @@ class Blog < ApplicationRecord
     BlogCrawlProgress.create!(blog_id: blog.id, epoch: 0)
     BlogPostLock.create!(blog_id: blog.id)
     GuidedCrawlingJob.perform_later(
-      blog.id, GuidedCrawlingJobArgs.new(start_page_id, start_feed_id).to_json
+      blog.id, GuidedCrawlingJobArgs.new(start_feed.id).to_json
     )
 
     blog

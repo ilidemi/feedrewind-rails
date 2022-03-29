@@ -2,7 +2,7 @@ require 'json'
 require_relative '../lib/guided_crawling/guided_crawling'
 require_relative '../services/update_rss_service'
 
-GuidedCrawlingJobArgs = Struct.new(:start_page_id, :start_feed_id)
+GuidedCrawlingJobArgs = Struct.new(:start_feed_id)
 
 class GuidedCrawlingJob < ApplicationJob
   queue_as :default
@@ -10,12 +10,8 @@ class GuidedCrawlingJob < ApplicationJob
   def perform(blog_id, args_json)
     begin
       args = JSON.parse(args_json, object_class: GuidedCrawlingJobArgs)
-      if args.start_page_id && !args.start_page_id.empty?
-        start_page = StartPage.find(args.start_page_id)
-      else
-        start_page = nil
-      end
       start_feed = StartFeed.find(args.start_feed_id)
+      start_page = start_feed.start_page
 
       crawl_ctx = CrawlContext.new
       http_client = HttpClient.new

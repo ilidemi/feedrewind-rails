@@ -6,9 +6,6 @@
           <div class="flex flex-row gap-[0.3125rem] items-center">
             <button class="link font-semibold text-black feeds-choose"
                     data-start_feed_id="<%= feed.id %>"
-                    data-start_page_id="<%= feeds_data.start_page_id %>"
-                    data-start_feed_final_url="<%= feed.final_url || feed.url %>"
-                    data-name="<%= feed.title %>"
             >
               <%= feed.title %>
             </button>
@@ -28,9 +25,6 @@
       <div>
         <button class="relative feeds-choose feeds-choose-btn btn-no-disable"
                 data-start_feed_id="<%= feed.id %>"
-                data-start_page_id="<%= feeds_data.start_page_id %>"
-                data-start_feed_final_url="<%= feed.final_url || feed.url %>"
-                data-name="<%= feed.title %>"
         >
           <div class="feeds-choose-label">Continue</div>
           <div class="feeds-choose-spinner absolute-center hidden">

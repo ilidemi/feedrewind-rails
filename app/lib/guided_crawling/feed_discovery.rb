@@ -5,7 +5,7 @@ require_relative 'mock_progress_saver'
 require_relative 'progress_logger'
 require_relative 'util'
 
-DiscoveredSingleFeed = Struct.new(:feed)
+DiscoveredSingleFeed = Struct.new(:start_page, :feed)
 DiscoveredMultipleFeeds = Struct.new(:start_page, :feeds)
 DiscoveredFeed = Struct.new(:title, :url)
 DiscoveredFetchedFeed = Struct.new(:title, :url, :final_url, :content)
@@ -44,7 +44,7 @@ def discover_feeds_at_url(start_url, crawl_ctx, http_client, logger)
       feed = DiscoveredFetchedFeed.new(
         feed_title, start_link.url, start_result.fetch_uri.to_s, start_result.content
       )
-      DiscoveredSingleFeed.new(feed)
+      DiscoveredSingleFeed.new(nil, feed)
     rescue => e
       logger.info("Parse feed exception")
       print_nice_error(e).each do |line|
@@ -110,7 +110,7 @@ def discover_feeds_at_url(start_url, crawl_ctx, http_client, logger)
     if dedup_feeds.length == 0
       :discovered_no_feeds
     elsif dedup_feeds.length == 1
-      DiscoveredSingleFeed.new(dedup_feeds.first)
+      DiscoveredSingleFeed.new(start_page, dedup_feeds.first)
     else
       DiscoveredMultipleFeeds.new(start_page, dedup_feeds)
     end

@@ -19,7 +19,6 @@ class OnboardingController < ApplicationController
     elsif discover_feeds_result.is_a?(Subscription::BlogNotSupported)
       redirect_to BlogsHelper.unsupported_path(discover_feeds_result.blog)
     else
-      @start_url = params[:start_url]
       @feeds_data = discover_feeds_result
       render "add"
     end
@@ -41,7 +40,7 @@ class OnboardingController < ApplicationController
 
   private
 
-  FeedsData = Struct.new(:start_url, :start_page_id, :feeds, :are_no_feeds, :could_not_reach, :bad_feed)
+  FeedsData = Struct.new(:start_url, :feeds, :are_no_feeds, :could_not_reach, :bad_feed)
 
   def discover_feeds_internal(start_url, user)
     crawl_ctx = CrawlContext.new
@@ -49,29 +48,43 @@ class OnboardingController < ApplicationController
     discovered_feeds = discover_feeds_at_url(start_url, crawl_ctx, http_client, Rails.logger)
 
     if discovered_feeds.is_a?(DiscoveredSingleFeed)
-      feed = discovered_feeds.feed
-      if feed.is_a?(DiscoveredFetchedFeed)
+      discovered_start_page = discovered_feeds.start_page
+      if discovered_feeds.start_page
+        start_page = StartPage.new(
+          url: discovered_start_page.url,
+          final_url: discovered_start_page.final_url,
+          content: discovered_start_page.content
+        )
+        start_page.save!
+      else
+        start_page = nil
+      end
+
+      discovered_feed = discovered_feeds.feed
+      if discovered_feed.is_a?(DiscoveredFetchedFeed)
         start_feed = StartFeed.new(
-          url: feed.url,
-          final_url: feed.final_url,
-          content: feed.content,
-          title: feed.title
+          url: discovered_feed.url,
+          final_url: discovered_feed.final_url,
+          content: discovered_feed.content,
+          title: discovered_feed.title,
+          start_page_id: start_page&.id
         )
         start_feed.save!
 
-        updated_blog = Blog::create_or_update(nil, start_feed.id, start_feed.final_url, feed.title)
+        updated_blog = Blog::create_or_update(start_feed)
         subscription_or_blog_not_supported = Subscription::create_for_blog(updated_blog, user)
         subscription_or_blog_not_supported
       else
         start_feed = StartFeed.new(
-          url: feed.url,
+          url: discovered_feed.url,
           final_url: nil,
           content: nil,
-          title: feed.title
+          title: discovered_feed.title,
+          start_page_id: start_page&.id
         )
         start_feed.save!
 
-        FeedsData.new(nil, nil, [start_feed], nil, nil, nil)
+        FeedsData.new(start_url, [start_feed], nil, nil, nil)
       end
     elsif discovered_feeds.is_a?(DiscoveredMultipleFeeds)
       start_page = StartPage.new(
@@ -87,19 +100,20 @@ class OnboardingController < ApplicationController
           url: feed.url,
           final_url: nil,
           content: nil,
-          title: feed.title
+          title: feed.title,
+          start_page_id: start_page.id
         )
         start_feed.save!
         start_feeds << start_feed
       end
 
-      FeedsData.new(nil, start_page.id, start_feeds, nil, nil, nil)
+      FeedsData.new(start_url, start_feeds, nil, nil, nil)
     elsif discovered_feeds == :discovered_no_feeds
-      FeedsData.new(start_url, nil, nil, true, nil, nil)
+      FeedsData.new(start_url, nil, true, nil, nil)
     elsif discovered_feeds == :discover_could_not_reach
-      FeedsData.new(start_url, nil, nil, nil, true, nil)
+      FeedsData.new(start_url, nil, nil, true, nil)
     elsif discovered_feeds == :discovered_bad_feed
-      FeedsData.new(start_url, nil, nil, nil, nil, true)
+      FeedsData.new(start_url, nil, nil, nil, true)
     else
       raise "Unexpected result from discover_feeds_at_url: #{discovered_feeds}"
     end

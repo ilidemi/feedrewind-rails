@@ -32,20 +32,17 @@ class SubscriptionsController < ApplicationController
 
   def create
     fill_current_user
-    create_params = params.permit(:start_page_id, :start_feed_id, :start_feed_final_url, :name)
+    create_params = params.permit(:start_feed_id)
     start_feed = StartFeed.find(create_params[:start_feed_id])
 
     # If the feed is already fetched, the blog and subscription were created in onboarding controller
-    feed_result = fetch_feed_at_url(params[:start_feed_final_url], Rails.logger)
+    feed_result = fetch_feed_at_url(start_feed.url, Rails.logger)
     if feed_result.is_a?(Page)
       start_feed.content = feed_result.content
       start_feed.final_url = feed_result.fetch_uri.to_s
       start_feed.save!
 
-      updated_blog = Blog::create_or_update(
-        create_params[:start_page_id], create_params[:start_feed_id], create_params[:start_feed_final_url],
-        create_params[:name]
-      )
+      updated_blog = Blog::create_or_update(start_feed)
       subscription_or_blog_not_supported = Subscription::create_for_blog(updated_blog, @current_user)
 
       if subscription_or_blog_not_supported.is_a?(Subscription::BlogNotSupported)

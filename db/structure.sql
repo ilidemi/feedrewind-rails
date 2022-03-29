@@ -464,7 +464,8 @@ CREATE TABLE public.start_feeds (
     updated_at timestamp(6) without time zone NOT NULL,
     url text NOT NULL,
     final_url text,
-    title text NOT NULL
+    title text NOT NULL,
+    start_page_id integer
 );
 
 
@@ -855,6 +856,13 @@ CREATE UNIQUE INDEX index_blogs_on_feed_url_and_version ON public.blogs USING bt
 
 
 --
+-- Name: index_start_feeds_on_start_page_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_start_feeds_on_start_page_id ON public.start_feeds USING btree (start_page_id);
+
+
+--
 -- Name: current_rsses fk_rails_647dccf03a; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -967,6 +975,14 @@ ALTER TABLE ONLY public.subscription_posts
 
 
 --
+-- Name: start_feeds fk_rails_d91add3512; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.start_feeds
+    ADD CONSTRAINT fk_rails_d91add3512 FOREIGN KEY (start_page_id) REFERENCES public.start_pages(id);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
@@ -1036,6 +1052,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220114233334'),
 ('20220115001649'),
 ('20220308005116'),
-('20220321220933');
+('20220321220933'),
+('20220329191713');
 
 
