@@ -10,7 +10,11 @@ class GuidedCrawlingJob < ApplicationJob
   def perform(blog_id, args_json)
     begin
       args = JSON.parse(args_json, object_class: GuidedCrawlingJobArgs)
-      start_page = args.start_page_id ? StartPage.find(args.start_page_id) : nil
+      if !args.start_page_id && !args.start_page_id.empty?
+        start_page = StartPage.find(args.start_page_id)
+      else
+        start_page = nil
+      end
       start_feed = StartFeed.find(args.start_feed_id)
 
       crawl_ctx = CrawlContext.new
@@ -58,6 +62,7 @@ class GuidedCrawlingJob < ApplicationJob
       end
     rescue ActiveRecord::RecordNotFound
       Rails.logger.warn("Record not found for blog #{blog_id}")
+      raise
     ensure
       ActionCable.server.broadcast("discovery_#{blog_id}", { done: true })
       Rails.logger.info("discovery_#{blog_id} done: true")

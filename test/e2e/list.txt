@@ -1,52 +1,74 @@
 ## Logged in user
+### Feed discovery
+00. "potato" - couldn't reach - /1f.jpg - no feeds - /1f404 - couldn't reach - 10.255.255.1 - couldn't reach - /bad_rss.xml - couldn't read - 1fno - no feeds - /tags - three feeds - /rename-title - two feeds - /rename-host - two feeds - /dedup - one feed - 1a - one feed - /multiple - three feeds
+01. set 3 second delay - /multiple - /multiple (rapid click go and other buttons) - one request, three feeds - Feed 1 (rapid click title and other buttons) - one request > /subs/id/setup
+02. set 3 second delay - /multiple - Feed 1 (rapid click Continue and other buttons) - one request > /subs/id/setup - unset delay
+03. /bad - Very Bad Feed - couldn't read - Bad Feed - /blogs/id/unsupported
+
+https://ilidemi.github.io/dummy-blogs/1fjpg/1f.jpg
+https://ilidemi.github.io/dummy-blogs/1f404/
+https://ilidemi.github.io/dummy-blogs/multiple-feeds/bad/bad_rss.xml
+https://ilidemi.github.io/dummy-blogs/1fno/
+https://ilidemi.github.io/dummy-blogs/multiple-feeds/tags/
+https://ilidemi.github.io/dummy-blogs/multiple-feeds/rename-title/
+https://ilidemi.github.io/dummy-blogs/multiple-feeds/rename-host/
+https://ilidemi.github.io/dummy-blogs/multiple-feeds/dedup/
+https://ilidemi.github.io/dummy-blogs/1a/
+https://ilidemi.github.io/dummy-blogs/multiple-feeds/multiple/
+https://ilidemi.github.io/dummy-blogs/multiple-feeds/bad/
+
 ### Successes
-00. 10a (new) - confirm - schedule - feed - manage > /subs/id
-01. 10a (vot) - confirm - schedule - feed - dashboard > /subs
-02. 10a (vot) - looks wrong - continue > /subs/id/setup
-03. 10a (con) > /subs/id/setup
-04. 1a (new) - looks wrong - discard > /subs
+10. 10a (new) - confirm - schedule - feed - manage > /subs/id
+11. 10a (vot) - confirm - schedule - feed - dashboard > /subs
+12. 10a (vot) - looks wrong - continue > /subs/id/setup
+13. 10a (con) > /subs/id/setup
+14. 1a (new) - looks wrong - discard > /subs
+
+https://ilidemi.github.io/dummy-blogs/10a/rss.xml
+https://ilidemi.github.io/dummy-blogs/1a/rss.xml
 
 ### Failures
-10. 1fa (new) - failed - try another > /subs/add
-11. 1fb (new) - discover - failed - discard > /subs
-12. google - no feeds - yandex - no feeds - 1fa - discover - google - no feeds - 1fa - discover - 1fb - discover - unsupported - try another > /subs/add
-13. 1fb (fai) - unsupported - go back > /subs
+20. 1fa (new) - failed - try another > /subs/add
+21. 1fb (new) - discover - failed - discard > /subs
+22. 1fb (fai) - discover - unsupported - try another > /subs/add
+23. 1fb (fai) - unsupported - go back > /subs
+
+https://ilidemi.github.io/dummy-blogs/1fa/rss.xml
+https://ilidemi.github.io/dummy-blogs/1fb/rss.xml
 
 ## Anonymous user
 ### Successes
-20. 10b (new) - confirm - sign up > /subs/id/setup
-21. 10b (vot) - confirm - sign up > /subs/id/setup
-22. 10b (vot) - looks wrong - continue - sign up > /subs/id/setup
-23. 10b (con) - presenting goods - sign up > /subs/id/setup
-24. 1b (new) - looks wrong - discard > /
+30. 10b (new) - confirm - sign up > /subs/id/setup
+31. 10b (vot) - confirm - sign up > /subs/id/setup
+32. 10b (vot) - looks wrong - continue - sign up > /subs/id/setup
+33. 10b (con) - presenting goods - sign up > /subs/id/setup
+34. 1b (new) - looks wrong - discard > /
+
+https://ilidemi.github.io/dummy-blogs/10b/rss.xml
+https://ilidemi.github.io/dummy-blogs/1b/rss.xml
 
 ### Failures
-30. 1fc (new) - failed - try another > /subs/add
-31. 1fd (new) - discover - failed - discard > /
-32. google - no feeds - yandex - no feeds - 1fc - discover - google - no feeds - 1fc - discover - 1fd - discover - unsupported - try another > /subs/add
-33. 1fd (fai) - unsupported - go back > /
-34. 10a page 2 > no feeds
+40. 1fc (new) - failed - try another > /subs/add
+41. 1fd (new) - discover - failed - discard > /
+42. 1fd (fai) - discover - unsupported - try another > /subs/add
+43. 1fd (fai) - unsupported - go back > /
+44. 1fno - no feeds
+45. /multiple - multiple feeds
+
+https://ilidemi.github.io/dummy-blogs/1fc/rss.xml
+https://ilidemi.github.io/dummy-blogs/1fd/rss.xml
+https://ilidemi.github.io/dummy-blogs/1fno/
+https://ilidemi.github.io/dummy-blogs/multiple-feeds/multiple/
 
 ### Landing page reminder
-40. 1fe (new) - failed ⋯ / > no reminder
-41. 10c (new) ⋯ / - continue ⋯ / - discard > no reminder
-42. 10b (con) - presenting goods ⋯ / - continue > /subs/id/add
-43. 10c (vot) - confirm ⋯ / - continue > /subs/id/add
+50. 1fe (new) - failed ⋯ / > no reminder
+51. 10c (new) ⋯ / - continue ⋯ / - discard > no reminder
+52. 10b (con) - presenting goods ⋯ / - continue > /subs/id/add
+53. 10c (vot) - confirm ⋯ / - continue > /subs/id/add
 
-## Urls
-https://ilidemi.github.io/dummy-blogs/1a/rss.xml
-https://ilidemi.github.io/dummy-blogs/1b/rss.xml
-https://ilidemi.github.io/dummy-blogs/10a/rss.xml
-https://ilidemi.github.io/dummy-blogs/10b/rss.xml
-https://ilidemi.github.io/dummy-blogs/10c/rss.xml
-https://ilidemi.github.io/dummy-blogs/1fa/rss.xml
-https://ilidemi.github.io/dummy-blogs/1fa/
-https://google.com
-https://yandex.com
-https://ilidemi.github.io/dummy-blogs/1fb/rss.xml
-https://ilidemi.github.io/dummy-blogs/1fb/
-https://ilidemi.github.io/dummy-blogs/1fc/rss.xml
-https://ilidemi.github.io/dummy-blogs/1fc/
-https://ilidemi.github.io/dummy-blogs/1fd/rss.xml
-https://ilidemi.github.io/dummy-blogs/1fd/
 https://ilidemi.github.io/dummy-blogs/1fe/rss.xml
+https://ilidemi.github.io/dummy-blogs/10c/rss.xml
+https://ilidemi.github.io/dummy-blogs/10b/rss.xml
+
+### Cleanup
+Blog.where("feed_url like '%ilidemi.github.io%'").each { |blog| puts("#{blog.feed_url} #{blog.version}"); blog.destroy_recursively! }

@@ -41,9 +41,12 @@ class AdminController < ApplicationController
 
       update_action = params[:update_action]
 
-      crawl_ctx = CrawlContext.new
-      http_client = HttpClient.new(false)
-      parsed_feed = fetch_feed_at_url(feed_url, crawl_ctx, http_client, Rails.logger)
+      feed_result = fetch_feed_at_url(feed_url, Rails.logger)
+      raise "Couldn't fetch feed" unless feed_result.is_a?(Page)
+
+      feed_link = to_canonical_link(feed_url, Rails.logger)
+      parsed_feed = parse_feed(feed_result.content, feed_link.uri, Rails.logger)
+
       post_curis_set = post_urls_titles
         .map { |url_title| to_canonical_link(url_title[:url], Rails.logger) }
         .map(&:curi)

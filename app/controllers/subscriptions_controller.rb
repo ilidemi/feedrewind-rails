@@ -1,5 +1,8 @@
 require 'json'
 require_relative '../jobs/guided_crawling_job'
+require_relative '../lib/guided_crawling/crawling'
+require_relative '../lib/guided_crawling/http_client'
+require_relative '../lib/guided_crawling/feed_discovery'
 
 class SubscriptionsController < ApplicationController
   before_action :authorize, except: [
@@ -30,17 +33,31 @@ class SubscriptionsController < ApplicationController
   def create
     fill_current_user
     create_params = params.permit(:start_page_id, :start_feed_id, :start_feed_final_url, :name)
-    updated_blog = Blog::create_or_update(
-      create_params[:start_page_id], create_params[:start_feed_id], create_params[:start_feed_final_url],
-      create_params[:name]
-    )
-    subscription_or_blog_not_supported = Subscription::create_for_blog(updated_blog, @current_user)
+    start_feed = StartFeed.find(create_params[:start_feed_id])
 
-    if subscription_or_blog_not_supported.is_a?(Subscription::BlogNotSupported)
-      return redirect_to BlogsHelper.unsupported_path(subscription_or_blog_not_supported.blog)
+    # If the feed is already fetched, the blog and subscription were created in onboarding controller
+    feed_result = fetch_feed_at_url(params[:start_feed_final_url], Rails.logger)
+    if feed_result.is_a?(Page)
+      start_feed.content = feed_result.content
+      start_feed.final_url = feed_result.fetch_uri.to_s
+      start_feed.save!
+
+      updated_blog = Blog::create_or_update(
+        create_params[:start_page_id], create_params[:start_feed_id], create_params[:start_feed_final_url],
+        create_params[:name]
+      )
+      subscription_or_blog_not_supported = Subscription::create_for_blog(updated_blog, @current_user)
+
+      if subscription_or_blog_not_supported.is_a?(Subscription::BlogNotSupported)
+        render plain: BlogsHelper.unsupported_path(subscription_or_blog_not_supported.blog)
+      else
+        render plain: SubscriptionsHelper.setup_path(subscription_or_blog_not_supported)
+      end
+    elsif feed_result == :discovered_bad_feed
+      render plain: "", status: :unsupported_media_type
+    else
+      raise "Unexpected result from fetch_feed_at_url: #{feed_result}"
     end
-
-    redirect_to action: "setup", id: subscription_or_blog_not_supported.id
   end
 
   def setup
@@ -117,13 +134,13 @@ class SubscriptionsController < ApplicationController
     Rails.logger.info("Client: #{params[:epoch_durations]}")
     server_durations = blog_crawl_progress
       .epoch_times
-      .split(";")
-      .map(&:to_f)
+      &.split(";")
+      &.map(&:to_f)
     client_durations = params[:epoch_durations]
       .split(";")
       .map(&:to_f)
-    if client_durations.length != server_durations.length
-      Rails.logger.info("Epoch count mismatch: client #{client_durations.length}, server #{server_durations.length}")
+    if client_durations.length != server_durations&.length
+      Rails.logger.info("Epoch count mismatch: client #{client_durations.length}, server #{server_durations&.length}")
       return nil
     end
 

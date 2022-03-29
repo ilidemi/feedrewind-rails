@@ -29,8 +29,9 @@ class Blog < ApplicationRecord
       begin
         Rails.logger.info("Creating a new blog for feed_url #{start_feed_url}")
         Blog.transaction do
-          return Blog::create_with_crawling(start_page_id, start_feed_id, start_feed_url, name)
+          blog = Blog::create_with_crawling(start_page_id, start_feed_id, start_feed_url, name)
         end
+        return blog
       rescue ActiveRecord::RecordNotUnique
         # Another writer must've created the record at the same time, let's use that
         blog = Blog.find_by(feed_url: start_feed_url, version: Blog::LATEST_VERSION)

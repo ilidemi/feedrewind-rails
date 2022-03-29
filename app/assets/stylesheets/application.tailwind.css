@@ -12,15 +12,19 @@
     }
 
     .link {
-        @apply underline decoration-from-font text-blue-700 hover:text-blue-900 hover:cursor-pointer
+        @apply underline decoration-from-font text-blue-700 hover:text-blue-900 hover:cursor-pointer disabled:hover:text-blue-700 disabled:hover:cursor-default
     }
 
     .link-secondary {
-        @apply underline decoration-from-font text-gray-500 hover:text-gray-700 hover:cursor-pointer
+        @apply underline decoration-from-font text-gray-500 hover:text-gray-700 hover:cursor-pointer disabled:hover:text-gray-500 disabled:hover:cursor-default
     }
 
     .btn {
-        @apply text-white font-semibold bg-slate-700 hover:bg-slate-900 rounded-md px-3 py-2 hover:cursor-pointer disabled:opacity-50 disabled:hover:cursor-default
+        @apply text-white font-semibold bg-slate-700 hover:bg-slate-900 rounded-md px-3 py-2 hover:cursor-pointer disabled:hover:bg-slate-700 disabled:opacity-50 disabled:hover:cursor-default
+    }
+
+    .btn-no-disable {
+        @apply text-white font-semibold bg-slate-700 hover:bg-slate-900 rounded-md px-3 py-2 hover:cursor-pointer disabled:hover:bg-slate-700 disabled:hover:cursor-default
     }
 
     .btn-red {
@@ -35,8 +39,16 @@
         @apply text-sm text-red-700 font-semibold border border-red-700 hover:bg-red-100 rounded-md px-2 py-1 hover:cursor-pointer
     }
 
+    .absolute-center {
+        @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+    }
+
     .break-word {
         word-break: break-word;
+    }
+
+    .break-all {
+        word-break: break-all;
     }
 
     /*noinspection CssReplaceWithShorthandSafely*/
@@ -205,9 +217,19 @@
         animation-timing-function: ease-in-out;
     }
 
+    .spinner-light {
+        border-color: rgb(243 244 246); /* gray-100 */
+        border-top-color: rgb(203 213 225); /* slate-300 */
+    }
+
+    .spinner-dark {
+        border-color: rgb(156 163 175); /* gray-400 */
+        border-top-color: rgb(241 245 249); /* slate-100 */
+    }
+
     .spinner {
-        border: 0.2em solid rgb(243 244 246); /* gray-100 */
-        border-top: 0.2em solid rgb(203 213 225); /* slate-300 */
+        border-width: 0.2em;
+        border-style: solid;
         border-radius: 50%;
         width: 1rem;
         height: 1rem;
@@ -215,8 +237,12 @@
     }
 
     @keyframes spinner {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
     }
 
 }

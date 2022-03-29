@@ -1,32 +1,49 @@
-<% feeds.supported_feeds.each do |feed| %>
-  <div style="display:flex; justify-content:space-between">
-    <span>
-      <b><%= feed.title %></b>
-      <br>
-      <%= feed.url %>
-    </span>
-    <span>
-      <%= button_to "Continue", subscriptions_path, action: :post, params: {
-        start_page_id: feeds.start_page_id,
-        start_feed_id: feed.id,
-        start_feed_final_url: feed.final_url,
-        name: feed.title
-      } %>
-    </span>
-  </div>
-<% end %>
+<% if feeds_data.feeds %>
+  <div class="grid grid-cols-[minmax(0,_1fr)_min-content] gap-6 w-full">
+    <% feeds_data.feeds.each do |feed| %>
+      <div>
+        <div class="flex flex-col">
+          <div class="flex flex-row gap-[0.3125rem] items-center">
+            <button class="link font-semibold text-black feeds-choose"
+                    data-start_feed_id="<%= feed.id %>"
+                    data-start_page_id="<%= feeds_data.start_page_id %>"
+                    data-start_feed_final_url="<%= feed.final_url || feed.url %>"
+                    data-name="<%= feed.title %>"
+            >
+              <%= feed.title %>
+            </button>
+            <div class="feeds-choose-spinner spinner spinner-light hidden"></div>
+          </div>
+          <span class="text-sm text-gray-500 break-all">
+            <%= feed.url %>
+          </span>
+          <span id="bad_feed_<%= feed.id %>"
+                class="text-sm font-semibold text-red-600 hidden"
+          >
+            Couldn't read this feed
+          </span>
+        </div>
+      </div>
 
-<% feeds.unsupported_feeds.each do |unsupported_feed| %>
-  <div style="display:flex; justify-content:space-between">
-    <span>
-      <b><%= unsupported_feed.title %></b>
-      <br>
-      <%= unsupported_feed.url %>
-    </span>
-    <span>Not supported</span>
+      <div>
+        <button class="relative feeds-choose feeds-choose-btn btn-no-disable"
+                data-start_feed_id="<%= feed.id %>"
+                data-start_page_id="<%= feeds_data.start_page_id %>"
+                data-start_feed_final_url="<%= feed.final_url || feed.url %>"
+                data-name="<%= feed.title %>"
+        >
+          <div class="feeds-choose-label">Continue</div>
+          <div class="feeds-choose-spinner absolute-center hidden">
+            <div class="spinner spinner-dark"></div>
+          </div>
+        </button>
+      </div>
+    <% end %>
   </div>
-<% end %>
-
-<% if feeds.supported_feeds.empty? && feeds.unsupported_feeds.empty? %>
-  <div>This link doesn't seem to have a feed. Try another one?</div>
+<% elsif feeds_data.are_no_feeds %>
+  <%= feeds_data.start_url %> doesn't appear to have a feed. Try another link?
+<% elsif feeds_data.could_not_reach %>
+  Couldn't reach <%= feeds_data.start_url %>. Try another link?
+<% elsif feeds_data.bad_feed %>
+  Couldn't read the feed at <%= feeds_data.start_url %>. Try another link?
 <% end %>

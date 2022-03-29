@@ -31,8 +31,7 @@ class GuidedCrawlError < StandardError
 end
 
 def guided_crawl(
-  discovered_start_page, discovered_start_feed, crawl_ctx, http_client, puppeteer_client, progress_saver,
-  logger
+  discovered_start_page, start_feed, crawl_ctx, http_client, puppeteer_client, progress_saver, logger
 )
   guided_crawl_result = GuidedCrawlResult.new
   begin
@@ -40,13 +39,13 @@ def guided_crawl(
     guided_crawl_result.feed_result = feed_result
     progress_logger = ProgressLogger.new(progress_saver)
 
-    logger.info("Feed url: #{discovered_start_feed.final_url}")
-    feed_result.feed_url = "<a href=\"#{discovered_start_feed.final_url}\">feed</a>"
+    logger.info("Feed url: #{start_feed.final_url}")
+    feed_result.feed_url = "<a href=\"#{start_feed.final_url}\">feed</a>"
 
-    feed_link = to_canonical_link(discovered_start_feed.url, logger)
-    feed_final_link = to_canonical_link(discovered_start_feed.final_url, logger)
+    feed_link = to_canonical_link(start_feed.url, logger)
+    feed_final_link = to_canonical_link(start_feed.final_url, logger)
 
-    parsed_feed = parse_feed(discovered_start_feed.content, feed_final_link.uri, logger)
+    parsed_feed = parse_feed(start_feed.content, feed_final_link.uri, logger)
     feed_result.feed_links = parsed_feed.entry_links.length
     raise "Feed is empty" if parsed_feed.entry_links.length == 0
     raise "Feed only has 1 item" if parsed_feed.entry_links.length == 1
@@ -66,7 +65,7 @@ def guided_crawl(
       )
     else
       logger.info("Discovered start page is absent")
-      guided_crawl_result.start_url = "<a href=\"#{discovered_start_feed.url}\">#{discovered_start_feed.url}</a>"
+      guided_crawl_result.start_url = "<a href=\"#{start_feed.url}\">#{start_feed.url}</a>"
       start_page_link, start_page = get_feed_start_page(
         feed_link, parsed_feed, crawl_ctx, http_client, progress_logger, logger
       )

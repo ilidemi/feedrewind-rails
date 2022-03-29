@@ -1,34 +1,45 @@
 <h2>Admin: Add Blog</h2>
 
-<%= form_with url: "/admin/post_blog", method: :post do |form| %>
-  <%= form.label :name %>
-  <%= form.text_field :name %>
-  <br>
+<%= form_with url: "/admin/post_blog",
+              method: :post,
+              class: "flex flex-col gap-3" do |form|
+%>
+  <div>
+    <%= form.label :name %>
+    <%= form.text_field :name %>
+  </div>
 
-  <%= form.label :feed_url %>
-  <%= form.url_field :feed_url %>
-  <br>
+  <div>
+    <%= form.label :feed_url %>
+    <%= form.url_field :feed_url %>
+  </div>
 
-  <%= form.label :direction %>
-  <%= form.select :direction, %w[newest_first oldest_first], selected: "newest_first" %>
-  <br>
+  <div>
+    <%= form.label :direction %>
+    <%= form.select :direction, %w[newest_first oldest_first], selected: "newest_first" %>
+  </div>
 
-  <%= form.label :posts %> (one per line, https://post-1 Post 1)
-  <br>
-  <%= form.text_area :posts, rows: 20, cols: 80 %>
-  <br>
+  <div class="flex flex-col gap-1">
+    <span><%= form.label :posts %> (one per line, https://post-1 Post 1)</span>
+    <%= form.text_area :posts, rows: 20, cols: 80 %>
+  </div>
 
-  <%= form.label :same_hosts %> (one per line)
-  <br>
-  <%= form.text_area :same_hosts %>
-  <br>
+  <div class="flex flex-col gap-1">
+    <span><%= form.label :same_hosts %> (one per line)</span>
+    <%= form.text_area :same_hosts %>
+  </div>
 
-  <%= form.label :expect_tumblr_paths %>
-  <%= form.check_box :expect_tumblr_paths %>
-  <br>
+  <div>
+    <%= form.label :expect_tumblr_paths %>
+    <%= form.check_box :expect_tumblr_paths %>
+  </div>
 
-  <%= form.label :update_action %>
-  <%= form.select :update_action, %w[update_from_feed_or_fail no_op fail recrawl] %>
+  <div>
+    <%= form.label :update_action %>
+    <%= form.select :update_action, %w[update_from_feed_or_fail no_op fail recrawl] %>
+  </div>
 
-  <%= form.submit "Save" %>
+  <div>
+    <%= form.submit "Save", class: "btn" %>
+  </div>
 <% end %>

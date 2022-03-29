@@ -459,11 +459,11 @@ CREATE TABLE public.schema_migrations (
 
 CREATE TABLE public.start_feeds (
     id bigint NOT NULL,
-    content bytea NOT NULL,
+    content bytea,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     url text NOT NULL,
-    final_url text NOT NULL,
+    final_url text,
     title text NOT NULL
 );
 
@@ -1035,6 +1035,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220105233450'),
 ('20220114233334'),
 ('20220115001649'),
-('20220308005116');
+('20220308005116'),
+('20220321220933');
 
 
