@@ -111,7 +111,7 @@ def discover_feeds_at_url(start_url, crawl_ctx, http_client, logger)
       :discovered_no_feeds
     elsif dedup_feeds.length == 1
       #noinspection RubyNilAnalysis
-      single_feed_result = fetch_feed_at_url(dedup_feeds.first.url, logger)
+      single_feed_result = fetch_feed_at_url(dedup_feeds.first.url, crawl_ctx, http_client, logger)
       if single_feed_result.is_a?(Page)
         #noinspection RubyNilAnalysis
         fetched_feed = DiscoveredFetchedFeed.new(
@@ -132,9 +132,7 @@ def discover_feeds_at_url(start_url, crawl_ctx, http_client, logger)
   end
 end
 
-def fetch_feed_at_url(feed_url, logger)
-  crawl_ctx = CrawlContext.new
-  http_client = HttpClient.new(false)
+def fetch_feed_at_url(feed_url, crawl_ctx, http_client, logger)
   mock_progress_logger = ProgressLogger.new(MockProgressSaver.new(logger))
 
   feed_link = to_canonical_link(feed_url, logger)

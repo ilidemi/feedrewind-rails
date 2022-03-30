@@ -41,7 +41,9 @@ class AdminController < ApplicationController
 
       update_action = params[:update_action]
 
-      feed_result = fetch_feed_at_url(feed_url, Rails.logger)
+      crawl_ctx = CrawlContext.new
+      http_client = HttpClient.new(false)
+      feed_result = fetch_feed_at_url(feed_url, crawl_ctx, http_client, Rails.logger)
       raise "Couldn't fetch feed" unless feed_result.is_a?(Page)
 
       feed_link = to_canonical_link(feed_url, Rails.logger)

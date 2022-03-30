@@ -99,7 +99,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     if discover_feeds_result == :discovered_bad_feed
       raise "Bad feed at #{start_url}"
     elsif discover_feeds_result.is_a?(DiscoveredSingleFeed)
-      discovered_start_page = nil
+      discovered_start_page = discover_feeds_result.start_page
       discovered_start_feed = discover_feeds_result.feed
     else
       raise "No feeds discovered" if discover_feeds_result.feeds.empty?

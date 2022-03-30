@@ -36,7 +36,9 @@ class SubscriptionsController < ApplicationController
     start_feed = StartFeed.find(create_params[:start_feed_id])
 
     # If the feed is already fetched, the blog and subscription were created in onboarding controller
-    feed_result = fetch_feed_at_url(start_feed.url, Rails.logger)
+    crawl_ctx = CrawlContext.new
+    http_client = HttpClient.new(false)
+    feed_result = fetch_feed_at_url(start_feed.url, crawl_ctx, http_client, Rails.logger)
     if feed_result.is_a?(Page)
       start_feed.content = feed_result.content
       start_feed.final_url = feed_result.fetch_uri.to_s
