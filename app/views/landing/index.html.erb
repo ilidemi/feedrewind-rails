@@ -26,19 +26,19 @@
     <ul class="flex flex-row flex-wrap gap-x-6 gap-y-1">
       <li class="flex flex-row gap-0.5 items-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
         Any feed
       </li>
       <li class="flex flex-row gap-0.5 items-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
         Your schedule
       </li>
       <li class="flex flex-row gap-0.5 items-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
         Via email or RSS
       </li>
@@ -63,14 +63,36 @@
         <%= form_with url: "subscriptions/add", method: :post do |form| %>
           <div class="flex flex-row w-[480px] max-w-full">
             <%= form.url_field :start_url,
-                               value: @start_url,
                                placeholder: "Feed or blog link",
                                autocomplete: "off",
                                class: "border border-slate-700 rounded-l-md w-full focus:ring-transparent focus:shadow-none"
             %>
-            <%= form.submit "Go",
-                            class: "btn rounded-l-none border border-slate-700 bg-slate-700 hover:bg-slate-900 hover:border-slate-900 hover:disabled:cursor-default rounded-r-md focus:ring-1 focus:ring-offset-1 focus:ring-indigo-500 focus:outline-none"
-            %>
+            <button id="discover_go"
+                    type="submit"
+                    class="btn-no-disable rounded-l-none border border-slate-700 rounded-r-md focus:ring-1 focus:ring-offset-1 focus:ring-indigo-500 focus:outline-none relative"
+            >
+              <div id="discover_go_label" class="">Go</div>
+              <div id="discover_spinner" class="absolute-center hidden">
+                <div class="spinner spinner-dark"></div>
+              </div>
+            </button>
+
+            <script>
+                function showSpinner() {
+                    const button = document.getElementById("discover_go");
+                    button.classList.add("disabled");
+                    const label = document.getElementById("discover_go_label");
+                    label.classList.add("invisible");
+                    const spinner = document.getElementById("discover_spinner");
+                    spinner.classList.remove("hidden");
+                    void spinner.offsetWidth; // trigger reflow
+                }
+
+                const discoverButton = document.getElementById("discover_go");
+                discoverButton.addEventListener("click", () => {
+                    showSpinner();
+                });
+            </script>
           </div>
         <% end %>
       <% end %>
