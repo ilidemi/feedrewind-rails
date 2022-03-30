@@ -17,10 +17,22 @@ def is_feed(page_content, logger)
     return false
   end
 
-  return true unless xml.xpath("/rss/channel").empty?
+  return true if is_rss(xml)
+  return true if is_rdf(xml)
   return true if xml.namespaces["xmlns"] == "http://www.w3.org/2005/Atom" && !xml.xpath("/xmlns:feed").empty?
 
   false
+end
+
+def is_rss(xml)
+  !xml.xpath("/rss/channel").empty?
+end
+
+def is_rdf(xml)
+  #noinspection HttpUrlsUsage
+  xml.namespaces.include?("xmlns:rdf") &&
+    xml.namespaces["xmlns"] == "http://purl.org/rss/1.0/" &&
+    !xml.xpath("/rdf:RDF/xmlns:channel").empty?
 end
 
 ParsedFeed = Struct.new(:title, :root_link, :entry_links, :generator)
@@ -28,14 +40,15 @@ ParsedFeed = Struct.new(:title, :root_link, :entry_links, :generator)
 def parse_feed(feed_content, fetch_uri, logger)
   xml = Nokogiri::XML(feed_content)
   has_feedburner_namespace = xml.namespaces.key?("xmlns:feedburner")
-  rss_channel = xml.at_xpath("/rss/channel")
-  if rss_channel
+  if is_rss(xml)
     logger.info("RSS feed")
     logger.info("Feed is from Feedburner") if has_feedburner_namespace
-    feed_title = rss_channel.at_xpath("title")&.inner_text&.strip
-    root_url = rss_channel.at_xpath("link")&.inner_text
 
-    item_nodes = rss_channel.xpath("item")
+    channel_node = xml.at_xpath("/rss/channel")
+    feed_title = channel_node.at_xpath("title")&.inner_text&.strip
+    root_url = channel_node.at_xpath("link")&.inner_text
+
+    item_nodes = channel_node.xpath("item")
     is_permalink_guid_used = false
     items = item_nodes.map do |item|
       item_title = item.xpath("title").first&.inner_text&.strip
@@ -54,15 +67,15 @@ def parse_feed(feed_content, fetch_uri, logger)
 
       if has_feedburner_namespace
         logger.info("Feed is from Feedburner")
-        feedburner_orig_link = item.at_xpath("feedburner:origLink")
+        feedburner_orig_link = item.at_xpath("feedburner:origLink")&.inner_text
         if feedburner_orig_link
-          next { title: item_title, pub_date: pub_date, url: feedburner_orig_link.inner_text }
+          next { title: item_title, pub_date: pub_date, url: feedburner_orig_link }
         end
       end
 
-      link = item.at_xpath("link")
+      link = item.at_xpath("link")&.inner_text
       if link
-        next { title: item_title, pub_date: pub_date, url: link.inner_text }
+        next { title: item_title, pub_date: pub_date, url: link }
       end
 
       permalink_guid = item
@@ -70,9 +83,10 @@ def parse_feed(feed_content, fetch_uri, logger)
         .to_a
         .filter { |guid| guid.attributes["isPermaLink"].to_s == "true" }
         .first
+        &.inner_text
       if permalink_guid
         is_permalink_guid_used = true
-        next { title: item_title, pub_date: pub_date, url: permalink_guid.inner_text }
+        next { title: item_title, pub_date: pub_date, url: permalink_guid }
       end
 
       nil
@@ -85,7 +99,7 @@ def parse_feed(feed_content, fetch_uri, logger)
 
     sorted_entries, are_dates_certain = try_sort_reverse_chronological(items, logger)
 
-    generator_node = rss_channel.at_xpath("generator")
+    generator_node = channel_node.at_xpath("generator")
     generator = nil
     if generator_node
       generator_text = generator_node.inner_text.downcase
@@ -99,6 +113,41 @@ def parse_feed(feed_content, fetch_uri, logger)
 
       logger.info("Feed generator: #{generator}") if generator
     end
+  elsif is_rdf(xml)
+    logger.info("RDF feed")
+
+    channel_node = xml.at_xpath("/rdf:RDF/xmlns:channel")
+    feed_title = channel_node.at_xpath("xmlns:title")&.inner_text&.strip
+    root_url = channel_node.at_xpath("xmlns:link")&.inner_text
+
+    item_nodes = xml.xpath("/rdf:RDF/xmlns:item")
+    has_dc_namespace = xml.namespaces.include?("xmlns:dc")
+    items = item_nodes.map do |item|
+      item_title = item.xpath("xmlns:title").first&.inner_text&.strip
+
+      dates = has_dc_namespace ? item.xpath("dc:date") : []
+      if dates.length == 1
+        begin
+          pub_date = DateTime.iso8601(dates[0].inner_text)
+        rescue Date::Error
+          logger.info("Invalid date: #{dates[0].inner_text}")
+          pub_date = nil
+        end
+      else
+        pub_date = nil
+      end
+
+      link = item.at_xpath("xmlns:link")&.inner_text
+      if link
+        next { title: item_title, pub_date: pub_date, url: link }
+      end
+
+      nil
+    end
+    raise "Couldn't extract item urls from RSS" if items.any?(&:nil?)
+
+    sorted_entries, are_dates_certain = try_sort_reverse_chronological(items, logger)
+    generator = nil
   else
     logger.info("Atom feed")
     logger.info("Feed is from Feedburner") if has_feedburner_namespace

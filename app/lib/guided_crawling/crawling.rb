@@ -66,6 +66,7 @@ def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progre
           .find { |token| token.downcase.start_with?('charset') }
         if charset_token
           encoding = charset_token.split("=").last.strip
+          encoding = "utf-8" if encoding == "utf8"
         else
           encoding = "utf-8"
         end

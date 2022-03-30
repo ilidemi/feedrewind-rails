@@ -244,7 +244,7 @@ def get_feed_start_page(feed_link, feed_links, crawl_ctx, http_client, progress_
   end
 end
 
-ARCHIVES_REGEX = "/(?:(?:[a-z]+-)?archives?|posts?|all(?:-[a-z]+)?)(?:\\.[a-z]+)?$"
+ARCHIVES_REGEX = "/(?:[a-z-]*archives?|posts?|all(?:-[a-z]+)?)(?:\\.[a-z]+)?$"
 MAIN_PAGE_REGEX = "/(?:blog|articles|writing|journal|essays)(?:\\.[a-z]+)?$"
 
 def guided_crawl_historical(

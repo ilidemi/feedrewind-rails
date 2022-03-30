@@ -93,19 +93,20 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     end
     db.exec_params('delete from historical where start_link_id = $1', [start_link_id])
 
-    discover_feeds_result = discover_feeds_at_url(
-      start_link_feed_url || start_link_url, crawl_ctx, mock_http_client, logger
-    )
+    start_url = start_link_feed_url || start_link_url
+    discover_feeds_result = discover_feeds_at_url(start_url, crawl_ctx, mock_http_client, logger)
 
-    if discover_feeds_result.is_a?(SingleFeedResult)
+    if discover_feeds_result == :discovered_bad_feed
+      raise "Bad feed at #{start_url}"
+    elsif discover_feeds_result.is_a?(DiscoveredSingleFeed)
       discovered_start_page = nil
-      discovered_start_feed = discover_feeds_result.start_feed
+      discovered_start_feed = discover_feeds_result.feed
     else
-      raise "No feeds discovered" if discover_feeds_result.start_feeds.empty?
-      raise "More than one feed discovered" if discover_feeds_result.start_feeds.length > 1
+      raise "No feeds discovered" if discover_feeds_result.feeds.empty?
+      raise "More than one feed discovered" if discover_feeds_result.feeds.length > 1
 
       discovered_start_page = discover_feeds_result.start_page
-      discovered_start_feed = discover_feeds_result.start_feeds.first
+      discovered_start_feed = discover_feeds_result.feeds.first
     end
 
     progress_saver = MockProgressSaver.new(logger)
