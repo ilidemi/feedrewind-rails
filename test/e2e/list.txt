@@ -1,13 +1,15 @@
 ## Logged in user
 ### Feed discovery
-00. "potato" - couldn't reach - /1f.jpg - no feeds - /1f404 - couldn't reach - 10.255.255.1 - couldn't reach - /bad_rss.xml - couldn't read - 1fno - no feeds - /tags - three feeds - /rename-title - two feeds - /rename-host - two feeds - /dedup - one feed - 1a - one feed - /multiple - three feeds
+00. "potato" - couldn't reach - /1f.jpg - no feeds - /1f404 - couldn't reach - /200?sleep=200000 - couldn't reach - /bad_rss.xml - couldn't read - /1ftimeout - 1 feed - Timeout Feed - couldn't read - 1fno - no feeds - /tags - three feeds - /rename-title - two feeds - /rename-host - two feeds - /dedup - one feed - 1a - one feed - /multiple - three feeds
 01. set 3 second delay - /multiple - /multiple (rapid click go and other buttons) - one request, three feeds - Feed 1 (rapid click title and other buttons) - one request > /subs/id/setup
 02. set 3 second delay - /multiple - Feed 1 (rapid click Continue and other buttons) - one request > /subs/id/setup - unset delay
 03. /bad - Very Bad Feed - couldn't read - Bad Feed - /blogs/id/unsupported
 
 https://ilidemi.github.io/dummy-blogs/1fjpg/1f.jpg
 https://ilidemi.github.io/dummy-blogs/1f404/
+https://httpstat.us/200?sleep=20000
 https://ilidemi.github.io/dummy-blogs/multiple-feeds/bad/bad_rss.xml
+https://ilidemi.github.io/dummy-blogs/1ftimeout/
 https://ilidemi.github.io/dummy-blogs/1fno/
 https://ilidemi.github.io/dummy-blogs/multiple-feeds/tags/
 https://ilidemi.github.io/dummy-blogs/multiple-feeds/rename-title/

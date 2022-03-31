@@ -81,6 +81,10 @@
 
               discoverButton.disabled = true;
               showSpinner();
+              const feedError = document.getElementById("feeds_error");
+              if (feedError) {
+                  feedError.classList.add("hidden");
+              }
               const feedButtons = document.getElementsByClassName("feeds-choose");
               for (let feedButton of feedButtons) {
                   disableFeedButton(feedButton);

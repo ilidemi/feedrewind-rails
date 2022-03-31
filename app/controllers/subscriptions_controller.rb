@@ -1,4 +1,5 @@
 require 'json'
+require 'timeout'
 require_relative '../jobs/guided_crawling_job'
 require_relative '../lib/guided_crawling/crawling'
 require_relative '../lib/guided_crawling/http_client'
@@ -38,7 +39,7 @@ class SubscriptionsController < ApplicationController
     # If the feed is already fetched, the blog and subscription were created in onboarding controller
     crawl_ctx = CrawlContext.new
     http_client = HttpClient.new(false)
-    feed_result = fetch_feed_at_url(start_feed.url, crawl_ctx, http_client, Rails.logger)
+    feed_result = fetch_feed_at_url(start_feed.url, 10, crawl_ctx, http_client, Rails.logger)
     if feed_result.is_a?(Page)
       start_feed.content = feed_result.content
       start_feed.final_url = feed_result.fetch_uri.to_s
@@ -52,7 +53,7 @@ class SubscriptionsController < ApplicationController
       else
         render plain: SubscriptionsHelper.setup_path(subscription_or_blog_not_supported)
       end
-    elsif feed_result == :discovered_bad_feed
+    elsif [:discovered_bad_feed, :discovered_timeout_feed].include?(feed_result)
       render plain: "", status: :unsupported_media_type
     else
       raise "Unexpected result from fetch_feed_at_url: #{feed_result}"
