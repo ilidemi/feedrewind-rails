@@ -249,6 +249,17 @@ class Blog < ApplicationRecord
     end
   end
 
+  def downgrade!
+    Blog.transaction do
+      Blog.uncached do
+        raise "Blog is not latest version: #{self.version}" if self.version != LATEST_VERSION
+
+        self.version = Blog::get_downgrade_version(self.feed_url)
+        self.save!
+      end
+    end
+  end
+
   private
 
   def Blog::create_with_crawling(start_feed)

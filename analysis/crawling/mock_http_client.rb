@@ -8,7 +8,7 @@ class MockHttpClient
     @network_requests_made = 0
   end
 
-  def request(uri, logger)
+  def request(uri, should_throttle, logger)
     fetch_url = uri.to_s
 
     response_row = @db.exec_params(
@@ -27,7 +27,7 @@ class MockHttpClient
 
     logger.info("URI not in mock tables, falling back on http client: #{uri}")
     @network_requests_made += 1
-    response = @http_client.request(uri, logger)
+    response = @http_client.request(uri, should_throttle, logger)
 
     @db.exec_params(
       "insert into mock_responses (start_link_id, fetch_url, code, content_type, location, body) values ($1, $2, $3, $4, $5, $6)",

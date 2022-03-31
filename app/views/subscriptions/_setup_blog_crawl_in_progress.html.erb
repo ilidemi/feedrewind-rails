@@ -40,13 +40,20 @@
                     let rects = [];
                     let matches = [...data.status.matchAll(/pP|p|hF\d*|h/g)];
                     let tokens = matches.map(match => match[0]);
-                    let firstDarkIndex = tokens.length;
+
+                    let lastTrailingDarkIndex = tokens[tokens.length - 1].startsWith("hF")
+                        ? tokens.length - 1
+                        : tokens.length;
+                    let firstTrailingDarkIndex = tokens.length;
+
                     for (let index = tokens.length - 1; index >= 0; index--) {
                         if (!tokens[index].startsWith("hF")) break;
-                        firstDarkIndex = index;
+                        firstTrailingDarkIndex = index;
                     }
+
                     let needsTrailingLoader = true;
                     let trailingLoaderIsDark = false;
+
                     for (let index in tokens) {
                         let token = tokens[index];
                         if (token === "h") {
@@ -57,7 +64,9 @@
                         } else if (token === "pP") {
                             rects.push(createRect("w-[4.25rem] h-5 rounded-sm bg-slate-400"));
                         } else if (token.startsWith("hF")) {
-                            if (index >= firstDarkIndex) {
+                            if (index >= firstTrailingDarkIndex &&
+                                firstTrailingDarkIndex !== lastTrailingDarkIndex
+                            ) {
                                 rects.push(createRect("w-5 h-5 rounded-sm bg-slate-600"));
                                 if (parseInt(index) === tokens.length - 1) {
                                     let remainingCountMatch = token.match(/\d+$/g);
@@ -91,7 +100,7 @@
                     document.getElementById("progress_rects").replaceChildren(...rects);
                 }
 
-                if (data.hasOwnProperty("count") && data.count !== null) {
+                if (data.hasOwnProperty("count")) {
                     if (data.count) {
                         document.getElementById("progress_count").innerHTML = `Discovering posts: ${data.count}`;
                     } else {

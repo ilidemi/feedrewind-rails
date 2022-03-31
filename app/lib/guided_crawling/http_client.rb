@@ -10,8 +10,8 @@ class HttpClient
     @enable_throttling = enable_throttling
   end
 
-  def request(uri, _)
-    throttle if @enable_throttling
+  def request(uri, should_throttle, _)
+    throttle if @enable_throttling && should_throttle
 
     req = Net::HTTP::Get.new(uri, initheader = { 'User-Agent' => 'FeedRewind/0.1' })
     begin

@@ -23,6 +23,11 @@ class ProgressLogger
     @progress_saver.save_status(@status_str)
   end
 
+  def log_and_save_postprocessing_reset_count
+    @status_str << 'F'
+    @progress_saver.save_status_and_count(@status_str, nil)
+  end
+
   def log_and_save_postprocessing_counts(fetched_count, remaining_count)
     @status_str << 'F'
     @status_str << "#{remaining_count}"

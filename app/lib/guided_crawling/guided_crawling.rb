@@ -268,6 +268,7 @@ def guided_crawl_historical(
 
   archives_categories_state = ArchivesCategoriesState.new(initial_blog_link)
 
+  guided_seen_queryless_curis_set << canonical_uri_without_query(start_page.curi)
   if start_page.curi.trimmed_path&.match?(ARCHIVES_REGEX)
     logger.info("Start page uri matches archives: #{start_page.fetch_uri.to_s}")
     archives_queue << start_page
@@ -894,14 +895,14 @@ def postprocess_sort_links_maybe_dates(
   links_to_crawl.each_with_index do |link, index|
     page = crawl_request(link, false, crawl_ctx, http_client, progress_logger, logger)
     unless page.is_a?(Page) && page.document
-      progress_logger.log_and_save_postprocessing
+      progress_logger.log_and_save_postprocessing_reset_count
       logger.info("Couldn't fetch link during result postprocess: #{page}")
       return nil
     end
 
     sort_state = historical_archives_sort_add(page, feed_generator, sort_state, logger)
     unless sort_state
-      progress_logger.log_and_save_postprocessing
+      progress_logger.log_and_save_postprocessing_reset_count
       logger.info("Postprocess sort links, maybe dates failed during add")
       return nil
     end

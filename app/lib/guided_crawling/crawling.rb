@@ -27,11 +27,13 @@ def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progre
   link = initial_link
   seen_urls = [link.url]
   link = follow_cached_redirects(link, crawl_ctx.redirects, seen_urls)
+  should_throttle = true
   http_errors_count = 0
 
   loop do
     request_start = monotonic_now
-    resp = http_client.request(link.uri, logger)
+    resp = http_client.request(link.uri, should_throttle, logger)
+    should_throttle = true
     request_ms = ((monotonic_now - request_start) * 1000).to_i
     crawl_ctx.requests_made += 1
     progress_logger.log_html
@@ -52,6 +54,7 @@ def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progre
 
       if redirection_link_or_result.is_a?(Link)
         link = redirection_link_or_result
+        should_throttle = false
       else
         return redirection_link_or_result
       end
@@ -119,6 +122,7 @@ def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progre
         new_url = new_uri.to_s
         logger.info("SSLError_www #{request_ms}ms #{link.url} -> #{new_url}")
         link = to_canonical_link(new_url, logger)
+        should_throttle = false
         next
       else
         logger.info("SSLError #{request_ms}ms #{link.url}")
