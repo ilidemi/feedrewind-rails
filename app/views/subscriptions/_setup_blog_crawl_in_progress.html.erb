@@ -12,7 +12,7 @@
         let epoch;
         let epochTimestamp;
         let epochDurations = [];
-        let isDone = false;
+        let wasDone = false;
 
         function createRect(classes) {
             let rect = document.createElement("div");
@@ -36,14 +36,15 @@
                     epochDurations.push(0);
                 }
 
-                if (data.hasOwnProperty("status") && data.status !== null) {
+                if (epoch > 0 && data.hasOwnProperty("status") && data.status !== null) {
                     let rects = [];
                     let matches = [...data.status.matchAll(/pP|p|hF\d*|h/g)];
                     let tokens = matches.map(match => match[0]);
 
-                    let lastTrailingDarkIndex = tokens[tokens.length - 1].startsWith("hF")
-                        ? tokens.length - 1
-                        : tokens.length;
+                    let lastTrailingDarkIndex = tokens.length;
+                    if (tokens.length > 0 && tokens[tokens.length - 1].startsWith("hF")) {
+                        lastTrailingDarkIndex = tokens.length - 1;
+                    }
                     let firstTrailingDarkIndex = tokens.length;
 
                     for (let index = tokens.length - 1; index >= 0; index--) {
@@ -98,6 +99,10 @@
                         }
                     }
                     document.getElementById("progress_rects").replaceChildren(...rects);
+                } else if (epoch === 0) {
+                    document
+                        .getElementById("progress_rects")
+                        .replaceChildren(createRect("w-5 h-5 rounded-sm border border-slate-400 loader-41"));
                 }
 
                 if (data.hasOwnProperty("count")) {
@@ -110,9 +115,9 @@
             }
 
             if (data.done) {
-                if (isDone) return;
+                if (wasDone) return;
 
-                isDone = true;
+                wasDone = true;
                 let epochDurationsStr = epochDurations
                     .map(t => t.toFixed(3))
                     .join(";");
