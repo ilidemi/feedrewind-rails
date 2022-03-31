@@ -69,6 +69,7 @@ def output_report(filename, result_column_names, results, expected_total)
     report_file.write("<head>\n")
     report_file.write("<title>Report</title>\n")
     report_file.write("<style>table, th, td { border: 1px solid black; border-collapse: collapse; }</style>\n")
+    report_file.write("<style>body, table { font-size: small; }</style>\n")
     report_file.write("</head>\n")
     report_file.write("<body>\n")
 

@@ -69,6 +69,7 @@ class AdminController < ApplicationController
         blog = Blog.create!(
           name: name,
           feed_url: feed_url,
+          url: params[:url],
           status: "manually_inserted",
           status_updated_at: DateTime.now,
           version: Blog::LATEST_VERSION,

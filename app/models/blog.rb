@@ -158,7 +158,7 @@ class Blog < ApplicationRecord
     end
   end
 
-  def init_crawled(urls_titles, discarded_feed_urls, curi_eq_cfg_hash)
+  def init_crawled(url, urls_titles, discarded_feed_urls, curi_eq_cfg_hash)
     raise "Can only init posts when status is crawl_in_progress" unless self.status == "crawl_in_progress"
 
     Blog.transaction do
@@ -183,6 +183,7 @@ class Blog < ApplicationRecord
         )
       end
 
+      self.url = url
       self.status = "crawled_voting"
       self.save!
     end
@@ -254,6 +255,7 @@ class Blog < ApplicationRecord
     blog = Blog.create!(
       name: start_feed.title,
       feed_url: start_feed.final_url,
+      url: nil,
       status: "crawl_in_progress",
       status_updated_at: DateTime.now,
       version: Blog::LATEST_VERSION,

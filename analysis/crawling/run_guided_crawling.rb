@@ -15,6 +15,7 @@ GUIDED_CRAWLING_RESULT_COLUMNS = [
   [:gt_pattern, :neutral],
   [:feed_url, :boolean],
   [:feed_links, :boolean],
+  [:blog_url, :neutral_present],
   [:historical_links_found, :boolean],
   [:historical_links_matching, :boolean],
   [:historical_links_pattern, :neutral_present],
@@ -75,7 +76,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     end
 
     gt_row = db.exec_params(
-      "select pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url, titles, links "\
+      "select pattern, entries_count, blog_canonical_url, main_page_canonical_url, oldest_entry_canonical_url, titles, links "\
       "from historical_ground_truth "\
       "where start_link_id = $1",
       [start_link_id]
@@ -127,6 +128,8 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
       .to_i == 1
     unless historical_result
       if gt_row
+        result.blog_url_status = :failure
+        result.blog_url = "(#{gt_row["blog_canonical_url"]})" if gt_row["blog_canonical_url"]
         result.historical_links_pattern_status = :failure
         result.historical_links_pattern = "(#{gt_row["pattern"]})"
         result.historical_links_count_status = :failure
@@ -158,18 +161,29 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     link_curis = historical_result.links.map(&:curi)
     db.exec_params(
       "insert into historical "\
-      "(start_link_id, pattern, entries_count, main_page_canonical_url, oldest_entry_canonical_url, titles, links) "\
+      "(start_link_id, pattern, entries_count, blog_canonical_url, main_page_canonical_url, oldest_entry_canonical_url, titles, links) "\
       "values "\
-      "($1, $2, $3, $4, $5, $6::text[], $7::text[])",
+      "($1, $2, $3, $4, $5, $6, $7::text[], $8::text[])",
       [
-        start_link_id, historical_result.pattern, entries_count, historical_result.main_link.curi.to_s,
-        oldest_link.curi.to_s, PG::TextEncoder::Array.new.encode(link_titles.map(&:value)),
+        start_link_id, historical_result.pattern, entries_count, historical_result.blog_link.curi.to_s,
+        historical_result.main_link.curi.to_s, oldest_link.curi.to_s,
+        PG::TextEncoder::Array.new.encode(link_titles.map(&:value)),
         PG::TextEncoder::Array.new.encode(link_curis.map(&:to_s))
       ]
     )
 
     if gt_row
       historical_links_matching = true
+
+      gt_blog_url = gt_row["blog_canonical_url"]
+      if gt_blog_url == historical_result.blog_link.curi.to_s
+        result.blog_url_status = :success
+        result.blog_url = "<a href=\"#{historical_result.blog_link.url}\">#{historical_result.blog_link.curi.to_s}</a>"
+      else
+        result.blog_url_status = :failure
+        result.blog_url = "<a href=\"#{historical_result.blog_link.url}\">#{historical_result.blog_link.curi.to_s}</a><br>(#{gt_row["blog_canonical_url"]})"
+        historical_links_matching = false
+      end
 
       if historical_result.pattern == gt_row["pattern"]
         result.historical_links_pattern_status = :success
@@ -317,6 +331,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
         logger.info("Saved guided success")
       end
     else
+      result.blog_url = "<a href=\"#{historical_result.blog_link.url}\">#{historical_result.blog_link.curi.to_s}</a>"
       result.historical_links_matching = '?'
       result.historical_links_matching_status = :neutral
       result.no_guided_regression_status = :neutral

@@ -317,7 +317,8 @@ CREATE TABLE public.blogs (
     version integer NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    update_action public.blog_update_action NOT NULL
+    update_action public.blog_update_action NOT NULL,
+    url character varying
 );
 
 
@@ -1053,6 +1054,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220115001649'),
 ('20220308005116'),
 ('20220321220933'),
-('20220329191713');
+('20220329191713'),
+('20220331171951');
 
 

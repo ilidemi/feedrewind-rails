@@ -18,7 +18,7 @@ require_relative 'util'
 GuidedCrawlResult = Struct.new(:feed_result, :start_url, :curi_eq_cfg, :historical_result, :historical_error)
 FeedResult = Struct.new(:feed_url, :feed_links, :feed_matching_titles, :feed_matching_titles_status)
 HistoricalResult = Struct.new(
-  :main_link, :pattern, :links, :count, :discarded_feed_entry_urls, :extra, keyword_init: true
+  :blog_link, :main_link, :pattern, :links, :count, :discarded_feed_entry_urls, :extra, keyword_init: true
 )
 
 class GuidedCrawlError < StandardError
@@ -117,6 +117,7 @@ def guided_crawl(
     guided_crawl_result.curi_eq_cfg = curi_eq_cfg
 
     feed_entry_curis_titles_map = CanonicalUriTitleMap.new(parsed_feed.entry_links.to_a, curi_eq_cfg)
+    initial_blog_link = parsed_feed.root_link || start_page_final_link
 
     historical_error = nil
     if parsed_feed.entry_links.length <= 100
@@ -124,7 +125,7 @@ def guided_crawl(
         if parsed_feed.generator != :tumblr
           crawl_historical_result = guided_crawl_historical(
             start_page, parsed_feed.entry_links, feed_entry_curis_titles_map, parsed_feed.generator,
-            crawl_ctx, curi_eq_cfg, http_client, puppeteer_client, progress_logger, logger
+            initial_blog_link, crawl_ctx, curi_eq_cfg, http_client, puppeteer_client, progress_logger, logger
           )
         else
           crawl_historical_result = get_tumblr_api_historical(
@@ -144,6 +145,7 @@ def guided_crawl(
             .map(&:url)
 
           historical_result = HistoricalResult.new(
+            blog_link: crawl_historical_result.main_link,
             main_link: crawl_historical_result.main_link,
             pattern: crawl_historical_result.pattern,
             links: crawl_historical_result.links,
@@ -161,6 +163,7 @@ def guided_crawl(
     else
       logger.info("Feed is long with #{parsed_feed.entry_links.length} entries")
       historical_result = HistoricalResult.new(
+        blog_link: initial_blog_link,
         main_link: feed_link,
         pattern: "long_feed",
         links: parsed_feed.entry_links.to_a,
@@ -248,8 +251,8 @@ ARCHIVES_REGEX = "/(?:[a-z-]*archives?|posts?|all(?:-[a-z]+)?)(?:\\.[a-z]+)?$"
 MAIN_PAGE_REGEX = "/(?:blog|articles|writing|journal|essays)(?:\\.[a-z]+)?$"
 
 def guided_crawl_historical(
-  start_page, feed_entry_links, feed_entry_curis_titles_map, feed_generator, crawl_ctx, curi_eq_cfg,
-  http_client, puppeteer_client, progress_logger, logger
+  start_page, feed_entry_links, feed_entry_curis_titles_map, feed_generator, initial_blog_link, crawl_ctx,
+  curi_eq_cfg, http_client, puppeteer_client, progress_logger, logger
 )
   archives_queue = []
   main_page_queue = []
@@ -263,7 +266,7 @@ def guided_crawl_historical(
   start_page_allowed_hosts_links = start_page_all_links
     .filter { |link| allowed_hosts.include?(link.uri.host) }
 
-  archives_categories_state = ArchivesCategoriesState.new
+  archives_categories_state = ArchivesCategoriesState.new(initial_blog_link)
 
   if start_page.curi.trimmed_path&.match?(ARCHIVES_REGEX)
     logger.info("Start page uri matches archives: #{start_page.fetch_uri.to_s}")

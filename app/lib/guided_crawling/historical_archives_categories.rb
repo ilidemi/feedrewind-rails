@@ -1,11 +1,12 @@
 require_relative 'historical_common'
 
 class ArchivesCategoriesState
-  def initialize
+  def initialize(main_link)
     @links_maybe_dates_by_feed_matching_curis_set = {}
+    @main_link = main_link
   end
 
-  attr_reader :links_maybe_dates_by_feed_matching_curis_set
+  attr_reader :links_maybe_dates_by_feed_matching_curis_set, :main_link
 end
 
 ArchivesCategoriesResult = Struct.new(
@@ -107,7 +108,7 @@ def try_extract_archives_categories(
     combinations_count += 1
     result = try_combination(
       feed_matching_curis_sets_categories, feed_entry_links, curi_eq_cfg, almost_match_threshold,
-      combinations_count, page_link, logger
+      combinations_count, state.main_link, logger
     )
     return result if result
   end
@@ -116,7 +117,7 @@ def try_extract_archives_categories(
     combinations_count += 1
     result = try_combination(
       feed_matching_curis_sets_categories, feed_entry_links, curi_eq_cfg, almost_match_threshold,
-      combinations_count, page_link, logger
+      combinations_count, state.main_link, logger
     )
     return result if result
   end
