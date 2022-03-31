@@ -259,9 +259,7 @@ class SubscriptionsController < ApplicationController
 
     commit_blog_votes(blog)
 
-    respond_to do |format|
-      format.js
-    end
+    render body: nil
   end
 
   def continue_with_wrong
