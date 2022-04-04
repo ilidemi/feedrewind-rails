@@ -435,7 +435,7 @@ class SubscriptionsController < ApplicationController
       .where(status: "live")
       .order("created_at desc")
       .filter { |sub| sub.id != current_sub_id }
-      .filter { |sub| (sub.subscription_posts.count(&:is_published) || 0) > 0 }
+      .filter { |sub| (sub.subscription_posts.count { |post| !post.is_published }) > 0 }
 
     other_sub_names_by_day = DAYS_OF_WEEK.to_h { |day| [day, []] }
     other_active_subs.each do |sub|

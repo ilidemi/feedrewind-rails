@@ -67,17 +67,17 @@
         </div>
       <% end %>
 
-      <% done_subscriptions = @subscriptions.filter do |sub|
+      <% finished_subscriptions = @subscriptions.filter do |sub|
         sub.status == "live" && sub.subscription_posts.count { |post| !post.is_published } == 0
       end %>
-      <% if done_subscriptions.length > 0 %>
+      <% if finished_subscriptions.length > 0 %>
         <div class="flex flex-col gap-0.5">
           <div class="text-lg font-semibold">
-            Done
+            Finished
           </div>
           <div class="w-full h-px bg-slate-300"></div>
           <div class="grid grid-cols-[1fr_auto] gap-x-4 gap-y-0.5 items-center">
-            <% done_subscriptions.each do |subscription| %>
+            <% finished_subscriptions.each do |subscription| %>
               <% published_count = subscription.subscription_posts.count(&:is_published) || 0 %>
               <%= link_to subscription.name,
                           subscription,
