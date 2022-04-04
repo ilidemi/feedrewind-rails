@@ -1,4 +1,4 @@
-<%= render partial: "common/refresh_popup" %>
+<%= render partial: "common/info_popup" %>
 
 <div class="flex flex-col gap-6 mb-6 max-w-lg">
   <div class="flex flex-col gap-1">
@@ -81,15 +81,7 @@
 
               discoverButton.disabled = true;
               showSpinner();
-              const feedError = document.getElementById("feeds_error");
-              if (feedError) {
-                  feedError.classList.add("hidden");
-              }
-              const feedButtons = document.getElementsByClassName("feeds-choose");
-              for (let feedButton of feedButtons) {
-                  disableFeedButton(feedButton);
-                  // At the end of the request the feeds will be replaced so no enable is required
-              }
+              document.getElementById("feeds").innerHTML = "";
 
               try {
                   const abortController = new AbortController();
@@ -126,12 +118,14 @@
                   } else {
                       clearTimeout(timeoutId);
                       hideSpinner();
-                      triggerRefreshPopup("Something went wrong. Please refresh the page.");
+                      discoverButton.disabled = false;
+                      triggerInfoPopup("Something went wrong");
                   }
               } catch (err) {
                   // Timeout
                   hideSpinner();
-                  triggerRefreshPopup("Something went wrong. Please refresh the page.");
+                  discoverButton.disabled = false;
+                  triggerInfoPopup("Something went wrong");
               }
           });
       </script>
@@ -236,13 +230,23 @@
                           }
                       } else {
                           clearTimeout(timeoutId);
+                          discoverButton.disabled = false;
+                          discoverButton.classList.remove("opacity-50");
                           hideFeedSpinner(button);
-                          triggerRefreshPopup("Something went wrong. Please refresh the page.");
+                          for (let button2 of buttons) {
+                              enableFeedButton(button2);
+                          }
+                          triggerInfoPopup("Something went wrong");
                       }
                   } catch (err) {
                       // Timeout
+                      discoverButton.disabled = false;
+                      discoverButton.classList.remove("opacity-50");
                       hideFeedSpinner(button);
-                      triggerRefreshPopup("Something went wrong. Please refresh the page.");
+                      for (let button2 of buttons) {
+                          enableFeedButton(button2);
+                      }
+                      triggerInfoPopup("Something went wrong");
                   }
               })
           }
