@@ -4,16 +4,15 @@
 </div>
 
 <script>
+    let infoPopup = document.getElementById("info_popup");
     document.getElementById("info_popup").addEventListener("animationend", (event) => {
         if (event.animationName === "popup-disappear") {
-            let infoPopup = document.getElementById("info_popup");
             infoPopup.classList.remove("popup");
             infoPopup.classList.add("hidden");
         }
     });
 
     function triggerInfoPopup(message) {
-        let infoPopup = document.getElementById("info_popup");
         infoPopup.classList.add("hidden");
         infoPopup.classList.remove("popup");
         infoPopup.innerText = message;
@@ -23,7 +22,6 @@
     }
 
     function hideInfoPopup() {
-        let infoPopup = document.getElementById("info_popup");
         infoPopup.classList.remove("popup");
         infoPopup.classList.add("hidden");
     }

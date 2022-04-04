@@ -181,7 +181,7 @@
 
     checkWebsocketStaleness();
 
-    document.addEventListener('turbolinks:before-render', () => {
+    window.addEventListener('beforeunload', () => {
         if (crawlStalenessTimeoutId) {
             clearTimeout(crawlStalenessTimeoutId);
         }
