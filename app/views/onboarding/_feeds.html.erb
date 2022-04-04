@@ -40,7 +40,7 @@
       <a href="https://duckduckgo.com/?q=<%= Addressable::URI.escape(feeds_data.start_url) %>"
          target="_blank"
          class="link">
-        Search web for a link to "<%= feeds_data.start_url %>" →
+        Search online for a link to "<%= feeds_data.start_url %>" →
       </a>
     <% elsif feeds_data.are_no_feeds %>
       <%= feeds_data.start_url %> doesn't appear to have a feed. Try another link?
