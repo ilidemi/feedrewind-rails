@@ -36,7 +36,13 @@
   </div>
 <% else %>
   <div id="feeds_error">
-    <% if feeds_data.are_no_feeds %>
+    <% if feeds_data.not_a_url %>
+      <a href="https://duckduckgo.com/?q=<%= Addressable::URI.escape(feeds_data.start_url) %>"
+         target="_blank"
+         class="link">
+        Search web for a link to "<%= feeds_data.start_url %>" →
+      </a>
+    <% elsif feeds_data.are_no_feeds %>
       <%= feeds_data.start_url %> doesn't appear to have a feed. Try another link?
     <% elsif feeds_data.could_not_reach %>
       Couldn't reach <%= feeds_data.start_url %>. Try another link?

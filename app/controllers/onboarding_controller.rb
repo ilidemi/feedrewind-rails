@@ -40,7 +40,7 @@ class OnboardingController < ApplicationController
 
   private
 
-  FeedsData = Struct.new(:start_url, :feeds, :are_no_feeds, :could_not_reach, :bad_feed)
+  FeedsData = Struct.new(:start_url, :feeds, :not_a_url, :are_no_feeds, :could_not_reach, :bad_feed)
 
   def discover_feeds_internal(start_url, user)
     crawl_ctx = CrawlContext.new
@@ -108,12 +108,14 @@ class OnboardingController < ApplicationController
       end
 
       FeedsData.new(start_url, start_feeds, nil, nil, nil)
+    elsif discovered_feeds == :discovered_not_a_url
+      FeedsData.new(start_url, nil, true, nil, nil, nil)
     elsif discovered_feeds == :discovered_no_feeds
-      FeedsData.new(start_url, nil, true, nil, nil)
+      FeedsData.new(start_url, nil, nil, true, nil, nil)
     elsif discovered_feeds == :discover_could_not_reach
-      FeedsData.new(start_url, nil, nil, true, nil)
+      FeedsData.new(start_url, nil, nil, nil, true, nil)
     elsif discovered_feeds == :discovered_bad_feed
-      FeedsData.new(start_url, nil, nil, nil, true)
+      FeedsData.new(start_url, nil, nil, nil, nil, true)
     else
       raise "Unexpected result from discover_feeds_at_url: #{discovered_feeds}"
     end

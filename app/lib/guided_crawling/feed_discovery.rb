@@ -13,13 +13,27 @@ DiscoveredFetchedFeed = Struct.new(:title, :url, :final_url, :content)
 DiscoveredStartPage = Struct.new(:url, :final_url, :content)
 
 def discover_feeds_at_url(start_url, enforce_timeout, crawl_ctx, http_client, logger)
-  mock_progress_logger = ProgressLogger.new(MockProgressSaver.new(logger))
+  #noinspection HttpUrlsUsage
+  if start_url.start_with?("http://") || start_url.start_with?("https://")
+    full_start_url = start_url
+  elsif start_url.include?(".")
+    #noinspection HttpUrlsUsage
+    full_start_url = "http://" + start_url
+  else
+    return :discovered_not_a_url
+  end
 
-  start_link = to_canonical_link(start_url, logger)
+  start_link = to_canonical_link(full_start_url, logger)
   unless start_link
     logger.info("Bad start url: #{start_url}")
-    return :discover_could_not_reach
+    if full_start_url == start_url
+      return :discover_could_not_reach
+    else
+      return :discovered_not_a_url
+    end
   end
+
+  mock_progress_logger = ProgressLogger.new(MockProgressSaver.new(logger))
 
   begin
     start_result = crawl_request_with_timeout(
