@@ -261,13 +261,9 @@
   </div>
 
   <script>
-      {
-          let start_url_field = document.getElementById("start_url");
-          let feeds = document.getElementById("feeds");
-          document.addEventListener('turbolinks:before-render', () => {
-              start_url_field.value = "";
-              feeds.innerHTML = "";
-          });
-      }
+      document.addEventListener('turbolinks:before-render', () => {
+          document.getElementById("start_url").value = "";
+          document.getElementById("feeds").innerHTML = "";
+      });
   </script>
 </div>

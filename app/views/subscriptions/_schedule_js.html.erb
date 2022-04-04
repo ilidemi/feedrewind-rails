@@ -1,87 +1,85 @@
 <script>
-    {
-        let daysOfWeek = ["<%= raw days_of_week.join('", "') %>"];
+    let scheduleDaysOfWeek = ["<%= raw days_of_week.join('", "') %>"];
 
-        function validateSchedule(hasSomethingChanged) {
-            let totalCount = 0;
-            daysOfWeek.forEach(day => {
-                totalCount += parseInt(document.getElementById(`${day}_count`).value);
-            });
-            let isValid = totalCount > 0;
-            <%= js_validate_callback %>(isValid, hasSomethingChanged);
+    function validateSchedule(hasSomethingChanged) {
+        let totalCount = 0;
+        scheduleDaysOfWeek.forEach(day => {
+            totalCount += parseInt(document.getElementById(`${day}_count`).value);
+        });
+        let isValid = totalCount > 0;
+        <%= js_validate_callback %>(isValid, hasSomethingChanged);
+    }
+
+    scheduleDaysOfWeek.forEach(day => {
+        let dayField = document.getElementById(`${day}_count`);
+        let dayPosts = document.getElementById(`${day}_posts`);
+        let dayPostsMobile = document.getElementById(`${day}_posts_mobile`);
+
+        function remove() {
+            dayField.value = parseInt(dayField.value) - 1;
+            document.getElementsByName(`${day}_remove`)[0].remove();
+            document.getElementsByName(`${day}_remove_mobile`)[0].remove();
+            validateSchedule(true);
         }
 
-        daysOfWeek.forEach(day => {
-            let dayField = document.getElementById(`${day}_count`);
-            let dayPosts = document.getElementById(`${day}_posts`);
-            let dayPostsMobile = document.getElementById(`${day}_posts_mobile`);
+        function createRemoveButton() {
+            let button = document
+                .getElementById(`${day}_template`)
+                .cloneNode(true);
+            button.removeAttribute("id");
+            button.setAttribute("name", `${day}_remove`);
+            button.classList.remove("hidden");
+            button.addEventListener("click", remove);
+            return button;
+        }
 
-            function remove() {
-                dayField.value = parseInt(dayField.value) - 1;
-                document.getElementsByName(`${day}_remove`)[0].remove();
-                document.getElementsByName(`${day}_remove_mobile`)[0].remove();
-                validateSchedule(true);
-            }
+        function createRemoveButtonMobile() {
+            let button = document
+                .getElementById(`${day}_template_mobile`)
+                .cloneNode(true);
+            button.removeAttribute("id");
+            button.setAttribute("name", `${day}_remove_mobile`);
+            button.classList.remove("hidden");
+            button.addEventListener("click", remove);
+            return button;
+        }
 
-            function createRemoveButton() {
-                let button = document
-                    .getElementById(`${day}_template`)
-                    .cloneNode(true);
-                button.removeAttribute("id");
-                button.setAttribute("name", `${day}_remove`);
-                button.classList.remove("hidden");
-                button.addEventListener("click", remove);
-                return button;
-            }
+        function insertAdd() {
+            let removeButton = createRemoveButton();
+            dayPosts.appendChild(removeButton);
 
-            function createRemoveButtonMobile() {
-                let button = document
-                    .getElementById(`${day}_template_mobile`)
-                    .cloneNode(true);
-                button.removeAttribute("id");
-                button.setAttribute("name", `${day}_remove_mobile`);
-                button.classList.remove("hidden");
-                button.addEventListener("click", remove);
-                return button;
-            }
+            let removeButtonMobile = createRemoveButtonMobile();
+            dayPostsMobile.prepend(removeButtonMobile);
+        }
 
-            function insertAdd() {
-                let removeButton = createRemoveButton();
-                dayPosts.appendChild(removeButton);
+        let initialDayCount = parseInt(dayField.value);
+        for (let i = 0; i < initialDayCount; i++) {
+            insertAdd();
+        }
 
-                let removeButtonMobile = createRemoveButtonMobile();
-                dayPostsMobile.prepend(removeButtonMobile);
-            }
-
-            let initialDayCount = parseInt(dayField.value);
-            for (let i = 0; i < initialDayCount; i++) {
+        document
+            .getElementById(`${day}_add`)
+            .addEventListener("click", () => {
+                dayField.value = parseInt(dayField.value) + 1;
                 insertAdd();
-            }
+                validateSchedule(true);
+            });
 
-            document
-                .getElementById(`${day}_add`)
-                .addEventListener("click", () => {
-                    dayField.value = parseInt(dayField.value) + 1;
-                    insertAdd();
-                    validateSchedule(true);
-                });
+        document
+            .getElementById(`${day}_add_mobile`)
+            .addEventListener("click", () => {
+                dayField.value = parseInt(dayField.value) + 1;
+                insertAdd();
+                validateSchedule(true);
+            });
+    });
 
-            document
-                .getElementById(`${day}_add_mobile`)
-                .addEventListener("click", () => {
-                    dayField.value = parseInt(dayField.value) + 1;
-                    insertAdd();
-                    validateSchedule(true);
-                });
-        });
+    validateSchedule(false);
 
-        validateSchedule(false);
-
-        <%= js_set_name_change_callback %>((newName) => {
-            let elems = document.getElementsByClassName("schedule-sub-name");
-            for (let elem of elems) {
-                elem.innerText = newName;
-            }
-        });
-    }
+    <%= js_set_name_change_callback %>((newName) => {
+        let elems = document.getElementsByClassName("schedule-sub-name");
+        for (let elem of elems) {
+            elem.innerText = newName;
+        }
+    });
 </script>

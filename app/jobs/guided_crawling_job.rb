@@ -59,7 +59,6 @@ class GuidedCrawlingJob < ApplicationJob
       end
     rescue ActiveRecord::RecordNotFound
       Rails.logger.warn("Record not found for blog #{blog_id}")
-      raise
     ensure
       ActionCable.server.broadcast("discovery_#{blog_id}", { done: true })
       Rails.logger.info("discovery_#{blog_id} done: true")

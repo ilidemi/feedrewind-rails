@@ -4,15 +4,13 @@
 </div>
 
 <script>
-    {
-        let infoPopup = document.getElementById("info_popup");
-        infoPopup.addEventListener("animationend", (event) => {
-            if (event.animationName === "popup-disappear") {
-                infoPopup.classList.remove("popup");
-                infoPopup.classList.add("hidden");
-            }
-        });
-    }
+    document.getElementById("info_popup").addEventListener("animationend", (event) => {
+        if (event.animationName === "popup-disappear") {
+            let infoPopup = document.getElementById("info_popup");
+            infoPopup.classList.remove("popup");
+            infoPopup.classList.add("hidden");
+        }
+    });
 
     function triggerInfoPopup(message) {
         let infoPopup = document.getElementById("info_popup");

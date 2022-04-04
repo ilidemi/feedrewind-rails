@@ -15,32 +15,35 @@
 </div>
 
 <script>
-    {
+    document.getElementById("<%= trigger_button_id %>").addEventListener("click", () => {
         let deletePopup = document.getElementById("delete_popup<%= id_suffix %>");
         let deleteBackground = document.getElementById("delete_popup_background<%= id_suffix %>");
-        document.getElementById("<%= trigger_button_id %>").addEventListener("click", () => {
+        deletePopup.classList.add("hidden");
+        deletePopup.classList.remove("popup-appear");
+        void deletePopup.offsetWidth; // trigger reflow
+        deletePopup.classList.remove("hidden");
+        deletePopup.classList.add("popup-appear");
+        deleteBackground.classList.remove("hidden");
+    });
+    document.getElementById("popup_cancel_button<%= id_suffix %>").addEventListener("click", () => {
+        let deletePopup = document.getElementById("delete_popup<%= id_suffix %>");
+        let deleteBackground = document.getElementById("delete_popup_background<%= id_suffix %>");
+        deletePopup.classList.remove("popup-appear");
+        deletePopup.classList.add("popup-disappear");
+        deleteBackground.classList.add("hidden");
+    });
+    document.getElementById("delete_popup_background<%= id_suffix %>").addEventListener("click", () => {
+        let deletePopup = document.getElementById("delete_popup<%= id_suffix %>");
+        let deleteBackground = document.getElementById("delete_popup_background<%= id_suffix %>");
+        deletePopup.classList.remove("popup-appear");
+        deletePopup.classList.add("popup-disappear");
+        deleteBackground.classList.add("hidden");
+    });
+    document.getElementById("delete_popup<%= id_suffix %>").addEventListener("animationend", (event) => {
+        let deletePopup = document.getElementById("delete_popup<%= id_suffix %>");
+        if (event.animationName === "popup-disappear") {
+            deletePopup.classList.remove("popup-disappear");
             deletePopup.classList.add("hidden");
-            deletePopup.classList.remove("popup-appear");
-            void deletePopup.offsetWidth; // trigger reflow
-            deletePopup.classList.remove("hidden");
-            deletePopup.classList.add("popup-appear");
-            deleteBackground.classList.remove("hidden");
-        });
-        document.getElementById("popup_cancel_button<%= id_suffix %>").addEventListener("click", () => {
-            deletePopup.classList.remove("popup-appear");
-            deletePopup.classList.add("popup-disappear");
-            deleteBackground.classList.add("hidden");
-        });
-        deleteBackground.addEventListener("click", () => {
-            deletePopup.classList.remove("popup-appear");
-            deletePopup.classList.add("popup-disappear");
-            deleteBackground.classList.add("hidden");
-        });
-        deletePopup.addEventListener("animationend", (event) => {
-            if (event.animationName === "popup-disappear") {
-                deletePopup.classList.remove("popup-disappear");
-                deletePopup.classList.add("hidden");
-            }
-        });
-    }
+        }
+    });
 </script>
