@@ -12,7 +12,7 @@ DiscoveredFeed = Struct.new(:title, :url)
 DiscoveredFetchedFeed = Struct.new(:title, :url, :final_url, :content)
 DiscoveredStartPage = Struct.new(:url, :final_url, :content)
 
-def discover_feeds_at_url(start_url, request_timeout, crawl_ctx, http_client, logger)
+def discover_feeds_at_url(start_url, enforce_timeout, crawl_ctx, http_client, logger)
   mock_progress_logger = ProgressLogger.new(MockProgressSaver.new(logger))
 
   start_link = to_canonical_link(start_url, logger)
@@ -23,7 +23,7 @@ def discover_feeds_at_url(start_url, request_timeout, crawl_ctx, http_client, lo
 
   begin
     start_result = crawl_request_with_timeout(
-      start_link, true, request_timeout, crawl_ctx, http_client, mock_progress_logger, logger
+      start_link, true, enforce_timeout, crawl_ctx, http_client, mock_progress_logger, logger
     )
 
     if start_result.is_a?(Page) && !start_result.content
@@ -115,7 +115,7 @@ def discover_feeds_at_url(start_url, request_timeout, crawl_ctx, http_client, lo
     elsif dedup_feeds.length == 1
       #noinspection RubyNilAnalysis
       single_feed_result = fetch_feed_at_url(
-        dedup_feeds.first.url, request_timeout, crawl_ctx, http_client, logger
+        dedup_feeds.first.url, enforce_timeout, crawl_ctx, http_client, logger
       )
       if single_feed_result.is_a?(Page)
         #noinspection RubyNilAnalysis
@@ -139,7 +139,7 @@ def discover_feeds_at_url(start_url, request_timeout, crawl_ctx, http_client, lo
   end
 end
 
-def fetch_feed_at_url(feed_url, request_timeout, crawl_ctx, http_client, logger)
+def fetch_feed_at_url(feed_url, enforce_timeout, crawl_ctx, http_client, logger)
   mock_progress_logger = ProgressLogger.new(MockProgressSaver.new(logger))
 
   feed_link = to_canonical_link(feed_url, logger)
@@ -150,7 +150,7 @@ def fetch_feed_at_url(feed_url, request_timeout, crawl_ctx, http_client, logger)
 
   begin
     crawl_result = crawl_request_with_timeout(
-      feed_link, true, request_timeout, crawl_ctx, http_client, mock_progress_logger, logger
+      feed_link, true, enforce_timeout, crawl_ctx, http_client, mock_progress_logger, logger
     )
     unless crawl_result.is_a?(Page) && crawl_result.content
       logger.info("Unexpected crawl result: #{crawl_result}")
@@ -170,10 +170,10 @@ def fetch_feed_at_url(feed_url, request_timeout, crawl_ctx, http_client, logger)
 end
 
 def crawl_request_with_timeout(
-  link, is_feed_expected, timeout, crawl_ctx, http_client, progress_logger, logger
+  link, is_feed_expected, enforce_timeout, crawl_ctx, http_client, progress_logger, logger
 )
-  if timeout
-    Timeout::timeout(timeout) do
+  if enforce_timeout
+    Timeout::timeout(10) do
       crawl_request(link, is_feed_expected, crawl_ctx, http_client, progress_logger, logger)
     end
   else

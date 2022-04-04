@@ -38,7 +38,7 @@ mock_logger = MockLogger.new
 
 partition.each do |id, url|
   begin
-    discover_result = discover_feeds_at_url(url, nil, crawl_ctx, http_client, mock_logger)
+    discover_result = discover_feeds_at_url(url, false, crawl_ctx, http_client, mock_logger)
     next unless discover_result.is_a?(DiscoveredMultipleFeeds)
 
     logger.info("#{id} #{discover_result.class} feeds:#{discover_result.start_feeds.length}")

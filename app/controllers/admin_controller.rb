@@ -43,7 +43,7 @@ class AdminController < ApplicationController
 
       crawl_ctx = CrawlContext.new
       http_client = HttpClient.new(false)
-      feed_result = fetch_feed_at_url(feed_url, nil, crawl_ctx, http_client, Rails.logger)
+      feed_result = fetch_feed_at_url(feed_url, false, crawl_ctx, http_client, Rails.logger)
       raise "Couldn't fetch feed" unless feed_result.is_a?(Page)
 
       feed_link = to_canonical_link(feed_url, Rails.logger)

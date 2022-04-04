@@ -20,7 +20,7 @@
             <% setting_up_subscriptions.each do |subscription| %>
               <%= link_to subscription.name,
                           SubscriptionsHelper.setup_path(subscription),
-                          class: "justify-self-start break-word text-base font-semibold leading-relaxed underline"
+                          class: "justify-self-start break-word text-base leading-relaxed underline hover:text-blue-900"
               %>
               <button id="delete_button_<%= subscription.id %>" class="justify-self-end btn-secondary-red">
                 Delete
@@ -56,7 +56,7 @@
               <% published_count = subscription.subscription_posts.count(&:is_published) || 0 %>
               <%= link_to subscription.name,
                           subscription,
-                          class: "justify-self-start break-word text-base font-semibold leading-relaxed underline"
+                          class: "justify-self-start break-word text-base leading-relaxed underline hover:text-blue-900"
               %>
               <span class="justify-self-end text-sm text-gray-500">
                 <% verb = subscription.is_paused ? "published, paused" : "published" %>
@@ -81,7 +81,7 @@
               <% published_count = subscription.subscription_posts.count(&:is_published) || 0 %>
               <%= link_to subscription.name,
                           subscription,
-                          class: "justify-self-start break-word text-base font-semibold leading-relaxed underline"
+                          class: "justify-self-start break-word text-base leading-relaxed underline hover:text-blue-900"
               %>
               <span class="justify-self-end text-sm text-gray-500">
                 <%= published_count %> published

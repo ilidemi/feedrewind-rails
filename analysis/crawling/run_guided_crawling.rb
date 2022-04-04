@@ -95,7 +95,7 @@ def run_guided_crawl(start_link_id, save_successes, allow_puppeteer, db, logger)
     db.exec_params('delete from historical where start_link_id = $1', [start_link_id])
 
     start_url = start_link_feed_url || start_link_url
-    discover_feeds_result = discover_feeds_at_url(start_url, nil, crawl_ctx, mock_http_client, logger)
+    discover_feeds_result = discover_feeds_at_url(start_url, false, crawl_ctx, mock_http_client, logger)
 
     if discover_feeds_result == :discovered_bad_feed
       raise "Bad feed at #{start_url}"

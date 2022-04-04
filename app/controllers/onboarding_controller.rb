@@ -45,7 +45,7 @@ class OnboardingController < ApplicationController
   def discover_feeds_internal(start_url, user)
     crawl_ctx = CrawlContext.new
     http_client = HttpClient.new(false)
-    discovered_feeds = discover_feeds_at_url(start_url, 10, crawl_ctx, http_client, Rails.logger)
+    discovered_feeds = discover_feeds_at_url(start_url, true, crawl_ctx, http_client, Rails.logger)
 
     if discovered_feeds.is_a?(DiscoveredSingleFeed)
       discovered_start_page = discovered_feeds.start_page
