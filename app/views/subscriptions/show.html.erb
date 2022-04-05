@@ -82,7 +82,7 @@
             remote: true,
             id: "schedule_form"
           ) do %>
-        <div class="flex flex-col gap-1">
+        <div class="flex flex-col">
           <div class="sticky top-0 bg-white py-1">
             <div id="schedule_header" class="flex flex-row gap-[0.3125rem] items-center flex-wrap">
               <div class="font-semibold self-baseline">Weekly schedule</div>
@@ -140,15 +140,15 @@
                 const scheduleHeader = document.getElementById("schedule_header");
                 const scheduleError = document.getElementById("schedule_empty_error");
                 const scheduleSpinnerContainer = document.getElementById("schedule_save_spinner_container");
-                const scheduleMobileGrid = document.getElementById("schedule_mobile_grid");
+                const scheduleMobile = document.getElementById("schedule_mobile");
                 if (isValid) {
                     scheduleError.classList.add("invisible");
                     scheduleSpinnerContainer.classList.remove("hidden");
                 } else {
                     scheduleSpinnerContainer.classList.add("hidden");
-                    const scheduleMobileGridStyle = window.getComputedStyle(scheduleMobileGrid);
-                    if (scheduleMobileGridStyle.display !== "none") {
-                        scheduleHeader.style.maxWidth = scheduleMobileGridStyle.width;
+                    const scheduleMobileStyle = window.getComputedStyle(scheduleMobile);
+                    if (scheduleMobileStyle.display !== "none") {
+                        scheduleHeader.style.maxWidth = scheduleMobileStyle.width;
                     } else {
                         scheduleHeader.style.maxWidth = null;
                     }
