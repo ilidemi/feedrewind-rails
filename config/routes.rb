@@ -10,6 +10,7 @@ Rails.application.routes.draw do
 
   resources :subscriptions, only: [:index, :create, :update, :destroy], param: :id
   get "/subscriptions/add", to: "onboarding#add"
+  get "/subscriptions/add/*start_url", to: "onboarding#add", format: false, defaults: { format: "html" }
   post "/subscriptions/add", to: "onboarding#add_landing"
   post "/subscriptions/discover_feeds", to: "onboarding#discover_feeds"
 

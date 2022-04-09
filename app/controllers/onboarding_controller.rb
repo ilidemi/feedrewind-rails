@@ -9,7 +9,19 @@ class OnboardingController < ApplicationController
   skip_before_action :verify_authenticity_token, only: :add_landing
 
   def add
-    @feeds_data = nil
+    if params[:start_url]
+      discover_feeds_result = discover_feeds_internal(params[:start_url], @current_user)
+      if discover_feeds_result.is_a?(Subscription)
+        redirect_to SubscriptionsHelper.setup_path(discover_feeds_result)
+      elsif discover_feeds_result.is_a?(Subscription::BlogNotSupported)
+        redirect_to BlogsHelper.unsupported_path(discover_feeds_result.blog)
+      else
+        @feeds_data = discover_feeds_result
+        render "add"
+      end
+    else
+      @feeds_data = nil
+    end
   end
 
   def add_landing

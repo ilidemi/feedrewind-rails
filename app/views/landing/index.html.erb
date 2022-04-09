@@ -8,9 +8,8 @@
       <%= link_to "Sign up", signup_path, class: "text-sm text-white bg-slate-700 hover:bg-slate-900 rounded-full px-3 py-1.5 hover:cursor-pointer" %>
     </div>
   </header>
-  <main class="flex-1 flex flex-col gap-4 xs:gap-6 sm:gap-8 md:gap-10 mt-2 xs:mt-4 sm:mt-6 md:mt-8">
-    <div class="flex flex-col align-center">
-      <h1 class="text-xl 3xs:text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold flex flex-col headline">
+  <main class="flex-1 flex flex-col gap-16 mt-6">
+    <h1 class="text-xl 3xs:text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold flex flex-col headline">
         <span>Read that
           <span class="relative">
             <span class="word word1">blog</span>
@@ -18,10 +17,9 @@
             <span class="word word3">webcomic</span>
           </span>
         </span>
-        <span>you keep returning to.</span>
-        <span>At your own pace.</span>
-      </h1>
-    </div>
+      <span>you keep returning to.</span>
+      <span>At your own pace.</span>
+    </h1>
 
     <ul class="flex flex-row flex-wrap gap-x-6 gap-y-1">
       <li class="flex flex-row gap-0.5 items-center">
@@ -29,7 +27,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
-        Any feed
+        Any feed (almost)
       </li>
       <li class="flex flex-row gap-0.5 items-center">
         <!-- check-circle icon -->
@@ -48,6 +46,7 @@
     </ul>
 
     <div class="flex flex-col gap-1">
+      <div class="font-semibold">Try it out:</div>
       <% if @subscription %>
         <div>
           <%= link_to "Continue with #{@subscription.name}",
@@ -55,14 +54,13 @@
                       class: "link"
           %>
           or
-          <%= link_to "try another",
+          <%= link_to "try another feed",
                       "/discard",
                       method: :post,
                       class: "link"
           %>
         </div>
       <% else %>
-        Try it out:
         <%= form_with url: "subscriptions/add",
                       method: :post,
                       html: { novalidate: true } do |form| %>
@@ -101,6 +99,74 @@
           </div>
         <% end %>
       <% end %>
+    </div>
+
+    <div class="flex flex-col gap-y-4">
+      <div>
+        <div>Not sure what to read? Start with one of our picks:</div>
+        <div class="text-xs text-gray-500">(not affiliated with FeedRewind)</div>
+      </div>
+
+      <% @suggested_categories.each_with_index do |category, index| %>
+        <div class="w-[480px] max-w-full flex flex-row">
+          <% if index == 1 %>
+            <div class="flex-1"></div>
+          <% end %>
+          <div class="w-fit">
+            <div class="text-lg font-semibold leading-8"><%= category.name %></div>
+            <% category.blogs.each do |blog| %>
+              <div class="flex flex-row gap-2 items-baseline leading-7">
+                <span class="flex-1">
+                  <a class="link text-black"
+                     href="<%= SubscriptionsHelper.subscription_add_feed_path(blog.feed_url) %>"
+                  >
+                    <%= blog.name %>
+                  </a>
+                  <!-- chevron-right icon -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 text-gray-500 inline -ml-[0.1875rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </span>
+                <a class="w-4 h-4 link pt-[0.1875rem] shrink-0" href="<%= blog.url %>" target="_blank">
+                  <!-- external-link icon -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="align-baseline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                  </svg>
+                </a>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <div class="w-[480px] pt-8 max-w-full flex flex-row">
+        <div class="flex-1"></div>
+        <div class="w-fit">
+          <div class="text-lg font-semibold leading-8">Miscellaneous</div>
+          <% @miscellaneous_blogs.each do |blog| %>
+            <div class="flex flex-row gap-2 items-baseline leading-7">
+              <span class="flex-1">
+                <a class="link text-black"
+                   href="<%= SubscriptionsHelper.subscription_add_feed_path(blog.feed_url) %>"
+                >
+                  <%= blog.name %>
+                </a>
+                <!-- chevron-right icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 text-gray-500 relative inline -ml-[0.1875rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+              </span>
+              <div class="rounded-full bg-slate-100 text-sm px-2"><%= blog.tag.gsub(" ", "\u00A0") %></div>
+              <a class="w-4 h-4 link pt-[0.1875rem] shrink-0" href="<%= blog.url %>" target="_blank">
+                <!-- external-link icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+            </div>
+          <% end %>
+        </div>
+      </div>
     </div>
   </main>
   <footer>

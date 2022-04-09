@@ -1,3 +1,5 @@
+require 'addressable/uri'
+
 module SubscriptionsHelper
   def SubscriptionsHelper.setup_path(subscription)
     "/subscriptions/#{subscription.id}/setup"
@@ -33,6 +35,11 @@ module SubscriptionsHelper
 
   def SubscriptionsHelper.unpause_path(subscription)
     "/subscriptions/#{subscription.id}/unpause"
+  end
+
+  def SubscriptionsHelper.subscription_add_feed_path(feed_url)
+    encoded_url = Addressable::URI.encode_component(feed_url, Addressable::URI::CharacterClasses::UNRESERVED)
+    "/subscriptions/add/#{encoded_url}"
   end
 
   def SubscriptionsHelper.subscription_add_url
