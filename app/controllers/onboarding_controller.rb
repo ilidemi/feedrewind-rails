@@ -21,6 +21,8 @@ class OnboardingController < ApplicationController
       end
     else
       @feeds_data = nil
+      @suggested_categories = OnboardingHelper::SUGGESTED_CATEGORIES
+      @miscellaneous_blogs = OnboardingHelper::MISCELLANEOUS_BLOGS
     end
   end
 

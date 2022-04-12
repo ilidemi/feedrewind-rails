@@ -1,6 +1,6 @@
 <%= render partial: "common/info_popup" %>
 
-<div class="flex flex-col gap-6 mb-6 max-w-lg">
+<div class="flex flex-col gap-6 max-w-lg">
   <div class="flex flex-col gap-1">
     <div>
       <% if @current_user %>
@@ -35,7 +35,7 @@
               type="submit"
               class="btn-no-disable rounded-l-none border border-slate-700 rounded-r-md focus:ring-1 focus:ring-offset-1 focus:ring-indigo-500 focus:outline-none relative"
       >
-        <div id="discover_go_label" class="">Go</div>
+        <div id="discover_go_label">Go</div>
         <div id="discover_spinner" class="absolute-center hidden">
           <div class="spinner spinner-dark"></div>
         </div>
@@ -82,6 +82,7 @@
               discoverButton.disabled = true;
               showSpinner();
               document.getElementById("feeds").innerHTML = "";
+              document.getElementById("suggestions").innerHTML = "";
 
               try {
                   const abortController = new AbortController();
@@ -258,5 +259,44 @@
       <%= render partial: "feeds", locals: { feeds_data: @feeds_data } %>
       <script>setUpFeedsCallbacks();</script>
     <% end %>
+  </div>
+
+  <div id="suggestions" class="mt-10 flex flex-col gap-y-2">
+    <div id="suggestions_toggle" class="max-w-lg py-2 border-y flex flex-row items-center hover:cursor-pointer no-tap-highlight">
+      <div class="flex-1">Not sure what to read?</div>
+      <!-- chevron-down icon -->
+      <svg xmlns="http://www.w3.org/2000/svg" id="suggestions_toggle_icon" class="w-4 h-4 text-gray-500 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </div>
+
+    <div id="suggestions_body" class="transition-all max-h-0 overflow-hidden flex flex-col gap-y-6">
+      <div>
+        <div>Take a look at our picks:</div>
+        <div class="text-xs text-gray-500">(not affiliated with FeedRewind)</div>
+      </div>
+
+      <%= render partial: "onboarding/suggestions",
+                 locals: {
+                   suggested_categories: @suggested_categories,
+                   miscellaneous_blogs: @miscellaneous_blogs,
+                   width_class: "max-w-full"
+                 }
+      %>
+    </div>
+
+    <script>
+      document.getElementById("suggestions_toggle").addEventListener("click", () => {
+          const suggestionsToggleIcon = document.getElementById("suggestions_toggle_icon");
+          suggestionsToggleIcon.classList.toggle("rotate-180");
+
+          const suggestionsBody = document.getElementById("suggestions_body");
+          if (suggestionsBody.style.maxHeight) {
+              suggestionsBody.style.maxHeight = null;
+          } else {
+              suggestionsBody.style.maxHeight = suggestionsBody.scrollHeight + "px";
+          }
+      });
+    </script>
   </div>
 </div>

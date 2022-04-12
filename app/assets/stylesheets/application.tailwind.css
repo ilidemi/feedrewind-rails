@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer components {
+    html {
+        font-size: 17px;
+    }
+
     body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     }
@@ -49,6 +53,10 @@
 
     .break-all {
         word-break: break-all;
+    }
+
+    .no-tap-highlight {
+        -webkit-tap-highlight-color: transparent;
     }
 
     /*noinspection CssReplaceWithShorthandSafely*/
@@ -244,5 +252,4 @@
             transform: rotate(360deg);
         }
     }
-
 }

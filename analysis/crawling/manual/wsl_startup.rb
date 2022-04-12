@@ -39,3 +39,5 @@ puts "dbnavigator.xml IP: #{dbnavigator_xml_replaced_ip}"
 if conf_replaced_ip == ip
   puts %x[wsl sudo service postgresql start]
 end
+
+puts %x[wsl sudo screen -S tailscale -dm tailscaled]
