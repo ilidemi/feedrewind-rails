@@ -132,9 +132,10 @@ def discover_feeds_at_url(start_url, enforce_timeout, crawl_ctx, http_client, lo
         dedup_feeds.first.url, enforce_timeout, crawl_ctx, http_client, logger
       )
       if single_feed_result.is_a?(Page)
+        parsed_feed = parse_feed(single_feed_result.content, single_feed_result.fetch_uri, logger)
         #noinspection RubyNilAnalysis
         fetched_feed = DiscoveredFetchedFeed.new(
-          dedup_feeds.first.title,
+          parsed_feed.title,
           dedup_feeds.first.url,
           single_feed_result.fetch_uri.to_s,
           single_feed_result.content

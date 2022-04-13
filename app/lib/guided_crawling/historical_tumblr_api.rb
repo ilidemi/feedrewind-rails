@@ -20,7 +20,7 @@ def get_tumblr_api_historical(hostname, crawl_ctx, http_client, progress_logger,
   loop do
     uri = URI(url)
     request_start = monotonic_now
-    resp = http_client.request(uri, logger)
+    resp = http_client.request(uri, true, logger)
     request_ms = ((monotonic_now - request_start) * 1000).to_i
     crawl_ctx.requests_made += 1
     progress_logger.log_html

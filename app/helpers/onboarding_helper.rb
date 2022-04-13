@@ -22,7 +22,8 @@ module OnboardingHelper
         SuggestedBlog.new("https://distill.pub/", "https://distill.pub/rss.xml", "Distill"),
         SuggestedBlog.new("https://openai.com/blog/", "https://openai.com/blog/rss/", "OpenAI"),
         SuggestedBlog.new("https://bair.berkeley.edu/blog/", "https://bair.berkeley.edu/blog/feed.xml", "BAIR"),
-        SuggestedBlog.new("https://www.deepmind.com/blog", "https://www.deepmind.com/blog/rss.xml", "DeepMind")
+      # Website is very custom
+      # SuggestedBlog.new("https://www.deepmind.com/blog", "https://www.deepmind.com/blog/rss.xml", "DeepMind")
       ]
     ),
     BlogsCategory.new(
@@ -43,7 +44,8 @@ module OnboardingHelper
     MiscellaneousBlog.new("https://pedestrianobservations.com/", "https://pedestrianobservations.com/feed/", "Pedestrian Observations", "urbanism"),
     MiscellaneousBlog.new("http://paulgraham.com/articles.html", "http://www.aaronsw.com/2002/feeds/pgessays.rss", "Paul Graham", "entrepreneurship"),
     MiscellaneousBlog.new("https://caseyhandmer.wordpress.com/", "https://caseyhandmer.wordpress.com/feed/", "Casey Handmer", "space"),
-    MiscellaneousBlog.new("https://waitbutwhy.com/archive", "https://waitbutwhy.com/feed", "Wait But Why", "life"),
+    # 1 link is missing from feed
+    # MiscellaneousBlog.new("https://waitbutwhy.com/archive", "https://waitbutwhy.com/feed", "Wait But Why", "life"),
     MiscellaneousBlog.new("https://www.mrmoneymustache.com/", "https://feeds.feedburner.com/mrmoneymustache", "Mr. Money Mustache", "personal finance"),
     MiscellaneousBlog.new("https://blog.cryptographyengineering.com/", "https://blog.cryptographyengineering.com/feed/", "Cryptographic Engineering", "cryptography"),
     MiscellaneousBlog.new("https://www.righto.com/", "https://www.righto.com/feeds/posts/default", "Kevin Shirriff", "hardware"),

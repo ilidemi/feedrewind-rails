@@ -36,7 +36,9 @@ def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progre
     should_throttle = true
     request_ms = ((monotonic_now - request_start) * 1000).to_i
     crawl_ctx.requests_made += 1
-    progress_logger.log_html
+    if should_throttle
+      progress_logger.log_html
+    end
 
     if crawl_ctx.fetched_curis.include?(link.curi)
       duplicate_fetch_log = " (duplicate fetch)"

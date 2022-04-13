@@ -40,58 +40,40 @@
                 let matches = [...data.status.matchAll(/pP|p|hF\d*|h/g)];
                 let tokens = matches.map(match => match[0]);
 
-                let lastTrailingDarkIndex = tokens.length;
-                if (tokens.length > 0 && tokens[tokens.length - 1].startsWith("hF")) {
-                    lastTrailingDarkIndex = tokens.length - 1;
-                }
-                let firstTrailingDarkIndex = tokens.length;
-
-                for (let index = tokens.length - 1; index >= 0; index--) {
-                    if (!tokens[index].startsWith("hF")) break;
-                    firstTrailingDarkIndex = index;
-                }
-
+                let rectsAreDark = tokens.length > 0 && tokens[tokens.length - 1].startsWith("hF");
+                let bgClass = rectsAreDark ? "bg-slate-600" : "bg-slate-400";
                 let needsTrailingLoader = true;
-                let trailingLoaderIsDark = false;
 
                 for (let index in tokens) {
                     let token = tokens[index];
                     if (token === "h") {
-                        rects.push(createProgressRect("w-5 h-5 rounded-sm bg-slate-400"));
+                        rects.push(createProgressRect(`w-5 h-5 rounded-sm ${bgClass}`));
                     } else if (token === "p") {
                         rects.push(createProgressRect("w-[4.25rem] h-5 rounded-sm border border-slate-400 loader-41"));
                         needsTrailingLoader = false;
                     } else if (token === "pP") {
-                        rects.push(createProgressRect("w-[4.25rem] h-5 rounded-sm bg-slate-400"));
+                        rects.push(createProgressRect(`w-[4.25rem] h-5 rounded-sm ${bgClass}`));
                     } else if (token.startsWith("hF")) {
-                        if (index >= firstTrailingDarkIndex &&
-                            firstTrailingDarkIndex !== lastTrailingDarkIndex
-                        ) {
-                            rects.push(createProgressRect("w-5 h-5 rounded-sm bg-slate-600"));
-                            if (parseInt(index) === tokens.length - 1) {
-                                let remainingCountMatch = token.match(/\d+$/g);
-                                if (remainingCountMatch) {
-                                    needsTrailingLoader = false;
-                                    let remainingCount = parseInt(remainingCountMatch[0]);
-                                    if (remainingCount >= 1) {
-                                        rects.push(createProgressRect("w-5 h-5 rounded-sm border border-slate-600 loader-41-dark"))
-                                    }
-                                    for (let i = 1; i < remainingCount; i++) {
-                                        rects.push(createProgressRect("w-5 h-5 rounded-sm border border-slate-600"));
-                                    }
+                        rects.push(createProgressRect(`w-5 h-5 rounded-sm ${bgClass}`));
+                        if (parseInt(index) === tokens.length - 1) {
+                            let remainingCountMatch = token.match(/\d+$/g);
+                            if (remainingCountMatch) {
+                                needsTrailingLoader = false;
+                                let remainingCount = parseInt(remainingCountMatch[0]);
+                                if (remainingCount >= 1) {
+                                    rects.push(createProgressRect("w-5 h-5 rounded-sm border border-slate-600 loader-41-dark"))
                                 }
-                            } else {
-                                trailingLoaderIsDark = true;
+                                for (let i = 1; i < remainingCount; i++) {
+                                    rects.push(createProgressRect("w-5 h-5 rounded-sm border border-slate-600"));
+                                }
                             }
-                        } else {
-                            rects.push(createProgressRect("w-5 h-5 rounded-sm bg-slate-400"));
                         }
                     } else {
                         console.warn(`Unknown progress token: ${token} (${data})`);
                     }
                 }
                 if (needsTrailingLoader) {
-                    if (trailingLoaderIsDark) {
+                    if (rectsAreDark) {
                         rects.push(createProgressRect("w-5 h-5 rounded-sm border border-slate-600 loader-41-dark"));
                     } else {
                         rects.push(createProgressRect("w-5 h-5 rounded-sm border border-slate-400 loader-41"));
