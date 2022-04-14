@@ -1,17 +1,19 @@
 <div>
   <%= form_with url: SubscriptionsHelper.schedule_path(subscription), method: :post do %>
     <div class="flex flex-col gap-6">
-      <div>
+      <div class="flex flex-col gap-2">
         <%= label_tag :name, "Name", class: "font-semibold" %>
-        <%= text_field_tag :name,
-                           subscription.name,
-                           class: "rounded-md shadow-sm border-gray-300 block w-80 mt-2" %>
-        <div id="name_empty_error" class="hidden text-red-600 text-sm">Name cannot be empty</div>
+        <div class="flex flex-col">
+          <%= text_field_tag :name,
+                             subscription.name,
+                             class: "rounded-md shadow-sm border-gray-300 max-w-xs" %>
+          <div id="name_empty_error" class="hidden text-red-600 text-sm">Name cannot be empty</div>
+        </div>
       </div>
 
       <div class="flex flex-col gap-1">
         <div class="font-semibold">Weekly schedule</div>
-
+o
         <%= render partial: "schedule", locals: {
           subscription_name: subscription.name,
           current_counts_by_day: days_of_week.to_h { |day| [day, 0] },
@@ -20,6 +22,32 @@
         } %>
 
         <div id="schedule_empty_error" class="hidden text-red-600 text-sm">Select at least some days</div>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <div class="font-semibold">Preview</div>
+        <table class="table-auto w-fit">
+          <thead>
+          <tr>
+            <th class="text-left font-normal py-0.75 pl-0 border-b border-b-slate-300">Post</th>
+            <th class="text-left font-normal py-0.75 pl-6 border-b border-b-slate-300">Arrives</th>
+          </tr>
+          </thead>
+
+          <% next_posts.blog_posts.each do |blog_post| %>
+            <tr>
+              <td class="py-0.75 pl-0 align-text-top">
+                <a class="link text-black" href="<%= blog_post.url %>"><%= blog_post.title %></a>
+              </td>
+              <td class="next-post-date py-0.75 pl-6 whitespace-nowrap align-text-top"></td>
+            </tr>
+          <% end %>
+
+          <tr class="text-gray-500">
+            <td class="py-0.75 pl-0 align-text-top">(<%= next_posts.more_count %> more)</td>
+            <td class="py-0.75 pl-6 align-text-top">…</td>
+          </tr>
+        </table>
       </div>
 
       <div>
@@ -66,12 +94,63 @@
         document.getElementById("name").addEventListener("input", validateName);
 
 
-        function onValidateSchedule(isValid) {
+        function advanceDate(date) {
+            date.setDate(date.getDate() + 1);
+        }
+
+        const todayDate = new Date("<%= today_date %>");
+        const tomorrowDate = new Date(todayDate);
+        advanceDate(tomorrowDate);
+        const firstScheduleDate = new Date("<%= first_schedule_date %>");
+
+        function onValidateSchedule(isValid, countsByDay, _) {
+            function advanceUntilScheduled(date) {
+                while (!countsByDay.get(getDayOfWeek(date))) {
+                    advanceDate(date);
+                }
+            }
+
+            function getDayOfWeek(date) {
+                return date
+                    .toLocaleDateString("en-US", {weekday: "short", timeZone: "UTC"})
+                    .toLowerCase();
+            }
+
             const scheduleError = document.getElementById("schedule_empty_error");
+            const nextPostDates = document.getElementsByClassName("next-post-date");
             if (isValid) {
                 scheduleError.classList.add("hidden");
+
+                const date = new Date(firstScheduleDate);
+                advanceUntilScheduled(date);
+                let postsLeft = countsByDay.get(getDayOfWeek(date));
+
+                for (let nextPostDate of nextPostDates) {
+                    if (date.getTime() === todayDate.getTime()) {
+                        nextPostDate.innerText = "Today";
+                    } else if (date.getTime() === tomorrowDate.getTime()) {
+                        nextPostDate.innerText = "Tomorrow";
+                    } else {
+                        nextPostDate.innerText = date.toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "long",
+                            day: "numeric",
+                            timeZone: "UTC"
+                        });
+                    }
+
+                    postsLeft--;
+                    if (postsLeft === 0) {
+                        advanceDate(date);
+                        advanceUntilScheduled(date);
+                        postsLeft = countsByDay.get(getDayOfWeek(date));
+                    }
+                }
             } else {
                 scheduleError.classList.remove("hidden");
+                for (let nextPostDate of nextPostDates) {
+                    nextPostDate.innerText = "…";
+                }
             }
             isScheduleValid = isValid;
             validateForm();

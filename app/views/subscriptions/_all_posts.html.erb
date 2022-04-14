@@ -1,7 +1,7 @@
 <div class="flex flex-col gap-1.5">
   <% ordered_blog_posts.each_with_index do |blog_post, index| %>
     <div>
-      <a href="<%= blog_post.url %>" class="link"><%= blog_post.title %></a>
+      <a href="<%= blog_post.url %>" class="link text-black"><%= blog_post.title %></a>
       <% if index == 0 %>
         <span class="text-gray-500">(oldest)</span>
       <% elsif index == ordered_blog_posts.length - 1 %>

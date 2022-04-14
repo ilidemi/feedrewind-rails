@@ -2,12 +2,15 @@
     let scheduleDaysOfWeek = ["<%= raw days_of_week.join('", "') %>"];
 
     function validateSchedule(hasSomethingChanged) {
+        let countsByDay = new Map(scheduleDaysOfWeek.map(
+            day => [day, parseInt(document.getElementById(`${day}_count`).value)]
+        ));
         let totalCount = 0;
-        scheduleDaysOfWeek.forEach(day => {
-            totalCount += parseInt(document.getElementById(`${day}_count`).value);
+        countsByDay.forEach(value => {
+            totalCount += value;
         });
         let isValid = totalCount > 0;
-        <%= js_validate_callback %>(isValid, hasSomethingChanged);
+        <%= js_validate_callback %>(isValid, countsByDay, hasSomethingChanged);
     }
 
     scheduleDaysOfWeek.forEach(day => {

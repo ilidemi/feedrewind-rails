@@ -20,7 +20,7 @@
       .order(:day_of_week)
       .map(&:day_of_week)
     days_of_week = %w[sun mon tue wed thu fri sat]
-    today_index = days_of_week.index(DateService.day_of_week)
+    today_index = days_of_week.index(ScheduleDate.today.day_of_week)
     if subscription.is_added_past_midnight
       days_of_week_from_next_schedule = days_of_week.rotate(today_index)
     else

@@ -60,6 +60,8 @@ class SubscriptionsController < ApplicationController
     end
   end
 
+  NextPosts = Struct.new(:blog_posts, :more_count)
+
   def setup
     fill_current_user
     @subscription = Subscription.find_by(id: params[:id])
@@ -100,6 +102,24 @@ class SubscriptionsController < ApplicationController
     if @subscription.status == "setup" && @current_user
       @other_sub_names_by_day = get_other_sub_names_by_day(nil)
       @days_of_week = DAYS_OF_WEEK
+
+      next_blog_posts = @subscription
+        .subscription_posts
+        .includes(:blog_post)
+        .order("blog_posts.index asc")
+        .limit(3)
+        .map(&:blog_post)
+      more_count = @subscription.subscription_posts.length - next_blog_posts.length
+      @next_posts = NextPosts.new(next_blog_posts, more_count)
+
+      today = ScheduleHelper.today
+      if today.is_early_morning
+        first_schedule_time = today
+      else
+        first_schedule_time = today.advance_till_midnight
+      end
+      @today_date = today.date_str
+      @first_schedule_date = first_schedule_time.date_str
     end
   end
 
