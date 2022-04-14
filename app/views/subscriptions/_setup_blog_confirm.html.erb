@@ -1,6 +1,6 @@
 <div class="flex flex-col gap-6">
   <div class="flex flex-col gap-1.5">
-    Discovered <%= subscription.blog.blog_posts.length %> posts (oldest to newest):
+    Discovered <%= subscription.blog.blog_posts.length %> posts:
 
     <%= render partial: "posts", locals: { subscription: subscription } %>
   </div>
