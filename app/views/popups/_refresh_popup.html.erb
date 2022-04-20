@@ -11,9 +11,12 @@
 <script>
     document.getElementById("popup_refresh_button").addEventListener("click", () => window.location.reload());
 
-    function triggerRefreshPopup(message) {
-        let refreshPopupMessage = document.getElementById("refresh_popup_message");
-        refreshPopupMessage.innerText = message;
+    function showRefreshPopup(message) {
+        for (let element of document.getElementsByClassName("modal-inert")) {
+            element.inert = true;
+        }
+
+        document.getElementById("refresh_popup_message").innerText = message;
         let refreshPopup = document.getElementById("refresh_popup");
         refreshPopup.classList.remove("hidden");
         refreshPopup.classList.add("popup-appear");

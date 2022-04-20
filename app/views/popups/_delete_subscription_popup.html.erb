@@ -1,0 +1,72 @@
+<div id="delete_subscription_popup_background" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75"></div>
+<div id="delete_subscription_popup"
+     class="hidden fixed top-0 left-1/2 -translate-x-1/2 px-4 py-4 rounded-b-3xl border-x border-b border-gray-300 bg-white shadow-md flex flex-col gap-4"
+>
+  <div class="break-word">
+    <span id="delete_subscription_popup_prefix"></span><span id="delete_subscription_popup_subscription_name" class="font-semibold"></span><span id="delete_subscription_popup_suffix"></span>
+  </div>
+  <div class="flex flex-row gap-3 justify-end">
+    <button id="delete_subscription_popup_keep_button" class="btn"></button>
+    <%= link_to "", "", # Filled in JavaScript
+                method: :delete,
+                id: "delete_subscription_popup_delete_button",
+                class: "btn-red"
+    %>
+  </div>
+</div>
+
+<script>
+    function showDeleteSubscriptionPopup(
+        promptPrefix, subscriptionName, promptSuffix, subscriptionPath, keepLabel, deleteLabel
+    ) {
+        for (let element of document.getElementsByClassName("modal-inert")) {
+            element.inert = true;
+        }
+
+        document.getElementById("delete_subscription_popup_prefix").innerText = promptPrefix;
+        document.getElementById("delete_subscription_popup_subscription_name").innerText = subscriptionName;
+        document.getElementById("delete_subscription_popup_suffix").innerText = promptSuffix;
+        document.getElementById("delete_subscription_popup_keep_button").innerText = keepLabel;
+
+        let deleteButton = document.getElementById("delete_subscription_popup_delete_button");
+        deleteButton.innerText = deleteLabel;
+        deleteButton.href = subscriptionPath;
+
+        let deletePopup = document.getElementById("delete_subscription_popup");
+        let deleteBackground = document.getElementById("delete_subscription_popup_background");
+        deletePopup.classList.add("hidden");
+        deletePopup.classList.remove("popup-appear");
+        void deletePopup.offsetWidth; // trigger reflow
+        deletePopup.classList.remove("hidden");
+        deletePopup.classList.add("popup-appear");
+        deleteBackground.classList.remove("hidden");
+    }
+
+    function hideDeleteSubscriptionPopup() {
+        let deletePopup = document.getElementById("delete_subscription_popup");
+        let deleteBackground = document.getElementById("delete_subscription_popup_background");
+        deletePopup.classList.remove("popup-appear");
+        deletePopup.classList.add("popup-disappear");
+        deleteBackground.classList.add("hidden");
+
+        for (let element of document.getElementsByClassName("modal-inert")) {
+            element.inert = false;
+        }
+    }
+
+    document.getElementById("delete_subscription_popup_keep_button").addEventListener("click", () => {
+        hideDeleteSubscriptionPopup();
+    });
+
+    document.getElementById("delete_subscription_popup_background").addEventListener("click", () => {
+        hideDeleteSubscriptionPopup();
+    });
+
+    document.getElementById("delete_subscription_popup").addEventListener("animationend", (event) => {
+        let deletePopup = document.getElementById("delete_subscription_popup");
+        if (event.animationName === "popup-disappear") {
+            deletePopup.classList.remove("popup-disappear");
+            deletePopup.classList.add("hidden");
+        }
+    });
+</script>

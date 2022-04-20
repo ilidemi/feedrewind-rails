@@ -33,12 +33,12 @@ def crawl_request(initial_link, is_feed_expected, crawl_ctx, http_client, progre
   loop do
     request_start = monotonic_now
     resp = http_client.request(link.uri, should_throttle, logger)
-    should_throttle = true
     request_ms = ((monotonic_now - request_start) * 1000).to_i
     crawl_ctx.requests_made += 1
     if should_throttle
       progress_logger.log_html
     end
+    should_throttle = true
 
     if crawl_ctx.fetched_curis.include?(link.curi)
       duplicate_fetch_log = " (duplicate fetch)"

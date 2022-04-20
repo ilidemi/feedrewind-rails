@@ -1,6 +1,3 @@
-<%= render partial: "common/info_popup" %>
-<%= render partial: "common/refresh_popup" %>
-
 <div class="flex flex-col gap-12">
   <div class="flex flex-col gap-6">
     <div class="flex flex-col gap-1">
@@ -27,8 +24,7 @@
         <%= render partial: "copy_feed_link",
                    locals: {
                      request: request,
-                     subscription: @subscription,
-                     js_trigger_popup: "triggerInfoPopup"
+                     subscription: @subscription
                    } %>
       </div>
     </div>
@@ -187,21 +183,21 @@
                             clearTimeout(timeoutId);
                             maybeHideSpinner();
                             if (json.version > maxSeenVersion) {
-                                triggerRefreshPopup("Schedule is out of date. Please refresh the page.");
+                                showRefreshPopup("Schedule is out of date. Please refresh the page.");
                             }
                             // If the version is older, we're expecting some other request to succeed
                         } else {
                             clearTimeout(timeoutId);
                             maybeHideSpinner();
                             if (requestVersion === maxSeenVersion) {
-                                triggerRefreshPopup("Something went wrong. Please refresh the page.");
+                                showRefreshPopup("Something went wrong. Please refresh the page.");
                             }
                             // If the version is older, we're expecting some other request to succeed
                         }
                     } catch (err) {
                         // Timeout
                         maybeHideSpinner();
-                        triggerRefreshPopup("Something went wrong. Please refresh the page.");
+                        showRefreshPopup("Something went wrong. Please refresh the page.");
                     }
                 }
             }
@@ -229,17 +225,16 @@
       </svg>
       Delete
     </button>
-  </div>
 
-  <%= render partial: "delete_subscription_popup",
-             locals: {
-               trigger_button_id: "delete_button",
-               id_suffix: "",
-               prompt_prefix: "Delete ",
-               prompt_suffix: "? This cannot be undone.",
-               keep_label: "Cancel",
-               delete_label: "Delete",
-               subscription: @subscription
-             }
-  %>
+    <script>
+        document
+            .getElementById("delete_button")
+            .addEventListener("click", () => {
+                showDeleteSubscriptionPopup(
+                    "Delete ", "<%= @subscription.name %>", "? This cannot be undone.",
+                    "<%= subscription_path(@subscription.id) %>", "Keep", "Delete"
+                );
+            })
+    </script>
+  </div>
 </div>

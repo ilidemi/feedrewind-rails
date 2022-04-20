@@ -12,7 +12,8 @@
 </head>
 
 <body class="container mx-auto max-w-[360px]">
-<main class="my-8">
+<%= render partial: "popups/popups" %>
+<main class="my-8 modal-inert">
   <%= yield %>
 </main>
 </body>

@@ -9,10 +9,10 @@
         <% category.blogs.each do |blog| %>
           <div class="flex flex-row gap-4 items-baseline py-0.5">
             <span class="flex-1">
-              <a class="link text-black" href="<%= blog.url %>" target="_blank"><%= blog.name %></a><!--
-           --><a class="link" href="<%= blog.url %>" target="_blank"><!--
+              <a href="<%= blog.url %>" target="_blank">
+                <span class="link text-black"><%= blog.name %></span><!--
                  external-link icon
-             --><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 pt-0.75 inline align-baseline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+             --><svg xmlns="http://www.w3.org/2000/svg" class="link w-4 h-4 pt-0.75 inline align-baseline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                 </svg>
               </a>
@@ -37,13 +37,13 @@
       <% miscellaneous_blogs.each do |blog| %>
         <div class="flex flex-row gap-3 items-baseline py-0.5">
           <span class="flex-1 inline-block">
-            <a class="link text-black" href="<%= blog.url %>" target="_blank"><%= blog.name %></a><!--
-         --><a class="link" href="<%= blog.url %>" target="_blank"><!--
-              external-link icon
-           --><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 pt-0.75 inline align-baseline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <a href="<%= blog.url %>" target="_blank">
+              <span class="link text-black"><%= blog.name %></span><!--
+               external-link icon
+           --><svg xmlns="http://www.w3.org/2000/svg" class="link w-4 h-4 pt-0.75 inline align-baseline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-              </svg><!--
-         --></a>
+              </svg>
+            </a>
           </span>
 
           <div class="rounded-full bg-slate-100 text-sm px-2"><%= blog.tag.gsub(" ", "\u00A0") %></div>
@@ -62,24 +62,27 @@
   <div class="flex flex-row gap-x-4 gap-y-1 flex-wrap items-baseline pt-8">
     <div>Or check out some blog aggregators:</div>
     <div class="flex flex-row gap-x-4 flex-nowrap items-baseline">
-      <div class="flex flex-row">
-        <a class="link text-black" href="https://blogsurf.io/" target="_blank">Blog Surf</a>
-        <a class="link" href="https://blogsurf.io/" target="_blank">
-          <!-- external-link icon -->
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 pt-0.75 inline align-baseline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-          </svg>
-        </a>
-      </div>
-      <div class="flex flex-row">
-        <a class="link text-black" href="https://refined.blog/" target="_blank">Refined Blog</a>
-        <a class="link" href="https://refined.blog/" target="_blank">
-          <!-- external-link icon -->
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 pt-0.75 inline align-baseline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-          </svg>
-        </a>
-      </div>
+      <a class="flex flex-row items-baseline" href="https://blogsurf.io/" target="_blank">
+        <span class="link text-black">Blog Surf</span>
+        <!-- external-link icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="link w-4 h-4 pt-0.75" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+        </svg>
+      </a>
+      <a class="flex flex-row items-baseline" href="https://refined.blog/" target="_blank">
+        <span class="link text-black">Refined Blog</span>
+        <!-- external-link icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="link w-4 h-4 pt-0.75" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+        </svg>
+      </a>
+      <a class="flex flex-row items-baseline" href="https://substack.com/discover" target="_blank">
+        <span class="link text-black">Substack</span>
+        <!-- external-link icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="link w-4 h-4 pt-0.75" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+        </svg>
+      </a>
     </div>
   </div>
 </div>

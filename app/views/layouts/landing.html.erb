@@ -12,6 +12,9 @@
 </head>
 
 <body class="container mx-auto max-w-screen-md">
+<%= render partial: "popups/popups" %>
+<div class="modal-inert">
   <%= yield %>
+</div>
 </body>
 </html>

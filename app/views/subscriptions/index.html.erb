@@ -25,17 +25,17 @@
               <button id="delete_button_<%= subscription.id %>" class="justify-self-end btn-secondary-red">
                 Delete
               </button>
-              <%= render partial: "delete_subscription_popup",
-                         locals: {
-                           trigger_button_id: "delete_button_#{subscription.id}",
-                           id_suffix: "_#{subscription.id}",
-                           prompt_prefix: "Delete ",
-                           prompt_suffix: "? This cannot be undone.",
-                           keep_label: "Keep",
-                           delete_label: "Delete",
-                           subscription: subscription
-                         }
-              %>
+
+              <script>
+                  document
+                      .getElementById("delete_button_<%= subscription.id %>")
+                      .addEventListener("click", () => {
+                          showDeleteSubscriptionPopup(
+                              "Delete ", "<%= subscription.name %>", "? This cannot be undone.",
+                              "<%= subscription_path(subscription.id) %>",  "Keep", "Delete"
+                          );
+                      })
+              </script>
             <% end %>
           </div>
         </div>

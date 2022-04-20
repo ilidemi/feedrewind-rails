@@ -1,5 +1,3 @@
-<%= render partial: "common/refresh_popup" %>
-
 <div id="posts">
   <% ordered_blog_posts = subscription.blog.blog_posts.sort_by(&:index) %>
   <% if ordered_blog_posts.length <= 11 %>
@@ -64,12 +62,12 @@
                 } else {
                     clearTimeout(timeoutId);
                     hideSpinner();
-                    triggerRefreshPopup("Something went wrong. Please refresh the page.");
+                    showRefreshPopup("Something went wrong. Please refresh the page.");
                 }
             } catch (err) {
                 // Timeout
                 hideSpinner();
-                triggerRefreshPopup("Something went wrong. Please refresh the page.");
+                showRefreshPopup("Something went wrong. Please refresh the page.");
             }
         });
     </script>
