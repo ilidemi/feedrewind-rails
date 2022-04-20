@@ -25,7 +25,7 @@ class Subscription < ApplicationRecord
           {
             subscription_id: subscription.id,
             blog_post_id: blog_post.id,
-            is_published: false,
+            published_at: nil,
             created_at: now,
             updated_at: now
           }

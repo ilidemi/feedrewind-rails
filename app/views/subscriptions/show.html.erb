@@ -33,7 +33,7 @@
       </div>
     </div>
     <% total_count = @subscription.subscription_posts.count %>
-    <% published_count = @subscription.subscription_posts.group(:is_published).count[true] || 0 %>
+    <% published_count = @subscription.subscription_posts.where("published_at is not null").length %>
     <div>
       <span class="font-semibold">Published:</span>
       <span><%= published_count %>/<%= total_count %></span>
@@ -134,7 +134,7 @@
                 }
             }
 
-            async function onValidateSchedule(isValid, _, hasSomethingChanged) {
+            async function onValidateSchedule(isValid, countsByDay, hasSomethingChanged) {
                 isScheduleValid = isValid;
 
                 const scheduleHeader = document.getElementById("schedule_header");
@@ -144,6 +144,7 @@
                 if (isValid) {
                     scheduleError.classList.add("invisible");
                     scheduleSpinnerContainer.classList.remove("hidden");
+                    updateNextPosts(countsByDay);
                 } else {
                     scheduleSpinnerContainer.classList.add("hidden");
                     const scheduleMobileStyle = window.getComputedStyle(scheduleMobile);
@@ -153,6 +154,7 @@
                         scheduleHeader.style.maxWidth = null;
                     }
                     scheduleError.classList.remove("invisible");
+                    // Don't update next posts because the schedule won't be saved
                 }
 
                 if (isValid && hasSomethingChanged) {
@@ -207,13 +209,15 @@
             function setNameChangeScheduleCallback(callback) {
             }
         </script>
-
-        <%= render partial: "schedule_js", locals: {
-          days_of_week: @days_of_week,
-          js_validate_callback: "onValidateSchedule",
-          js_set_name_change_callback: "setNameChangeScheduleCallback"
-        } %>
       <% end %>
+
+      <%= render partial: "schedule_preview", locals: { schedule_preview: @schedule_preview } %>
+
+      <%= render partial: "schedule_js", locals: {
+        days_of_week: @days_of_week,
+        js_validate_callback: "onValidateSchedule",
+        js_set_name_change_callback: "setNameChangeScheduleCallback"
+      } %>
     <% end %>
   </div>
 

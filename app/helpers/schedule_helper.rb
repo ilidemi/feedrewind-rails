@@ -2,7 +2,7 @@ module ScheduleHelper
   class ScheduleDate
     PACIFIC_TIME_ZONE = 'Pacific Time (US & Canada)'
 
-    def ScheduleDate::today
+    def ScheduleDate::now
       ScheduleDate.new(
         DateTime
           .now
@@ -39,7 +39,7 @@ module ScheduleHelper
     attr_reader :date
   end
 
-  def ScheduleHelper::today
-    ScheduleDate::today
+  def ScheduleHelper::now
+    ScheduleDate::now
   end
 end

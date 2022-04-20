@@ -29,6 +29,7 @@ class SubscriptionsController < ApplicationController
       .to_h { |schedule| [schedule.day_of_week, schedule.count] }
     @other_sub_names_by_day = get_other_sub_names_by_day(@subscription.id)
     @days_of_week = DAYS_OF_WEEK
+    @schedule_preview = get_schedule_preview(@subscription)
   end
 
   def create
@@ -59,8 +60,6 @@ class SubscriptionsController < ApplicationController
       raise "Unexpected result from fetch_feed_at_url: #{feed_result}"
     end
   end
-
-  NextPosts = Struct.new(:blog_posts, :more_count)
 
   def setup
     fill_current_user
@@ -102,24 +101,7 @@ class SubscriptionsController < ApplicationController
     if @subscription.status == "setup" && @current_user
       @other_sub_names_by_day = get_other_sub_names_by_day(nil)
       @days_of_week = DAYS_OF_WEEK
-
-      next_blog_posts = @subscription
-        .subscription_posts
-        .includes(:blog_post)
-        .order("blog_posts.index asc")
-        .limit(3)
-        .map(&:blog_post)
-      more_count = @subscription.subscription_posts.length - next_blog_posts.length
-      @next_posts = NextPosts.new(next_blog_posts, more_count)
-
-      today = ScheduleHelper.today
-      if today.is_early_morning
-        first_schedule_time = today
-      else
-        first_schedule_time = today.advance_till_midnight
-      end
-      @today_date = today.date_str
-      @first_schedule_date = first_schedule_time.date_str
+      @schedule_preview = get_schedule_preview(@subscription)
     end
   end
 
@@ -242,7 +224,7 @@ class SubscriptionsController < ApplicationController
         SubscriptionPost.create!(
           blog_post_id: blog_post.id,
           subscription_id: subscription.id,
-          is_published: false
+          published_at: nil
         )
       end
     end
@@ -309,34 +291,39 @@ class SubscriptionsController < ApplicationController
     return redirect_from_not_found unless @subscription
     return if @subscription.status != "setup"
 
-    total_count = DAY_COUNT_NAMES
-      .map { |day_count_name| schedule_params[day_count_name].to_i }
+    counts_by_day = DAYS_OF_WEEK.zip(DAY_COUNT_NAMES).to_h do |day_of_week, day_count_name|
+      [day_of_week, schedule_params[day_count_name].to_i]
+    end
+
+    total_count = counts_by_day
+      .values
       .sum
     raise "Expecting some count to not be zero" unless total_count > 0
 
+    today_of_week = ScheduleHelper.now.day_of_week
+
     Subscription.transaction do
-      DAY_COUNT_NAMES.each do |day_count_name|
-        day_count = schedule_params[day_count_name].to_i
+      counts_by_day.each do |day_of_week, count|
         @subscription.schedules.new(
-          day_of_week: day_count_name.to_s[...3],
-          count: day_count
+          day_of_week: day_of_week,
+          count: count
         )
-      end
-
-      UpdateRssService.init(@subscription)
-
-      if DateService.now.hour < 5
-        # People setting up a blog just after midnight should still get it in the morning
-        UpdateRssJob.perform_later(@subscription.id)
-        @subscription.is_added_past_midnight = true
-      else
-        UpdateRssJob.schedule_for_tomorrow(@subscription.id)
-        @subscription.is_added_past_midnight = false
       end
 
       @subscription.name = schedule_params[:name]
       @subscription.status = "live"
       @subscription.version = 1
+
+      if ScheduleHelper.now.is_early_morning
+        # People setting up a blog just after midnight should get the first post same day
+        UpdateRssService.update_rss(@subscription, counts_by_day[today_of_week])
+        @subscription.is_added_past_midnight = true
+      else
+        UpdateRssService.update_rss(@subscription, 0)
+        @subscription.is_added_past_midnight = false
+      end
+
+      UpdateRssJob.schedule_for_tomorrow(@subscription.id)
       @subscription.save!
     end
 
@@ -455,7 +442,7 @@ class SubscriptionsController < ApplicationController
       .where(status: "live")
       .order("created_at desc")
       .filter { |sub| sub.id != current_sub_id }
-      .filter { |sub| (sub.subscription_posts.count { |post| !post.is_published }) > 0 }
+      .filter { |sub| (sub.subscription_posts.count { |post| post.published_at.nil? }) > 0 }
 
     other_sub_names_by_day = DAYS_OF_WEEK.to_h { |day| [day, []] }
     other_active_subs.each do |sub|
@@ -467,5 +454,79 @@ class SubscriptionsController < ApplicationController
     end
 
     other_sub_names_by_day
+  end
+
+  SchedulePreview = Struct.new(
+    :prev_posts, :next_posts, :prev_has_more, :next_has_more, :today_date, :next_schedule_date
+  )
+  PrevPost = Struct.new(:url, :title, :published_date)
+  NextPost = Struct.new(:url, :title)
+
+  def get_schedule_preview(subscription)
+    Subscription.transaction do
+      prev_posts = subscription
+        .subscription_posts
+        .where("published_at is not null")
+        .includes(:blog_post)
+        .order("blog_posts.index desc")
+        .limit(2)
+        .reverse
+        .map do |subscription_post|
+        PrevPost.new(
+          subscription_post.blog_post.url,
+          subscription_post.blog_post.title,
+          subscription_post.published_at.strftime("%Y-%m-%d")
+        )
+      end
+      published_count = subscription
+        .subscription_posts
+        .where("published_at is not null")
+        .length
+      prev_has_more = (published_count - prev_posts.length) > 0
+      if prev_has_more
+        # Always show 2 lines: either all 2 prev posts or ellipsis and a post
+        prev_posts = prev_posts[1..]
+      end
+
+      next_posts = subscription
+        .subscription_posts
+        .where("published_at is null")
+        .includes(:blog_post)
+        .order("blog_posts.index asc")
+        .limit(4)
+        .map do |subscription_post|
+        NextPost.new(
+          subscription_post.blog_post.url,
+          subscription_post.blog_post.title
+        )
+      end
+      unpublished_count = subscription
+        .subscription_posts
+        .where("published_at is null")
+        .length
+      next_has_more = (unpublished_count - next_posts.length) > 0
+      if next_has_more
+        # Always show 4 lines: either all 4 next posts or 3 posts and ellipsis
+        next_posts = next_posts[...-1]
+      end
+
+      today = ScheduleHelper.now
+      is_schedule_set_up = subscription.is_added_past_midnight != nil
+      are_any_published_today = prev_posts.any? { |post| post.published_date == today.date_str }
+
+      if (!is_schedule_set_up && today.is_early_morning) ||
+        (is_schedule_set_up && !are_any_published_today)
+        next_schedule_time = today
+      else
+        next_schedule_time = today.advance_till_midnight
+      end
+
+      today_date = today.date_str
+      next_schedule_date = next_schedule_time.date_str
+
+      SchedulePreview.new(
+        prev_posts, next_posts, prev_has_more, next_has_more, today_date, next_schedule_date
+      )
+    end
   end
 end

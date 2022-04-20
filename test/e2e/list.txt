@@ -72,5 +72,25 @@ https://ilidemi.github.io/dummy-blogs/1fe/rss.xml
 https://ilidemi.github.io/dummy-blogs/10c/rss.xml
 https://ilidemi.github.io/dummy-blogs/10b/rss.xml
 
+### Scheduling
+60. travel_to_1am - 10a - pick 2*today and 2*tomorrow - next is today - schedule - entries already arrived - feed has 2 entries - manage - scheduled for today/tomorrow - travel_to_12pm - refresh show - scheduled for today/tomorrow - travel_1_day - refresh show - scheduled for yesterday/today - run_update_rss_job - feed has 4 entries - refresh show - scheduled for today/(next week date) - delete sub - travel_back
+61. travel_to_12pm - 10a - pick today, tomorrow and day after tomorrow - next is tomorrow - schedule - entry will arrive - feed has 0 entries - manage - scheduled for tomorrow - travel_1day - travel_to_1am - refresh show - scheduled for today - travel_to_12pm - refresh show - scheduled for today - run_update_rss_job - feed has 1 entry - refresh show - scheduled for today/tomorrow - travel_to_1am - refresh show - scheduled for today/tomorrow - travel_1day - refresh show - scheduled for yesterday/today - run_update_rss_job - feed has 2 entries - refresh show - scheduled for today/(next week date) - delete sub - travel_back
+
+https://ilidemi.github.io/dummy-blogs/10a/rss.xml
+http://localhost:3000/test/travel_to_1am
+http://localhost:3000/test/travel_to_12pm
+http://localhost:3000/test/travel_1day
+http://localhost:3000/test/run_update_rss_job?subscription_id=
+http://localhost:3000/test/travel_back
+
+
+### Reset failed blogs
+70. 1fa - failed - try another - 1fa - failed (without discovery) - travel_31days - run_reset_failed_blogs_job - travel_back - 1fa - failed (with discovery)
+
+https://ilidemi.github.io/dummy-blogs/1fa/rss.xml
+http://localhost:3000/test/travel_31days
+http://localhost:3000/test/run_reset_failed_blogs_job
+http://localhost:3000/test/travel_back
+
 ### Cleanup
 Blog.where("feed_url like '%ilidemi.github.io%'").each { |blog| puts("#{blog.feed_url} #{blog.version}"); blog.destroy_recursively! }

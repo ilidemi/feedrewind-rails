@@ -3,7 +3,25 @@ require "test_helper"
 class UpdateRssServiceTest < ActiveSupport::TestCase
   test "init" do
     subscription = subscriptions(:test)
-    UpdateRssService.init(subscription)
+    blog = blogs(:test)
+    (1..5).each do |index|
+      blog.blog_posts.create!(
+        id: index,
+        blog_id: blog.id,
+        index: index,
+        url: "https://blog/#{index}",
+        title: "Post #{index}"
+      )
+
+      subscription.subscription_posts.create!(
+        id: index,
+        blog_post_id: index,
+        subscription_id: subscription.id,
+        published_at: nil
+      )
+    end
+
+    UpdateRssService.update_rss(subscription, 0)
     actual_body = CurrentRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
@@ -37,7 +55,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
         id: index,
         blog_post_id: index,
         subscription_id: subscription.id,
-        is_published: false
+        published_at: nil
       )
     end
 
@@ -80,7 +98,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
         id: index,
         blog_post_id: index,
         subscription_id: subscription.id,
-        is_published: false
+        published_at: nil
       )
     end
 
@@ -133,7 +151,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
         id: index,
         blog_post_id: index,
         subscription_id: subscription.id,
-        is_published: index == 1
+        published_at: index == 1 ? ScheduleHelper.now.date : nil
       )
     end
 
@@ -181,7 +199,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
         id: index,
         blog_post_id: index,
         subscription_id: subscription.id,
-        is_published: index <= 15
+        published_at: index <= 15 ? ScheduleHelper.now.date : nil
       )
     end
 
@@ -289,7 +307,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
         id: index,
         blog_post_id: index,
         subscription_id: subscription.id,
-        is_published: index < 14
+        published_at: index < 14 ? ScheduleHelper.now.date : nil
       )
     end
 
@@ -402,7 +420,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
         id: index,
         blog_post_id: index,
         subscription_id: subscription.id,
-        is_published: index < 15
+        published_at: index < 15 ? ScheduleHelper.now.date : nil
       )
     end
 
@@ -515,7 +533,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
         id: index,
         blog_post_id: index,
         subscription_id: subscription.id,
-        is_published: index < 16
+        published_at: index < 16 ? ScheduleHelper.now.date : nil
       )
     end
 

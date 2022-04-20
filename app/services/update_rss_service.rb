@@ -4,28 +4,20 @@ require 'ox'
 module UpdateRssService
   POSTS_IN_RSS = 15
 
-  def UpdateRssService.init(subscription)
-    welcome_item = generate_welcome_item(subscription)
-    rss_document = generate_rss(subscription, [], [], welcome_item, nil)
-    rss_text = Ox.dump(rss_document)
-    current_rss = CurrentRss.new(subscription_id: subscription.id, body: rss_text)
-    current_rss.save!
-  end
-
   def UpdateRssService.update_rss(subscription, to_publish_count)
     subscription_blog_posts = subscription
       .subscription_posts
       .includes(:blog_post)
     subscription_blog_posts_to_publish = subscription_blog_posts
-      .where(is_published: false)
+      .where("published_at is null")
       .order("blog_posts.index asc")
       .limit(to_publish_count)
     subscription_blog_posts_unpublished_count = subscription_blog_posts
-      .where(is_published: false)
+      .where("published_at is null")
       .length
     blog_posts_to_publish = subscription_blog_posts_to_publish.map(&:blog_post)
     blog_posts_last_published = subscription_blog_posts
-      .where(is_published: true)
+      .where("published_at is not null")
       .order("blog_posts.index desc")
       .limit(POSTS_IN_RSS - blog_posts_to_publish.length)
       .map(&:blog_post)
@@ -50,7 +42,7 @@ module UpdateRssService
 
     CurrentRss.transaction do
       subscription_blog_posts_to_publish.each do |subscription_post|
-        subscription_post.is_published = true
+        subscription_post.published_at = ScheduleHelper.now.date
         subscription_post.save!
       end
 

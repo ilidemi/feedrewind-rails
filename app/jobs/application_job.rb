@@ -6,7 +6,7 @@ class ApplicationJob < ActiveJob::Base
   # discard_on ActiveJob::DeserializationError
 
   def self.schedule_for_tomorrow(*args)
-    next_run = ScheduleDate::today.advance_till_midnight.date
+    next_run = ScheduleHelper::now.advance_till_midnight.date
     self
       .set(wait_until: next_run)
       .perform_later(*args)

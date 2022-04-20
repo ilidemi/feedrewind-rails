@@ -16,7 +16,7 @@ class DiscoveryChannel < ApplicationCable::Channel
   private
 
   def transmit_status
-    payload = Blog::crawl_progress_json(params[:blog_id])
+    payload = Blog::crawl_progress_json(params[:blog_id]) || {}
     payload["force_push"] = true
     transmit(payload)
   end

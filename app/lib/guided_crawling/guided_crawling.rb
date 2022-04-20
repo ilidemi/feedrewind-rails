@@ -316,9 +316,10 @@ def guided_crawl_historical(
   feed_entry_links_arr = feed_entry_links.to_a
   entry1_page = crawl_request(feed_entry_links_arr[0], false, crawl_ctx, http_client, progress_logger, logger)
   progress_logger.save_status
+  raise "Couldn't fetch entry 1: #{entry1_page}" unless entry1_page.is_a?(Page) && entry1_page.document
+
   entry2_page = crawl_request(feed_entry_links_arr[1], false, crawl_ctx, http_client, progress_logger, logger)
   progress_logger.save_status
-  raise "Couldn't fetch entry 1: #{entry1_page}" unless entry1_page.is_a?(Page) && entry1_page.document
   raise "Couldn't fetch entry 2: #{entry2_page}" unless entry2_page.is_a?(Page) && entry2_page.document
 
   entry1_links = extract_links(

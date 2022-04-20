@@ -7,3 +7,4 @@ test:
   is_paused: false
   is_added_past_midnight: false
   discarded_at: null
+  version: 1

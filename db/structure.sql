@@ -530,9 +530,9 @@ CREATE TABLE public.subscription_posts (
     id bigint NOT NULL,
     blog_post_id bigint NOT NULL,
     subscription_id bigint NOT NULL,
-    is_published boolean NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    published_at timestamp without time zone
 );
 
 
@@ -1055,6 +1055,8 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220308005116'),
 ('20220321220933'),
 ('20220329191713'),
-('20220331171951');
+('20220331171951'),
+('20220415183313'),
+('20220415201523');
 
 

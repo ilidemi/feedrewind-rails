@@ -34,5 +34,15 @@ Rails.application.routes.draw do
   get "/admin/add_blog", to: "admin#add_blog"
   post "/admin/post_blog", to: "admin#post_blog"
 
+  if Rails.env.development? || Rails.env.test?
+    get "/test/travel_to_1am", to: "test#travel_to_1am"
+    get "/test/travel_to_12pm", to: "test#travel_to_12pm"
+    get "/test/travel_1day", to: "test#travel_1day"
+    get "/test/travel_31days", to: "test#travel_31days"
+    get "/test/travel_back", to: "test#travel_back"
+    get "/test/run_update_rss_job", to: "test#run_update_rss_job"
+    get "/test/run_reset_failed_blogs_job", to: "test#run_reset_failed_blogs_job"
+  end
+
   mount ActionCable.server => "/cable"
 end
