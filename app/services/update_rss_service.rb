@@ -1,4 +1,3 @@
-require 'htmlentities'
 require 'ox'
 
 module UpdateRssService
@@ -69,7 +68,7 @@ module UpdateRssService
     channel = Ox::Element.new("channel")
 
     channel_title = Ox::Element.new("title")
-    channel_title << "#{HTMLEntities.new.encode(subscription.name)} · FeedRewind"
+    channel_title << "#{subscription.name} · FeedRewind"
     channel << channel_title
 
     if final_item
@@ -97,11 +96,11 @@ module UpdateRssService
     item = Ox::Element.new("item")
 
     post_title = Ox::Element.new("title")
-    post_title << HTMLEntities.new.encode(blog_post.title)
+    post_title << blog_post.title
     item << post_title
 
     link = Ox::Element.new("link")
-    link << HTMLEntities.new.encode(blog_post.url)
+    link << blog_post.url
     item << link
 
     subscription_url = SubscriptionsHelper.subscription_url(subscription)
@@ -116,7 +115,7 @@ module UpdateRssService
     item = Ox::Element.new("item")
 
     post_title = Ox::Element.new("title")
-    post_title << "#{HTMLEntities.new.encode(subscription.name)} added to FeedRewind"
+    post_title << "#{subscription.name} added to FeedRewind"
     item << post_title
 
     subscription_url = SubscriptionsHelper.subscription_url(subscription)
@@ -135,7 +134,7 @@ module UpdateRssService
     item = Ox::Element.new("item")
 
     post_title = Ox::Element.new("title")
-    post_title << "You're all caught up with #{HTMLEntities.new.encode(subscription.name)}"
+    post_title << "You're all caught up with #{subscription.name}"
     item << post_title
 
     subscription_url = SubscriptionsHelper.subscription_url(subscription)
