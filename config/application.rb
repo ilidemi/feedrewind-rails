@@ -1,6 +1,7 @@
 require_relative "boot"
 
 require "rails/all"
+require "json"
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
@@ -27,6 +28,30 @@ module RssCatchupRails
     Delayed::Worker.raise_signal_exceptions = :term
 
     Rails.autoloaders.main.ignore(Rails.root.join('app/lib'))
+
+    config.after_initialize do
+      # Make sure all shipped NPM dependencies have their license on about page
+
+      dependencies_not_shipped = %w[@rails/webpacker webpack webpack-cli]
+
+      File.open("package.json") do |package_json_file|
+        package_json = JSON.parse(package_json_file.read)
+        dependencies = package_json["dependencies"].keys
+
+        File.open("app/views/misc/about.html.erb") do |about_file|
+          about_str = about_file.read
+          raise "Couldn't read about template" unless about_str
+
+          dependencies.each do |dependency|
+            next if dependencies_not_shipped.include?(dependency)
+
+            unless about_str.include?("id=\"#{dependency}_license\"")
+              raise "NPM dependency #{dependency} doesn't have a corresponding license on the about page"
+            end
+          end
+        end
+      end
+    end
 
     def session_data(request)
       session_key = config.session_options[:key]

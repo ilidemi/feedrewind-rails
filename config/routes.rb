@@ -31,6 +31,10 @@ Rails.application.routes.draw do
 
   get "/blogs/:id/unsupported", to: "blogs#unsupported"
 
+  get "/terms", to: "misc#terms"
+  get "/privacy", to: "misc#privacy"
+  get "/about", to: "misc#about"
+
   get "/admin/add_blog", to: "admin#add_blog"
   post "/admin/post_blog", to: "admin#post_blog"
 
