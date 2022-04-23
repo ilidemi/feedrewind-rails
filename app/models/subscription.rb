@@ -17,20 +17,10 @@ class Subscription < ApplicationRecord
           blog_id: blog.id,
           name: blog.name,
           status: "setup",
+          is_paused: false,
           version: 0
         )
-
-        now = Time.current
-        subscription_posts_fields = blog.blog_posts.map do |blog_post|
-          {
-            subscription_id: subscription.id,
-            blog_post_id: blog_post.id,
-            published_at: nil,
-            created_at: now,
-            updated_at: now
-          }
-        end
-        SubscriptionPost.insert_all!(subscription_posts_fields)
+        subscription.create_subscription_posts!
 
         subscription
       end
@@ -42,8 +32,19 @@ class Subscription < ApplicationRecord
         blog_id: blog.id,
         name: blog.name,
         status: "waiting_for_blog",
+        is_paused: false,
         version: 0
       )
     end
+  end
+
+  def create_subscription_posts!
+    query = <<-SQL
+      insert into subscription_posts (subscription_id, blog_post_id, published_at, created_at, updated_at)
+      select $1, id, null, $2, $2
+      from blog_posts
+      where blog_id = $3;
+    SQL
+    ActiveRecord::Base.connection.exec_query(query, "SQL", [self.id, Time.current, self.blog_id])
   end
 end

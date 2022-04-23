@@ -93,14 +93,17 @@ class Blog < ApplicationRecord
         begin
           blog.blog_post_lock.with_lock("for update nowait") do
             index_offset = blog.blog_posts.maximum(:index) + 1
-            new_links.reverse.each_with_index do |link, index|
-              BlogPost.create!(
+            blog_posts_fields = new_links.reverse.map.with_index do |link, index|
+              {
                 blog_id: blog.id,
-                url: link.url,
                 index: index + index_offset,
-                title: link.title.value
-              )
+                url: link.url,
+                title: link.title.value,
+                created_at: now,
+                updated_at: now
+              }
             end
+            BlogPost.insert_all!(blog_posts_fields)
           end
           blog.reload
         rescue ActiveRecord::LockWaitTimeout
@@ -163,13 +166,19 @@ class Blog < ApplicationRecord
 
     Blog.transaction do
       posts_count = urls_titles.length
-      urls_titles.each_with_index do |url_title, post_index|
-        self.blog_posts.create!(
+
+      now = Time.current
+      blog_posts_fields = urls_titles.map.with_index do |url_title, index|
+        {
+          blog_id: self.id,
+          index: posts_count - index - 1,
           url: url_title[:url],
-          index: posts_count - post_index - 1,
           title: url_title[:title],
-        )
+          created_at: now,
+          updated_at: now
+        }
       end
+      BlogPost.insert_all!(blog_posts_fields)
 
       BlogCanonicalEqualityConfig.create!(
         blog_id: self.id,

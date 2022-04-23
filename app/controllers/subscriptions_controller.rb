@@ -13,20 +13,76 @@ class SubscriptionsController < ApplicationController
   DAYS_OF_WEEK = %w[sun mon tue wed thu fri sat]
   DAY_COUNT_NAMES = [:sun_count, :mon_count, :tue_count, :wed_count, :thu_count, :fri_count, :sat_count]
 
+  IndexSubscription = Struct.new(:id, :name, :status, :is_paused, :published_count, :total_count)
+
   def index
-    @subscriptions = @current_user.subscriptions.order(created_at: :desc)
+    query = <<-SQL
+      with user_subscriptions as (
+        select id, name, status, is_paused, created_at from subscriptions
+        where user_id = $1 and discarded_at is null
+      )  
+      select id, name, status, is_paused, published_count, total_count
+      from user_subscriptions
+      left join (
+        select subscription_id,
+          count(published_at) as published_count,
+          count(1) as total_count
+        from subscription_posts
+        where subscription_id in (select id from user_subscriptions)
+        group by subscription_id
+      ) as post_counts on subscription_id = id
+      order by created_at desc
+    SQL
+    query_result = ActiveRecord::Base.connection.exec_query(query, "SQL", [@current_user.id])
+    @subscriptions = query_result.rows.map { |row| IndexSubscription.new(*row) }
   end
 
-  def show
-    @subscription = @current_user.subscriptions.find(params[:id])
+  ShowSubscription = Struct.new(
+    :id, :name, :is_paused, :status, :version, :is_added_past_midnight, :url, :published_count, :total_count,
+    :has_schedules, keyword_init: true
+  )
 
-    if @subscription.schedules.empty?
+  def show
+    query = <<-SQL
+      (
+        select 'subscription' as tag, id, name, is_paused, status, version, is_added_past_midnight,
+          (select url from blogs where id = blog_id) as url,
+          (
+            select count(published_at) from subscription_posts where subscription_id = subscriptions.id
+          ) as published_count,
+          (select count(1) from subscription_posts where subscription_id = subscriptions.id) as total_count,
+          null::day_of_week, null::integer
+        from subscriptions
+        where id = $1 and user_id = $2 and discarded_at is null
+      ) union all (
+        select 'schedule' as tag, null, null, null, null, null, null, null, null, null, day_of_week, count
+        from schedules
+        where subscription_id = $1
+      )
+    SQL
+    query_result = ActiveRecord::Base.connection.exec_query(query, "SQL", [params[:id], @current_user.id])
+    unless query_result.rows.length > 0 && query_result.rows.first[0] == "subscription"
+      return redirect_from_not_found
+    end
+
+    first_row = query_result.rows.first
+    @subscription = ShowSubscription.new(
+      id: first_row[1],
+      name: first_row[2],
+      is_paused: first_row[3],
+      status: first_row[4],
+      version: first_row[5],
+      is_added_past_midnight: first_row[6],
+      url: first_row[7],
+      published_count: first_row[8],
+      total_count: first_row[9],
+    )
+
+    if @subscription.status != "live"
       redirect_to action: "setup", id: @subscription.id
     end
 
-    @current_counts_by_day = @subscription
-      .schedules
-      .to_h { |schedule| [schedule.day_of_week, schedule.count] }
+    @current_counts_by_day = query_result.rows[1..].to_h { |row| [row[10], row[11]] }
     @other_sub_names_by_day = get_other_sub_names_by_day(@subscription.id)
     @days_of_week = DAYS_OF_WEEK
     @schedule_preview = get_schedule_preview(@subscription)
@@ -219,16 +275,7 @@ class SubscriptionsController < ApplicationController
 
     commit_blog_votes(blog)
 
-    SubscriptionPost.transaction do
-      blog.blog_posts.each do |blog_post|
-        SubscriptionPost.create!(
-          blog_post_id: blog_post.id,
-          subscription_id: subscription.id,
-          published_at: nil
-        )
-      end
-    end
-
+    subscription.create_subscription_posts!
     subscription.status = "setup"
     subscription.save!
 
@@ -435,21 +482,39 @@ class SubscriptionsController < ApplicationController
   end
 
   def get_other_sub_names_by_day(current_sub_id)
-    other_active_subs = Subscription
-      .includes(:subscription_posts)
-      .includes(:schedules)
-      .where(user_id: @current_user.id)
-      .where(status: "live")
-      .order("created_at desc")
-      .filter { |sub| sub.id != current_sub_id }
-      .filter { |sub| (sub.subscription_posts.count { |post| post.published_at.nil? }) > 0 }
+    query = <<-SQL
+      with user_subscriptions as (
+        select id, name, created_at from subscriptions
+        where user_id = $1 and
+          status = 'live' and
+          discarded_at is null
+      )  
+      select name, day_of_week, day_count
+      from user_subscriptions
+      join (
+        select subscription_id,
+          count(published_at) as published_count,
+          count(1) as total_count
+        from subscription_posts
+        where subscription_id in (select id from user_subscriptions)
+        group by subscription_id
+      ) as post_counts on post_counts.subscription_id = id
+      join (
+        select subscription_id, day_of_week, count as day_count
+        from schedules
+        where count > 0 and subscription_id in (select id from user_subscriptions)
+      ) as schedules on schedules.subscription_id = id
+      where id != $2 and
+        published_count != total_count
+      order by created_at desc
+    SQL
+    query_result = ActiveRecord::Base.connection.exec_query(query, "SQL", [@current_user.id, current_sub_id])
 
     other_sub_names_by_day = DAYS_OF_WEEK.to_h { |day| [day, []] }
-    other_active_subs.each do |sub|
-      sub.schedules.each do |schedule|
-        schedule.count.times do
-          other_sub_names_by_day[schedule.day_of_week] << sub.name
-        end
+    query_result.rows.each do |row|
+      name, day_of_week, day_count = *row
+      day_count.times do
+        other_sub_names_by_day[day_of_week] << name
       end
     end
 
@@ -459,74 +524,90 @@ class SubscriptionsController < ApplicationController
   SchedulePreview = Struct.new(
     :prev_posts, :next_posts, :prev_has_more, :next_has_more, :today_date, :next_schedule_date
   )
-  PrevPost = Struct.new(:url, :title, :published_date)
-  NextPost = Struct.new(:url, :title)
+  PrevPost = Struct.new(:url, :title, :published_date, keyword_init: true)
+  NextPost = Struct.new(:url, :title, keyword_init: true)
 
   def get_schedule_preview(subscription)
-    Subscription.transaction do
-      prev_posts = subscription
-        .subscription_posts
-        .where("published_at is not null")
-        .includes(:blog_post)
-        .order("blog_posts.index desc")
-        .limit(2)
-        .reverse
-        .map do |subscription_post|
-        PrevPost.new(
-          subscription_post.blog_post.url,
-          subscription_post.blog_post.title,
-          subscription_post.published_at.strftime("%Y-%m-%d")
-        )
-      end
-      published_count = subscription
-        .subscription_posts
-        .where("published_at is not null")
-        .length
-      prev_has_more = (published_count - prev_posts.length) > 0
-      if prev_has_more
-        # Always show 2 lines: either all 2 prev posts or ellipsis and a post
-        prev_posts = prev_posts[1..]
-      end
-
-      next_posts = subscription
-        .subscription_posts
-        .where("published_at is null")
-        .includes(:blog_post)
-        .order("blog_posts.index asc")
-        .limit(4)
-        .map do |subscription_post|
-        NextPost.new(
-          subscription_post.blog_post.url,
-          subscription_post.blog_post.title
-        )
-      end
-      unpublished_count = subscription
-        .subscription_posts
-        .where("published_at is null")
-        .length
-      next_has_more = (unpublished_count - next_posts.length) > 0
-      if next_has_more
-        # Always show 4 lines: either all 4 next posts or 3 posts and ellipsis
-        next_posts = next_posts[...-1]
-      end
-
-      today = ScheduleHelper.now
-      is_schedule_set_up = subscription.is_added_past_midnight != nil
-      are_any_published_today = prev_posts.any? { |post| post.published_date == today.date_str }
-
-      if (!is_schedule_set_up && today.is_early_morning) ||
-        (is_schedule_set_up && !are_any_published_today)
-        next_schedule_time = today
-      else
-        next_schedule_time = today.advance_till_midnight
-      end
-
-      today_date = today.date_str
-      next_schedule_date = next_schedule_time.date_str
-
-      SchedulePreview.new(
-        prev_posts, next_posts, prev_has_more, next_has_more, today_date, next_schedule_date
+    query = <<-SQL
+      (
+        select 'prev_post' as tag, url, title, published_at, null::bigint as count
+        from subscription_posts
+        join (select id, url, title, index from blog_posts) as blog_posts on blog_posts.id = blog_post_id 
+        where subscription_id = $1 and published_at is not null
+        order by index desc
+        limit 2
+      ) UNION ALL (
+        select 'next_post' as tag, url, title, published_at, null as count
+        from subscription_posts
+        join (select id, url, title, index from blog_posts) as blog_posts on blog_posts.id = blog_post_id 
+        where subscription_id = $1 and published_at is null
+        order by index asc
+        limit 4
+      ) UNION ALL (
+        select 'published_count' as tag, null, null, null, count(published_at) as count from subscription_posts
+        where subscription_id = $1
+      ) UNION ALL (
+        select 'total_count' as tag, null, null, null, count(1) as count from subscription_posts
+        where subscription_id = $1
       )
+    SQL
+    query_result = ActiveRecord::Base.connection.exec_query(query, "SQL", [subscription.id])
+
+    prev_posts = []
+    next_posts = []
+    published_count = nil
+    total_count = nil
+
+    query_result.rows.each do |row|
+      if row[0] == "prev_post"
+        prev_posts << PrevPost.new(
+          url: row[1],
+          title: row[2],
+          published_date: row[3].strftime("%Y-%m-%d")
+        )
+      elsif row[0] == "next_post"
+        next_posts << NextPost.new(
+          url: row[1],
+          title: row[2]
+        )
+      elsif row[0] == "published_count"
+        published_count = row.last.to_i
+      elsif row[0] == "total_count"
+        total_count = row.last.to_i
+      end
     end
+
+    prev_posts.reverse!
+    unpublished_count = total_count - published_count
+
+    prev_has_more = (published_count - prev_posts.length) > 0
+    if prev_has_more
+      # Always show 2 lines: either all 2 prev posts or ellipsis and a post
+      prev_posts = prev_posts[1..]
+    end
+
+    next_has_more = (unpublished_count - next_posts.length) > 0
+    if next_has_more
+      # Always show 4 lines: either all 4 next posts or 3 posts and ellipsis
+      next_posts = next_posts[...-1]
+    end
+
+    today = ScheduleHelper.now
+    is_schedule_set_up = subscription.is_added_past_midnight != nil
+    are_any_published_today = prev_posts.any? { |post| post.published_date == today.date_str }
+
+    if (!is_schedule_set_up && today.is_early_morning) ||
+      (is_schedule_set_up && !are_any_published_today)
+      next_schedule_time = today
+    else
+      next_schedule_time = today.advance_till_midnight
+    end
+
+    today_date = today.date_str
+    next_schedule_date = next_schedule_time.date_str
+
+    SchedulePreview.new(
+      prev_posts, next_posts, prev_has_more, next_has_more, today_date, next_schedule_date
+    )
   end
 end
