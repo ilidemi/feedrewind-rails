@@ -1,4 +1,5 @@
 require 'json'
+require 'set'
 require 'timeout'
 require_relative '../jobs/guided_crawling_job'
 require_relative '../lib/guided_crawling/crawling'
@@ -155,7 +156,7 @@ class SubscriptionsController < ApplicationController
     end
 
     if @subscription.status == "setup" && @current_user
-      @other_sub_names_by_day = get_other_sub_names_by_day(nil)
+      @other_sub_names_by_day = get_other_sub_names_by_day(@subscription.id)
       @days_of_week = DAYS_OF_WEEK
       @schedule_preview = get_schedule_preview(@subscription)
     end
@@ -275,9 +276,11 @@ class SubscriptionsController < ApplicationController
 
     commit_blog_votes(blog)
 
-    subscription.create_subscription_posts!
-    subscription.status = "setup"
-    subscription.save!
+    subscription.transaction do
+      subscription.create_subscription_posts_raw!
+      subscription.status = "setup"
+      subscription.save!
+    end
 
     if @current_user
       redirect_to action: "setup", id: subscription.id
@@ -468,10 +471,22 @@ class SubscriptionsController < ApplicationController
 
   def commit_blog_votes(blog)
     blog_votes = BlogCrawlVote.where(blog_id: blog.id)
-    return unless blog_votes.length >= 3
 
-    confirmed_count = blog_votes.count { |vote| vote.value == "confirmed" }
-    if confirmed_count * 1.0 / blog_votes.length > 0.5
+    admin_votes = []
+    other_votes = Set.new
+    blog_votes.each do |vote|
+      if vote.user_id == Rails.configuration.admin_user_id
+        admin_votes << [vote.user_id, vote.value]
+      else
+        other_votes << [vote.user_id, vote.value]
+      end
+    end
+    dedup_blog_votes = admin_votes + other_votes.to_a
+
+    return unless dedup_blog_votes.length >= 3
+
+    confirmed_count = dedup_blog_votes.count { |_, value| value == "confirmed" }
+    if confirmed_count * 1.0 / dedup_blog_votes.length > 0.5
       blog.status = "crawled_confirmed"
     else
       blog.status = "crawled_looks_wrong"

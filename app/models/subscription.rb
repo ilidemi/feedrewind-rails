@@ -20,7 +20,7 @@ class Subscription < ApplicationRecord
           is_paused: false,
           version: 0
         )
-        subscription.create_subscription_posts!
+        subscription.create_subscription_posts_raw!
 
         subscription
       end
@@ -38,7 +38,7 @@ class Subscription < ApplicationRecord
     end
   end
 
-  def create_subscription_posts!
+  def create_subscription_posts_raw!
     query = <<-SQL
       insert into subscription_posts (subscription_id, blog_post_id, published_at, created_at, updated_at)
       select $1, id, null, $2, $2
