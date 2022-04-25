@@ -570,7 +570,8 @@ CREATE TABLE public.subscriptions (
     discarded_at timestamp without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    version integer NOT NULL
+    version integer NOT NULL,
+    finished_setup_at timestamp without time zone
 );
 
 
@@ -1057,6 +1058,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220329191713'),
 ('20220331171951'),
 ('20220415183313'),
-('20220415201523');
+('20220415201523'),
+('20220425183655');
 
 

@@ -19,7 +19,7 @@ class SubscriptionsController < ApplicationController
   def index
     query = <<-SQL
       with user_subscriptions as (
-        select id, name, status, is_paused, created_at from subscriptions
+        select id, name, status, is_paused, finished_setup_at, created_at from subscriptions
         where user_id = $1 and discarded_at is null
       )  
       select id, name, status, is_paused, published_count, total_count
@@ -32,10 +32,17 @@ class SubscriptionsController < ApplicationController
         where subscription_id in (select id from user_subscriptions)
         group by subscription_id
       ) as post_counts on subscription_id = id
-      order by created_at desc
+      order by finished_setup_at desc, created_at desc
     SQL
     query_result = ActiveRecord::Base.connection.exec_query(query, "SQL", [@current_user.id])
-    @subscriptions = query_result.rows.map { |row| IndexSubscription.new(*row) }
+    subscriptions = query_result.rows.map { |row| IndexSubscription.new(*row) }
+    @setting_up_subscriptions, set_up_subscriptions = subscriptions.partition do |subscription|
+      subscription.status != "live"
+    end
+    @active_subscriptions, @finished_subscriptions = set_up_subscriptions.partition do |subscription|
+      subscription.published_count < subscription.total_count
+    end
+    @subscriptions_count = subscriptions.length
   end
 
   ShowSubscription = Struct.new(
@@ -350,7 +357,8 @@ class SubscriptionsController < ApplicationController
       .sum
     raise "Expecting some count to not be zero" unless total_count > 0
 
-    today_of_week = ScheduleHelper.now.day_of_week
+    now = ScheduleHelper.now
+    today_of_week = now.day_of_week
 
     Subscription.transaction do
       counts_by_day.each do |day_of_week, count|
@@ -362,6 +370,7 @@ class SubscriptionsController < ApplicationController
 
       @subscription.name = schedule_params[:name]
       @subscription.status = "live"
+      @subscription.finished_setup_at = now
       @subscription.version = 1
 
       if ScheduleHelper.now.is_early_morning
@@ -519,8 +528,7 @@ class SubscriptionsController < ApplicationController
         from schedules
         where count > 0 and subscription_id in (select id from user_subscriptions)
       ) as schedules on schedules.subscription_id = id
-      where id != $2 and
-        published_count != total_count
+      where id != $2 and published_count != total_count
       order by created_at desc
     SQL
     query_result = ActiveRecord::Base.connection.exec_query(query, "SQL", [@current_user.id, current_sub_id])
