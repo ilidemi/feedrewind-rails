@@ -1,6 +1,7 @@
 module ScheduleHelper
   class ScheduleDate
     PACIFIC_TIME_ZONE = 'Pacific Time (US & Canada)'
+    PSQL_PACIFIC_TIME_ZONE = 'PDT'
 
     def ScheduleDate::now
       ScheduleDate.new(

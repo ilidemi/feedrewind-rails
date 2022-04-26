@@ -10,7 +10,7 @@ class HttpClient
     @enable_throttling = enable_throttling
   end
 
-  def request(uri, should_throttle, _)
+  def request(uri, should_throttle, logger)
     throttle if @enable_throttling && should_throttle
 
     req = Net::HTTP::Get.new(uri, initheader = { 'User-Agent' => 'FeedRewind/0.1' })
@@ -22,6 +22,9 @@ class HttpClient
       return HttpResponse.new("SSLError", nil, nil, nil)
     rescue Errno::ETIMEDOUT
       return HttpResponse.new("Timeout", nil, nil, nil)
+    rescue => error
+      logger.info("HTTP request error: #{error}")
+      return HttpResponse.new("Exception", nil, nil, nil)
     end
 
     HttpResponse.new(

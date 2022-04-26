@@ -342,25 +342,24 @@ class SubscriptionsController < ApplicationController
   end
 
   def schedule
-    schedule_params = params.permit(:id, :name, *DAY_COUNT_NAMES)
-
-    @subscription = @current_user.subscriptions.find_by(id: schedule_params[:id])
-    return redirect_from_not_found unless @subscription
-    return if @subscription.status != "setup"
-
-    counts_by_day = DAYS_OF_WEEK.zip(DAY_COUNT_NAMES).to_h do |day_of_week, day_count_name|
-      [day_of_week, schedule_params[day_count_name].to_i]
-    end
-
-    total_count = counts_by_day
-      .values
-      .sum
-    raise "Expecting some count to not be zero" unless total_count > 0
-
-    now = ScheduleHelper.now
-    today_of_week = now.day_of_week
-
     Subscription.transaction do
+      schedule_params = params.permit(:id, :name, *DAY_COUNT_NAMES)
+      @subscription = @current_user.subscriptions.find_by(id: schedule_params[:id])
+      return redirect_from_not_found unless @subscription
+      return if @subscription.status != "setup"
+
+      counts_by_day = DAYS_OF_WEEK.zip(DAY_COUNT_NAMES).to_h do |day_of_week, day_count_name|
+        [day_of_week, schedule_params[day_count_name].to_i]
+      end
+
+      total_count = counts_by_day
+        .values
+        .sum
+      raise "Expecting some count to not be zero" unless total_count > 0
+
+      now = ScheduleHelper.now
+      today_of_week = now.day_of_week
+
       counts_by_day.each do |day_of_week, count|
         @subscription.schedules.new(
           day_of_week: day_of_week,
