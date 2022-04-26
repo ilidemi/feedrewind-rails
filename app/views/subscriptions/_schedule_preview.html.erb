@@ -9,19 +9,15 @@
     </thead>
 
     <% if schedule_preview.prev_has_more %>
-      <tr class="text-gray-500">
+      <tr class="bg-gray-50 text-gray-500">
         <td class="py-0.75 px-0 align-text-top">…</td>
         <td class="py-0.75 pl-6 pr-0 align-text-top">…</td>
       </tr>
     <% end %>
 
     <% unless schedule_preview.prev_posts.empty? %>
-      <% schedule_preview.prev_posts.each_with_index do |post, index| %>
-        <tr
-          <% if index == schedule_preview.prev_posts.length - 1 %>
-          class="border-b border-b-slate-300"
-          <% end %>
-          >
+      <% schedule_preview.prev_posts.each do |post| %>
+        <tr class="bg-gray-50">
           <td class="py-0.75 px-0 align-text-top line-clamp-2">
             <a class="link text-gray-500" href="<%= post.url %>"><%= post.title %></a>
           </td>
