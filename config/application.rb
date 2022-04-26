@@ -1,4 +1,5 @@
 require_relative "boot"
+require_relative "../lib/middleware/log_request"
 
 require "rails/all"
 require "json"
@@ -28,6 +29,8 @@ module RssCatchupRails
     Delayed::Worker.raise_signal_exceptions = :term
 
     Rails.autoloaders.main.ignore(Rails.root.join('app/lib'))
+
+    config.middleware.use(LogRequest)
 
     config.after_initialize do
       # Make sure all shipped NPM dependencies have their license on about page
