@@ -369,7 +369,7 @@ class SubscriptionsController < ApplicationController
 
       @subscription.name = schedule_params[:name]
       @subscription.status = "live"
-      @subscription.finished_setup_at = now
+      @subscription.finished_setup_at = now.date
       @subscription.version = 1
 
       if ScheduleHelper.now.is_early_morning

@@ -7,41 +7,47 @@ module UpdateRssService
     subscription_blog_posts = subscription
       .subscription_posts
       .includes(:blog_post)
-    subscription_blog_posts_to_publish = subscription_blog_posts
+    subscription_posts_to_publish = subscription_blog_posts
       .where("published_at is null")
       .order("blog_posts.index asc")
       .limit(to_publish_count)
     subscription_blog_posts_unpublished_count = subscription_blog_posts
       .where("published_at is null")
       .length
-    blog_posts_to_publish = subscription_blog_posts_to_publish.map(&:blog_post)
-    blog_posts_last_published = subscription_blog_posts
+    subscription_posts_last_published = subscription_blog_posts
       .where("published_at is not null")
       .order("blog_posts.index desc")
-      .limit(POSTS_IN_RSS - blog_posts_to_publish.length)
+      .limit(POSTS_IN_RSS - subscription_posts_to_publish.length)
       .map(&:blog_post)
       .reverse
 
-    if blog_posts_to_publish.length + blog_posts_last_published.length < POSTS_IN_RSS
+    now = ScheduleHelper.now.date
+    subscription_posts_to_publish.each do |subscription_post|
+      subscription_post.published_at = now
+    end
+
+    if subscription_posts_to_publish.length + subscription_posts_last_published.length < POSTS_IN_RSS
       welcome_item = generate_welcome_item(subscription)
     else
       welcome_item = nil
     end
 
-    if blog_posts_to_publish.length == subscription_blog_posts_unpublished_count
+    if subscription_posts_to_publish.length == subscription_blog_posts_unpublished_count
+      subscription.final_item_published_at = now if subscription.final_item_published_at.nil?
       final_item = generate_final_item(subscription)
     else
       final_item = nil
     end
 
     rss_document = generate_rss(
-      subscription, blog_posts_to_publish, blog_posts_last_published, welcome_item, final_item
+      subscription, subscription_posts_to_publish, subscription_posts_last_published, welcome_item, final_item
     )
     rss_text = Ox.dump(rss_document)
 
     CurrentRss.transaction do
-      subscription_blog_posts_to_publish.each do |subscription_post|
-        subscription_post.published_at = ScheduleHelper.now.date
+      subscription.save!
+
+      subscription_posts_to_publish.each do |subscription_post|
         subscription_post.save!
       end
 
@@ -52,7 +58,7 @@ module UpdateRssService
   end
 
   def self.generate_rss(
-    subscription, blog_posts_to_publish, blog_posts_last_published, welcome_item, final_item
+    subscription, subscription_posts_to_publish, subscription_posts_last_published, welcome_item, final_item
   )
     document = Ox::Document.new
 
@@ -75,12 +81,12 @@ module UpdateRssService
       channel << final_item
     end
 
-    blog_posts_to_publish.to_enum.reverse_each do |blog_post|
-      channel << generate_post_rss(subscription, blog_post)
+    subscription_posts_to_publish.to_enum.reverse_each do |subscription_post|
+      channel << generate_post_rss(subscription, subscription_post)
     end
 
-    blog_posts_last_published.to_enum.reverse_each do |blog_post|
-      channel << generate_post_rss(subscription, blog_post)
+    subscription_posts_last_published.to_enum.reverse_each do |subscription_post|
+      channel << generate_post_rss(subscription, subscription_post)
     end
 
     if welcome_item
@@ -92,21 +98,25 @@ module UpdateRssService
     document
   end
 
-  def self.generate_post_rss(subscription, blog_post)
+  def self.generate_post_rss(subscription, subscription_post)
     item = Ox::Element.new("item")
 
     post_title = Ox::Element.new("title")
-    post_title << blog_post.title
+    post_title << subscription_post.blog_post.title
     item << post_title
 
     link = Ox::Element.new("link")
-    link << blog_post.url
+    link << subscription_post.blog_post.url
     item << link
 
     subscription_url = SubscriptionsHelper.subscription_url(subscription)
     description = Ox::Element.new("description")
     description << "<a href=\"#{subscription_url}\">Manage</a>"
     item << description
+
+    pub_date = Ox::Element.new("pubDate")
+    pub_date << subscription_post.published_at.to_formatted_s(:rfc822)
+    item << pub_date
 
     item
   end
@@ -127,6 +137,10 @@ module UpdateRssService
     description << "<a href=\"#{subscription_url}\">Manage</a>"
     item << description
 
+    pub_date = Ox::Element.new("pubDate")
+    pub_date << subscription.finished_setup_at.to_formatted_s(:rfc822)
+    item << pub_date
+
     item
   end
 
@@ -146,6 +160,10 @@ module UpdateRssService
     description = Ox::Element.new("description")
     description << "<a href=\"#{subscription_add_url}\">Read something else?</a>"
     item << description
+
+    pub_date = Ox::Element.new("pubDate")
+    pub_date << subscription.final_item_published_at.to_formatted_s(:rfc822)
+    item << pub_date
 
     item
   end
