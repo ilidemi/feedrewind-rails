@@ -1,5 +1,13 @@
 https://danluu.com/atom.xml
+https://danluu.com
 
+https://danluu.com/simple-architectures In defense of simple architectures
+https://danluu.com/nothing-works Why is it so hard to buy things that work well?
+https://danluu.com/talent Misidentifying talent
+https://danluu.com/cache-incidents A decade of major cache incidents at Twitter
+https://danluu.com/cocktail-ideas Cocktail party ideas
+https://danluu.com/cgroup-throttling The container throttling problem
+https://danluu.com/writing-non-advice Some thoughts on writing
 https://danluu.com/latency-pitfalls Some latency measurement pitfalls
 https://danluu.com/corrections Major errors on this blog (and their corrections)
 https://danluu.com/people-matter Individuals matter
@@ -92,3 +100,5 @@ https://danluu.com/discourage-oss How to discourage open source contributions
 https://danluu.com/randomize-hn Randomize HN
 https://danluu.com/pl-troll Writing safe Verilog
 https://danluu.com/why-hardware-development-is-hard Verilog is weird
+
+update_from_feed_or_fail
