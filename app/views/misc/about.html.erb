@@ -185,5 +185,12 @@
               suggestionsBody.style.maxHeight = suggestionsBody.scrollHeight + "px";
           }
       });
+
+      document.getElementById("licenses_body").addEventListener("transitionend", () => {
+          const suggestionsBody = document.getElementById("licenses_body");
+          if (suggestionsBody.style.maxHeight) {
+              suggestionsBody.style.maxHeight = "fit-content";
+          }
+      });
   </script>
 </div>

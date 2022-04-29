@@ -19,7 +19,7 @@
       <% schedule_preview.prev_posts.each do |post| %>
         <tr class="bg-gray-50">
           <td class="py-0.75 px-0 align-text-top line-clamp-2">
-            <a class="link text-gray-500" href="<%= post.url %>"><%= post.title %></a>
+            <a class="link text-gray-500" href="<%= post.url %>" target="_blank"><%= post.title %></a>
           </td>
           <td class="py-0.75 pl-6 pr-0 text-gray-500 whitespace-nowrap align-text-top">
             <div class="prev-post-date hidden md:block"></div>
@@ -32,7 +32,7 @@
     <% schedule_preview.next_posts.each do |post| %>
       <tr>
         <td class="py-0.75 px-0 align-text-top line-clamp-2">
-          <a class="link text-black" href="<%= post.url %>"><%= post.title %></a>
+          <a class="link text-black" href="<%= post.url %>" target="_blank"><%= post.title %></a>
         </td>
         <td class="py-0.75 pl-6 pr-0 whitespace-nowrap align-text-top">
           <div class="next-post-date hidden md:block"></div>

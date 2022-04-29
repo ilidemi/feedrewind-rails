@@ -1,4 +1,4 @@
-<div class="flex flex-col gap-y-6">
+<div class="flex flex-col gap-y-3">
   <% suggested_categories.each_with_index do |category, index| %>
     <div class="flex flex-row <%= width_class %>">
       <% if index == 1 %>
@@ -31,7 +31,7 @@
       <% miscellaneous_blogs.each do |blog| %>
         <div class="flex flex-row gap-3 items-baseline py-0.5">
           <span class="flex-1 inline-block">
-            <a href="<%= blog.url %>" target="_blank" class="external-link"><span class="link text-black"><%= blog.name %></span></a>
+            <a href="<%= blog.url %>" target="_blank" class="external-link"><span class="link text-black break-word"><%= blog.name %></span></a>
           </span>
 
           <div class="rounded-full bg-slate-100 text-sm px-2"><%= blog.tag.gsub(" ", "\u00A0") %></div>
