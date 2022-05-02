@@ -38,8 +38,7 @@ module SubscriptionsHelper
   end
 
   def SubscriptionsHelper.subscription_add_feed_path(feed_url)
-    encoded_url = Addressable::URI.encode_component(feed_url, Addressable::URI::CharacterClasses::UNRESERVED)
-    "/subscriptions/add/#{encoded_url}"
+    "/subscriptions/add/#{encode_url(feed_url)}"
   end
 
   def SubscriptionsHelper.subscription_add_url
@@ -59,6 +58,10 @@ module SubscriptionsHelper
   # This has to be a full url because we're showing it to the user to select and copy
   def SubscriptionsHelper.feed_url(request, subscription)
     "#{request.protocol}#{request.host_with_port}/subscriptions/#{subscription.id}/feed"
+  end
+
+  def SubscriptionsHelper.encode_url(url)
+    Addressable::URI.encode_component(url, Addressable::URI::CharacterClasses::UNRESERVED)
   end
 
   class ProgressSaver

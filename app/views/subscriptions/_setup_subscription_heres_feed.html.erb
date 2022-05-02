@@ -1,57 +1,83 @@
-<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-12">
   <div class="flex flex-col gap-1">
     <p>Here's your private feed link. Add it to your feed reader and you're all set!</p>
-    <div>
+    <div class="flex flex-col gap-2">
       <%= render partial: "copy_feed_link",
                  locals: {
                    request: request,
                    subscription: subscription,
                  }
       %>
+
+      <div class="flex flex-row flex-nowrap gap-2">
+        <%= button_to "https://feedly.com/i/subscription/feed%2F#{SubscriptionsHelper.encode_url(SubscriptionsHelper.feed_url(request, subscription))}",
+                      class: "inline-flex flex-row gap-1 items-center rounded-md border border-gray-300 text-gray-700 bg-gray-50 hover:bg-gray-100 hover:cursor-pointer px-2 py-1 text-sm font-semibold",
+                      method: :get do %>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-[#2bb24c]" viewBox="0 0 28 28" fill="none">
+            <path fill="currentColor" d="M16.034 3.334a2.867 2.867 0 0 0-4.043 0L1.834 13.49a2.867 2.867 0 0 0 0 4.043l7.248 7.248c.504.44 1.164.706 1.886.706h6.089c.793 0 1.512-.322 2.032-.841l7.107-7.108a2.867 2.867 0 0 0 0-4.043L16.034 3.334Zm-.283 18.551L14.736 22.9a.407.407 0 0 1-.29.12h-.868a.41.41 0 0 1-.27-.1l-1.033-1.034a.408.408 0 0 1 0-.577l1.449-1.45a.41.41 0 0 1 .577 0l1.45 1.45a.409.409 0 0 1 0 .577Zm0-6.079-4.054 4.054a.408.408 0 0 1-.29.12h-.869a.408.408 0 0 1-.269-.1l-1.034-1.035a.41.41 0 0 1 0-.577l4.489-4.488a.409.409 0 0 1 .577 0l1.45 1.45a.409.409 0 0 1 0 .576Zm0-6.08L8.657 16.82a.408.408 0 0 1-.29.12H7.5a.407.407 0 0 1-.27-.1l-1.034-1.035a.409.409 0 0 1 0-.577L13.724 7.7a.409.409 0 0 1 .577 0l1.45 1.45a.409.409 0 0 1 0 .576Z"></path>
+          </svg>
+          Add to Feedly
+        <% end %>
+        <%= button_to "https://www.inoreader.com/search/feeds/#{SubscriptionsHelper.encode_url(SubscriptionsHelper.feed_url(request, subscription))}",
+                      class: "inline-flex flex-row gap-1 items-center rounded-md border border-gray-300 text-gray-700 bg-gray-50 hover:bg-gray-100 hover:cursor-pointer px-2 py-1 text-sm font-semibold",
+                      method: :get do
+        %>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 72 72">
+            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+              <g transform="translate(-605.000000, -1824.000000)" fill="#007BC7" fill-rule="nonzero">
+                <path d="M641,1824 C660.882251,1824 677,1840.11775 677,1860 C677,1879.88225 660.882251,1896 641,1896 C621.117749,1896 605,1879.88225 605,1860 C605,1840.11775 621.117749,1824 641,1824 Z M633.010291,1854.98015 C625.825335,1854.98015 620,1860.80399 620,1867.98875 C620,1875.17483 625.825335,1881 633.010291,1881 C640.193256,1881 646.018591,1875.17483 646.018591,1867.98875 C646.018591,1860.80399 640.193256,1854.98015 633.010291,1854.98015 Z M636.679077,1860.54455 C638.736093,1860.54455 640.404266,1862.21533 640.404266,1864.2703 C640.404266,1866.33124 638.736093,1867.9987 636.679077,1867.9987 C634.619408,1867.9987 632.949908,1866.33124 632.949908,1864.2703 C632.949908,1862.21533 634.619408,1860.54455 636.679077,1860.54455 Z M633.010026,1845.78714 L633.010026,1850.47435 C642.666054,1850.47435 650.525844,1858.33193 650.525844,1867.98901 L650.525844,1867.98901 L655.214512,1867.98901 C655.214512,1855.74746 645.253912,1845.78714 633.010026,1845.78714 L633.010026,1845.78714 Z M633.010092,1836 L633.010092,1840.68721 C640.30188,1840.68721 647.157713,1843.5278 652.316177,1848.68479 C657.473978,1853.84179 660.310668,1860.69942 660.310668,1867.98901 L660.310668,1867.98901 L665,1867.98901 C665,1859.44534 661.671616,1851.41192 655.629299,1845.36845 C649.586319,1839.32696 641.555332,1836 633.010092,1836 L633.010092,1836 Z" id="inoreader_logo_icon_blue"></path>
+              </g>
+            </g>
+          </svg>
+          Add to Inoreader
+        <% end %>
+      </div>
     </div>
   </div>
 
-  <% published_count = subscription.subscription_posts.where("published_at is not null").length %>
-  <% if published_count == 1 %>
-    <p>First entry has already arrived.</p>
-  <% elsif published_count > 1 %>
-    <p>First entries have already arrived.</p>
-  <% else %>
-    <%
-      enabled_days_of_week = subscription
-        .schedules
-        .where("count > 0")
-        .to_h { |schedule| [schedule.day_of_week, schedule.count] }
-      first_schedule_date = ScheduleHelper.now.advance_till_midnight
-      until enabled_days_of_week.include?(first_schedule_date.day_of_week)
-        first_schedule_date = first_schedule_date.advance_till_midnight
-      end
-
-      next_enabled_day_of_week_str = first_schedule_date.date.strftime("%A, %B %-d")
-    %>
-
-    <% if enabled_days_of_week[first_schedule_date.day_of_week] == 1 %>
-      <p>First entry will arrive on <%= next_enabled_day_of_week_str %> after midnight.</p>
+  <div class="flex flex-col gap-1">
+    <% published_count = subscription.subscription_posts.where("published_at is not null").length %>
+    <% if published_count == 1 %>
+      <p>First entry has already arrived.</p>
+    <% elsif published_count > 1 %>
+      <p>First entries have already arrived.</p>
     <% else %>
-      <p>First entries will arrive on <%= next_enabled_day_of_week_str %> after midnight.</p>
-    <% end %>
-  <% end %>
+      <%
+        enabled_days_of_week = subscription
+          .schedules
+          .where("count > 0")
+          .to_h { |schedule| [schedule.day_of_week, schedule.count] }
+        first_schedule_date = ScheduleHelper.now.advance_till_midnight
+        until enabled_days_of_week.include?(first_schedule_date.day_of_week)
+          first_schedule_date = first_schedule_date.advance_till_midnight
+        end
 
-  <p class="inline-flex flex-row gap-2">
-    <%= link_to subscriptions_path, class: "btn-secondary bg-gray-50 inline-flex flex-row gap-1 items-center" do %>
-      <!-- arrow-left icon -->
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 mt-0.5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-      </svg>
-      Dashboard
+        next_enabled_day_of_week_str = first_schedule_date.date.strftime("%A, %B %-d")
+      %>
+
+      <% if enabled_days_of_week[first_schedule_date.day_of_week] == 1 %>
+        <p>First entry will arrive on <%= next_enabled_day_of_week_str %> after midnight.</p>
+      <% else %>
+        <p>First entries will arrive on <%= next_enabled_day_of_week_str %> after midnight.</p>
+      <% end %>
     <% end %>
-    <%= link_to subscription_path, class: "btn-secondary bg-gray-50 inline-flex flex-row gap-0.5 items-center" do %>
-      <!-- cog icon -->
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mt-0.5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-      </svg>
-      Manage
-    <% end %>
-  </p>
+
+    <p class="inline-flex flex-row gap-2">
+      <%= link_to subscriptions_path, class: "btn-secondary bg-gray-50 inline-flex flex-row gap-1 items-center" do %>
+        <!-- arrow-left icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 mt-0.5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Dashboard
+      <% end %>
+      <%= link_to subscription_path, class: "btn-secondary bg-gray-50 inline-flex flex-row gap-0.5 items-center" do %>
+        <!-- cog icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mt-0.5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        Manage
+      <% end %>
+    </p>
+  </div>
 </div>
