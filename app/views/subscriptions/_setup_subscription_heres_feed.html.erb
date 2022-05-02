@@ -10,18 +10,21 @@
       %>
 
       <div class="flex flex-row flex-nowrap gap-2">
-        <%= button_to "https://feedly.com/i/subscription/feed%2F#{SubscriptionsHelper.encode_url(SubscriptionsHelper.feed_url(request, subscription))}",
-                      class: "inline-flex flex-row gap-1 items-center rounded-md border border-gray-300 text-gray-700 bg-gray-50 hover:bg-gray-100 hover:cursor-pointer px-2 py-1 text-sm font-semibold",
-                      method: :get do %>
+        <a href="https://feedly.com/i/subscription/feed%2F<%= SubscriptionsHelper.encode_url(SubscriptionsHelper.feed_url(request, subscription)) %>"
+           class="inline-flex flex-row gap-1 items-center rounded-md border border-gray-300 text-gray-700 bg-gray-50 hover:bg-gray-100 hover:cursor-pointer px-2 py-1 text-sm font-semibold"
+           target="_blank"
+        >
+          <!-- Grabbed from the main page when logged in -->
           <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-[#2bb24c]" viewBox="0 0 28 28" fill="none">
             <path fill="currentColor" d="M16.034 3.334a2.867 2.867 0 0 0-4.043 0L1.834 13.49a2.867 2.867 0 0 0 0 4.043l7.248 7.248c.504.44 1.164.706 1.886.706h6.089c.793 0 1.512-.322 2.032-.841l7.107-7.108a2.867 2.867 0 0 0 0-4.043L16.034 3.334Zm-.283 18.551L14.736 22.9a.407.407 0 0 1-.29.12h-.868a.41.41 0 0 1-.27-.1l-1.033-1.034a.408.408 0 0 1 0-.577l1.449-1.45a.41.41 0 0 1 .577 0l1.45 1.45a.409.409 0 0 1 0 .577Zm0-6.079-4.054 4.054a.408.408 0 0 1-.29.12h-.869a.408.408 0 0 1-.269-.1l-1.034-1.035a.41.41 0 0 1 0-.577l4.489-4.488a.409.409 0 0 1 .577 0l1.45 1.45a.409.409 0 0 1 0 .576Zm0-6.08L8.657 16.82a.408.408 0 0 1-.29.12H7.5a.407.407 0 0 1-.27-.1l-1.034-1.035a.409.409 0 0 1 0-.577L13.724 7.7a.409.409 0 0 1 .577 0l1.45 1.45a.409.409 0 0 1 0 .576Z"></path>
           </svg>
           Add to Feedly
-        <% end %>
-        <%= button_to "https://www.inoreader.com/search/feeds/#{SubscriptionsHelper.encode_url(SubscriptionsHelper.feed_url(request, subscription))}",
-                      class: "inline-flex flex-row gap-1 items-center rounded-md border border-gray-300 text-gray-700 bg-gray-50 hover:bg-gray-100 hover:cursor-pointer px-2 py-1 text-sm font-semibold",
-                      method: :get do
-        %>
+        </a>
+        <a href="https://www.inoreader.com/search/feeds/<%= SubscriptionsHelper.encode_url(SubscriptionsHelper.feed_url(request, subscription)) %>"
+           class="inline-flex flex-row gap-1 items-center rounded-md border border-gray-300 text-gray-700 bg-gray-50 hover:bg-gray-100 hover:cursor-pointer px-2 py-1 text-sm font-semibold"
+           target="_blank"
+        >
+          <!-- https://www.inoreader.com/brand/ -->
           <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 72 72">
             <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
               <g transform="translate(-605.000000, -1824.000000)" fill="#007BC7" fill-rule="nonzero">
@@ -30,7 +33,7 @@
             </g>
           </svg>
           Add to Inoreader
-        <% end %>
+        </a>
       </div>
     </div>
   </div>
