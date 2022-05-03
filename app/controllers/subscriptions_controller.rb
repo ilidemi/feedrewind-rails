@@ -619,7 +619,7 @@ class SubscriptionsController < ApplicationController
     are_any_published_today = prev_posts.any? { |post| post.published_date == today.date_str }
 
     if (!is_schedule_set_up && today.is_early_morning) ||
-      (is_schedule_set_up && !are_any_published_today)
+      (is_schedule_set_up && !are_any_published_today && !prev_posts.empty?)
       next_schedule_time = today
     else
       next_schedule_time = today.advance_till_midnight
