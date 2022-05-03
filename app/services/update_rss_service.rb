@@ -1,7 +1,7 @@
 require 'ox'
 
 module UpdateRssService
-  POSTS_IN_RSS = 15
+  POSTS_IN_RSS = 30
 
   def UpdateRssService.update_rss(subscription, to_publish_count)
     subscription_blog_posts = subscription
@@ -18,7 +18,6 @@ module UpdateRssService
       .where("published_at is not null")
       .order("blog_posts.index desc")
       .limit(POSTS_IN_RSS - subscription_posts_to_publish.length)
-      .map(&:blog_post)
       .reverse
 
     now = ScheduleHelper.now.date
