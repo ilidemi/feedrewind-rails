@@ -5,7 +5,7 @@ class Subscription < ApplicationRecord
   belongs_to :blog
   has_many :subscription_posts, dependent: :destroy
   has_many :schedules, dependent: :destroy
-  has_one :current_rss, dependent: :destroy
+  has_one :subscription_rss, dependent: :destroy
 
   BlogNotSupported = Struct.new(:blog)
 

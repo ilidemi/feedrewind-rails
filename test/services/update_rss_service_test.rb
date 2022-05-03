@@ -22,7 +22,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     end
 
     UpdateRssService.update_rss(subscription, 0)
-    actual_body = CurrentRss.find_by(subscription_id: subscription.id).body
+    actual_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
@@ -60,7 +60,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     end
 
     UpdateRssService.update_rss(subscription, 1)
-    actual_body = CurrentRss.find_by(subscription_id: subscription.id).body
+    actual_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
@@ -103,7 +103,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     end
 
     UpdateRssService.update_rss(subscription, 3)
-    actual_body = CurrentRss.find_by(subscription_id: subscription.id).body
+    actual_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
@@ -156,7 +156,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     end
 
     UpdateRssService.update_rss(subscription, 1)
-    actual_body = CurrentRss.find_by(subscription_id: subscription.id).body
+    actual_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
@@ -204,7 +204,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     end
 
     UpdateRssService.update_rss(subscription, 1)
-    actual_body = CurrentRss.find_by(subscription_id: subscription.id).body
+    actual_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
@@ -312,7 +312,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     end
 
     UpdateRssService.update_rss(subscription, 1)
-    actual_body = CurrentRss.find_by(subscription_id: subscription.id).body
+    actual_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
@@ -425,7 +425,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     end
 
     UpdateRssService.update_rss(subscription, 1)
-    actual_body = CurrentRss.find_by(subscription_id: subscription.id).body
+    actual_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
@@ -538,7 +538,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     end
 
     UpdateRssService.update_rss(subscription, 1)
-    actual_body = CurrentRss.find_by(subscription_id: subscription.id).body
+    actual_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">

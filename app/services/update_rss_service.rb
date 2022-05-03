@@ -43,16 +43,16 @@ module UpdateRssService
     )
     rss_text = Ox.dump(rss_document)
 
-    CurrentRss.transaction do
+    SubscriptionRss.transaction do
       subscription.save!
 
       subscription_posts_to_publish.each do |subscription_post|
         subscription_post.save!
       end
 
-      current_rss = CurrentRss.find_or_initialize_by(subscription_id: subscription.id)
-      current_rss.body = rss_text
-      current_rss.save!
+      subscription_rss = SubscriptionRss.find_or_initialize_by(subscription_id: subscription.id)
+      subscription_rss.body = rss_text
+      subscription_rss.save!
     end
   end
 

@@ -342,38 +342,6 @@ ALTER SEQUENCE public.blogs_id_seq OWNED BY public.blogs.id;
 
 
 --
--- Name: current_rsses; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.current_rsses (
-    id bigint NOT NULL,
-    body text NOT NULL,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL,
-    subscription_id bigint NOT NULL
-);
-
-
---
--- Name: current_rsses_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.current_rsses_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: current_rsses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.current_rsses_id_seq OWNED BY public.current_rsses.id;
-
-
---
 -- Name: delayed_jobs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -556,6 +524,38 @@ ALTER SEQUENCE public.subscription_posts_id_seq OWNED BY public.subscription_pos
 
 
 --
+-- Name: subscription_rsses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.subscription_rsses (
+    id bigint NOT NULL,
+    body text NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    subscription_id bigint NOT NULL
+);
+
+
+--
+-- Name: subscription_rsses_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.subscription_rsses_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: subscription_rsses_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.subscription_rsses_id_seq OWNED BY public.subscription_rsses.id;
+
+
+--
 -- Name: subscriptions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -652,13 +652,6 @@ ALTER TABLE ONLY public.blogs ALTER COLUMN id SET DEFAULT nextval('public.blogs_
 
 
 --
--- Name: current_rsses id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.current_rsses ALTER COLUMN id SET DEFAULT nextval('public.current_rsses_id_seq'::regclass);
-
-
---
 -- Name: delayed_jobs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -691,6 +684,13 @@ ALTER TABLE ONLY public.start_pages ALTER COLUMN id SET DEFAULT nextval('public.
 --
 
 ALTER TABLE ONLY public.subscription_posts ALTER COLUMN id SET DEFAULT nextval('public.subscription_posts_id_seq'::regclass);
+
+
+--
+-- Name: subscription_rsses id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscription_rsses ALTER COLUMN id SET DEFAULT nextval('public.subscription_rsses_id_seq'::regclass);
 
 
 --
@@ -773,14 +773,6 @@ ALTER TABLE ONLY public.blogs
 
 
 --
--- Name: current_rsses current_rsses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.current_rsses
-    ADD CONSTRAINT current_rsses_pkey PRIMARY KEY (id);
-
-
---
 -- Name: delayed_jobs delayed_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -829,6 +821,14 @@ ALTER TABLE ONLY public.subscription_posts
 
 
 --
+-- Name: subscription_rsses subscription_rsses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscription_rsses
+    ADD CONSTRAINT subscription_rsses_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: subscriptions subscriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -866,10 +866,10 @@ CREATE INDEX index_start_feeds_on_start_page_id ON public.start_feeds USING btre
 
 
 --
--- Name: current_rsses fk_rails_647dccf03a; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: subscription_rsses fk_rails_647dccf03a; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.current_rsses
+ALTER TABLE ONLY public.subscription_rsses
     ADD CONSTRAINT fk_rails_647dccf03a FOREIGN KEY (subscription_id) REFERENCES public.subscriptions(id);
 
 
@@ -1061,6 +1061,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220415183313'),
 ('20220415201523'),
 ('20220425183655'),
-('20220428234040');
+('20220428234040'),
+('20220503200250');
 
 
