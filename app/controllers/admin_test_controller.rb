@@ -1,6 +1,6 @@
 require 'active_support/testing/time_helpers'
 
-class TestController < ApplicationController
+class AdminTestController < ApplicationController
   extend ActiveSupport::Testing::TimeHelpers
 
   def travel_to_1am
@@ -33,7 +33,8 @@ class TestController < ApplicationController
   end
 
   def run_update_rss_job
-    UpdateRssJob.new.perform(params[:subscription_id])
+    fill_current_user
+    UpdateRssJobNew.new.perform(@current_user.id, true)
     render plain: "OK"
   end
 

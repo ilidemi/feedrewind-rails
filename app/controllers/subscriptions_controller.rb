@@ -357,31 +357,29 @@ class SubscriptionsController < ApplicationController
         .sum
       raise "Expecting some count to not be zero" unless total_count > 0
 
-      now = ScheduleHelper.now
-      today_of_week = now.day_of_week
-
       counts_by_day.each do |day_of_week, count|
-        @subscription.schedules.new(
+        @subscription.schedules.create!(
           day_of_week: day_of_week,
           count: count
         )
       end
 
+      now = ScheduleHelper.now
       @subscription.name = schedule_params[:name]
       @subscription.status = "live"
       @subscription.finished_setup_at = now.date
       @subscription.version = 1
+      @subscription.save! # so that rss update can pick it up
 
       if ScheduleHelper.now.is_early_morning
         # People setting up a blog just after midnight should get the first post same day
-        UpdateRssService.update_rss(@subscription, counts_by_day[today_of_week])
+        UpdateRssServiceNew.init_subscription(@subscription, true, now)
         @subscription.is_added_past_midnight = true
       else
-        UpdateRssService.update_rss(@subscription, 0)
+        UpdateRssServiceNew.init_subscription(@subscription, false, now)
         @subscription.is_added_past_midnight = false
       end
 
-      UpdateRssJob.schedule_for_tomorrow(@subscription.id)
       @subscription.save!
     end
 

@@ -1,8 +1,0 @@
-test:
-  id: 1
-  name: Test Blog
-  feed_url: https://blog/feed.xml
-  status: crawled_confirmed
-  status_updated_at: 2021-12-28 01:15:46.516387
-  version: <%= Blog::LATEST_VERSION %>
-  update_action: recrawl

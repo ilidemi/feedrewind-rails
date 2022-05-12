@@ -3,7 +3,7 @@ require 'ox'
 module UpdateRssService
   POSTS_IN_RSS = 30
 
-  def UpdateRssService.update_rss(subscription, to_publish_count)
+  def UpdateRssService.update_rss(subscription, to_publish_count, now)
     subscription_blog_posts = subscription
       .subscription_posts
       .includes(:blog_post)
@@ -20,22 +20,24 @@ module UpdateRssService
       .limit(POSTS_IN_RSS - subscription_posts_to_publish.length)
       .reverse
 
-    now = ScheduleHelper.now.date
     subscription_posts_to_publish.each do |subscription_post|
-      subscription_post.published_at = now
-    end
-
-    if subscription_posts_to_publish.length + subscription_posts_last_published.length < POSTS_IN_RSS
-      welcome_item = generate_welcome_item(subscription)
-    else
-      welcome_item = nil
+      subscription_post.published_at = now.date
     end
 
     if subscription_posts_to_publish.length == subscription_blog_posts_unpublished_count
-      subscription.final_item_published_at = now if subscription.final_item_published_at.nil?
+      subscription.final_item_published_at = now.date if subscription.final_item_published_at.nil?
+      if subscription_posts_last_published.length + subscription_posts_to_publish.length == POSTS_IN_RSS
+        subscription_posts_last_published = subscription_posts_last_published[1..]
+      end
       final_item = generate_final_item(subscription)
     else
       final_item = nil
+    end
+
+    if subscription_posts_to_publish.length + subscription_posts_last_published.length + (final_item ? 1 : 0) < POSTS_IN_RSS
+      welcome_item = generate_welcome_item(subscription)
+    else
+      welcome_item = nil
     end
 
     rss_document = generate_rss(

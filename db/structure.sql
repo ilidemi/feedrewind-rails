@@ -185,7 +185,8 @@ CREATE TABLE public.blog_crawl_votes (
     blog_id bigint NOT NULL,
     value public.blog_crawl_vote_value NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    user_id_int bigint
 );
 
 
@@ -572,7 +573,8 @@ CREATE TABLE public.subscriptions (
     updated_at timestamp(6) without time zone NOT NULL,
     version integer NOT NULL,
     finished_setup_at timestamp without time zone,
-    final_item_published_at timestamp without time zone
+    final_item_published_at timestamp without time zone,
+    user_id_int bigint
 );
 
 
@@ -596,6 +598,19 @@ ALTER SEQUENCE public.subscriptions_id_seq OWNED BY public.subscriptions.id;
 
 
 --
+-- Name: user_rsses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_rsses (
+    user_id uuid DEFAULT public.gen_random_uuid() NOT NULL,
+    body text NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    user_id_int bigint
+);
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -605,7 +620,8 @@ CREATE TABLE public.users (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     auth_token character varying,
-    id uuid DEFAULT public.gen_random_uuid() NOT NULL
+    id uuid DEFAULT public.gen_random_uuid() NOT NULL,
+    id_int bigint
 );
 
 
@@ -837,6 +853,14 @@ ALTER TABLE ONLY public.subscriptions
 
 
 --
+-- Name: user_rsses user_rsses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_rsses
+    ADD CONSTRAINT user_rsses_pkey PRIMARY KEY (user_id);
+
+
+--
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -863,6 +887,37 @@ CREATE UNIQUE INDEX index_blogs_on_feed_url_and_version ON public.blogs USING bt
 --
 
 CREATE INDEX index_start_feeds_on_start_page_id ON public.start_feeds USING btree (start_page_id);
+
+
+--
+-- Name: index_users_on_id_int; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_users_on_id_int ON public.users USING btree (id_int);
+
+
+--
+-- Name: user_rsses fk_rails_17396fc3a7; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_rsses
+    ADD CONSTRAINT fk_rails_17396fc3a7 FOREIGN KEY (user_id_int) REFERENCES public.users(id_int) ON UPDATE CASCADE;
+
+
+--
+-- Name: subscriptions fk_rails_416412a06b; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.subscriptions
+    ADD CONSTRAINT fk_rails_416412a06b FOREIGN KEY (user_id_int) REFERENCES public.users(id_int) ON UPDATE CASCADE;
+
+
+--
+-- Name: user_rsses fk_rails_58b587f246; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_rsses
+    ADD CONSTRAINT fk_rails_58b587f246 FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -986,6 +1041,14 @@ ALTER TABLE ONLY public.start_feeds
 
 
 --
+-- Name: blog_crawl_votes fk_rails_f74b6b39ca; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_crawl_votes
+    ADD CONSTRAINT fk_rails_f74b6b39ca FOREIGN KEY (user_id_int) REFERENCES public.users(id_int) ON UPDATE CASCADE;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
@@ -1062,6 +1125,9 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220415201523'),
 ('20220425183655'),
 ('20220428234040'),
-('20220503200250');
+('20220503200250'),
+('20220503204702'),
+('20220511235054'),
+('20220512003521');
 
 

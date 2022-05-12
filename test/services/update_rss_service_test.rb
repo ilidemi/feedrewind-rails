@@ -1,5 +1,6 @@
 require "test_helper"
 
+#noinspection HttpUrlsUsage
 class UpdateRssServiceTest < ActiveSupport::TestCase
   test "init" do
     subscription = subscriptions(:test)
@@ -21,7 +22,8 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
       )
     end
 
-    UpdateRssService.update_rss(subscription, 0)
+    now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
+    UpdateRssService.update_rss(subscription, 0, now)
     actual_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
@@ -30,8 +32,9 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     <title>Test Subscription · FeedRewind</title>
     <item>
       <title>Test Subscription added to FeedRewind</title>
-      <link>https://rss-catchup.herokuapp.com/subscriptions/1</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <link>https://feedrewind.herokuapp.com/subscriptions/1</link>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
   </channel>
 </rss>
@@ -59,7 +62,8 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
       )
     end
 
-    UpdateRssService.update_rss(subscription, 1)
+    now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
+    UpdateRssService.update_rss(subscription, 1, now)
     actual_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
@@ -69,12 +73,14 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     <item>
       <title>Post 1</title>
       <link>https://blog/1</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Test Subscription added to FeedRewind</title>
-      <link>https://rss-catchup.herokuapp.com/subscriptions/1</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <link>https://feedrewind.herokuapp.com/subscriptions/1</link>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
   </channel>
 </rss>
@@ -102,7 +108,8 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
       )
     end
 
-    UpdateRssService.update_rss(subscription, 3)
+    now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
+    UpdateRssService.update_rss(subscription, 3, now)
     actual_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
@@ -112,22 +119,26 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     <item>
       <title>Post 3</title>
       <link>https://blog/3</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 2</title>
       <link>https://blog/2</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
       <link>https://blog/1</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Test Subscription added to FeedRewind</title>
-      <link>https://rss-catchup.herokuapp.com/subscriptions/1</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <link>https://feedrewind.herokuapp.com/subscriptions/1</link>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
   </channel>
 </rss>
@@ -138,6 +149,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
   test "welcome + 1 to welcome + 2" do
     subscription = subscriptions(:test)
     blog = blogs(:test)
+    before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
     (1..5).each do |index|
       blog.blog_posts.create!(
         id: index,
@@ -151,11 +163,12 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
         id: index,
         blog_post_id: index,
         subscription_id: subscription.id,
-        published_at: index == 1 ? ScheduleHelper.now.date : nil
+        published_at: index == 1 ? before.date : nil
       )
     end
 
-    UpdateRssService.update_rss(subscription, 1)
+    now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
+    UpdateRssService.update_rss(subscription, 1, now)
     actual_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
@@ -165,17 +178,20 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     <item>
       <title>Post 2</title>
       <link>https://blog/2</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
       <link>https://blog/1</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Test Subscription added to FeedRewind</title>
-      <link>https://rss-catchup.herokuapp.com/subscriptions/1</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <link>https://feedrewind.herokuapp.com/subscriptions/1</link>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
   </channel>
 </rss>
@@ -186,7 +202,8 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
   test "evict welcome" do
     subscription = subscriptions(:test)
     blog = blogs(:test)
-    (1..17).each do |index|
+    before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
+    (1..6).each do |index|
       blog.blog_posts.create!(
         id: index,
         blog_id: blog.id,
@@ -199,11 +216,15 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
         id: index,
         blog_post_id: index,
         subscription_id: subscription.id,
-        published_at: index <= 15 ? ScheduleHelper.now.date : nil
+        published_at: index <= 4 ? before.date : nil
       )
     end
 
-    UpdateRssService.update_rss(subscription, 1)
+    now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
+    silence_warnings do
+      UpdateRssService::POSTS_IN_RSS = 5
+    end
+    UpdateRssService.update_rss(subscription, 1, now)
     actual_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
@@ -211,79 +232,34 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
   <channel>
     <title>Test Subscription · FeedRewind</title>
     <item>
-      <title>Post 16</title>
-      <link>https://blog/16</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 15</title>
-      <link>https://blog/15</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 14</title>
-      <link>https://blog/14</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 13</title>
-      <link>https://blog/13</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 12</title>
-      <link>https://blog/12</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 11</title>
-      <link>https://blog/11</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 10</title>
-      <link>https://blog/10</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 9</title>
-      <link>https://blog/9</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 8</title>
-      <link>https://blog/8</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 7</title>
-      <link>https://blog/7</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 6</title>
-      <link>https://blog/6</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
       <title>Post 5</title>
       <link>https://blog/5</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 4</title>
       <link>https://blog/4</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 3</title>
       <link>https://blog/3</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 2</title>
       <link>https://blog/2</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>Post 1</title>
+      <link>https://blog/1</link>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
   </channel>
 </rss>
@@ -294,7 +270,8 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
   test "finish with welcome" do
     subscription = subscriptions(:test)
     blog = blogs(:test)
-    (1..14).each do |index|
+    before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
+    (1..3).each do |index|
       blog.blog_posts.create!(
         id: index,
         blog_id: blog.id,
@@ -307,11 +284,15 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
         id: index,
         blog_post_id: index,
         subscription_id: subscription.id,
-        published_at: index < 14 ? ScheduleHelper.now.date : nil
+        published_at: index < 3 ? before.date : nil
       )
     end
 
-    UpdateRssService.update_rss(subscription, 1)
+    now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
+    silence_warnings do
+      UpdateRssService::POSTS_IN_RSS = 5
+    end
+    UpdateRssService.update_rss(subscription, 1, now)
     actual_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
@@ -320,83 +301,33 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     <title>Test Subscription · FeedRewind</title>
     <item>
       <title>You're all caught up with Test Subscription</title>
-      <link>https://rss-catchup.herokuapp.com/subscriptions/1</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/add"&gt;Read something else?&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 14</title>
-      <link>https://blog/14</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 13</title>
-      <link>https://blog/13</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 12</title>
-      <link>https://blog/12</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 11</title>
-      <link>https://blog/11</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 10</title>
-      <link>https://blog/10</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 9</title>
-      <link>https://blog/9</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 8</title>
-      <link>https://blog/8</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 7</title>
-      <link>https://blog/7</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 6</title>
-      <link>https://blog/6</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 5</title>
-      <link>https://blog/5</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 4</title>
-      <link>https://blog/4</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <link>https://feedrewind.herokuapp.com/subscriptions/1</link>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/add"&gt;Read something else?&lt;/a&gt;</description>
+      <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 3</title>
       <link>https://blog/3</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 2</title>
       <link>https://blog/2</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
       <link>https://blog/1</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Test Subscription added to FeedRewind</title>
-      <link>https://rss-catchup.herokuapp.com/subscriptions/1</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <link>https://feedrewind.herokuapp.com/subscriptions/1</link>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
   </channel>
 </rss>
@@ -407,7 +338,8 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
   test "finish without welcome" do
     subscription = subscriptions(:test)
     blog = blogs(:test)
-    (1..15).each do |index|
+    before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
+    (1..4).each do |index|
       blog.blog_posts.create!(
         id: index,
         blog_id: blog.id,
@@ -420,11 +352,15 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
         id: index,
         blog_post_id: index,
         subscription_id: subscription.id,
-        published_at: index < 15 ? ScheduleHelper.now.date : nil
+        published_at: index < 4 ? before.date : nil
       )
     end
 
-    UpdateRssService.update_rss(subscription, 1)
+    now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
+    silence_warnings do
+      UpdateRssService::POSTS_IN_RSS = 5
+    end
+    UpdateRssService.update_rss(subscription, 1, now)
     actual_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
@@ -433,83 +369,33 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     <title>Test Subscription · FeedRewind</title>
     <item>
       <title>You're all caught up with Test Subscription</title>
-      <link>https://rss-catchup.herokuapp.com/subscriptions/1</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/add"&gt;Read something else?&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 15</title>
-      <link>https://blog/15</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 14</title>
-      <link>https://blog/14</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 13</title>
-      <link>https://blog/13</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 12</title>
-      <link>https://blog/12</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 11</title>
-      <link>https://blog/11</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 10</title>
-      <link>https://blog/10</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 9</title>
-      <link>https://blog/9</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 8</title>
-      <link>https://blog/8</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 7</title>
-      <link>https://blog/7</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 6</title>
-      <link>https://blog/6</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 5</title>
-      <link>https://blog/5</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <link>https://feedrewind.herokuapp.com/subscriptions/1</link>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/add"&gt;Read something else?&lt;/a&gt;</description>
+      <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 4</title>
       <link>https://blog/4</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 3</title>
       <link>https://blog/3</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 2</title>
       <link>https://blog/2</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
       <link>https://blog/1</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
   </channel>
 </rss>
@@ -520,7 +406,8 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
   test "finish without welcome and first post" do
     subscription = subscriptions(:test)
     blog = blogs(:test)
-    (1..16).each do |index|
+    before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
+    (1..5).each do |index|
       blog.blog_posts.create!(
         id: index,
         blog_id: blog.id,
@@ -533,11 +420,15 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
         id: index,
         blog_post_id: index,
         subscription_id: subscription.id,
-        published_at: index < 16 ? ScheduleHelper.now.date : nil
+        published_at: index < 5 ? before.date : nil
       )
     end
 
-    UpdateRssService.update_rss(subscription, 1)
+    now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
+    silence_warnings do
+      UpdateRssService::POSTS_IN_RSS = 5
+    end
+    UpdateRssService.update_rss(subscription, 1, now)
     actual_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_body = <<-BODY
 <?xml version="1.0" encoding="UTF-8"?>
@@ -546,83 +437,33 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     <title>Test Subscription · FeedRewind</title>
     <item>
       <title>You're all caught up with Test Subscription</title>
-      <link>https://rss-catchup.herokuapp.com/subscriptions/1</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/add"&gt;Read something else?&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 16</title>
-      <link>https://blog/16</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 15</title>
-      <link>https://blog/15</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 14</title>
-      <link>https://blog/14</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 13</title>
-      <link>https://blog/13</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 12</title>
-      <link>https://blog/12</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 11</title>
-      <link>https://blog/11</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 10</title>
-      <link>https://blog/10</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 9</title>
-      <link>https://blog/9</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 8</title>
-      <link>https://blog/8</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 7</title>
-      <link>https://blog/7</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
-    </item>
-    <item>
-      <title>Post 6</title>
-      <link>https://blog/6</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <link>https://feedrewind.herokuapp.com/subscriptions/1</link>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/add"&gt;Read something else?&lt;/a&gt;</description>
+      <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 5</title>
       <link>https://blog/5</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 4</title>
       <link>https://blog/4</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 3</title>
       <link>https://blog/3</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 2</title>
       <link>https://blog/2</link>
-      <description>&lt;a href="https://rss-catchup.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.herokuapp.com/subscriptions/1"&gt;Manage&lt;/a&gt;</description>
+      <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
   </channel>
 </rss>

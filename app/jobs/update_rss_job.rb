@@ -29,7 +29,7 @@ class UpdateRssJob < ApplicationJob
     end
 
     if !subscription.is_paused && schedule && schedule.count > 0
-      UpdateRssService.update_rss(subscription, schedule.count)
+      UpdateRssService.update_rss(subscription, schedule.count, now)
     end
 
     if subscription.subscription_posts.where("published_at is null").length > 0

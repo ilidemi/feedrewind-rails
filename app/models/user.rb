@@ -1,6 +1,10 @@
 class User < ApplicationRecord
+  include RandomId
+
   has_secure_password
-  has_many :subscriptions
+  has_many :subscriptions, dependent: :destroy
+  has_one :user_rss, dependent: :destroy
+  has_many :blog_crawl_votes, dependent: :destroy
   validates_length_of :password, minimum: 8
   validates_presence_of :email
   validate :email_uniqueness

@@ -27,7 +27,9 @@ Rails.application.routes.draw do
   post "/subscriptions/:id/schedule", to: "subscriptions#schedule"
   post "/subscriptions/:id/pause", to: "subscriptions#pause"
   post "/subscriptions/:id/unpause", to: "subscriptions#unpause"
-  get "/subscriptions/:id/feed", to: "rss#show"
+
+  get "/subscriptions/:id/feed", to: "rss#subscription_feed"
+  get "/users/:id/feed", to: "rss#user_feed"
 
   get "/blogs/:id/unsupported", to: "blogs#unsupported"
 
@@ -39,13 +41,13 @@ Rails.application.routes.draw do
   post "/admin/post_blog", to: "admin#post_blog"
 
   if Rails.env.development? || Rails.env.test?
-    get "/test/travel_to_1am", to: "test#travel_to_1am"
-    get "/test/travel_to_12pm", to: "test#travel_to_12pm"
-    get "/test/travel_1day", to: "test#travel_1day"
-    get "/test/travel_31days", to: "test#travel_31days"
-    get "/test/travel_back", to: "test#travel_back"
-    get "/test/run_update_rss_job", to: "test#run_update_rss_job"
-    get "/test/run_reset_failed_blogs_job", to: "test#run_reset_failed_blogs_job"
+    get "/test/travel_to_1am", to: "admin_test#travel_to_1am"
+    get "/test/travel_to_12pm", to: "admin_test#travel_to_12pm"
+    get "/test/travel_1day", to: "admin_test#travel_1day"
+    get "/test/travel_31days", to: "admin_test#travel_31days"
+    get "/test/travel_back", to: "admin_test#travel_back"
+    get "/test/run_update_rss_job", to: "admin_test#run_update_rss_job"
+    get "/test/run_reset_failed_blogs_job", to: "admin_test#run_reset_failed_blogs_job"
   end
 
   mount ActionCable.server => "/cable"

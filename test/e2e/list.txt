@@ -80,7 +80,7 @@ https://ilidemi.github.io/dummy-blogs/10a/rss.xml
 http://localhost:3000/test/travel_to_1am
 http://localhost:3000/test/travel_to_12pm
 http://localhost:3000/test/travel_1day
-http://localhost:3000/test/run_update_rss_job?subscription_id=
+http://localhost:3000/test/run_update_rss_job
 http://localhost:3000/test/travel_back
 
 
