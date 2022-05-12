@@ -20,7 +20,15 @@ class MakeUserIdsIntegers < ActiveRecord::Migration[6.1]
       end
       user.update_attribute(:id_int, new_id)
 
-      user.user_rss.update_attribute(:user_id_int, new_id)
+      if user.user_rss
+        user.user_rss.update_attribute(:user_id_int, new_id)
+      else
+        UserRss.create!(
+          user_id: user.id,
+          user_id_int: new_id,
+          body: ""
+        )
+      end
 
       user.subscriptions.with_discarded.each do |subscription|
         subscription.update_attribute(:user_id_int, new_id)
