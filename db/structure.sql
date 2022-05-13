@@ -181,12 +181,11 @@ CREATE TABLE public.blog_crawl_progresses (
 
 CREATE TABLE public.blog_crawl_votes (
     id bigint NOT NULL,
-    user_id uuid,
     blog_id bigint NOT NULL,
     value public.blog_crawl_vote_value NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    user_id_int bigint
+    user_id bigint
 );
 
 
@@ -562,7 +561,6 @@ ALTER SEQUENCE public.subscription_rsses_id_seq OWNED BY public.subscription_rss
 
 CREATE TABLE public.subscriptions (
     id bigint NOT NULL,
-    user_id uuid,
     blog_id bigint NOT NULL,
     name character varying NOT NULL,
     status public.subscription_status NOT NULL,
@@ -574,7 +572,7 @@ CREATE TABLE public.subscriptions (
     version integer NOT NULL,
     finished_setup_at timestamp without time zone,
     final_item_published_at timestamp without time zone,
-    user_id_int bigint
+    user_id bigint
 );
 
 
@@ -602,11 +600,10 @@ ALTER SEQUENCE public.subscriptions_id_seq OWNED BY public.subscriptions.id;
 --
 
 CREATE TABLE public.user_rsses (
-    user_id uuid DEFAULT public.gen_random_uuid() NOT NULL,
     body text NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    user_id_int bigint
+    user_id bigint NOT NULL
 );
 
 
@@ -620,8 +617,7 @@ CREATE TABLE public.users (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     auth_token character varying,
-    id uuid DEFAULT public.gen_random_uuid() NOT NULL,
-    id_int bigint
+    id bigint NOT NULL
 );
 
 
@@ -890,10 +886,10 @@ CREATE INDEX index_start_feeds_on_start_page_id ON public.start_feeds USING btre
 
 
 --
--- Name: index_users_on_id_int; Type: INDEX; Schema: public; Owner: -
+-- Name: index_users_on_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_users_on_id_int ON public.users USING btree (id_int);
+CREATE UNIQUE INDEX index_users_on_id ON public.users USING btree (id);
 
 
 --
@@ -901,7 +897,7 @@ CREATE UNIQUE INDEX index_users_on_id_int ON public.users USING btree (id_int);
 --
 
 ALTER TABLE ONLY public.user_rsses
-    ADD CONSTRAINT fk_rails_17396fc3a7 FOREIGN KEY (user_id_int) REFERENCES public.users(id_int) ON UPDATE CASCADE;
+    ADD CONSTRAINT fk_rails_17396fc3a7 FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE;
 
 
 --
@@ -909,15 +905,7 @@ ALTER TABLE ONLY public.user_rsses
 --
 
 ALTER TABLE ONLY public.subscriptions
-    ADD CONSTRAINT fk_rails_416412a06b FOREIGN KEY (user_id_int) REFERENCES public.users(id_int) ON UPDATE CASCADE;
-
-
---
--- Name: user_rsses fk_rails_58b587f246; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_rsses
-    ADD CONSTRAINT fk_rails_58b587f246 FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT fk_rails_416412a06b FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE;
 
 
 --
@@ -945,14 +933,6 @@ ALTER TABLE ONLY public.blog_discarded_feed_entries
 
 
 --
--- Name: subscriptions fk_rails_933bdff476; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.subscriptions
-    ADD CONSTRAINT fk_rails_933bdff476 FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
 -- Name: blog_canonical_equality_configs fk_rails_9b3fd3910a; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -966,14 +946,6 @@ ALTER TABLE ONLY public.blog_canonical_equality_configs
 
 ALTER TABLE ONLY public.blog_posts
     ADD CONSTRAINT fk_rails_9d677c923b FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
-
-
---
--- Name: blog_crawl_votes fk_rails_a04f6fad36; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.blog_crawl_votes
-    ADD CONSTRAINT fk_rails_a04f6fad36 FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -1045,7 +1017,7 @@ ALTER TABLE ONLY public.start_feeds
 --
 
 ALTER TABLE ONLY public.blog_crawl_votes
-    ADD CONSTRAINT fk_rails_f74b6b39ca FOREIGN KEY (user_id_int) REFERENCES public.users(id_int) ON UPDATE CASCADE;
+    ADD CONSTRAINT fk_rails_f74b6b39ca FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE;
 
 
 --
@@ -1129,6 +1101,8 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220503204702'),
 ('20220511235054'),
 ('20220512003521'),
-('20220513002103');
+('20220513002103'),
+('20220513002912'),
+('20220513010057');
 
 

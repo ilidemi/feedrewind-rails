@@ -78,7 +78,7 @@ module RssCatchupRails
       lambda do |request|
         begin
           value = session_data(request)["user_id"] || ""
-          "U#{value[...8]}"
+          "U#{value}"
         rescue
           nil
         end

@@ -550,7 +550,12 @@ class SubscriptionsController < ApplicationController
   def get_schedule_preview(subscription)
     query = <<-SQL
       (
-        select 'prev_post' as tag, url, title, published_at, null::bigint as count
+        select
+          'prev_post' as tag,
+          url,
+          title,
+          published_at at time zone 'UTC' at time zone $2 as published_at,
+          null::bigint as count
         from subscription_posts
         join (select id, url, title, index from blog_posts) as blog_posts on blog_posts.id = blog_post_id 
         where subscription_id = $1 and published_at is not null
@@ -571,7 +576,9 @@ class SubscriptionsController < ApplicationController
         where subscription_id = $1
       )
     SQL
-    query_result = ActiveRecord::Base.connection.exec_query(query, "SQL", [subscription.id])
+    query_result = ActiveRecord::Base.connection.exec_query(
+      query, "SQL", [subscription.id, ScheduleHelper::ScheduleDate::PSQL_PACIFIC_TIME_ZONE]
+    )
 
     prev_posts = []
     next_posts = []
