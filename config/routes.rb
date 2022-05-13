@@ -28,8 +28,9 @@ Rails.application.routes.draw do
   post "/subscriptions/:id/pause", to: "subscriptions#pause"
   post "/subscriptions/:id/unpause", to: "subscriptions#unpause"
 
-  get "/subscriptions/:id/feed", to: "rss#subscription_feed"
-  get "/users/:id/feed", to: "rss#user_feed"
+  get "/subscriptions/:id/feed", to: "rss#subscription_feed" # Legacy
+  get "/feeds/single/:id", to: "rss#user_feed"
+  get "/feeds/:id", to: "rss#subscription_feed"
 
   get "/blogs/:id/unsupported", to: "blogs#unsupported"
 

@@ -12,7 +12,7 @@ class ApplicationController < ActionController::Base
   end
 
   def authorize_admin
-    unless current_user.id == Rails.configuration.admin_user_id
+    unless Rails.configuration.admin_user_ids.include?(current_user.id)
       raise ActionController::RoutingError.new('Not Found')
     end
   end

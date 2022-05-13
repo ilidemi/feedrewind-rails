@@ -1,6 +1,5 @@
 require 'json'
 require_relative '../lib/guided_crawling/guided_crawling'
-require_relative '../services/update_rss_service'
 
 GuidedCrawlingJobArgs = Struct.new(:start_feed_id)
 

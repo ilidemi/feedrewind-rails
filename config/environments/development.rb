@@ -84,5 +84,5 @@ Rails.application.configure do
   config.log_level = :info
   config.log_tags = [ user_id, session_id, :request_id ]
 
-  config.admin_user_id = "c7450562-8e67-4436-80ba-7b7202ec7d36"
+  config.admin_user_ids = [3537695508506533183] # belk94@gmail.com
 end

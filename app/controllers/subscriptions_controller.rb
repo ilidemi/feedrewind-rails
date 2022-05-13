@@ -481,7 +481,7 @@ class SubscriptionsController < ApplicationController
     admin_votes = []
     other_votes = Set.new
     blog_votes.each do |vote|
-      if vote.user_id == Rails.configuration.admin_user_id
+      if Rails.configuration.admin_user_ids.include?(vote.user_id)
         admin_votes << [vote.user_id, vote.value]
       else
         other_votes << [vote.user_id, vote.value]
