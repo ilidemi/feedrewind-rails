@@ -26,7 +26,7 @@ module UpdateRssServiceNew
       new_user_items_count = 0
 
       subscriptions.each do |subscription|
-        Rails.logger.info("Subscription #{subscription.id}")
+        Rails.logger.info("Subscription #{subscription.id} (#{subscription.name})")
         schedule = subscription.schedules.find_by(day_of_week: now.day_of_week)
         subscription_blog_posts = subscription
           .subscription_posts

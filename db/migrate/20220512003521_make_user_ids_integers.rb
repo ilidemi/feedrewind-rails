@@ -51,6 +51,7 @@ class MakeUserIdsIntegers < ActiveRecord::Migration[6.1]
     add_foreign_key :blog_crawl_votes, :users, column: :user_id_int, primary_key: :id_int, on_update: :cascade
 
     # Separately:
+    # Fix subscription user ids
     # Drop old foreign keys
     # Drop old id column
     # Rename id_int to id

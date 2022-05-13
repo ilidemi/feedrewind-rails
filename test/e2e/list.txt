@@ -1,4 +1,6 @@
 ## Logged in user
+On Heroku, log in as test user (test@test.com)
+
 ### Feed discovery
 00. "potato" - couldn't reach - /1f.jpg - no feeds - /1f404 - couldn't reach - /200?sleep=200000 - couldn't reach - /bad_rss.xml - couldn't read - /1ftimeout - 1 feed - Timeout Feed - couldn't read - 1fno - no feeds - /tags - three feeds - /rename-title - two feeds - /rename-host - two feeds - /dedup - one feed - 1a - one feed - /multiple - three feeds
 01. set 3 second delay - /multiple - /multiple (rapid click go and other buttons) - one request, three feeds - Feed 1 (rapid click title and other buttons) - one request > /subs/id/setup
