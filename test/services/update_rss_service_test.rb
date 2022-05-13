@@ -1,12 +1,12 @@
 require "test_helper"
 
 #noinspection HttpUrlsUsage
-class UpdateRssServiceNewTest < ActiveSupport::TestCase
+class UpdateRssServiceTest < ActiveSupport::TestCase
   test "init with 0 posts" do
     now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
     subscription = create_subscription(1, now.date, 5, 0, fri_count: 1)
 
-    UpdateRssServiceNew.init_subscription(subscription, false, now)
+    UpdateRssService.init_subscription(subscription, false, now)
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -51,7 +51,7 @@ class UpdateRssServiceNewTest < ActiveSupport::TestCase
     now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
     subscription = create_subscription(1, now.date, 5, 0, thu_count: 1)
 
-    UpdateRssServiceNew.init_subscription(subscription, false, now)
+    UpdateRssService.init_subscription(subscription, false, now)
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -96,7 +96,7 @@ class UpdateRssServiceNewTest < ActiveSupport::TestCase
     now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
     subscription = create_subscription(1, now.date, 5, 0, thu_count: 2, fri_count: 2)
 
-    UpdateRssServiceNew.init_subscription(subscription, true, now)
+    UpdateRssService.init_subscription(subscription, true, now)
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -171,7 +171,7 @@ class UpdateRssServiceNewTest < ActiveSupport::TestCase
     before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-04 00:00:00"))
     create_subscription(2, before.date, 5, 1, wed_count: 1)
 
-    UpdateRssServiceNew.init_subscription(subscription1, false, now)
+    UpdateRssService.init_subscription(subscription1, false, now)
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription1.id).body
     expected_sub_body = <<-BODY
@@ -232,7 +232,7 @@ class UpdateRssServiceNewTest < ActiveSupport::TestCase
     before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-04 00:00:00"))
     create_subscription(2, before.date, 5, 1, wed_count: 1)
 
-    UpdateRssServiceNew.init_subscription(subscription1, false, now)
+    UpdateRssService.init_subscription(subscription1, false, now)
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription1.id).body
     expected_sub_body = <<-BODY
@@ -293,7 +293,7 @@ class UpdateRssServiceNewTest < ActiveSupport::TestCase
     before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-04 00:00:00"))
     create_subscription(2, before.date, 5, 1, wed_count: 1)
 
-    UpdateRssServiceNew.init_subscription(subscription1, true, now)
+    UpdateRssService.init_subscription(subscription1, true, now)
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription1.id).body
     expected_sub_body = <<-BODY
@@ -379,10 +379,10 @@ class UpdateRssServiceNewTest < ActiveSupport::TestCase
   test "update one" do
     before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
     subscription = create_subscription(1, before.date, 5, 0, thu_count: 2, fri_count: 2)
-    UpdateRssServiceNew.init_subscription(subscription, true, before)
+    UpdateRssService.init_subscription(subscription, true, before)
 
     now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
-    UpdateRssServiceNew.update_for_user(subscription.user_id, now)
+    UpdateRssService.update_for_user(subscription.user_id, now)
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -482,13 +482,13 @@ class UpdateRssServiceNewTest < ActiveSupport::TestCase
   test "update multiple at once" do
     before_before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-04 00:00:00"))
     subscription1 = create_subscription(1, before_before.date, 5, 0, wed_count: 2, fri_count: 2)
-    UpdateRssServiceNew.init_subscription(subscription1, true, before_before)
+    UpdateRssService.init_subscription(subscription1, true, before_before)
     before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
     subscription2 = create_subscription(2, before.date, 5, 0, thu_count: 1, fri_count: 1)
-    UpdateRssServiceNew.init_subscription(subscription2, true, before)
+    UpdateRssService.init_subscription(subscription2, true, before)
 
     now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
-    UpdateRssServiceNew.update_for_user(subscription1.user_id, now)
+    UpdateRssService.update_for_user(subscription1.user_id, now)
 
     actual_sub1_body = SubscriptionRss.find_by(subscription_id: subscription1.id).body
     expected_sub1_body = <<-BODY
@@ -642,13 +642,13 @@ class UpdateRssServiceNewTest < ActiveSupport::TestCase
   test "update some but not all" do
     before_before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-04 00:00:00"))
     subscription1 = create_subscription(1, before_before.date, 5, 0, wed_count: 1, fri_count: 1)
-    UpdateRssServiceNew.init_subscription(subscription1, true, before_before)
+    UpdateRssService.init_subscription(subscription1, true, before_before)
     before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
     subscription2 = create_subscription(2, before.date, 5, 0, thu_count: 1)
-    UpdateRssServiceNew.init_subscription(subscription2, true, before)
+    UpdateRssService.init_subscription(subscription2, true, before)
 
     now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
-    UpdateRssServiceNew.update_for_user(subscription1.user_id, now)
+    UpdateRssService.update_for_user(subscription1.user_id, now)
 
     actual_sub1_body = SubscriptionRss.find_by(subscription_id: subscription1.id).body
     expected_sub1_body = <<-BODY
@@ -760,13 +760,13 @@ class UpdateRssServiceNewTest < ActiveSupport::TestCase
   test "update none" do
     before_before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-04 00:00:00"))
     subscription1 = create_subscription(1, before_before.date, 5, 0, wed_count: 1)
-    UpdateRssServiceNew.init_subscription(subscription1, true, before_before)
+    UpdateRssService.init_subscription(subscription1, true, before_before)
     before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
     subscription2 = create_subscription(2, before.date, 5, 0, thu_count: 1)
-    UpdateRssServiceNew.init_subscription(subscription2, true, before)
+    UpdateRssService.init_subscription(subscription2, true, before)
 
     now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
-    UpdateRssServiceNew.update_for_user(subscription1.user_id, now)
+    UpdateRssService.update_for_user(subscription1.user_id, now)
 
     actual_sub1_body = SubscriptionRss.find_by(subscription_id: subscription1.id).body
     expected_sub1_body = <<-BODY
@@ -864,11 +864,11 @@ class UpdateRssServiceNewTest < ActiveSupport::TestCase
   test "evict welcome" do
     before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
     subscription = create_subscription(1, before.date, 6, 4, fri_count: 1)
-    UpdateRssServiceNew.init_subscription(subscription, true, before)
+    UpdateRssService.init_subscription(subscription, true, before)
 
     now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
-    silence_warnings { UpdateRssServiceNew::POSTS_IN_RSS = 5 }
-    UpdateRssServiceNew.update_for_user(subscription.user_id, now)
+    silence_warnings { UpdateRssService::POSTS_IN_RSS = 5 }
+    UpdateRssService.update_for_user(subscription.user_id, now)
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -921,11 +921,11 @@ class UpdateRssServiceNewTest < ActiveSupport::TestCase
   test "finish with welcome" do
     before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
     subscription = create_subscription(1, before.date, 3, 2, fri_count: 1)
-    UpdateRssServiceNew.init_subscription(subscription, true, before)
+    UpdateRssService.init_subscription(subscription, true, before)
 
     now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
-    silence_warnings { UpdateRssServiceNew::POSTS_IN_RSS = 5 }
-    UpdateRssServiceNew.update_for_user(subscription.user_id, now)
+    silence_warnings { UpdateRssService::POSTS_IN_RSS = 5 }
+    UpdateRssService.update_for_user(subscription.user_id, now)
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -978,11 +978,11 @@ class UpdateRssServiceNewTest < ActiveSupport::TestCase
   test "finish without welcome" do
     before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
     subscription = create_subscription(1, before.date, 4, 3, fri_count: 1)
-    UpdateRssServiceNew.init_subscription(subscription, true, before)
+    UpdateRssService.init_subscription(subscription, true, before)
 
     now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
-    silence_warnings { UpdateRssServiceNew::POSTS_IN_RSS = 5 }
-    UpdateRssServiceNew.update_for_user(subscription.user_id, now)
+    silence_warnings { UpdateRssService::POSTS_IN_RSS = 5 }
+    UpdateRssService.update_for_user(subscription.user_id, now)
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -1035,11 +1035,11 @@ class UpdateRssServiceNewTest < ActiveSupport::TestCase
   test "finish without welcome and first post" do
     before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
     subscription = create_subscription(1, before.date, 5, 4, fri_count: 1)
-    UpdateRssServiceNew.init_subscription(subscription, true, before)
+    UpdateRssService.init_subscription(subscription, true, before)
 
     now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
-    silence_warnings { UpdateRssServiceNew::POSTS_IN_RSS = 5 }
-    UpdateRssServiceNew.update_for_user(subscription.user_id, now)
+    silence_warnings { UpdateRssService::POSTS_IN_RSS = 5 }
+    UpdateRssService.update_for_user(subscription.user_id, now)
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -1092,11 +1092,11 @@ class UpdateRssServiceNewTest < ActiveSupport::TestCase
   test "is_paused handling" do
     before = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
     subscription = create_subscription(1, before.date, 5, 0, fri_count: 1)
-    UpdateRssServiceNew.init_subscription(subscription, true, before)
+    UpdateRssService.init_subscription(subscription, true, before)
     subscription.update_attribute(:is_paused, true)
 
     now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
-    UpdateRssServiceNew.update_for_user(subscription.user_id, now)
+    UpdateRssService.update_for_user(subscription.user_id, now)
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -1127,10 +1127,10 @@ class UpdateRssServiceNewTest < ActiveSupport::TestCase
 
     date3 = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-05 00:00:00"))
     subscription3 = create_subscription(3, date3.date, 1, 1, sat_count: 1)
-    UpdateRssServiceNew.init_subscription(subscription3, true, date3)
+    UpdateRssService.init_subscription(subscription3, true, date3)
 
     now = ScheduleHelper::ScheduleDate.new(DateTime.parse("2022-05-06 00:00:00"))
-    UpdateRssServiceNew.update_for_user(subscription1.user_id, now)
+    UpdateRssService.update_for_user(subscription1.user_id, now)
 
     actual_user_body = UserRss.find_by(user_id: subscription1.user.id).body
     # Sorted by publish date desc, sub date desc, post index desc

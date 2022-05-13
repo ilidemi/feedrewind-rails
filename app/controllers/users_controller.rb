@@ -19,7 +19,7 @@ class UsersController < ApplicationController
 
       if @user.save
         unless existing_user
-          UpdateRssJobNew.schedule_for_tomorrow(@user.id)
+          UpdateRssJob.schedule_for_tomorrow(@user.id)
         end
 
         session[:user_id] = @user.id

@@ -34,7 +34,7 @@ class AdminTestController < ApplicationController
 
   def run_update_rss_job
     fill_current_user
-    UpdateRssJobNew.new.perform(@current_user.id, true)
+    UpdateRssJob.new.perform(@current_user.id, true)
     render plain: "OK"
   end
 

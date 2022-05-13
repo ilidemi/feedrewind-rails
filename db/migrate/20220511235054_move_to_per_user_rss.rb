@@ -2,7 +2,7 @@ class MoveToPerUserRss < ActiveRecord::Migration[6.1]
   def up
     execute "delete from delayed_jobs where handler like '%job_class: UpdateRssJob%'"
     User.all.each do |user|
-      UpdateRssJobNew.schedule_for_tomorrow(user.id)
+      UpdateRssJob.schedule_for_tomorrow(user.id)
     end
   end
 

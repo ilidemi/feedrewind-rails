@@ -373,10 +373,10 @@ class SubscriptionsController < ApplicationController
 
       if ScheduleHelper.now.is_early_morning
         # People setting up a blog just after midnight should get the first post same day
-        UpdateRssServiceNew.init_subscription(@subscription, true, now)
+        UpdateRssService.init_subscription(@subscription, true, now)
         @subscription.is_added_past_midnight = true
       else
-        UpdateRssServiceNew.init_subscription(@subscription, false, now)
+        UpdateRssService.init_subscription(@subscription, false, now)
         @subscription.is_added_past_midnight = false
       end
 

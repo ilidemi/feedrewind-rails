@@ -1,4 +1,4 @@
-class UpdateRssJobNew < ApplicationJob
+class UpdateRssJob < ApplicationJob
   queue_as :default
 
   def perform(user_id, is_manual = false)
@@ -32,10 +32,10 @@ class UpdateRssJobNew < ApplicationJob
       end
     end
 
-    UpdateRssServiceNew.update_for_user(user_id, now)
+    UpdateRssService.update_for_user(user_id, now)
 
     unless is_manual
-      UpdateRssJobNew.schedule_for_tomorrow(user_id)
+      UpdateRssJob.schedule_for_tomorrow(user_id)
     end
   end
 end

@@ -1,18 +1,18 @@
 require 'digest'
 require 'ox'
 
-module UpdateRssServiceNew
+module UpdateRssService
   POSTS_IN_RSS = 30
 
-  def UpdateRssServiceNew.init_subscription(subscription, should_publish_posts, now)
+  def UpdateRssService.init_subscription(subscription, should_publish_posts, now)
     update(subscription.user_id, now, should_publish_posts ? subscription.id : :none)
   end
 
-  def UpdateRssServiceNew.update_for_user(user_id, now)
+  def UpdateRssService.update_for_user(user_id, now)
     update(user_id, now, :all)
   end
 
-  def UpdateRssServiceNew.update(user_id, now, publish_posts_for)
+  def UpdateRssService.update(user_id, now, publish_posts_for)
     sha256 = Digest::SHA256.new
 
     User.transaction do
