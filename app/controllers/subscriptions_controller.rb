@@ -1,6 +1,7 @@
 require 'json'
 require 'set'
 require 'timeout'
+require 'tzinfo'
 require_relative '../jobs/guided_crawling_job'
 require_relative '../lib/guided_crawling/crawling'
 require_relative '../lib/guided_crawling/http_client'
@@ -93,7 +94,7 @@ class SubscriptionsController < ApplicationController
     @current_counts_by_day = query_result.rows[1..].to_h { |row| [row[10], row[11]] }
     @other_sub_names_by_day = get_other_sub_names_by_day(@subscription.id)
     @days_of_week = DAYS_OF_WEEK
-    @schedule_preview = get_schedule_preview(@subscription)
+    @schedule_preview = get_schedule_preview(@subscription, @current_user)
   end
 
   def create
@@ -165,7 +166,40 @@ class SubscriptionsController < ApplicationController
     if @subscription.status == "setup" && @current_user
       @other_sub_names_by_day = get_other_sub_names_by_day(@subscription.id)
       @days_of_week = DAYS_OF_WEEK
-      @schedule_preview = get_schedule_preview(@subscription)
+      @schedule_preview = get_schedule_preview(@subscription, @current_user)
+    end
+
+    if @subscription.status == "live"
+      published_count = @subscription.subscription_posts.where("published_at is not null").length
+      if published_count == 1
+        @arrival_message = :arrived_one
+      elsif published_count > 1
+        @arrival_message = :arrived_many
+      else
+        enabled_days_of_week = @subscription
+          .schedules
+          .where("count > 0")
+          .to_h { |schedule| [schedule.day_of_week, schedule.count] }
+        utc_now = DateTime.now.utc
+        timezone = TZInfo::Timezone.get(@current_user.user_settings.timezone)
+        local_date = timezone.utc_to_local(utc_now).to_date
+        local_date_str = ScheduleHelper::date_str(local_date)
+
+        next_job_schedule_date = UpdateRssJob::get_next_scheduled_date(@current_user.id)
+        job_already_ran = next_job_schedule_date > local_date_str
+        first_schedule_date = job_already_ran ? local_date.next_day : local_date
+        until enabled_days_of_week.include?(ScheduleHelper.day_of_week(first_schedule_date))
+          first_schedule_date = first_schedule_date.next_day
+        end
+
+        @will_arrive_date = first_schedule_date.strftime("%A, %B %-d") + first_schedule_date.day.ordinal
+
+        if enabled_days_of_week[ScheduleHelper.day_of_week(first_schedule_date)] == 1
+          @arrival_message = :will_arrive_one
+        else
+          @arrival_message = :will_arrive_many
+        end
+      end
     end
   end
 
@@ -364,23 +398,36 @@ class SubscriptionsController < ApplicationController
         )
       end
 
-      now = ScheduleHelper.now
+      utc_now = DateTime.now.utc
+
       @subscription.name = schedule_params[:name]
       @subscription.status = "live"
-      @subscription.finished_setup_at = now.date
+      @subscription.finished_setup_at = utc_now
       @subscription.version = 1
+
+      timezone = TZInfo::Timezone.get(@current_user.user_settings.timezone)
+      local_datetime = timezone.utc_to_local(utc_now)
+      local_date_str = ScheduleHelper.date_str(local_datetime)
+
+      # People setting up a blog after the job has run but still in the early morning should get the first
+      # post right away. Controller action and UpdateRssJob are racing around the job execution time, so
+      # locking the user job while the subscription is being saved.
+      job_ids = UpdateRssJob.lock(@current_user.id)
+      Rails.logger.info("Locked UpdateRssJob #{job_ids}")
+
+      sleep 10
+
+      next_job_schedule_date = UpdateRssJob.get_next_scheduled_date(@current_user.id)
+      job_already_ran = next_job_schedule_date > local_date_str
+      is_added_past_midnight = ScheduleHelper.is_early_morning(local_datetime)
+      should_publish_posts = job_already_ran && is_added_past_midnight
+      local_date = local_datetime.to_date
+
+      @subscription.is_added_past_midnight = is_added_past_midnight
       @subscription.save! # so that rss update can pick it up
 
-      if ScheduleHelper.now.is_early_morning
-        # People setting up a blog just after midnight should get the first post same day
-        UpdateRssService.init_subscription(@subscription, true, now)
-        @subscription.is_added_past_midnight = true
-      else
-        UpdateRssService.init_subscription(@subscription, false, now)
-        @subscription.is_added_past_midnight = false
-      end
-
-      @subscription.save!
+      UpdateRssService.init_subscription(@subscription, should_publish_posts, utc_now, local_date)
+      Rails.logger.info("Unlocked UpdateRssJob #{job_ids}")
     end
 
     redirect_to action: "setup", id: @subscription.id
@@ -547,14 +594,14 @@ class SubscriptionsController < ApplicationController
   PrevPost = Struct.new(:url, :title, :published_date, keyword_init: true)
   NextPost = Struct.new(:url, :title, keyword_init: true)
 
-  def get_schedule_preview(subscription)
+  def get_schedule_preview(subscription, user)
     query = <<-SQL
       (
         select
           'prev_post' as tag,
           url,
           title,
-          published_at at time zone 'UTC' at time zone $2 as published_at,
+          published_at_local_date,
           null::bigint as count
         from subscription_posts
         join (select id, url, title, index from blog_posts) as blog_posts on blog_posts.id = blog_post_id 
@@ -562,7 +609,7 @@ class SubscriptionsController < ApplicationController
         order by index desc
         limit 2
       ) UNION ALL (
-        select 'next_post' as tag, url, title, published_at, null as count
+        select 'next_post' as tag, url, title, published_at_local_date, null as count
         from subscription_posts
         join (select id, url, title, index from blog_posts) as blog_posts on blog_posts.id = blog_post_id 
         where subscription_id = $1 and published_at is null
@@ -576,9 +623,7 @@ class SubscriptionsController < ApplicationController
         where subscription_id = $1
       )
     SQL
-    query_result = ActiveRecord::Base.connection.exec_query(
-      query, "SQL", [subscription.id, ScheduleHelper::ScheduleDate::PSQL_PACIFIC_TIME_ZONE]
-    )
+    query_result = ActiveRecord::Base.connection.exec_query(query, "SQL", [subscription.id])
 
     prev_posts = []
     next_posts = []
@@ -590,7 +635,7 @@ class SubscriptionsController < ApplicationController
         prev_posts << PrevPost.new(
           url: row[1],
           title: row[2],
-          published_date: row[3].strftime("%Y-%m-%d")
+          published_date: row[3]
         )
       elsif row[0] == "next_post"
         next_posts << NextPost.new(
@@ -619,22 +664,20 @@ class SubscriptionsController < ApplicationController
       next_posts = next_posts[...-1]
     end
 
-    today = ScheduleHelper.now
-    is_schedule_set_up = subscription.is_added_past_midnight != nil
-    are_any_published_today = prev_posts.any? { |post| post.published_date == today.date_str }
+    utc_now = DateTime.now.utc
+    timezone = TZInfo::Timezone.get(user.user_settings.timezone)
+    local_datetime = timezone.utc_to_local(utc_now)
+    local_date_str = ScheduleHelper::date_str(local_datetime)
 
-    if (!is_schedule_set_up && today.is_early_morning) ||
-      (is_schedule_set_up && !are_any_published_today && !prev_posts.empty?)
-      next_schedule_time = today
+    if subscription.status != "live" && ScheduleHelper::is_early_morning(local_datetime)
+      next_schedule_date = local_date_str
     else
-      next_schedule_time = today.advance_till_midnight
+      next_schedule_date = UpdateRssJob::get_next_scheduled_date(user.id)
     end
-
-    today_date = today.date_str
-    next_schedule_date = next_schedule_time.date_str
+    Rails.logger.info("Next schedule date: #{next_schedule_date}")
 
     SchedulePreview.new(
-      prev_posts, next_posts, prev_has_more, next_has_more, today_date, next_schedule_date
+      prev_posts, next_posts, prev_has_more, next_has_more, local_date_str, next_schedule_date
     )
   end
 end

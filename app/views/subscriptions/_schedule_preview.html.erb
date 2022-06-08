@@ -1,4 +1,4 @@
-<div class="flex flex-col gap-1.5">
+<div id="schedule_preview" class="flex flex-col gap-1.5">
   <div class="font-semibold">Preview</div>
   <table class="table-auto w-fit">
     <thead>
@@ -9,7 +9,7 @@
     </thead>
 
     <% if schedule_preview.prev_has_more %>
-      <tr class="bg-gray-50 text-gray-500">
+      <tr class="bg-gray-50 text-gray-500 prev_post">
         <td class="py-0.75 px-0 align-text-top">…</td>
         <td class="py-0.75 pl-6 pr-0 align-text-top">…</td>
       </tr>
@@ -17,7 +17,7 @@
 
     <% unless schedule_preview.prev_posts.empty? %>
       <% schedule_preview.prev_posts.each do |post| %>
-        <tr class="bg-gray-50">
+        <tr class="bg-gray-50 prev_post">
           <td class="py-0.75 px-0 align-text-top line-clamp-2">
             <a class="link text-gray-500" href="<%= post.url %>" target="_blank"><%= post.title %></a>
           </td>
@@ -30,7 +30,7 @@
     <% end %>
 
     <% schedule_preview.next_posts.each do |post| %>
-      <tr>
+      <tr class="next_post">
         <td class="py-0.75 px-0 align-text-top line-clamp-2">
           <a class="link text-black" href="<%= post.url %>" target="_blank"><%= post.title %></a>
         </td>
@@ -42,7 +42,7 @@
     <% end %>
 
     <% if schedule_preview.next_has_more %>
-      <tr class="text-gray-500">
+      <tr class="text-gray-500 next_post">
         <td class="py-0.75 px-0 align-text-top">…</td>
         <td class="py-0.75 pl-6 pr-0 align-text-top">…</td>
       </tr>

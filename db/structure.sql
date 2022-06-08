@@ -130,25 +130,6 @@ CREATE TABLE public.blog_canonical_equality_configs (
 
 
 --
--- Name: blog_canonical_equality_configs_blog_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.blog_canonical_equality_configs_blog_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: blog_canonical_equality_configs_blog_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.blog_canonical_equality_configs_blog_id_seq OWNED BY public.blog_canonical_equality_configs.blog_id;
-
-
---
 -- Name: blog_crawl_client_tokens; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -252,25 +233,6 @@ CREATE TABLE public.blog_post_locks (
 
 
 --
--- Name: blog_post_locks_blog_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.blog_post_locks_blog_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: blog_post_locks_blog_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.blog_post_locks_blog_id_seq OWNED BY public.blog_post_locks.blog_id;
-
-
---
 -- Name: blog_posts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -323,25 +285,6 @@ CREATE TABLE public.blogs (
 
 
 --
--- Name: blogs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.blogs_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: blogs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.blogs_id_seq OWNED BY public.blogs.id;
-
-
---
 -- Name: delayed_jobs; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -378,6 +321,17 @@ CREATE SEQUENCE public.delayed_jobs_id_seq
 --
 
 ALTER SEQUENCE public.delayed_jobs_id_seq OWNED BY public.delayed_jobs.id;
+
+
+--
+-- Name: last_time_travels; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.last_time_travels (
+    id bigint NOT NULL,
+    last_command_id bigint,
+    "timestamp" timestamp without time zone
+);
 
 
 --
@@ -439,25 +393,6 @@ CREATE TABLE public.start_feeds (
 
 
 --
--- Name: start_feeds_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.start_feeds_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: start_feeds_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.start_feeds_id_seq OWNED BY public.start_feeds.id;
-
-
---
 -- Name: start_pages; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -500,7 +435,8 @@ CREATE TABLE public.subscription_posts (
     subscription_id bigint NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    published_at timestamp without time zone
+    published_at timestamp without time zone,
+    published_at_local_date character varying
 );
 
 
@@ -577,25 +513,6 @@ CREATE TABLE public.subscriptions (
 
 
 --
--- Name: subscriptions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.subscriptions_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: subscriptions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.subscriptions_id_seq OWNED BY public.subscriptions.id;
-
-
---
 -- Name: user_rsses; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -604,6 +521,18 @@ CREATE TABLE public.user_rsses (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     user_id bigint NOT NULL
+);
+
+
+--
+-- Name: user_settings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_settings (
+    user_id bigint NOT NULL,
+    timezone character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
 );
 
 
@@ -622,13 +551,6 @@ CREATE TABLE public.users (
 
 
 --
--- Name: blog_canonical_equality_configs blog_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.blog_canonical_equality_configs ALTER COLUMN blog_id SET DEFAULT nextval('public.blog_canonical_equality_configs_blog_id_seq'::regclass);
-
-
---
 -- Name: blog_crawl_votes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -643,24 +565,10 @@ ALTER TABLE ONLY public.blog_discarded_feed_entries ALTER COLUMN id SET DEFAULT 
 
 
 --
--- Name: blog_post_locks blog_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.blog_post_locks ALTER COLUMN blog_id SET DEFAULT nextval('public.blog_post_locks_blog_id_seq'::regclass);
-
-
---
 -- Name: blog_posts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.blog_posts ALTER COLUMN id SET DEFAULT nextval('public.blog_posts_id_seq'::regclass);
-
-
---
--- Name: blogs id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.blogs ALTER COLUMN id SET DEFAULT nextval('public.blogs_id_seq'::regclass);
 
 
 --
@@ -675,13 +583,6 @@ ALTER TABLE ONLY public.delayed_jobs ALTER COLUMN id SET DEFAULT nextval('public
 --
 
 ALTER TABLE ONLY public.schedules ALTER COLUMN id SET DEFAULT nextval('public.schedules_id_seq'::regclass);
-
-
---
--- Name: start_feeds id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.start_feeds ALTER COLUMN id SET DEFAULT nextval('public.start_feeds_id_seq'::regclass);
 
 
 --
@@ -703,13 +604,6 @@ ALTER TABLE ONLY public.subscription_posts ALTER COLUMN id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.subscription_rsses ALTER COLUMN id SET DEFAULT nextval('public.subscription_rsses_id_seq'::regclass);
-
-
---
--- Name: subscriptions id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.subscriptions ALTER COLUMN id SET DEFAULT nextval('public.subscriptions_id_seq'::regclass);
 
 
 --
@@ -793,6 +687,14 @@ ALTER TABLE ONLY public.delayed_jobs
 
 
 --
+-- Name: last_time_travels last_time_travels_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.last_time_travels
+    ADD CONSTRAINT last_time_travels_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: schedules schedules_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -854,6 +756,14 @@ ALTER TABLE ONLY public.subscriptions
 
 ALTER TABLE ONLY public.user_rsses
     ADD CONSTRAINT user_rsses_pkey PRIMARY KEY (user_id);
+
+
+--
+-- Name: user_settings user_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_settings
+    ADD CONSTRAINT user_settings_pkey PRIMARY KEY (user_id);
 
 
 --
@@ -997,6 +907,14 @@ ALTER TABLE ONLY public.subscriptions
 
 
 --
+-- Name: user_settings fk_rails_d1371c6356; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_settings
+    ADD CONSTRAINT fk_rails_d1371c6356 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: subscription_posts fk_rails_d857bf4496; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1104,6 +1022,17 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220513002103'),
 ('20220513002912'),
 ('20220513010057'),
-('20220513015140');
+('20220513015140'),
+('20220518233013'),
+('20220519004059'),
+('20220519014120'),
+('20220521001101'),
+('20220521002554'),
+('20220602184712'),
+('20220608213556'),
+('20220608214452'),
+('20220608215044'),
+('20220608215349'),
+('20220608215533');
 
 

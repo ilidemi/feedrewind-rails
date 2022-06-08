@@ -53,7 +53,13 @@
         <%= render partial: "setup_subscription_presenting_goods", locals: { subscription: @subscription } %>
       <% end %>
     <% elsif @subscription.status == "live" %>
-      <%= render partial: "setup_subscription_heres_feed", locals: { subscription: @subscription } %>
+      <%= render partial: "setup_subscription_heres_feed",
+                 locals: {
+                   subscription: @subscription,
+                   arrival_message: @arrival_message,
+                   will_arrive_date: @will_arrive_date
+                 }
+      %>
     <% else %>
       <%= raise "Unexpected subscription status: #{@subscription.status}" %>
     <% end %>

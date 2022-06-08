@@ -91,6 +91,7 @@ class Blog < ApplicationRecord
       if new_links
         Rails.logger.info("Updating blog #{start_feed.final_url} from feed with #{new_links.length} new links")
         begin
+          utc_now = DateTime.now.utc
           blog.blog_post_lock.with_lock("for update nowait") do
             index_offset = blog.blog_posts.maximum(:index) + 1
             blog_posts_fields = new_links.reverse.map.with_index do |link, index|
@@ -99,8 +100,8 @@ class Blog < ApplicationRecord
                 index: index + index_offset,
                 url: link.url,
                 title: link.title.value,
-                created_at: now,
-                updated_at: now
+                created_at: utc_now,
+                updated_at: utc_now
               }
             end
             BlogPost.insert_all!(blog_posts_fields)
@@ -167,15 +168,15 @@ class Blog < ApplicationRecord
     Blog.transaction do
       posts_count = urls_titles.length
 
-      now = Time.current
+      utc_now = DateTime.now.utc
       blog_posts_fields = urls_titles.map.with_index do |url_title, index|
         {
           blog_id: self.id,
           index: posts_count - index - 1,
           url: url_title[:url],
           title: url_title[:title],
-          created_at: now,
-          updated_at: now
+          created_at: utc_now,
+          updated_at: utc_now
         }
       end
       BlogPost.insert_all!(blog_posts_fields)

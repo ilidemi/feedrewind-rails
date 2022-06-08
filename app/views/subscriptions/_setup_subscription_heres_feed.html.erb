@@ -39,31 +39,17 @@
   </div>
 
   <div class="flex flex-col gap-1">
-    <% published_count = subscription.subscription_posts.where("published_at is not null").length %>
-    <% if published_count == 1 %>
-      <p>First entry has already arrived.</p>
-    <% elsif published_count > 1 %>
-      <p>First entries have already arrived.</p>
-    <% else %>
-      <%
-        enabled_days_of_week = subscription
-          .schedules
-          .where("count > 0")
-          .to_h { |schedule| [schedule.day_of_week, schedule.count] }
-        first_schedule_date = ScheduleHelper.now.advance_till_midnight
-        until enabled_days_of_week.include?(first_schedule_date.day_of_week)
-          first_schedule_date = first_schedule_date.advance_till_midnight
-        end
-
-        next_enabled_day_of_week_str = first_schedule_date.date.strftime("%A, %B %-d")
-      %>
-
-      <% if enabled_days_of_week[first_schedule_date.day_of_week] == 1 %>
-        <p>First entry will arrive on <%= next_enabled_day_of_week_str %> after midnight.</p>
+    <div id="arrival_msg">
+      <% if arrival_message == :arrived_one %>
+        <p>First entry has already arrived.</p>
+      <% elsif arrival_message == :arrived_many %>
+        <p>First entries have already arrived.</p>
+      <% elsif arrival_message == :will_arrive_one %>
+        <p>First entry will arrive <%= will_arrive_date %> in the morning.</p>
       <% else %>
-        <p>First entries will arrive on <%= next_enabled_day_of_week_str %> after midnight.</p>
+        <p>First entries will arrive <%= will_arrive_date %> in the morning.</p>
       <% end %>
-    <% end %>
+    </div>
 
     <p class="inline-flex flex-row gap-2">
       <%= link_to subscriptions_path, class: "btn-secondary bg-gray-50 inline-flex flex-row gap-1 items-center" do %>

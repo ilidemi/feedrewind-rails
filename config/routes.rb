@@ -42,13 +42,17 @@ Rails.application.routes.draw do
   post "/admin/post_blog", to: "admin#post_blog"
 
   if Rails.env.development? || Rails.env.test?
-    get "/test/travel_to_1am", to: "admin_test#travel_to_1am"
-    get "/test/travel_to_12pm", to: "admin_test#travel_to_12pm"
-    get "/test/travel_1day", to: "admin_test#travel_1day"
     get "/test/travel_31days", to: "admin_test#travel_31days"
     get "/test/travel_back", to: "admin_test#travel_back"
-    get "/test/run_update_rss_job", to: "admin_test#run_update_rss_job"
+    get "/test/reschedule_update_rss_job", to: "admin_test#reschedule_update_rss_job"
     get "/test/run_reset_failed_blogs_job", to: "admin_test#run_reset_failed_blogs_job"
+    get "/test/destroy_user", to: "admin_test#destroy_user"
+    get "/test/destroy_user_subscriptions", to: "admin_test#destroy_user_subscriptions"
+    get "/test/user_timezone", to: "admin_test#user_timezone"
+    get "/test/travel_to_v2", to: "admin_test#travel_to_v2"
+    get "/test/travel_back_v2", to: "admin_test#travel_back_v2"
+    get "/test/wait_for_update_rss_job", to: "admin_test#wait_for_update_rss_job"
+    get "/test/execute_sql", to: "admin_test#execute_sql"
   end
 
   mount ActionCable.server => "/cable"

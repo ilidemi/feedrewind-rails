@@ -4,15 +4,16 @@ require 'ox'
 module UpdateRssService
   POSTS_IN_RSS = 30
 
-  def UpdateRssService.init_subscription(subscription, should_publish_posts, now)
-    update(subscription.user_id, now, should_publish_posts ? subscription.id : :none)
+  def UpdateRssService.init_subscription(subscription, should_publish_posts, utc_now, local_date)
+    publish_posts_for = should_publish_posts ? subscription.id : :none
+    update(subscription.user_id, utc_now, local_date, publish_posts_for)
   end
 
-  def UpdateRssService.update_for_user(user_id, now)
-    update(user_id, now, :all)
+  def UpdateRssService.update_for_user(user_id, utc_now, local_date)
+    update(user_id, utc_now, local_date, :all)
   end
 
-  def UpdateRssService.update(user_id, now, publish_posts_for)
+  def UpdateRssService.update(user_id, utc_now, local_date, publish_posts_for)
     sha256 = Digest::SHA256.new
 
     User.transaction do
@@ -27,7 +28,7 @@ module UpdateRssService
 
       subscriptions.each do |subscription|
         Rails.logger.info("Subscription #{subscription.id} (#{subscription.name})")
-        schedule = subscription.schedules.find_by(day_of_week: now.day_of_week)
+        schedule = subscription.schedules.find_by(day_of_week: ScheduleHelper::day_of_week(local_date))
         subscription_blog_posts = subscription
           .subscription_posts
           .includes(:blog_post)
@@ -54,7 +55,8 @@ module UpdateRssService
         new_user_items_count += subscription_posts_to_publish.length
 
         subscription_posts_to_publish.each do |subscription_post|
-          subscription_post.published_at = now.date
+          subscription_post.published_at = utc_now
+          subscription_post.published_at_local_date = ScheduleHelper::date_str(local_date)
         end
         subscription_posts = subscription_posts_last_published + subscription_posts_to_publish
 
@@ -63,7 +65,7 @@ module UpdateRssService
 
         if subscription_posts_to_publish.length == subscription_blog_posts_unpublished_count
           Rails.logger.info("Publishing final item")
-          subscription.final_item_published_at = now.date if subscription.final_item_published_at.nil?
+          subscription.final_item_published_at = utc_now if subscription.final_item_published_at.nil?
           subscription_add_url = SubscriptionsHelper.subscription_add_url
           final_item = generate_rss_item(
             title: "You're all caught up with #{subscription.name}",

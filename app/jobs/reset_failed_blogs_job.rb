@@ -2,15 +2,14 @@ class ResetFailedBlogsJob < ApplicationJob
   queue_as "reset_failed_blogs"
 
   def perform(enqueue_next)
-    cutoff = ScheduleHelper
-      .now
-      .date
-      .advance(days: -30)
+    utc_now = DateTime.now.utc
+    cutoff = utc_now.advance(days: -30)
 
     Blog::reset_failed_blogs(cutoff)
 
     if enqueue_next
-      ResetFailedBlogsJob.schedule_for_tomorrow(true)
+      next_run = utc_now.advance(days: 1).midnight
+      ResetFailedBlogsJob.set(wait_until: next_run).perform_later(true)
     end
   end
 end

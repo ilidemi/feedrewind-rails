@@ -49,6 +49,17 @@
           </span>
         </div>
       </div>
+
+      <%= hidden_field_tag "timezone" %>
+      <script>
+        document.getElementById("timezone").value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      </script>
+
+      <%= hidden_field_tag "time_offset" %>
+      <script>
+          document.getElementById("time_offset").value = new Date().getTimezoneOffset();
+      </script>
+
       <%= submit_tag "Sign up", class: "btn" %>
     </div>
   <% end %>
