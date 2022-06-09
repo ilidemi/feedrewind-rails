@@ -19,7 +19,7 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   end
 
   def visit_admin_sql(query)
-    escaped_query = Addressable::URI.escape(query)
+    escaped_query = Addressable::URI.encode_component(query, Addressable::URI::CharacterClasses::UNRESERVED)
     visit_admin("execute_sql?query=#{escaped_query}")
     JSON.parse(page.document.text)
   end
