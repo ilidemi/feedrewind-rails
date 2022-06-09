@@ -412,10 +412,9 @@ class SubscriptionsController < ApplicationController
       # People setting up a blog after the job has run but still in the early morning should get the first
       # post right away. Controller action and UpdateRssJob are racing around the job execution time, so
       # locking the user job while the subscription is being saved.
+      Rails.logger.info("Locking UpdateRssJob")
       job_ids = UpdateRssJob.lock(@current_user.id)
       Rails.logger.info("Locked UpdateRssJob #{job_ids}")
-
-      sleep 10
 
       next_job_schedule_date = UpdateRssJob.get_next_scheduled_date(@current_user.id)
       job_already_ran = next_job_schedule_date > local_date_str
@@ -528,7 +527,7 @@ class SubscriptionsController < ApplicationController
     admin_votes = []
     other_votes = Set.new
     blog_votes.each do |vote|
-      if Rails.configuration.admin_user_ids.include?(vote.user_id)
+      if Rails.configuration.admin_emails.include?(vote.user_id)
         admin_votes << [vote.user_id, vote.value]
       else
         other_votes << [vote.user_id, vote.value]
