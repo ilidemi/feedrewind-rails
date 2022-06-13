@@ -17,13 +17,6 @@ db_output = %x[wsl cat #{db_path}]
 db_replaced_ip = /host: "(\d+\.\d+\.\d+\.\d+)"/.match(db_output)[1]
 puts "DB IP: #{db_replaced_ip}"
 
-data_sources_path = "../../.idea/dataSources.xml"
-%x[wsl sed -i "s/rss_catchup_analysis@[0-9]\\+\\\\.[0-9]\\+\\\\.[0-9]\\+\\\\.[0-9]\\+/rss_catchup_analysis@#{ip}/g" #{data_sources_path}]
-%x[wsl sed -i "s/[0-9]\\+\\\\.[0-9]\\+\\\\.[0-9]\\+\\\\.[0-9]\\+:5432\\/rss_catchup_analysis/#{ip}:5432\\/rss_catchup_analysis/g" #{data_sources_path}]
-data_sources_output = %x[wsl cat #{data_sources_path}]
-data_sources_replaced_ip = /(\d+\.\d+\.\d+\.\d+):5432\/rss_catchup_analysis/.match(data_sources_output)[1]
-puts "Data Sources IP: #{data_sources_replaced_ip}"
-
 database_yml_path = "../../config/database.yml"
 %x[wsl sudo sed -i "s/host: [0-9]\\+\\\\.[0-9]\\+\\\\.[0-9]\\+\\\\.[0-9]\\+/host: #{ip}/g" #{database_yml_path}]
 database_yml_output = %x[wsl cat #{database_yml_path}]
