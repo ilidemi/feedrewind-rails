@@ -185,9 +185,9 @@ class SubscriptionsController < ApplicationController
         local_date = timezone.utc_to_local(utc_now).to_date
         local_date_str = ScheduleHelper::date_str(local_date)
 
-        next_job_schedule_date = UpdateRssJob::get_next_scheduled_date(@current_user.id)
-        job_already_ran = next_job_schedule_date > local_date_str
-        first_schedule_date = job_already_ran ? local_date.next_day : local_date
+        next_job_schedule_date = get_realistic_next_scheduled_date(@current_user.id, local_date_str)
+        todays_job_already_ran = next_job_schedule_date > local_date_str
+        first_schedule_date = todays_job_already_ran ? local_date.next_day : local_date
         until enabled_days_of_week.include?(ScheduleHelper.day_of_week(first_schedule_date))
           first_schedule_date = first_schedule_date.next_day
         end
@@ -418,17 +418,17 @@ class SubscriptionsController < ApplicationController
 
         # If subscription got added early morning, the first post needs to go out the same day, either via the
         # daily job or right away if the job has already ran
-        next_job_schedule_date = UpdateRssJob.get_next_scheduled_date(@current_user.id)
-        job_already_ran = next_job_schedule_date > local_date_str
-        is_added_past_midnight = ScheduleHelper.is_early_morning(local_datetime)
-        should_publish_posts = job_already_ran && is_added_past_midnight
+        next_job_schedule_date = get_realistic_next_scheduled_date(@current_user.id, local_date_str)
+        todays_job_already_ran = next_job_schedule_date > local_date_str
+        is_added_early_morning = ScheduleHelper.is_early_morning(local_datetime)
+        should_publish_posts = todays_job_already_ran && is_added_early_morning
         local_date = local_datetime.to_date
 
         @subscription.name = schedule_params[:name]
         @subscription.status = "live"
         @subscription.finished_setup_at = utc_now
         @subscription.version = 1
-        @subscription.is_added_past_midnight = is_added_past_midnight
+        @subscription.is_added_past_midnight = is_added_early_morning
         @subscription.save! # so that rss update can pick it up
 
         UpdateRssService.init_subscription(@subscription, should_publish_posts, utc_now, local_date)
@@ -685,12 +685,22 @@ class SubscriptionsController < ApplicationController
     if subscription.status != "live" && ScheduleHelper::is_early_morning(local_datetime)
       next_schedule_date = local_date_str
     else
-      next_schedule_date = UpdateRssJob::get_next_scheduled_date(user.id)
+      next_schedule_date = get_realistic_next_scheduled_date(user.id, local_date_str)
     end
     Rails.logger.info("Next schedule date: #{next_schedule_date}")
 
     SchedulePreview.new(
       prev_posts, next_posts, prev_has_more, next_has_more, local_date_str, next_schedule_date
     )
+  end
+
+  def get_realistic_next_scheduled_date(user_id, local_date_str)
+    next_schedule_date = UpdateRssJob::get_next_scheduled_date(user_id)
+    if next_schedule_date < local_date_str
+      Rails.logger.warn("UpdateRssJob is scheduled in the past for user #{user_id}: #{next_schedule_date} (today is #{local_date_str})")
+      local_date_str
+    else
+      next_schedule_date
+    end
   end
 end
