@@ -1,0 +1,91 @@
+<div class="flex flex-col gap-6">
+  <div class="flex flex-col gap-1">
+    <div>
+      <%= link_to "← Dashboard",
+                  subscriptions_path,
+                  class: "text-sm link-secondary" %>
+    </div>
+    <h2>Settings</h2>
+  </div>
+
+  <div class="flex flex-col gap-1">
+    <div class="flex flex-row gap-[0.3125rem] items-center">
+      <div class="font-semibold">Time zone</div>
+      <div id="timezone_save_spinner" class="spinner spinner-light hidden"></div>
+    </div>
+    <%= select_tag "timezone",
+                   options_for_select(@timezone_options, @selected_option),
+                   class: "border border-gray-300 rounded-md max-w-full"
+    %>
+
+    <script>
+        let timezoneRequestsInFlight = 0;
+        let maxSeenVersion = <%= @user_settings.version %>;
+
+        function showSpinner() {
+            timezoneRequestsInFlight++;
+            let spinner = document.getElementById("timezone_save_spinner");
+            spinner.classList.remove("hidden");
+        }
+
+        function maybeHideSpinner() {
+            timezoneRequestsInFlight--;
+            if (timezoneRequestsInFlight === 0) {
+                let spinner = document.getElementById("timezone_save_spinner");
+                spinner.classList.add("hidden");
+            }
+        }
+
+        document.getElementById("timezone").addEventListener("change", async () => {
+            let newTimezone = document.getElementById("timezone").value;
+            showSpinner();
+            maxSeenVersion += 1;
+            const requestVersion = maxSeenVersion;
+
+            try {
+                const abortController = new AbortController();
+                const timeoutId = setTimeout(() => abortController.abort(), 30000);
+                let formData = new FormData();
+                formData.append("timezone", newTimezone);
+                formData.append("version", requestVersion);
+                const body = new URLSearchParams(formData);
+                const response = await fetch(
+                    "settings/save_timezone",
+                    {
+                        method: "post",
+                        headers: {
+                            "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: body,
+                        signal: abortController.signal
+                    }
+                );
+
+                if (response.status === 200) {
+                    clearTimeout(timeoutId);
+                    maybeHideSpinner();
+                } else if (response.status === 409) {
+                    const json = await response.json();
+                    clearTimeout(timeoutId);
+                    maybeHideSpinner();
+                    if (json.version >= maxSeenVersion) {
+                        showRefreshPopup("Settings are out of date. Please refresh the page.");
+                    }
+                    // If the version is older, we're expecting some other request to succeed
+                } else {
+                    clearTimeout(timeoutId);
+                    maybeHideSpinner();
+                    if (requestVersion === maxSeenVersion) {
+                        showRefreshPopup("Something went wrong. Please refresh the page.");
+                    }
+                    // If the version is older, we're expecting some other request to succeed
+                }
+            } catch (err) {
+                // Timeout
+                maybeHideSpinner();
+                showRefreshPopup("Something went wrong. Please refresh the page.");
+            }
+        });
+    </script>
+  </div>
+</div>

@@ -1,5 +1,5 @@
 <div>
-  <%= form_with url: SubscriptionsHelper.schedule_path(subscription), method: :post do %>
+  <form id="schedule_form">
     <div class="flex flex-col gap-6">
       <div class="flex flex-col gap-2">
         <%= label_tag :name, "Name", class: "font-semibold" %>
@@ -27,7 +27,12 @@
       <%= render partial: "schedule_preview", locals: { schedule_preview: schedule_preview } %>
 
       <div>
-        <%= submit_tag "Continue", id: "save", class: "btn" %>
+        <button id="save_button" type="button" class="btn-no-disable relative">
+          <div id="save_label">Continue</div>
+          <div id="save_spinner" class="absolute-center hidden">
+            <div class="spinner spinner-dark"></div>
+          </div>
+        </button>
       </div>
     </div>
 
@@ -37,9 +42,66 @@
 
         function validateForm() {
             let isFormValid = isNameValid && isScheduleValid
-            let saveButton = document.getElementById("save");
+            let saveButton = document.getElementById("save_button");
             saveButton.disabled = !isFormValid;
         }
+
+        function showSpinner() {
+            const button = document.getElementById("save_button");
+            button.classList.add("disabled");
+            const label = document.getElementById("save_label");
+            label.classList.add("invisible");
+            const spinner = document.getElementById("save_spinner");
+            spinner.classList.remove("hidden");
+            void spinner.offsetWidth; // trigger reflow
+        }
+
+        function hideSpinner() {
+            const button = document.getElementById("save_button");
+            button.classList.remove("disabled");
+            const label = document.getElementById("save_label");
+            label.classList.remove("invisible");
+            const spinner = document.getElementById("save_spinner");
+            spinner.classList.add("hidden");
+        }
+
+        document.getElementById("save_button").addEventListener("click", async () => {
+            let saveButton = document.getElementById("save_button");
+            saveButton.disabled = true;
+            showSpinner();
+
+            try {
+                const abortController = new AbortController();
+                const timeoutId = setTimeout(() => abortController.abort(), 30000);
+                const body = new URLSearchParams(new FormData(document.getElementById("schedule_form")));
+                const response = await fetch(
+                    "<%= SubscriptionsHelper.schedule_path(subscription) %>",
+                    {
+                        method: "post",
+                        headers: {
+                            "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: body,
+                        signal: abortController.signal
+                    }
+                );
+
+                if (response.status === 200) {
+                    const text = await response.text();
+                    clearTimeout(timeoutId);
+                    // No need to hide spinner as we're navigating away
+                    window.location = text;
+                } else {
+                    clearTimeout(timeoutId);
+                    hideSpinner();
+                    showRefreshPopup("Something went wrong. Please refresh the page.");
+                }
+            } catch (err) {
+                // Timeout
+                hideSpinner();
+                showRefreshPopup("Something went wrong. Please refresh the page.");
+            }
+        });
 
         let nameTimer;
         let nameChangeScheduleCallback = (_) => {
@@ -88,5 +150,5 @@
       js_validate_callback: "onValidateSchedule",
       js_set_name_change_callback: "setNameChangeScheduleCallback"
     } %>
-  <% end %>
+  </form>
 </div>

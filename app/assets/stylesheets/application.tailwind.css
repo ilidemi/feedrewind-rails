@@ -276,4 +276,39 @@
             transform: rotate(360deg);
         }
     }
+
+    @keyframes user-menu-appear {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 100;
+            transform: scale(1);
+        }
+    }
+
+    @keyframes user-menu-disappear {
+        from {
+            opacity: 100;
+            transform: scale(1);
+        }
+        to {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+    }
+
+    .user-menu-appear {
+        animation-name: user-menu-appear;
+        animation-duration: 100ms;
+        animation-timing-function: ease-out;
+    }
+
+    .user-menu-disappear {
+        animation-name: user-menu-disappear;
+        animation-duration: 75ms;
+        animation-timing-function: ease-in;
+    }
 }

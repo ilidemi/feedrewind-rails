@@ -376,60 +376,74 @@ class SubscriptionsController < ApplicationController
   end
 
   def schedule
-    Subscription.transaction do
-      schedule_params = params.permit(:id, :name, *DAY_COUNT_NAMES)
-      @subscription = @current_user.subscriptions.find_by(id: schedule_params[:id])
-      return redirect_from_not_found unless @subscription
-      return if @subscription.status != "setup"
+    # Initializing subscription feed may race with user's update rss job.
+    # If the job is already running, wait till it finishes, otherwise lock the row so it doesn't start
+    failed_lock_attempts = 0
+    loop do
+      result = ActiveRecord::Base.transaction do
+        Rails.logger.info("Locking UpdateRssJob")
+        jobs = UpdateRssJob.lock(@current_user.id)
+        Rails.logger.info("Locked UpdateRssJob #{jobs}")
 
-      counts_by_day = DAYS_OF_WEEK.zip(DAY_COUNT_NAMES).to_h do |day_of_week, day_count_name|
-        [day_of_week, schedule_params[day_count_name].to_i]
+        unless jobs.values.all?(&:nil?)
+          Rails.logger.info("Some jobs are running, unlocking #{jobs.keys}")
+          next
+        end
+
+        schedule_params = params.permit(:id, :name, *DAY_COUNT_NAMES)
+        @subscription = @current_user.subscriptions.find_by(id: schedule_params[:id])
+        return redirect_from_not_found unless @subscription
+        return if @subscription.status != "setup"
+
+        counts_by_day = DAYS_OF_WEEK.zip(DAY_COUNT_NAMES).to_h do |day_of_week, day_count_name|
+          [day_of_week, schedule_params[day_count_name].to_i]
+        end
+
+        total_count = counts_by_day
+          .values
+          .sum
+        raise "Expecting some count to not be zero" unless total_count > 0
+
+        counts_by_day.each do |day_of_week, count|
+          @subscription.schedules.create!(
+            day_of_week: day_of_week,
+            count: count
+          )
+        end
+
+        utc_now = DateTime.now.utc
+        timezone = TZInfo::Timezone.get(@current_user.user_settings.timezone)
+        local_datetime = timezone.utc_to_local(utc_now)
+        local_date_str = ScheduleHelper.date_str(local_datetime)
+
+        # If subscription got added early morning, the first post needs to go out the same day, either via the
+        # daily job or right away if the job has already ran
+        next_job_schedule_date = UpdateRssJob.get_next_scheduled_date(@current_user.id)
+        job_already_ran = next_job_schedule_date > local_date_str
+        is_added_past_midnight = ScheduleHelper.is_early_morning(local_datetime)
+        should_publish_posts = job_already_ran && is_added_past_midnight
+        local_date = local_datetime.to_date
+
+        @subscription.name = schedule_params[:name]
+        @subscription.status = "live"
+        @subscription.finished_setup_at = utc_now
+        @subscription.version = 1
+        @subscription.is_added_past_midnight = is_added_past_midnight
+        @subscription.save! # so that rss update can pick it up
+
+        UpdateRssService.init_subscription(@subscription, should_publish_posts, utc_now, local_date)
+        Rails.logger.info("Unlocked UpdateRssJob #{jobs.keys}")
+        render plain: SubscriptionsHelper.setup_path(@subscription)
       end
 
-      total_count = counts_by_day
-        .values
-        .sum
-      raise "Expecting some count to not be zero" unless total_count > 0
+      return result if result
 
-      counts_by_day.each do |day_of_week, count|
-        @subscription.schedules.create!(
-          day_of_week: day_of_week,
-          count: count
-        )
+      failed_lock_attempts += 1
+      if failed_lock_attempts >= 3
+        raise "Couldn't lock the job rows"
       end
-
-      utc_now = DateTime.now.utc
-
-      @subscription.name = schedule_params[:name]
-      @subscription.status = "live"
-      @subscription.finished_setup_at = utc_now
-      @subscription.version = 1
-
-      timezone = TZInfo::Timezone.get(@current_user.user_settings.timezone)
-      local_datetime = timezone.utc_to_local(utc_now)
-      local_date_str = ScheduleHelper.date_str(local_datetime)
-
-      # People setting up a blog after the job has run but still in the early morning should get the first
-      # post right away. Controller action and UpdateRssJob are racing around the job execution time, so
-      # locking the user job while the subscription is being saved.
-      Rails.logger.info("Locking UpdateRssJob")
-      job_ids = UpdateRssJob.lock(@current_user.id)
-      Rails.logger.info("Locked UpdateRssJob #{job_ids}")
-
-      next_job_schedule_date = UpdateRssJob.get_next_scheduled_date(@current_user.id)
-      job_already_ran = next_job_schedule_date > local_date_str
-      is_added_past_midnight = ScheduleHelper.is_early_morning(local_datetime)
-      should_publish_posts = job_already_ran && is_added_past_midnight
-      local_date = local_datetime.to_date
-
-      @subscription.is_added_past_midnight = is_added_past_midnight
-      @subscription.save! # so that rss update can pick it up
-
-      UpdateRssService.init_subscription(@subscription, should_publish_posts, utc_now, local_date)
-      Rails.logger.info("Unlocked UpdateRssJob #{job_ids}")
+      sleep(1)
     end
-
-    redirect_to action: "setup", id: @subscription.id
   end
 
   def pause
@@ -527,7 +541,7 @@ class SubscriptionsController < ApplicationController
     admin_votes = []
     other_votes = Set.new
     blog_votes.each do |vote|
-      if Rails.configuration.admin_emails.include?(vote.user_id)
+      if Rails.configuration.admin_user_ids.include?(vote.user_id)
         admin_votes << [vote.user_id, vote.value]
       else
         other_votes << [vote.user_id, vote.value]

@@ -532,7 +532,8 @@ CREATE TABLE public.user_settings (
     user_id bigint NOT NULL,
     timezone character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    version integer NOT NULL
 );
 
 
@@ -1033,6 +1034,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220608214452'),
 ('20220608215044'),
 ('20220608215349'),
-('20220608215533');
+('20220608215533'),
+('20220613192525');
 
 

@@ -8,7 +8,10 @@ Rails.application.routes.draw do
   post "login", to: "sessions#create"
   get "logout", to: "sessions#destroy", as: "logout"
 
-  resources :subscriptions, only: [:index, :create, :update, :destroy], param: :id
+  get "settings", to: "users#settings"
+  post "settings/save_timezone", to: "users#save_timezone"
+
+  resources :subscriptions, only: [:index, :create, :destroy], param: :id
   get "/subscriptions/add", to: "onboarding#add"
   get "/subscriptions/add/*start_url", to: "onboarding#add", format: false, defaults: { format: "html" }
   post "/subscriptions/add", to: "onboarding#add_landing"
@@ -27,6 +30,7 @@ Rails.application.routes.draw do
   post "/subscriptions/:id/schedule", to: "subscriptions#schedule"
   post "/subscriptions/:id/pause", to: "subscriptions#pause"
   post "/subscriptions/:id/unpause", to: "subscriptions#unpause"
+  post "/subscriptions/:id", to: "subscriptions#update"
 
   get "/subscriptions/:id/feed", to: "rss#subscription_feed" # Legacy
   get "/feeds/single/:id", to: "rss#user_feed"
@@ -48,7 +52,6 @@ Rails.application.routes.draw do
     get "/test/run_reset_failed_blogs_job", to: "admin_test#run_reset_failed_blogs_job"
     get "/test/destroy_user", to: "admin_test#destroy_user"
     get "/test/destroy_user_subscriptions", to: "admin_test#destroy_user_subscriptions"
-    get "/test/user_timezone", to: "admin_test#user_timezone"
     get "/test/travel_to_v2", to: "admin_test#travel_to_v2"
     get "/test/travel_back_v2", to: "admin_test#travel_back_v2"
     get "/test/wait_for_update_rss_job", to: "admin_test#wait_for_update_rss_job"

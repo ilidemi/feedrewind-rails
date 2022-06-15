@@ -7,7 +7,8 @@
                     class: "text-sm link-secondary" %>
       </div>
 
-      <h2 class="break-word" id="name_header"><%= @subscription.name.strip %><a class="external-link" href="<%= @subscription.url %>" target="_blank"></a></h2>
+      <h2 class="break-word" id="name_header"><%= @subscription.name.strip %>
+        <a class="external-link" href="<%= @subscription.url %>" target="_blank"></a></h2>
     </div>
 
     <div class="flex flex-col gap-1">
@@ -62,12 +63,7 @@
     </div>
 
     <% if @subscription.published_count < @subscription.total_count %>
-      <%= form_tag(
-            { :controller => :subscriptions, :action => :update, :id => @subscription.id },
-            method: :put,
-            remote: true,
-            id: "schedule_form"
-          ) do %>
+      <form id="schedule_form">
         <div class="flex flex-col">
           <div class="sticky top-0 bg-white py-1">
             <div id="schedule_header" class="flex flex-row gap-[0.3125rem] items-center flex-wrap">
@@ -92,8 +88,6 @@
         </div>
 
         <%= number_field_tag "version", @subscription.version, id: "version", class: "hidden" %>
-
-        <%= submit_tag "Save schedule", id: "save_schedule", class: "hidden" %>
 
         <script>
             function getScheduleVersion() {
@@ -172,7 +166,7 @@
                             const json = await response.json();
                             clearTimeout(timeoutId);
                             maybeHideSpinner();
-                            if (json.version > maxSeenVersion) {
+                            if (json.version >= maxSeenVersion) {
                                 showRefreshPopup("Schedule is out of date. Please refresh the page.");
                             }
                             // If the version is older, we're expecting some other request to succeed
@@ -195,7 +189,7 @@
             function setNameChangeScheduleCallback(callback) {
             }
         </script>
-      <% end %>
+      </form>
 
       <%= render partial: "schedule_preview", locals: { schedule_preview: @schedule_preview } %>
 

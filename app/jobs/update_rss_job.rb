@@ -108,12 +108,19 @@ class UpdateRssJob < ApplicationJob
 
   def self.lock(user_id)
     query = <<-SQL
-      select id from delayed_jobs
+      select id, locked_by from delayed_jobs
       where handler like '%UpdateRssJob%'
         and handler like concat(E'%arguments:\n  - ', $1::text, E'\n%')
       for update
     SQL
     query_result = ActiveRecord::Base.connection.exec_query(query, "SQL", [user_id])
-    query_result.rows
+    query_result.rows.to_h
+  end
+
+  def self.update_run_at(job_id, run_at)
+    query = <<-SQL
+      update delayed_jobs set run_at = $1 where id = $2;
+    SQL
+    ActiveRecord::Base.connection.exec_query(query, "SQL", [run_at, job_id])
   end
 end

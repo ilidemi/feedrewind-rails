@@ -25,8 +25,8 @@ class TimezoneSignupTest < ApplicationSystemTestCase
       fill_in "new-password", with: "tz123456"
       click_button "Sign up"
 
-      visit_admin "user_timezone?email=#{data.email}"
-      assert_equal data.timezone, page.document.text
+      visit_dev "settings"
+      assert_selector "option[value='#{data.timezone}'][selected='selected']"
     end
   end
 end

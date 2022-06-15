@@ -1,9 +1,9 @@
 <div>
+  <% days_of_week.each do |day| %>
+    <%= hidden_field_tag "#{day}_count", current_counts_by_day[day] %>
+  <% end %>
   <div class="flex-col gap-1 hidden md:flex">
-    <div class="w-0 h-0"> <!-- Add a desktop-sized leading gap --> </div>
-    <% days_of_week.each do |day| %>
-      <%= hidden_field_tag "#{day}_count", current_counts_by_day[day] %>
-    <% end %>
+    <div class="w-0 h-0"> <!-- Leading gap --> </div>
     <div class="flex flex-col gap-2">
       <div class="flex flex-row gap-2">
         <% days_of_week.each do |day| %>
@@ -52,10 +52,10 @@
         </div>
       <% end %>
     </div>
-    <div class="w-0 h-0"> <!-- Add a desktop-sized trailing gap --> </div>
+    <div class="w-0 h-0"> <!-- Trailing gap --> </div>
   </div>
   <div id="schedule_mobile" class="flex-col gap-3 w-fit flex md:hidden">
-    <div class="w-0 h-0"> <!-- Add a mobile-sized leading gap --> </div>
+    <div class="w-0 h-0"> <!-- Leading gap --> </div>
     <div class="grid grid-cols-[min-content_minmax(0,_10rem)_minmax(0,_10rem)] gap-x-2 gap-y-6">
       <% days_of_week.each do |day| %>
         <div><%= day.capitalize %></div>
@@ -91,6 +91,6 @@
         </div>
       <% end %>
     </div>
-    <div class="w-0 h-0"> <!-- Add a mobile-sized trailing gap --> </div>
+    <div class="w-0 h-0"> <!-- Trailing gap --> </div>
   </div>
 </div>

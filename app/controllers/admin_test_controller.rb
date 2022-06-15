@@ -93,11 +93,6 @@ class AdminTestController < ApplicationController
     render plain: "OK"
   end
 
-  def user_timezone
-    user = User.find_by(email: params[:email])
-    render plain: user.user_settings.timezone
-  end
-
   def execute_sql
     query_result = ActiveRecord::Base.connection.exec_query(params[:query], "SQL", [])
     render plain: JSON.dump(query_result.to_a)

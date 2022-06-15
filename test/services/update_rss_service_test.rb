@@ -867,8 +867,10 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     UpdateRssService.init_subscription(subscription, true, utc_before, utc_before.to_date)
 
     utc_now = DateTime.parse("2022-05-06 00:00:00+00:00")
+    posts_in_rss_backup = UpdateRssService::POSTS_IN_RSS
     silence_warnings { UpdateRssService::POSTS_IN_RSS = 5 }
     UpdateRssService.update_for_user(subscription.user_id, utc_now, utc_now.to_date)
+    silence_warnings { UpdateRssService::POSTS_IN_RSS = posts_in_rss_backup }
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -924,8 +926,10 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     UpdateRssService.init_subscription(subscription, true, utc_before, utc_before.to_date)
 
     utc_now = DateTime.parse("2022-05-06 00:00:00+00:00")
+    posts_in_rss_backup = UpdateRssService::POSTS_IN_RSS
     silence_warnings { UpdateRssService::POSTS_IN_RSS = 5 }
     UpdateRssService.update_for_user(subscription.user_id, utc_now, utc_now.to_date)
+    silence_warnings { UpdateRssService::POSTS_IN_RSS = posts_in_rss_backup }
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -981,8 +985,10 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     UpdateRssService.init_subscription(subscription, true, utc_before, utc_before.to_date)
 
     utc_now = DateTime.parse("2022-05-06 00:00:00+00:00")
+    posts_in_rss_backup = UpdateRssService::POSTS_IN_RSS
     silence_warnings { UpdateRssService::POSTS_IN_RSS = 5 }
     UpdateRssService.update_for_user(subscription.user_id, utc_now, utc_now.to_date)
+    silence_warnings { UpdateRssService::POSTS_IN_RSS = posts_in_rss_backup }
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -1038,8 +1044,10 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     UpdateRssService.init_subscription(subscription, true, utc_before, utc_before.to_date)
 
     utc_now = DateTime.parse("2022-05-06 00:00:00+00:00")
+    posts_in_rss_backup = UpdateRssService::POSTS_IN_RSS
     silence_warnings { UpdateRssService::POSTS_IN_RSS = 5 }
     UpdateRssService.update_for_user(subscription.user_id, utc_now, utc_now.to_date)
+    silence_warnings { UpdateRssService::POSTS_IN_RSS = posts_in_rss_backup }
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -1096,7 +1104,6 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     subscription.update_attribute(:is_paused, true)
 
     utc_now = DateTime.parse("2022-05-06 00:00:00+00:00")
-    silence_warnings { UpdateRssService::POSTS_IN_RSS = 30 }
     UpdateRssService.update_for_user(subscription.user_id, utc_now, utc_now.to_date)
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
