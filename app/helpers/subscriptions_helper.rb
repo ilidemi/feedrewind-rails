@@ -42,13 +42,11 @@ module SubscriptionsHelper
   end
 
   def SubscriptionsHelper.subscription_add_url
-    # TODO: this should become feedrewind.com
-    "https://feedrewind.herokuapp.com/subscriptions/add"
+    "https://feedrewind.com/subscriptions/add"
   end
 
   def SubscriptionsHelper.subscription_url(subscription)
-    # TODO: this should become feedrewind.com
-    "https://feedrewind.herokuapp.com/subscriptions/#{subscription.id}"
+    "https://feedrewind.com/subscriptions/#{subscription.id}"
   end
 
   def SubscriptionsHelper.subscription_path(subscription)

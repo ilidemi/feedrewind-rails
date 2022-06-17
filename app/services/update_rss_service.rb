@@ -144,7 +144,7 @@ module UpdateRssService
       Rails.logger.info("Total user items: #{merged_user_items.length} (#{new_user_items_count} new)")
       user_rss_text = generate_rss(
         title: "FeedRewind",
-        url: "https://feedrewind.herokuapp.com",
+        url: "https://feedrewind.com",
         items: merged_user_items
       )
 
