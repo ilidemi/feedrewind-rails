@@ -7,8 +7,10 @@
                     class: "text-sm link-secondary" %>
       </div>
 
-      <h2 class="break-word" id="name_header"><%= @subscription.name.strip %>
-        <a class="external-link" href="<%= @subscription.url %>" target="_blank"></a></h2>
+      <!-- @formatter:off -->
+      <!-- whitespace is significant here -->
+      <h2 class="break-word" id="name_header"><%= @subscription.name.strip %><a class="external-link" href="<%= @subscription.url %>" target="_blank"></a></h2>
+      <!-- @formatter:on -->
     </div>
 
     <div class="flex flex-col gap-1">

@@ -66,10 +66,12 @@ class UsersController < ApplicationController
     authorize
     @user_settings = @current_user.user_settings
     @timezone_options = TimezoneHelper::FRIENDLY_NAME_BY_GROUP_ID.map { |pair| pair.reverse }
+    timezone = TZInfo::Timezone.get(@user_settings.timezone)
+    @server_offset_min = timezone.observed_utc_offset / 60
     if TimezoneHelper::GROUP_ID_BY_TIMEZONE_ID.include?(@user_settings.timezone)
       @selected_option = TimezoneHelper::GROUP_ID_BY_TIMEZONE_ID[@user_settings.timezone]
     else
-      offset = @user_settings.timezone.observed_utc_offset
+      offset = timezone.base_utc_offset
       offset_sign = offset >= 0 ? "+" : "-"
       offset_hour = ((offset.abs / 60) % 60).to_s.rjust(2, "0")
       offset_minute = (offset.abs / 3600).to_s.rjust(2, "0")
@@ -83,7 +85,7 @@ class UsersController < ApplicationController
 
   def save_timezone
     authorize
-    update_params = params.permit(:timezone, :version)
+    update_params = params.permit(:timezone, :client_timezone, :client_offset, :version)
     new_version = update_params[:version].to_i
     new_timezone_id = update_params[:timezone]
     unless TimezoneHelper::TZINFO_ALL_TIMEZONES.include?(new_timezone_id)

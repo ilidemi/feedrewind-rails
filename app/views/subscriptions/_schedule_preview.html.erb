@@ -4,7 +4,9 @@
     <thead>
     <tr class="border-b border-b-slate-300">
       <th class="text-left font-normal py-0.75 px-0">Post</th>
-      <th class="text-left font-normal py-0.75 pl-6 whitespace-nowrap">Scheduled for</th>
+      <th class="text-left font-normal py-0.75 pl-6 whitespace-nowrap">
+        Scheduled for<span id="tz_mismatch_asterisk" class="hidden font-semibold">*</span>
+      </th>
     </tr>
     </thead>
 
@@ -48,6 +50,10 @@
       </tr>
     <% end %>
   </table>
+  <span id="tz_mismatch_message" class="hidden text-sm">
+    <span class="font-semibold">*</span>
+    <span id="server_timezone"></span>, while this device is on <span id="client_timezone"></span>. You can change the time zone in <a href="/settings" target="_blank" class="link">settings</a>.
+  </span>
 </div>
 
 <script>
@@ -70,7 +76,6 @@
     const prevPostShortDates = document.getElementsByClassName("prev-post-short-date");
     const nextPostDates = document.getElementsByClassName("next-post-date");
     const nextPostShortDates = document.getElementsByClassName("next-post-short-date");
-
 
     for (let prevPostIndex = 0; prevPostIndex < prevPostDates.length; prevPostIndex++) {
         let prevPostDate = prevPostDates[prevPostIndex];
@@ -157,5 +162,24 @@
                 nextPostShortDate.innerText = "…";
             }
         }
+    }
+
+    const shortFriendlySuffixNameByGroupId = <%= TimezoneHelper::SHORT_FRIENDLY_SUFFIX_NAME_BY_GROUP_ID_JSON.html_safe %>;
+    const groupIdByTimezoneId = <%= TimezoneHelper::GROUP_ID_BY_TIMEZONE_ID_JSON.html_safe %>;
+    const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const serverTimezone = "<%= schedule_preview.timezone %>";
+
+    if (groupIdByTimezoneId.hasOwnProperty(clientTimezone) &&
+        groupIdByTimezoneId.hasOwnProperty(serverTimezone) &&
+        groupIdByTimezoneId[clientTimezone] !== groupIdByTimezoneId[serverTimezone]
+    ) {
+        const clientGroupId = groupIdByTimezoneId[clientTimezone];
+        const serverGroupId = groupIdByTimezoneId[serverTimezone];
+        document.getElementById("client_timezone").innerText =
+            shortFriendlySuffixNameByGroupId[clientGroupId];
+        document.getElementById("server_timezone").innerText =
+            shortFriendlySuffixNameByGroupId[serverGroupId];
+        document.getElementById("tz_mismatch_asterisk").classList.remove("hidden");
+        document.getElementById("tz_mismatch_message").classList.remove("hidden");
     }
 </script>

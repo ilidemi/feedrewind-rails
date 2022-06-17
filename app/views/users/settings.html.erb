@@ -8,17 +8,32 @@
     <h2>Settings</h2>
   </div>
 
-  <div class="flex flex-col gap-1">
-    <div class="flex flex-row gap-[0.3125rem] items-center">
-      <div class="font-semibold">Time zone</div>
-      <div id="timezone_save_spinner" class="spinner spinner-light hidden"></div>
+  <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-1">
+      <div class="flex flex-row gap-[0.3125rem] items-center">
+        <div class="font-semibold">Time zone</div>
+        <div id="timezone_save_spinner" class="spinner spinner-light hidden"></div>
+      </div>
+      <%= select_tag "timezone",
+                     options_for_select(@timezone_options, @selected_option),
+                     class: "border border-gray-300 rounded-md max-w-full"
+      %>
+      <div id="timezone_suggestion" class="hidden">
+        <!-- @formatter:off -->
+        (This device is on <button id="client_timezone" class="link"></button>)
+        <!-- @formatter:on -->
+      </div>
     </div>
-    <%= select_tag "timezone",
-                   options_for_select(@timezone_options, @selected_option),
-                   class: "border border-gray-300 rounded-md max-w-full"
-    %>
+    <div id="future_timezone" class="hidden">Entries will be arriving in early mornings <span id="future_timezone_name"></span>.</div>
 
     <script>
+        const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const clientOffset = new Date().getTimezoneOffset();
+
+        const shortFriendlyPrefixNameByGroupId = <%= TimezoneHelper::SHORT_FRIENDLY_PREFIX_NAME_BY_GROUP_ID_JSON.html_safe %>;
+        const shortFriendlyNameByGroupId = <%= TimezoneHelper::SHORT_FRIENDLY_NAME_BY_GROUP_ID_JSON.html_safe %>;
+        const groupIdByTimezoneId = <%= TimezoneHelper::GROUP_ID_BY_TIMEZONE_ID_JSON.html_safe %>;
+
         let timezoneRequestsInFlight = 0;
         let maxSeenVersion = <%= @user_settings.version %>;
 
@@ -36,7 +51,8 @@
             }
         }
 
-        document.getElementById("timezone").addEventListener("change", async () => {
+        const timezoneSelect = document.getElementById("timezone");
+        timezoneSelect.addEventListener("change", async () => {
             let newTimezone = document.getElementById("timezone").value;
             showSpinner();
             maxSeenVersion += 1;
@@ -47,6 +63,8 @@
                 const timeoutId = setTimeout(() => abortController.abort(), 30000);
                 let formData = new FormData();
                 formData.append("timezone", newTimezone);
+                formData.append("client_timezone", clientTimezone); // Just for logging
+                formData.append("client_offset", clientOffset.toString()); // Just for logging
                 formData.append("version", requestVersion);
                 const body = new URLSearchParams(formData);
                 const response = await fetch(
@@ -64,6 +82,7 @@
                 if (response.status === 200) {
                     clearTimeout(timeoutId);
                     maybeHideSpinner();
+                    updateLabels();
                 } else if (response.status === 409) {
                     const json = await response.json();
                     clearTimeout(timeoutId);
@@ -86,6 +105,34 @@
                 showRefreshPopup("Something went wrong. Please refresh the page.");
             }
         });
+
+        function updateLabels() {
+            if (groupIdByTimezoneId.hasOwnProperty(clientTimezone) &&
+                timezoneSelect.value !== groupIdByTimezoneId[clientTimezone]
+            ) {
+                const groupId = groupIdByTimezoneId[clientTimezone];
+                document.getElementById("client_timezone").innerText =
+                    shortFriendlyPrefixNameByGroupId[groupId];
+                const timezoneSuggestion = document.getElementById("timezone_suggestion");
+                timezoneSuggestion.addEventListener("click", () => {
+                    timezoneSuggestion.classList.add("hidden");
+                    timezoneSelect.value = groupId;
+                    timezoneSelect.dispatchEvent(new Event('change'));
+                });
+                timezoneSuggestion.classList.remove("hidden");
+            }
+
+            const futureTimezoneName = document.getElementById("future_timezone_name");
+            // Select is guaranteed to have every value from the friendly names map, but the friendly names
+            // map may not have a weird tz that user had on signup and we have to display here. Hence fallback
+            if (shortFriendlyNameByGroupId.hasOwnProperty(timezoneSelect.value)) {
+                futureTimezoneName.innerText = shortFriendlyNameByGroupId[timezoneSelect.value];
+            } else {
+                futureTimezoneName.innerText = timezoneSelect.value;
+            }
+            document.getElementById("future_timezone").classList.remove("hidden");
+        }
+        updateLabels();
     </script>
   </div>
 </div>

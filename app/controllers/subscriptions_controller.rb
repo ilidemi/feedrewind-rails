@@ -602,7 +602,7 @@ class SubscriptionsController < ApplicationController
   end
 
   SchedulePreview = Struct.new(
-    :prev_posts, :next_posts, :prev_has_more, :next_has_more, :today_date, :next_schedule_date
+    :prev_posts, :next_posts, :prev_has_more, :next_has_more, :today_date, :next_schedule_date, :timezone
   )
   PrevPost = Struct.new(:url, :title, :published_date, keyword_init: true)
   NextPost = Struct.new(:url, :title, keyword_init: true)
@@ -690,7 +690,8 @@ class SubscriptionsController < ApplicationController
     Rails.logger.info("Next schedule date: #{next_schedule_date}")
 
     SchedulePreview.new(
-      prev_posts, next_posts, prev_has_more, next_has_more, local_date_str, next_schedule_date
+      prev_posts, next_posts, prev_has_more, next_has_more, local_date_str, next_schedule_date,
+      user.user_settings.timezone
     )
   end
 
