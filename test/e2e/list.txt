@@ -81,5 +81,12 @@ http://localhost:3000/test/travel_31days
 http://localhost:3000/test/run_reset_failed_blogs_job
 http://localhost:3000/test/travel_back
 
+### Email
+postmark_client = Postmark::ApiClient.new(Rails.application.credentials.postmark_api_token)
+msg = SubscriptionPostMailer.with(subscription_post: SubscriptionPost.find(11653)).post_email
+resp = postmark_client.deliver_messages([msg])
+
+Web GMail, Windows Outlook, Android GMail light/dark, iOS Mail light/dark
+
 ### Cleanup
 Blog.where("feed_url like '%ilidemi.github.io%'").each { |blog| puts("#{blog.feed_url} #{blog.version}"); blog.destroy_recursively! }

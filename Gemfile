@@ -70,3 +70,4 @@ gem 'puppeteer-ruby', '~> 0.35', '>= 0.35.0'
 gem 'htmlentities', '~> 4.3', '>= 4.3.4'
 gem 'barnes', '~> 0.0.9', '>= 0.0.9'
 gem "tailwindcss-rails", "~> 2.0"
+gem "postmark-rails", "~> 0.22", ">= 0.22.0"

@@ -15,8 +15,9 @@ class TimeTravelJob < ApplicationJob
 
     utc_now = DateTime.now.utc
     Rails.logger.info("Current time: #{utc_now}")
-    LastTimeTravel
-      .find(0)
-      .update!(last_command_id: command_id, timestamp: utc_now)
+    TestSingleton.transaction do
+      TestSingleton.find("time_travel_command_id").update!(value: command_id.to_s)
+      TestSingleton.find("time_travel_timestamp").update!(value: utc_now.to_s)
+    end
   end
 end

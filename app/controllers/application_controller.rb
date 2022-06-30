@@ -19,10 +19,14 @@ class ApplicationController < ActionController::Base
     redirect_to login_path, alert: "Not authorized" if current_user.nil?
   end
 
+  def is_admin(user_id)
+    return true if Rails.env.development? || Rails.env.test?
+    return true if Rails.configuration.admin_user_ids.include?(user_id)
+    false
+  end
+
   def authorize_admin
-    unless Rails.configuration.admin_user_ids.include?(current_user.id)
-      raise ActionController::RoutingError.new('Not Found')
-    end
+    raise ActionController::RoutingError.new('Not Found') unless is_admin(current_user.id)
   end
 
   def fill_current_user

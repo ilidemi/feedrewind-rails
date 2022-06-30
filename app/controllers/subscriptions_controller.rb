@@ -185,7 +185,10 @@ class SubscriptionsController < ApplicationController
         local_date = timezone.utc_to_local(utc_now).to_date
         local_date_str = ScheduleHelper::date_str(local_date)
 
-        next_job_schedule_date = get_realistic_next_scheduled_date(@current_user.id, local_date_str)
+        # TODO: for email users this should be the email job? think more
+        next_job_schedule_date = get_realistic_next_scheduled_date(
+          UpdateRssJob, @current_user.id, local_date_str
+        )
         todays_job_already_ran = next_job_schedule_date > local_date_str
         first_schedule_date = todays_job_already_ran ? local_date.next_day : local_date
         until enabled_days_of_week.include?(ScheduleHelper.day_of_week(first_schedule_date))
@@ -368,6 +371,7 @@ class SubscriptionsController < ApplicationController
     if @subscription.status == "waiting_for_blog" &&
       %w[crawled_voting crawled_confirmed crawled_looks_wrong manually_inserted].include?(blog.status)
 
+      @subscription.create_subscription_posts_raw!
       @subscription.status = "setup"
       @subscription.save!
     end
@@ -381,12 +385,12 @@ class SubscriptionsController < ApplicationController
     failed_lock_attempts = 0
     loop do
       result = ActiveRecord::Base.transaction do
-        Rails.logger.info("Locking UpdateRssJob")
-        jobs = UpdateRssJob.lock(@current_user.id)
-        Rails.logger.info("Locked UpdateRssJob #{jobs}")
+        Rails.logger.info("Locking daily jobs")
+        jobs = UserJobHelper::lock_daily_jobs(@current_user.id)
+        Rails.logger.info("Locked daily jobs #{jobs}")
 
-        unless jobs.values.all?(&:nil?)
-          Rails.logger.info("Some jobs are running, unlocking #{jobs.keys}")
+        unless jobs.all? { |job| job.locked_by.nil? }
+          Rails.logger.info("Some jobs are running, unlocking #{jobs}")
           next
         end
 
@@ -417,11 +421,16 @@ class SubscriptionsController < ApplicationController
         local_date_str = ScheduleHelper.date_str(local_datetime)
 
         # If subscription got added early morning, the first post needs to go out the same day, either via the
-        # daily job or right away if the job has already ran
-        next_job_schedule_date = get_realistic_next_scheduled_date(@current_user.id, local_date_str)
-        todays_job_already_ran = next_job_schedule_date > local_date_str
+        # daily job or right away if the update rss job has already ran
+        next_update_rss_job_date = UserJobHelper::get_next_scheduled_date(UpdateRssJob, @current_user.id)
+        todays_update_rss_job_already_ran = next_update_rss_job_date > local_date_str
+        next_email_posts_job_date = UserJobHelper::get_next_scheduled_date(EmailPostsJob, @current_user.id)
+        todays_email_posts_job_already_ran = next_email_posts_job_date > local_date_str
         is_added_early_morning = ScheduleHelper.is_early_morning(local_datetime)
-        should_publish_posts = todays_job_already_ran && is_added_early_morning
+        should_publish_posts =
+          todays_update_rss_job_already_ran &&
+            is_added_early_morning &&
+            !todays_email_posts_job_already_ran
         local_date = local_datetime.to_date
 
         @subscription.name = schedule_params[:name]
@@ -432,7 +441,7 @@ class SubscriptionsController < ApplicationController
         @subscription.save! # so that rss update can pick it up
 
         UpdateRssService.init_subscription(@subscription, should_publish_posts, utc_now, local_date)
-        Rails.logger.info("Unlocked UpdateRssJob #{jobs.keys}")
+        Rails.logger.info("Unlocked daily jobs #{jobs}")
         render plain: SubscriptionsHelper.setup_path(@subscription)
       end
 
@@ -541,7 +550,7 @@ class SubscriptionsController < ApplicationController
     admin_votes = []
     other_votes = Set.new
     blog_votes.each do |vote|
-      if Rails.configuration.admin_user_ids.include?(vote.user_id)
+      if is_admin(vote.user_id)
         admin_votes << [vote.user_id, vote.value]
       else
         other_votes << [vote.user_id, vote.value]
@@ -627,7 +636,7 @@ class SubscriptionsController < ApplicationController
         join (select id, url, title, index from blog_posts) as blog_posts on blog_posts.id = blog_post_id 
         where subscription_id = $1 and published_at is null
         order by index asc
-        limit 4
+        limit 5
       ) UNION ALL (
         select 'published_count' as tag, null, null, null, count(published_at) as count from subscription_posts
         where subscription_id = $1
@@ -673,7 +682,7 @@ class SubscriptionsController < ApplicationController
 
     next_has_more = (unpublished_count - next_posts.length) > 0
     if next_has_more
-      # Always show 4 lines: either all 4 next posts or 3 posts and ellipsis
+      # Always show 5 lines: either all 5 next posts or 4 posts and ellipsis
       next_posts = next_posts[...-1]
     end
 
@@ -685,7 +694,8 @@ class SubscriptionsController < ApplicationController
     if subscription.status != "live" && ScheduleHelper::is_early_morning(local_datetime)
       next_schedule_date = local_date_str
     else
-      next_schedule_date = get_realistic_next_scheduled_date(user.id, local_date_str)
+      # UpdateRssJob is always the source of truth for schedule preview
+      next_schedule_date = get_realistic_next_scheduled_date(UpdateRssJob, user.id, local_date_str)
     end
     Rails.logger.info("Next schedule date: #{next_schedule_date}")
 
@@ -695,10 +705,10 @@ class SubscriptionsController < ApplicationController
     )
   end
 
-  def get_realistic_next_scheduled_date(user_id, local_date_str)
-    next_schedule_date = UpdateRssJob::get_next_scheduled_date(user_id)
+  def get_realistic_next_scheduled_date(job_class, user_id, local_date_str)
+    next_schedule_date = UserJobHelper::get_next_scheduled_date(job_class, user_id)
     if next_schedule_date < local_date_str
-      Rails.logger.warn("UpdateRssJob is scheduled in the past for user #{user_id}: #{next_schedule_date} (today is #{local_date_str})")
+      Rails.logger.warn("#{job_class} is scheduled in the past for user #{user_id}: #{next_schedule_date} (today is #{local_date_str})")
       local_date_str
     else
       next_schedule_date

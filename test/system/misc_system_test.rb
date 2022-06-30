@@ -17,7 +17,7 @@ class MiscSystemTest < ApplicationSystemTestCase
     today_local_1am = today_local.advance(hours: 1)
     visit_admin "travel_to_v2?timestamp=#{today_local_1am}"
     assert_equal today_local_1am, page.document.text
-    visit_admin "reschedule_update_rss_job"
+    visit_admin "reschedule_user_jobs"
     assert_equal "OK", page.document.text
 
     user_rows = visit_admin_sql "select id from users where email = '#{email}'"
@@ -45,6 +45,7 @@ class MiscSystemTest < ApplicationSystemTestCase
 
     click_button "wed_add"
     click_button "Continue"
+    assert_selector "#arrival_msg"
     subscription_id = /[0-9]+/.match(page.current_path)[0]
 
     # Duplicate the job
@@ -84,7 +85,7 @@ class MiscSystemTest < ApplicationSystemTestCase
     # Cleanup
     visit_admin "travel_back_v2"
     assert_in_delta DateTime.now.utc, DateTime.parse(page.document.text), 60
-    visit_admin "reschedule_update_rss_job"
+    visit_admin "reschedule_user_jobs"
     assert_equal "OK", page.document.text
 
     visit_dev "logout"
@@ -131,6 +132,7 @@ class MiscSystemTest < ApplicationSystemTestCase
 
     click_button "wed_add", wait: 2
     click_button "Continue"
+    assert_selector "#arrival_msg"
 
     subscription_id = /[0-9]+/.match(page.current_path)[0]
     visit_dev "subscriptions/#{subscription_id}"

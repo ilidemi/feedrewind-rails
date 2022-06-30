@@ -1,4 +1,3 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: 'from@example.com'
-  layout 'mailer'
+  default from: email_address_with_name("feedrewind@feedrewind.com", "FeedRewind")
 end

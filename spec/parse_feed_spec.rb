@@ -13,6 +13,8 @@ RSpec::Matchers.define :match_parsed_feed do |expected_root_url, expected_entry_
   end
 end
 
+RSpec::Matchers.define_negated_matcher :not_match_parsed_feed, :match_parsed_feed
+
 RSpec.describe "parse_feed" do
   logger = MyLogger.new($stdout)
 
@@ -150,7 +152,7 @@ RSpec.describe "parse_feed" do
             .and match_parsed_feed("https://root", %w[root/b root/c root/a])
   end
 
-  it "should sort RSS items by dates but not timestamps" do
+  it "should sort RSS items by dates and timestamps" do
     rss_content = %{
       <rss>
         <channel>
@@ -168,7 +170,7 @@ RSpec.describe "parse_feed" do
     }
     expect(parse_feed(rss_content, URI("https://root/feed"), logger))
       .to match_parsed_feed("https://root", %w[root/a root/b])
-            .and match_parsed_feed("https://root", %w[root/b root/a])
+            .and not_match_parsed_feed("https://root", %w[root/b root/a])
   end
 
   it "should parse RSS if a date is invalid" do
@@ -409,7 +411,7 @@ RSpec.describe "parse_feed" do
             .and match_parsed_feed("https://root", %w[root/b root/c root/a])
   end
 
-  it "should sort Atom items by dates but not timestamps" do
+  it "should sort Atom items by dates and timestamps" do
     atom_content = %{
       <feed xmlns="http://www.w3.org/2005/Atom">
         <link href="https://root"/>
@@ -424,8 +426,8 @@ RSpec.describe "parse_feed" do
       </feed>
     }
     expect(parse_feed(atom_content, URI("https://root/feed"), logger))
-      .to match_parsed_feed("https://root", %w[root/b root/a])
-            .and match_parsed_feed("https://root", %w[root/a root/b])
+      .to match_parsed_feed("https://root", %w[root/a root/b])
+            .and not_match_parsed_feed("https://root", %w[root/b root/a])
   end
 
   it "should parse Atom if a date is invalid" do

@@ -25,6 +25,10 @@ module RssCatchupRails
 
     config.active_record.schema_format = :sql
 
+    config.action_mailer.default_url_options = { host: 'feedrewind.com' }
+    config.action_mailer.delivery_method = :postmark
+    config.action_mailer.postmark_settings = { api_token: Rails.application.credentials.postmark_api_token }
+
     Delayed::Worker.sleep_delay = 0.1
     Delayed::Worker.raise_signal_exceptions = :term
 

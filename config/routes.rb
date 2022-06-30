@@ -48,13 +48,17 @@ Rails.application.routes.draw do
   if Rails.env.development? || Rails.env.test?
     get "/test/travel_31days", to: "admin_test#travel_31days"
     get "/test/travel_back", to: "admin_test#travel_back"
-    get "/test/reschedule_update_rss_job", to: "admin_test#reschedule_update_rss_job"
+    get "/test/reschedule_user_jobs", to: "admin_test#reschedule_user_jobs"
     get "/test/run_reset_failed_blogs_job", to: "admin_test#run_reset_failed_blogs_job"
     get "/test/destroy_user", to: "admin_test#destroy_user"
     get "/test/destroy_user_subscriptions", to: "admin_test#destroy_user_subscriptions"
     get "/test/travel_to_v2", to: "admin_test#travel_to_v2"
     get "/test/travel_back_v2", to: "admin_test#travel_back_v2"
     get "/test/wait_for_update_rss_job", to: "admin_test#wait_for_update_rss_job"
+    get "/test/wait_for_email_posts_job", to: "admin_test#wait_for_email_posts_job"
+    get "/test/set_email_metadata", to: "admin_test#set_email_metadata"
+    get "/test/assert_email_count_with_metadata", to: "admin_test#assert_email_count_with_metadata"
+    get "/test/delete_email_metadata", to: "admin_test#delete_email_metadata"
     get "/test/execute_sql", to: "admin_test#execute_sql"
   end
 

@@ -1,4 +1,5 @@
 require "json"
+require "postmark"
 
 class AdminTestController < ApplicationController
   def travel_31days
@@ -40,23 +41,40 @@ class AdminTestController < ApplicationController
   end
 
   def wait_for_update_rss_job
-    fill_current_user
+    wait_for_daily_job(UpdateRssJob)
+  end
 
-    utc_now = DateTime.now.utc
-    timezone = TZInfo::Timezone.get(@current_user.user_settings.timezone)
-    local_datetime = timezone.utc_to_local(utc_now)
-    local_date_str = ScheduleHelper::date_str(local_datetime)
+  def wait_for_email_posts_job
+    wait_for_daily_job(EmailPostsJob)
+  end
+
+  def set_email_metadata
+    value = params[:value]
+    TestSingleton.find("email_metadata").update_attribute(:value, value)
+    render plain: "OK"
+  end
+
+  def assert_email_count_with_metadata
+    value = params[:value]
+    count = params[:count].to_i
+    api_token = Rails.application.credentials.postmark_api_sandbox_token
+    postmark_client = Postmark::ApiClient.new(api_token)
 
     poll_count = 0
     while true
-      is_scheduled_for_date = UpdateRssJob::is_scheduled_for_date(@current_user.id, local_date_str)
-      break unless is_scheduled_for_date
+      messages = postmark_client.get_messages(count: 100, offset: 0, metadata_test: value)
+      break if messages&.length == count
 
-      sleep(0.1)
+      sleep(1)
       poll_count += 1
-      raise "Job didn't run" if poll_count >= 10
+      raise "Email count doesn't match: expected #{count}, actual #{messages&.length}" if poll_count >= 10
     end
 
+    render plain: "OK"
+  end
+
+  def delete_email_metadata
+    TestSingleton.find("email_metadata").update_attribute(:value, nil)
     render plain: "OK"
   end
 
@@ -66,16 +84,18 @@ class AdminTestController < ApplicationController
     render plain: "OK"
   end
 
-  def reschedule_update_rss_job
+  def reschedule_user_jobs
     fill_current_user
 
     query = <<-SQL
       delete from delayed_jobs
-      where handler like '%class: UpdateRssJob%' and handler like concat('%', $1::text, '%')
+      where (handler like '%class: UpdateRssJob%' or handler like '%class: EmailPostsJob%') and
+        handler like concat('%', $1::text, '%')
     SQL
     ActiveRecord::Base.connection.exec_query(query, "SQL", [@current_user.id])
 
     UpdateRssJob.initial_schedule(@current_user)
+    EmailPostsJob.initial_schedule(@current_user)
     render plain: "OK"
   end
 
@@ -89,6 +109,7 @@ class AdminTestController < ApplicationController
     return render plain: "NotFound" unless user
 
     user.destroy_subscriptions_recursively!
+    UserJobHelper::destroy_daily_jobs(user.id)
     user.destroy!
     render plain: "OK"
   end
@@ -105,13 +126,11 @@ class AdminTestController < ApplicationController
   end
 
   def compare_timestamps(command_id)
-    last_time_travel = nil
-    LastTimeTravel.uncached do
+    TestSingleton.uncached do
       poll_count = 0
       while true
-        last_time_travel = LastTimeTravel.find(0)
-        #noinspection RubyResolve
-        break if last_time_travel.last_command_id == command_id
+        worker_command_id_row = TestSingleton.find("time_travel_command_id")
+        break if worker_command_id_row.value == command_id.to_s
 
         sleep(0.1)
         poll_count += 1
@@ -120,10 +139,34 @@ class AdminTestController < ApplicationController
     end
 
     web_timestamp = DateTime.now.utc
-    #noinspection RubyNilAnalysis
-    difference = (last_time_travel.timestamp - web_timestamp).abs
+    worker_timestamp_row = TestSingleton.find("time_travel_timestamp")
+    worker_timestamp = DateTime.parse(worker_timestamp_row.value).to_time
+    difference = (worker_timestamp - web_timestamp).abs
     if difference > 60
-      raise "Web timestamp #{web_timestamp} doesn't match worker timestamp #{last_time_travel.timestamp}"
+      raise "Web timestamp #{web_timestamp} doesn't match worker timestamp #{worker_timestamp}"
     end
+  end
+
+  def wait_for_daily_job(job_class)
+    fill_current_user
+
+    utc_now = DateTime.now.utc
+    timezone = TZInfo::Timezone.get(@current_user.user_settings.timezone)
+    local_datetime = timezone.utc_to_local(utc_now)
+    local_date_str = ScheduleHelper::date_str(local_datetime)
+
+    poll_count = 0
+    while true
+      is_scheduled_for_date = UserJobHelper::is_scheduled_for_date(
+        job_class, @current_user.id, local_date_str
+      )
+      break unless is_scheduled_for_date
+
+      sleep(0.1)
+      poll_count += 1
+      raise "Job didn't run" if poll_count >= 10
+    end
+
+    render plain: "OK"
   end
 end

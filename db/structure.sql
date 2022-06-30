@@ -90,6 +90,28 @@ CREATE TYPE public.old_blog_status AS ENUM (
 
 
 --
+-- Name: post_delivery_channel; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.post_delivery_channel AS ENUM (
+    'single_feed',
+    'multiple_feeds',
+    'email'
+);
+
+
+--
+-- Name: post_email_status; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.post_email_status AS ENUM (
+    'sent',
+    'skipped',
+    'pending'
+);
+
+
+--
 -- Name: subscription_status; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -324,17 +346,6 @@ ALTER SEQUENCE public.delayed_jobs_id_seq OWNED BY public.delayed_jobs.id;
 
 
 --
--- Name: last_time_travels; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.last_time_travels (
-    id bigint NOT NULL,
-    last_command_id bigint,
-    "timestamp" timestamp without time zone
-);
-
-
---
 -- Name: schedules; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -436,7 +447,8 @@ CREATE TABLE public.subscription_posts (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     published_at timestamp without time zone,
-    published_at_local_date character varying
+    published_at_local_date character varying,
+    email_status public.post_email_status
 );
 
 
@@ -513,6 +525,18 @@ CREATE TABLE public.subscriptions (
 
 
 --
+-- Name: test_singletons; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.test_singletons (
+    key text NOT NULL,
+    value text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
 -- Name: user_rsses; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -533,7 +557,8 @@ CREATE TABLE public.user_settings (
     timezone character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    version integer NOT NULL
+    version integer NOT NULL,
+    delivery_channel public.post_delivery_channel NOT NULL
 );
 
 
@@ -688,14 +713,6 @@ ALTER TABLE ONLY public.delayed_jobs
 
 
 --
--- Name: last_time_travels last_time_travels_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.last_time_travels
-    ADD CONSTRAINT last_time_travels_pkey PRIMARY KEY (id);
-
-
---
 -- Name: schedules schedules_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -749,6 +766,14 @@ ALTER TABLE ONLY public.subscription_rsses
 
 ALTER TABLE ONLY public.subscriptions
     ADD CONSTRAINT subscriptions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: test_singletons test_singletons_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_singletons
+    ADD CONSTRAINT test_singletons_pkey PRIMARY KEY (key);
 
 
 --
@@ -1035,6 +1060,13 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220608215044'),
 ('20220608215349'),
 ('20220608215533'),
-('20220613192525');
+('20220613192525'),
+('20220623000345'),
+('20220623230024'),
+('20220623233843'),
+('20220624232743'),
+('20220625000522'),
+('20220625002918'),
+('20220630213859');
 
 

@@ -4,7 +4,7 @@ require "test_helper"
 
 class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
   Capybara.run_server = false
-  Capybara.default_max_wait_time = 0.5
+  Capybara.default_max_wait_time = 1.0
   Selenium::WebDriver.logger.ignore(:browser_options)
   driven_by :selenium, using: :chrome, screen_size: [1400, 1400] do |options|
     options.add_argument("--log-level=3")
