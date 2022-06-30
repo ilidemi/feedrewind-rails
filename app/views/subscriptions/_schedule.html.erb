@@ -29,7 +29,7 @@
           </div>
         <% end %>
       </div>
-      <% if other_sub_names_by_day.map(&:length).sum > 0 %>
+      <% if other_sub_names_by_day.values.map(&:length).sum > 0 %>
         <div class="w-full h-px bg-slate-300"></div>
         <div class="flex flex-row gap-2">
           <% days_of_week.each do |day| %>
