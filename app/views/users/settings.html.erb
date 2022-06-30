@@ -106,19 +106,22 @@
             }
         });
 
+        const timezoneSuggestion = document.getElementById("timezone_suggestion");
+        let clientTimezoneGroupId;
+
+        timezoneSuggestion.addEventListener("click", () => {
+            timezoneSuggestion.classList.add("hidden");
+            timezoneSelect.value = clientTimezoneGroupId;
+            timezoneSelect.dispatchEvent(new Event('change'));
+        });
+
         function updateLabels() {
             if (groupIdByTimezoneId.hasOwnProperty(clientTimezone) &&
                 timezoneSelect.value !== groupIdByTimezoneId[clientTimezone]
             ) {
-                const groupId = groupIdByTimezoneId[clientTimezone];
+                clientTimezoneGroupId = groupIdByTimezoneId[clientTimezone];
                 document.getElementById("client_timezone").innerText =
-                    shortFriendlyPrefixNameByGroupId[groupId];
-                const timezoneSuggestion = document.getElementById("timezone_suggestion");
-                timezoneSuggestion.addEventListener("click", () => {
-                    timezoneSuggestion.classList.add("hidden");
-                    timezoneSelect.value = groupId;
-                    timezoneSelect.dispatchEvent(new Event('change'));
-                });
+                    shortFriendlyPrefixNameByGroupId[clientTimezoneGroupId];
                 timezoneSuggestion.classList.remove("hidden");
             }
 
