@@ -1,12 +1,12 @@
 require "test_helper"
 
 #noinspection HttpUrlsUsage
-class UpdateRssServiceTest < ActiveSupport::TestCase
+class PublishPostsServiceTest < ActiveSupport::TestCase
   test "init with 0 posts" do
     utc_now = DateTime.parse("2022-05-05 00:00:00+00:00")
     subscription = create_subscription(1, utc_now, 5, 0, fri_count: 1)
 
-    UpdateRssService.init_subscription(subscription, false, utc_now, utc_now.to_date)
+    PublishPostsService.init_subscription(subscription, false, utc_now, utc_now.to_date, ScheduleHelper::date_str(utc_now))
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -51,7 +51,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     utc_now = DateTime.parse("2022-05-05 00:00:00+00:00")
     subscription = create_subscription(1, utc_now, 5, 0, thu_count: 1)
 
-    UpdateRssService.init_subscription(subscription, false, utc_now, utc_now.to_date)
+    PublishPostsService.init_subscription(subscription, false, utc_now, utc_now.to_date, ScheduleHelper::date_str(utc_now))
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -96,7 +96,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     utc_now = DateTime.parse("2022-05-05 00:00:00+00:00")
     subscription = create_subscription(1, utc_now, 5, 0, thu_count: 2, fri_count: 2)
 
-    UpdateRssService.init_subscription(subscription, true, utc_now, utc_now.to_date)
+    PublishPostsService.init_subscription(subscription, true, utc_now, utc_now.to_date, ScheduleHelper::date_str(utc_now))
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -171,7 +171,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     utc_before = DateTime.parse("2022-05-04 00:00:00+00:00")
     create_subscription(2, utc_before, 5, 1, wed_count: 1)
 
-    UpdateRssService.init_subscription(subscription1, false, utc_now, utc_now.to_date)
+    PublishPostsService.init_subscription(subscription1, false, utc_now, utc_now.to_date, ScheduleHelper::date_str(utc_now))
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription1.id).body
     expected_sub_body = <<-BODY
@@ -232,7 +232,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     utc_before = DateTime.parse("2022-05-04 00:00:00+00:00")
     create_subscription(2, utc_before, 5, 1, wed_count: 1)
 
-    UpdateRssService.init_subscription(subscription1, false, utc_now, utc_now.to_date)
+    PublishPostsService.init_subscription(subscription1, false, utc_now, utc_now.to_date, ScheduleHelper::date_str(utc_now))
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription1.id).body
     expected_sub_body = <<-BODY
@@ -293,7 +293,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     utc_before = DateTime.parse("2022-05-04 00:00:00+00:00")
     create_subscription(2, utc_before, 5, 1, wed_count: 1)
 
-    UpdateRssService.init_subscription(subscription1, true, utc_now, utc_now.to_date)
+    PublishPostsService.init_subscription(subscription1, true, utc_now, utc_now.to_date, ScheduleHelper::date_str(utc_now))
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription1.id).body
     expected_sub_body = <<-BODY
@@ -379,10 +379,10 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
   test "update one" do
     utc_before = DateTime.parse("2022-05-05 00:00:00+00:00")
     subscription = create_subscription(1, utc_before, 5, 0, thu_count: 2, fri_count: 2)
-    UpdateRssService.init_subscription(subscription, true, utc_before, utc_before.to_date)
+    PublishPostsService.init_subscription(subscription, true, utc_before, utc_before.to_date, ScheduleHelper::date_str(utc_before))
 
     utc_now = DateTime.parse("2022-05-06 00:00:00+00:00")
-    UpdateRssService.update_for_user(subscription.user_id, utc_now, utc_now.to_date)
+    PublishPostsService.publish_for_user(subscription.user_id, utc_now, utc_now.to_date, ScheduleHelper::date_str(utc_now), ScheduleHelper::utc_str(utc_now))
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -482,13 +482,13 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
   test "update multiple at once" do
     utc_before_before = DateTime.parse("2022-05-04 00:00:00+00:00")
     subscription1 = create_subscription(1, utc_before_before, 5, 0, wed_count: 2, fri_count: 2)
-    UpdateRssService.init_subscription(subscription1, true, utc_before_before, utc_before_before.to_date)
+    PublishPostsService.init_subscription(subscription1, true, utc_before_before, utc_before_before.to_date, ScheduleHelper::date_str(utc_before_before))
     utc_before = DateTime.parse("2022-05-05 00:00:00+00:00")
     subscription2 = create_subscription(2, utc_before, 5, 0, thu_count: 1, fri_count: 1)
-    UpdateRssService.init_subscription(subscription2, true, utc_before, utc_before.to_date)
+    PublishPostsService.init_subscription(subscription2, true, utc_before, utc_before.to_date, ScheduleHelper::date_str(utc_before))
 
     utc_now = DateTime.parse("2022-05-06 00:00:00+00:00")
-    UpdateRssService.update_for_user(subscription1.user_id, utc_now, utc_now.to_date)
+    PublishPostsService.publish_for_user(subscription1.user_id, utc_now, utc_now.to_date, ScheduleHelper::date_str(utc_now), ScheduleHelper::utc_str(utc_now))
 
     actual_sub1_body = SubscriptionRss.find_by(subscription_id: subscription1.id).body
     expected_sub1_body = <<-BODY
@@ -642,13 +642,13 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
   test "update some but not all" do
     utc_before_before = DateTime.parse("2022-05-04 00:00:00+00:00")
     subscription1 = create_subscription(1, utc_before_before, 5, 0, wed_count: 1, fri_count: 1)
-    UpdateRssService.init_subscription(subscription1, true, utc_before_before, utc_before_before.to_date)
+    PublishPostsService.init_subscription(subscription1, true, utc_before_before, utc_before_before.to_date, ScheduleHelper::date_str(utc_before_before))
     utc_before = DateTime.parse("2022-05-05 00:00:00+00:00")
     subscription2 = create_subscription(2, utc_before, 5, 0, thu_count: 1)
-    UpdateRssService.init_subscription(subscription2, true, utc_before, utc_before.to_date)
+    PublishPostsService.init_subscription(subscription2, true, utc_before, utc_before.to_date, ScheduleHelper::date_str(utc_before))
 
     utc_now = DateTime.parse("2022-05-06 00:00:00+00:00")
-    UpdateRssService.update_for_user(subscription1.user_id, utc_now, utc_now.to_date)
+    PublishPostsService.publish_for_user(subscription1.user_id, utc_now, utc_now.to_date, ScheduleHelper::date_str(utc_now), ScheduleHelper::utc_str(utc_now))
 
     actual_sub1_body = SubscriptionRss.find_by(subscription_id: subscription1.id).body
     expected_sub1_body = <<-BODY
@@ -760,13 +760,13 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
   test "update none" do
     utc_before_before = DateTime.parse("2022-05-04 00:00:00+00:00")
     subscription1 = create_subscription(1, utc_before_before, 5, 0, wed_count: 1)
-    UpdateRssService.init_subscription(subscription1, true, utc_before_before, utc_before_before.to_date)
+    PublishPostsService.init_subscription(subscription1, true, utc_before_before, utc_before_before.to_date, ScheduleHelper::date_str(utc_before_before))
     utc_before = DateTime.parse("2022-05-05 00:00:00+00:00")
     subscription2 = create_subscription(2, utc_before, 5, 0, thu_count: 1)
-    UpdateRssService.init_subscription(subscription2, true, utc_before, utc_before.to_date)
+    PublishPostsService.init_subscription(subscription2, true, utc_before, utc_before.to_date, ScheduleHelper::date_str(utc_before))
 
     utc_now = DateTime.parse("2022-05-06 00:00:00+00:00")
-    UpdateRssService.update_for_user(subscription1.user_id, utc_now, utc_now.to_date)
+    PublishPostsService.publish_for_user(subscription1.user_id, utc_now, utc_now.to_date, ScheduleHelper::date_str(utc_now), ScheduleHelper::utc_str(utc_now))
 
     actual_sub1_body = SubscriptionRss.find_by(subscription_id: subscription1.id).body
     expected_sub1_body = <<-BODY
@@ -864,13 +864,13 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
   test "evict welcome" do
     utc_before = DateTime.parse("2022-05-05 00:00:00+00:00")
     subscription = create_subscription(1, utc_before, 6, 4, fri_count: 1)
-    UpdateRssService.init_subscription(subscription, true, utc_before, utc_before.to_date)
+    PublishPostsService.init_subscription(subscription, true, utc_before, utc_before.to_date, ScheduleHelper::date_str(utc_before))
 
     utc_now = DateTime.parse("2022-05-06 00:00:00+00:00")
-    posts_in_rss_backup = UpdateRssService::POSTS_IN_RSS
-    silence_warnings { UpdateRssService::POSTS_IN_RSS = 5 }
-    UpdateRssService.update_for_user(subscription.user_id, utc_now, utc_now.to_date)
-    silence_warnings { UpdateRssService::POSTS_IN_RSS = posts_in_rss_backup }
+    posts_in_rss_backup = PublishPostsService::POSTS_IN_RSS
+    silence_warnings { PublishPostsService::POSTS_IN_RSS = 5 }
+    PublishPostsService.publish_for_user(subscription.user_id, utc_now, utc_now.to_date, ScheduleHelper::date_str(utc_now), ScheduleHelper::utc_str(utc_now))
+    silence_warnings { PublishPostsService::POSTS_IN_RSS = posts_in_rss_backup }
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -923,13 +923,13 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
   test "finish with welcome" do
     utc_before = DateTime.parse("2022-05-05 00:00:00+00:00")
     subscription = create_subscription(1, utc_before, 3, 2, fri_count: 1)
-    UpdateRssService.init_subscription(subscription, true, utc_before, utc_before.to_date)
+    PublishPostsService.init_subscription(subscription, true, utc_before, utc_before.to_date, ScheduleHelper::date_str(utc_before))
 
     utc_now = DateTime.parse("2022-05-06 00:00:00+00:00")
-    posts_in_rss_backup = UpdateRssService::POSTS_IN_RSS
-    silence_warnings { UpdateRssService::POSTS_IN_RSS = 5 }
-    UpdateRssService.update_for_user(subscription.user_id, utc_now, utc_now.to_date)
-    silence_warnings { UpdateRssService::POSTS_IN_RSS = posts_in_rss_backup }
+    posts_in_rss_backup = PublishPostsService::POSTS_IN_RSS
+    silence_warnings { PublishPostsService::POSTS_IN_RSS = 5 }
+    PublishPostsService.publish_for_user(subscription.user_id, utc_now, utc_now.to_date, ScheduleHelper::date_str(utc_now), ScheduleHelper::utc_str(utc_now))
+    silence_warnings { PublishPostsService::POSTS_IN_RSS = posts_in_rss_backup }
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -942,7 +942,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
       <title>You're all caught up with Test Subscription 1</title>
       <link>https://feedrewind.com/subscriptions/1</link>
       <guid isPermaLink=\"false\">3fe72a84a4c123fd67940ca3f338f28aa8de4991a1e444991f42aa7a1549e174</guid>
-      <description>&lt;a href="https://feedrewind.com/subscriptions/add"&gt;Read something else?&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.com/subscriptions/add"&gt;Want to read something else?&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
@@ -982,13 +982,13 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
   test "finish without welcome" do
     utc_before = DateTime.parse("2022-05-05 00:00:00+00:00")
     subscription = create_subscription(1, utc_before, 4, 3, fri_count: 1)
-    UpdateRssService.init_subscription(subscription, true, utc_before, utc_before.to_date)
+    PublishPostsService.init_subscription(subscription, true, utc_before, utc_before.to_date, ScheduleHelper::date_str(utc_before))
 
     utc_now = DateTime.parse("2022-05-06 00:00:00+00:00")
-    posts_in_rss_backup = UpdateRssService::POSTS_IN_RSS
-    silence_warnings { UpdateRssService::POSTS_IN_RSS = 5 }
-    UpdateRssService.update_for_user(subscription.user_id, utc_now, utc_now.to_date)
-    silence_warnings { UpdateRssService::POSTS_IN_RSS = posts_in_rss_backup }
+    posts_in_rss_backup = PublishPostsService::POSTS_IN_RSS
+    silence_warnings { PublishPostsService::POSTS_IN_RSS = 5 }
+    PublishPostsService.publish_for_user(subscription.user_id, utc_now, utc_now.to_date, ScheduleHelper::date_str(utc_now), ScheduleHelper::utc_str(utc_now))
+    silence_warnings { PublishPostsService::POSTS_IN_RSS = posts_in_rss_backup }
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -1001,7 +1001,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
       <title>You're all caught up with Test Subscription 1</title>
       <link>https://feedrewind.com/subscriptions/1</link>
       <guid isPermaLink=\"false\">3fe72a84a4c123fd67940ca3f338f28aa8de4991a1e444991f42aa7a1549e174</guid>
-      <description>&lt;a href="https://feedrewind.com/subscriptions/add"&gt;Read something else?&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.com/subscriptions/add"&gt;Want to read something else?&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
@@ -1041,13 +1041,13 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
   test "finish without welcome and first post" do
     utc_before = DateTime.parse("2022-05-05 00:00:00+00:00")
     subscription = create_subscription(1, utc_before, 5, 4, fri_count: 1)
-    UpdateRssService.init_subscription(subscription, true, utc_before, utc_before.to_date)
+    PublishPostsService.init_subscription(subscription, true, utc_before, utc_before.to_date, ScheduleHelper::date_str(utc_before))
 
     utc_now = DateTime.parse("2022-05-06 00:00:00+00:00")
-    posts_in_rss_backup = UpdateRssService::POSTS_IN_RSS
-    silence_warnings { UpdateRssService::POSTS_IN_RSS = 5 }
-    UpdateRssService.update_for_user(subscription.user_id, utc_now, utc_now.to_date)
-    silence_warnings { UpdateRssService::POSTS_IN_RSS = posts_in_rss_backup }
+    posts_in_rss_backup = PublishPostsService::POSTS_IN_RSS
+    silence_warnings { PublishPostsService::POSTS_IN_RSS = 5 }
+    PublishPostsService.publish_for_user(subscription.user_id, utc_now, utc_now.to_date, ScheduleHelper::date_str(utc_now), ScheduleHelper::utc_str(utc_now))
+    silence_warnings { PublishPostsService::POSTS_IN_RSS = posts_in_rss_backup }
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -1060,7 +1060,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
       <title>You're all caught up with Test Subscription 1</title>
       <link>https://feedrewind.com/subscriptions/1</link>
       <guid isPermaLink=\"false\">3fe72a84a4c123fd67940ca3f338f28aa8de4991a1e444991f42aa7a1549e174</guid>
-      <description>&lt;a href="https://feedrewind.com/subscriptions/add"&gt;Read something else?&lt;/a&gt;</description>
+      <description>&lt;a href="https://feedrewind.com/subscriptions/add"&gt;Want to read something else?&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
@@ -1100,11 +1100,11 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
   test "is_paused handling" do
     utc_before = DateTime.parse("2022-05-05 00:00:00+00:00")
     subscription = create_subscription(1, utc_before, 5, 0, fri_count: 1)
-    UpdateRssService.init_subscription(subscription, true, utc_before, utc_before.to_date)
+    PublishPostsService.init_subscription(subscription, true, utc_before, utc_before.to_date, ScheduleHelper::date_str(utc_before))
     subscription.update_attribute(:is_paused, true)
 
     utc_now = DateTime.parse("2022-05-06 00:00:00+00:00")
-    UpdateRssService.update_for_user(subscription.user_id, utc_now, utc_now.to_date)
+    PublishPostsService.publish_for_user(subscription.user_id, utc_now, utc_now.to_date, ScheduleHelper::date_str(utc_now), ScheduleHelper::utc_str(utc_now))
 
     actual_sub_body = SubscriptionRss.find_by(subscription_id: subscription.id).body
     expected_sub_body = <<-BODY
@@ -1135,10 +1135,10 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
 
     date3 = DateTime.parse("2022-05-05 00:00:00+00:00")
     subscription3 = create_subscription(3, date3, 1, 1, sat_count: 1)
-    UpdateRssService.init_subscription(subscription3, true, date3, date3.to_date)
+    PublishPostsService.init_subscription(subscription3, true, date3, date3.to_date, ScheduleHelper::date_str(date3))
 
     utc_now = DateTime.parse("2022-05-06 00:00:00+00:00")
-    UpdateRssService.update_for_user(subscription1.user_id, utc_now, utc_now.to_date)
+    PublishPostsService.publish_for_user(subscription1.user_id, utc_now, utc_now.to_date, ScheduleHelper::date_str(utc_now), ScheduleHelper::utc_str(utc_now))
 
     actual_user_body = UserRss.find_by(user_id: subscription1.user.id).body
     # Sorted by publish date desc, sub date desc, post index desc
@@ -1173,7 +1173,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
       <title>You're all caught up with Test Subscription 3</title>
       <link>https://feedrewind.com/subscriptions/3</link>
       <guid isPermaLink=\"false\">43b8e4fb7c0526d3ef514cac8554894843f36a7c0b3a5e3439f024fd5771cfd1</guid>
-      <description>&lt;a href=\"https://feedrewind.com/subscriptions/add\"&gt;Read something else?&lt;/a&gt;</description>
+      <description>&lt;a href=\"https://feedrewind.com/subscriptions/add\"&gt;Want to read something else?&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
@@ -1225,7 +1225,7 @@ class UpdateRssServiceTest < ActiveSupport::TestCase
     blog.update_attribute(:id, id)
 
     subscription = Subscription.create!(
-      user_id: "00000000-0000-0000-0000-000000000000",
+      user_id: 0,
       blog_id: id,
       name: "Test Subscription #{id}",
       status: "live",

@@ -9,7 +9,7 @@
   </div>
 
   <div class="flex flex-col gap-6">
-    <div class="flex flex-col gap-1">
+    <div class="flex flex-col gap-1.5">
       <div class="flex flex-row gap-[0.3125rem] items-center">
         <div class="font-semibold">Time zone</div>
         <div id="timezone_save_spinner" class="spinner spinner-light hidden"></div>
@@ -24,9 +24,17 @@
         <!-- @formatter:on -->
       </div>
     </div>
-    <div id="future_timezone" class="hidden">Entries will be arriving in early mornings <span id="future_timezone_name"></span>.</div>
+    <div id="future_timezone" class="hidden">Entries will be arriving in early mornings
+      <span id="future_timezone_name"></span>.
+    </div>
+
+    <%= render partial: "delivery_channel",
+               locals: { current_delivery_channel: @user_settings.delivery_channel }
+    %>
 
     <script>
+        let maxSeenVersion = <%= @user_settings.version %>;
+
         const clientTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         const clientOffset = new Date().getTimezoneOffset();
 
@@ -35,15 +43,14 @@
         const groupIdByTimezoneId = <%= TimezoneHelper::GROUP_ID_BY_TIMEZONE_ID_JSON.html_safe %>;
 
         let timezoneRequestsInFlight = 0;
-        let maxSeenVersion = <%= @user_settings.version %>;
 
-        function showSpinner() {
+        function showTimezoneSpinner() {
             timezoneRequestsInFlight++;
             let spinner = document.getElementById("timezone_save_spinner");
             spinner.classList.remove("hidden");
         }
 
-        function maybeHideSpinner() {
+        function maybeHideTimezoneSpinner() {
             timezoneRequestsInFlight--;
             if (timezoneRequestsInFlight === 0) {
                 let spinner = document.getElementById("timezone_save_spinner");
@@ -54,7 +61,7 @@
         const timezoneSelect = document.getElementById("timezone");
         timezoneSelect.addEventListener("change", async () => {
             let newTimezone = document.getElementById("timezone").value;
-            showSpinner();
+            showTimezoneSpinner();
             maxSeenVersion += 1;
             const requestVersion = maxSeenVersion;
 
@@ -81,19 +88,19 @@
 
                 if (response.status === 200) {
                     clearTimeout(timeoutId);
-                    maybeHideSpinner();
-                    updateLabels();
+                    maybeHideTimezoneSpinner();
+                    updateTimezoneLabels();
                 } else if (response.status === 409) {
                     const json = await response.json();
                     clearTimeout(timeoutId);
-                    maybeHideSpinner();
+                    maybeHideTimezoneSpinner();
                     if (json.version >= maxSeenVersion) {
                         showRefreshPopup("Settings are out of date. Please refresh the page.");
                     }
                     // If the version is older, we're expecting some other request to succeed
                 } else {
                     clearTimeout(timeoutId);
-                    maybeHideSpinner();
+                    maybeHideTimezoneSpinner();
                     if (requestVersion === maxSeenVersion) {
                         showRefreshPopup("Something went wrong. Please refresh the page.");
                     }
@@ -101,7 +108,7 @@
                 }
             } catch (err) {
                 // Timeout
-                maybeHideSpinner();
+                maybeHideTimezoneSpinner();
                 showRefreshPopup("Something went wrong. Please refresh the page.");
             }
         });
@@ -110,12 +117,11 @@
         let clientTimezoneGroupId;
 
         timezoneSuggestion.addEventListener("click", () => {
-            timezoneSuggestion.classList.add("hidden");
             timezoneSelect.value = clientTimezoneGroupId;
             timezoneSelect.dispatchEvent(new Event('change'));
         });
 
-        function updateLabels() {
+        function updateTimezoneLabels() {
             if (groupIdByTimezoneId.hasOwnProperty(clientTimezone) &&
                 timezoneSelect.value !== groupIdByTimezoneId[clientTimezone]
             ) {
@@ -123,6 +129,8 @@
                 document.getElementById("client_timezone").innerText =
                     shortFriendlyPrefixNameByGroupId[clientTimezoneGroupId];
                 timezoneSuggestion.classList.remove("hidden");
+            } else {
+                timezoneSuggestion.classList.add("hidden");
             }
 
             const futureTimezoneName = document.getElementById("future_timezone_name");
@@ -135,7 +143,79 @@
             }
             document.getElementById("future_timezone").classList.remove("hidden");
         }
-        updateLabels();
+
+        updateTimezoneLabels();
+
+        let deliveryChannelRequestsInFlight = 0;
+
+        function showDeliveryChannelSpinner() {
+            deliveryChannelRequestsInFlight++;
+            let spinner = document.getElementById("delivery_channel_save_spinner");
+            spinner.classList.remove("hidden");
+        }
+
+        function maybeHideDeliveryChannelSpinner() {
+            deliveryChannelRequestsInFlight--;
+            if (deliveryChannelRequestsInFlight === 0) {
+                let spinner = document.getElementById("delivery_channel_save_spinner");
+                spinner.classList.add("hidden");
+            }
+        }
+
+        const deliveryChannelRadios = document.querySelectorAll("input[name='delivery_channel']");
+        for (let radio of deliveryChannelRadios) {
+            radio.addEventListener("change", async (event) => {
+                showDeliveryChannelSpinner();
+                maxSeenVersion += 1;
+                const requestVersion = maxSeenVersion;
+
+                try {
+                    const abortController = new AbortController();
+                    const timeoutId = setTimeout(() => abortController.abort(), 30000);
+                    let formData = new FormData();
+                    formData.append("delivery_channel", event.target.value);
+                    formData.append("client_timezone", clientTimezone); // Just for logging
+                    formData.append("client_offset", clientOffset.toString()); // Just for logging
+                    formData.append("version", requestVersion);
+                    const body = new URLSearchParams(formData);
+                    const response = await fetch(
+                        "settings/save_delivery_channel",
+                        {
+                            method: "post",
+                            headers: {
+                                "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: body,
+                            signal: abortController.signal
+                        }
+                    );
+
+                    if (response.status === 200) {
+                        clearTimeout(timeoutId);
+                        maybeHideDeliveryChannelSpinner();
+                    } else if (response.status === 409) {
+                        const json = await response.json();
+                        clearTimeout(timeoutId);
+                        maybeHideDeliveryChannelSpinner();
+                        if (json.version >= maxSeenVersion) {
+                            showRefreshPopup("Settings are out of date. Please refresh the page.");
+                        }
+                        // If the version is older, we're expecting some other request to succeed
+                    } else {
+                        clearTimeout(timeoutId);
+                        maybeHideDeliveryChannelSpinner();
+                        if (requestVersion === maxSeenVersion) {
+                            showRefreshPopup("Something went wrong. Please refresh the page.");
+                        }
+                        // If the version is older, we're expecting some other request to succeed
+                    }
+                } catch (err) {
+                    // Timeout
+                    maybeHideDeliveryChannelSpinner();
+                    showRefreshPopup("Something went wrong. Please refresh the page.");
+                }
+            });
+        }
     </script>
   </div>
 </div>

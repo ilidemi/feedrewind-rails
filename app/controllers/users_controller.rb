@@ -35,33 +35,29 @@ class UsersController < ApplicationController
         Rails.logger.info("Timezone out: #{@timezone}")
       end
 
-      if @user.save
-        unless existing_user
-          UserSettings.create!(
-            user_id: @user.id, timezone: @timezone, delivery_channel: "multiple_feeds", version: 1
-          )
-          UpdateRssJob.initial_schedule(@user)
-          EmailPostsJob.initial_schedule(@user)
-        end
+      return render "signup_login/signup" unless @user.save
 
-        session[:user_id] = @user.id
+      unless existing_user
+        UserSettings.create!(
+          user_id: @user.id, timezone: @timezone, delivery_channel: nil, version: 1
+        )
+      end
 
-        if cookies[:anonymous_subscription]
-          subscription = Subscription.find_by(id: cookies[:anonymous_subscription], user_id: nil)
-          cookies.delete(:anonymous_subscription)
-        else
-          subscription = nil
-        end
+      session[:user_id] = @user.id
 
-        if subscription
-          subscription.user_id = @user.id
-          subscription.save!
-          redirect_to SubscriptionsHelper.setup_path(subscription), notice: "Thank you for signing up!"
-        else
-          redirect_to subscriptions_path, notice: "Thank you for signing up!"
-        end
+      if cookies[:anonymous_subscription]
+        subscription = Subscription.find_by(id: cookies[:anonymous_subscription], user_id: nil)
+        cookies.delete(:anonymous_subscription)
       else
-        render "signup_login/signup"
+        subscription = nil
+      end
+
+      if subscription
+        subscription.user_id = @user.id
+        subscription.save!
+        redirect_to SubscriptionsHelper.setup_path(subscription)
+      else
+        redirect_to subscriptions_path
       end
     end
   end
@@ -100,21 +96,20 @@ class UsersController < ApplicationController
     failed_lock_attempts = 0
     loop do
       result = ActiveRecord::Base.transaction do
-        Rails.logger.info("Locking daily jobs")
-        jobs = UserJobHelper::lock_daily_jobs(@current_user.id)
-        Rails.logger.info("Locked daily jobs #{jobs}")
+        Rails.logger.info("Locking PublishPostsJob")
+        jobs = PublishPostsJob::lock(@current_user.id)
+        Rails.logger.info("Locked PublishPostsJob #{jobs}")
 
         unless jobs.all? { |job| job.locked_by.nil? }
           Rails.logger.info("Some jobs are running, unlocking #{jobs}")
           next
         end
 
-        update_rss_job = jobs.find { |job| job.type == "UpdateRssJob" }
-        email_posts_job = jobs.find { |job| job.type == "EmailPostsJob" }
-        unless jobs.length == 2 && update_rss_job && email_posts_job
+        unless jobs.length == 1
           Rails.logger.warn("Unexpected amount of job rows for the user: #{jobs}")
           next
         end
+        publish_posts_job = jobs.first
 
         user_settings = @current_user.user_settings
         if user_settings.version >= new_version
@@ -126,38 +121,90 @@ class UsersController < ApplicationController
         user_settings.version = new_version
         user_settings.save!
 
-        rss_job_date_str = UserJobHelper::get_next_scheduled_date(UpdateRssJob, @current_user.id)
-        rss_job_date = Date.parse(rss_job_date_str)
-        rss_job_new_run_at_local = new_timezone.local_datetime(
-          rss_job_date.year, rss_job_date.month, rss_job_date.day, UpdateRssJob::HOUR_OF_DAY, 0, 0
+        job_date_str = PublishPostsJob::get_next_scheduled_date(@current_user.id)
+        job_date = Date.parse(job_date_str)
+        job_hour = PublishPostsJob::get_hour_of_day(user_settings.delivery_channel)
+        job_new_run_at_local = new_timezone.local_datetime(
+          job_date.year, job_date.month, job_date.day, job_hour, 0, 0
         )
-        rss_job_new_run_at = new_timezone.local_to_utc(rss_job_new_run_at_local)
-        utc_now = DateTime.now.utc
-        if rss_job_new_run_at > utc_now
-          UserJobHelper::update_run_at(update_rss_job.id, rss_job_new_run_at)
-        else
-          # If UpdateRssJob moves to the past, EmailPostsJob may also be in the past or fire right after the
-          # lock is released, racing UpdateRssJob. Performing it inline makes sure the execution order is
-          # correct
+        job_new_run_at = new_timezone.local_to_utc(job_new_run_at_local)
+        PublishPostsJob::update_run_at(publish_posts_job.id, job_new_run_at)
 
-          # Schedules tomorrow's one too, important that the new timezone is saved by now
-          UpdateRssJob.new(@current_user.id, rss_job_date_str).perform_now
-          UserJobHelper::destroy_job(update_rss_job.id)
+        Rails.logger.info("Unlocked PublishPostsJob #{jobs}")
+        head :ok
+      end
+
+      return result if result
+
+      failed_lock_attempts += 1
+      if failed_lock_attempts >= 3
+        raise "Couldn't lock the job rows"
+      end
+      sleep(1)
+    end
+  end
+
+  def save_delivery_channel
+    update_params = params.permit(:delivery_channel, :client_timezone, :client_offset, :version)
+    new_version = update_params[:version].to_i
+    case update_params[:delivery_channel]
+    when "rss"
+      new_delivery_channel = "multiple_feeds"
+    when "email"
+      new_delivery_channel = "email"
+    else
+      raise "Unknown delivery channel: #{update_params[:delivery_channel]}"
+    end
+
+    # Saving delivery channel may race with user's update rss job.
+    # If the job is already running, wait till it finishes, otherwise lock the row so it doesn't start
+    failed_lock_attempts = 0
+    loop do
+      result = ActiveRecord::Base.transaction do
+        Rails.logger.info("Locking PublishPostsJob")
+        jobs = PublishPostsJob::lock(@current_user.id)
+        Rails.logger.info("Locked PublishPostsJob #{jobs}")
+
+        unless jobs.all? { |job| job.locked_by.nil? }
+          Rails.logger.info("Some jobs are running, unlocking #{jobs}")
+          next
         end
 
-        email_job_date_str = UserJobHelper::get_next_scheduled_date(EmailPostsJob, @current_user.id)
-        email_job_date = Date.parse(email_job_date_str)
-        email_job_new_run_at_local = new_timezone.local_datetime(
-          email_job_date.year, email_job_date.month, email_job_date.day, EmailPostsJob::HOUR_OF_DAY, 0, 0
-        )
-        email_job_new_run_at = new_timezone.local_to_utc(email_job_new_run_at_local)
+        user_settings = @current_user.user_settings
+        unless (user_settings.delivery_channel && jobs.length == 1) ||
+          (!user_settings.delivery_channel && jobs.length == 0)
 
-        # Ideally we'd execute EmailPostsJob inline too if it lands in the past, but don't want to call
-        # Postmark APIs inside the database lock and frontend click handler. UpdateRssJob is already
-        # executed, so running EmailPostsJob in the worker right after will be ok.
-        UserJobHelper::update_run_at(email_posts_job.id, email_job_new_run_at)
+          Rails.logger.warn("Unexpected amount of job rows for the user: #{jobs}")
+          next
+        end
+        publish_posts_job = jobs.first
 
-        Rails.logger.info("Unlocked daily jobs #{jobs}")
+        if user_settings.version >= new_version
+          Rails.logger.info("Version conflict: existing #{user_settings.version}, new #{new_version}")
+          next render status: :conflict, json: { version: user_settings.version }
+        end
+
+        user_settings.delivery_channel = new_delivery_channel
+        user_settings.version = new_version
+        user_settings.save!
+
+        job_date_str = PublishPostsJob::get_next_scheduled_date(@current_user.id)
+        if job_date_str
+          job_date = Date.parse(job_date_str)
+          job_hour = PublishPostsJob::get_hour_of_day(user_settings.delivery_channel)
+          timezone = TZInfo::Timezone.get(user_settings.timezone)
+          job_new_run_at_local = timezone.local_datetime(
+            job_date.year, job_date.month, job_date.day, job_hour, 0, 0
+          )
+          job_new_run_at = timezone.local_to_utc(job_new_run_at_local)
+          PublishPostsJob::update_run_at(publish_posts_job.id, job_new_run_at)
+          Rails.logger.info("Rescheduled PublishPostsJob for #{job_new_run_at}")
+        else
+          PublishPostsJob::initial_schedule(@current_user)
+          Rails.logger.info("Did initial schedule for PublishPostsJob")
+        end
+
+        Rails.logger.info("Unlocked PublishPostsJob #{jobs}")
         head :ok
       end
 

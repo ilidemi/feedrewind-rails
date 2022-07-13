@@ -46,20 +46,32 @@
                      other_sub_names_by_day: @other_sub_names_by_day,
                      days_of_week: @days_of_week,
                      name_header_id: "name_header",
-                     schedule_preview: @schedule_preview
+                     schedule_preview: @schedule_preview,
+                     delivery_channel_set: @delivery_channel_set
                    }
         %>
       <% else %>
         <%= render partial: "setup_subscription_presenting_goods", locals: { subscription: @subscription } %>
       <% end %>
     <% elsif @subscription.status == "live" %>
-      <%= render partial: "setup_subscription_heres_feed",
-                 locals: {
-                   subscription: @subscription,
-                   arrival_message: @arrival_message,
-                   will_arrive_date: @will_arrive_date
-                 }
-      %>
+      <% if @delivery_channel == "email" %>
+        <%= render partial: "setup_subscription_heres_email",
+                   locals: {
+                     subscription: @subscription,
+                     arrival_message: @arrival_message,
+                     will_arrive_date: @will_arrive_date,
+                     email: @current_user.email
+                   }
+        %>
+      <% else %>
+        <%= render partial: "setup_subscription_heres_feed",
+                   locals: {
+                     subscription: @subscription,
+                     arrival_message: @arrival_message,
+                     will_arrive_date: @will_arrive_date
+                   }
+        %>
+      <% end %>
     <% else %>
       <%= raise "Unexpected subscription status: #{@subscription.status}" %>
     <% end %>

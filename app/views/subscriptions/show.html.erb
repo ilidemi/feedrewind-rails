@@ -13,16 +13,18 @@
       <!-- @formatter:on -->
     </div>
 
-    <div class="flex flex-col gap-1">
-      <p class="font-semibold">Private feed link</p>
-      <div>
-        <%= render partial: "copy_feed_link",
-                   locals: {
-                     request: request,
-                     subscription: @subscription
-                   } %>
+    <% if @delivery_channel != "email" %>
+      <div class="flex flex-col gap-1">
+        <p class="font-semibold">Private feed link</p>
+        <div>
+          <%= render partial: "copy_feed_link",
+                     locals: {
+                       request: request,
+                       subscription: @subscription
+                     } %>
+        </div>
       </div>
-    </div>
+    <% end %>
     <div>
       <span class="font-semibold">Published:</span>
       <span id="published_count"><%= @subscription.published_count %>/<%= @subscription.total_count %></span>

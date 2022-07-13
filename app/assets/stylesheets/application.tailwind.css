@@ -7,8 +7,12 @@
         font-size: 17px;
     }
 
+    .show-ring {
+        @apply ring-1 ring-indigo-500 ring-offset-1
+    }
+
     .focus-ring {
-        @apply focus:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500 focus-visible:ring-offset-1
+        @apply focus:outline-none focus-visible:show-ring
     }
 
     a, button, input {
@@ -41,6 +45,10 @@
 
     .btn-no-disable {
         @apply text-white font-semibold bg-slate-700 hover:bg-slate-900 rounded-md px-3 py-2 hover:cursor-pointer disabled:hover:bg-slate-700 disabled:hover:cursor-default
+    }
+
+    .btn-disabled {
+        @apply disabled:hover:bg-slate-700 disabled:opacity-50 disabled:hover:cursor-default
     }
 
     .btn-red {

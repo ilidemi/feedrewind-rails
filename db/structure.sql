@@ -101,13 +101,14 @@ CREATE TYPE public.post_delivery_channel AS ENUM (
 
 
 --
--- Name: post_email_status; Type: TYPE; Schema: public; Owner: -
+-- Name: post_publish_status; Type: TYPE; Schema: public; Owner: -
 --
 
-CREATE TYPE public.post_email_status AS ENUM (
-    'sent',
-    'skipped',
-    'pending'
+CREATE TYPE public.post_publish_status AS ENUM (
+    'rss_published',
+    'email_pending',
+    'email_skipped',
+    'email_sent'
 );
 
 
@@ -448,7 +449,7 @@ CREATE TABLE public.subscription_posts (
     updated_at timestamp(6) without time zone NOT NULL,
     published_at timestamp without time zone,
     published_at_local_date character varying,
-    email_status public.post_email_status
+    publish_status public.post_publish_status
 );
 
 
@@ -520,7 +521,9 @@ CREATE TABLE public.subscriptions (
     version integer NOT NULL,
     finished_setup_at timestamp without time zone,
     final_item_published_at timestamp without time zone,
-    user_id bigint
+    user_id bigint,
+    initial_item_publish_status public.post_publish_status,
+    final_item_publish_status public.post_publish_status
 );
 
 
@@ -558,7 +561,7 @@ CREATE TABLE public.user_settings (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     version integer NOT NULL,
-    delivery_channel public.post_delivery_channel NOT NULL
+    delivery_channel public.post_delivery_channel
 );
 
 
@@ -1067,6 +1070,16 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220624232743'),
 ('20220625000522'),
 ('20220625002918'),
-('20220630213859');
+('20220630213859'),
+('20220630232537'),
+('20220630232952'),
+('20220701002754'),
+('20220704213114'),
+('20220704230329'),
+('20220704230649'),
+('20220704233753'),
+('20220707003953'),
+('20220711225434'),
+('20220713013546');
 
 

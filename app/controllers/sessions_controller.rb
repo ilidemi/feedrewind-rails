@@ -22,9 +22,9 @@ class SessionsController < ApplicationController
       if subscription
         subscription.user_id = user.id
         subscription.save!
-        redirect_to SubscriptionsHelper.setup_path(subscription), notice: "Logged in!"
+        redirect_to SubscriptionsHelper.setup_path(subscription)
       else
-        redirect_to subscriptions_path, notice: "Logged in!"
+        redirect_to subscriptions_path
       end
     else
       @errors << "Email or password is invalid"
@@ -34,6 +34,6 @@ class SessionsController < ApplicationController
 
   def destroy
     reset_session
-    redirect_to root_path, notice: "Logged out!"
+    redirect_to root_path
   end
 end

@@ -1,12 +1,14 @@
 class InitEmailPostJobs2 < ActiveRecord::Migration[6.1]
   def up
-    User.all.each do |user|
-      begin
-        UserJobHelper.get_next_scheduled_date(EmailPostsJob, user.id)
-      rescue
-        EmailPostsJob.initial_schedule(user)
-      end
-    end
+    # It is not periodic anymore
+
+    # User.all.each do |user|
+    #   begin
+    #     UserJobHelper.get_next_scheduled_date(EmailPostsJob, user.id)
+    #   rescue
+    #     EmailPostsJob.initial_schedule(user)
+    #   end
+    # end
   end
 
   def down

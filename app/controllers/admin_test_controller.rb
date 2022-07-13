@@ -18,7 +18,7 @@ class AdminTestController < ApplicationController
     TimeTravelHelper::travel_to(timestamp)
 
     command_id = RandomId::generate_random_bigint
-    epoch =  Time.at(0).utc.to_datetime
+    epoch = Time.at(0).utc.to_datetime
     TimeTravelJob
       .set(wait_until: epoch)
       .perform_later(command_id, "travel_to", timestamp)
@@ -31,7 +31,7 @@ class AdminTestController < ApplicationController
     TimeTravelHelper::travel_back
 
     command_id = RandomId::generate_random_bigint
-    epoch =  Time.at(0).utc.to_datetime
+    epoch = Time.at(0).utc.to_datetime
     TimeTravelJob
       .set(wait_until: epoch)
       .perform_later(command_id, "travel_back", nil)
@@ -40,12 +40,25 @@ class AdminTestController < ApplicationController
     render plain: DateTime.now.utc.iso8601
   end
 
-  def wait_for_update_rss_job
-    wait_for_daily_job(UpdateRssJob)
-  end
+  def wait_for_publish_posts_job
+    fill_current_user
 
-  def wait_for_email_posts_job
-    wait_for_daily_job(EmailPostsJob)
+    utc_now = DateTime.now.utc
+    timezone = TZInfo::Timezone.get(@current_user.user_settings.timezone)
+    local_datetime = timezone.utc_to_local(utc_now)
+    local_date_str = ScheduleHelper::date_str(local_datetime)
+
+    poll_count = 0
+    while true
+      is_scheduled_for_date = PublishPostsJob::is_scheduled_for_date(@current_user.id, local_date_str)
+      break unless is_scheduled_for_date
+
+      sleep(0.1)
+      poll_count += 1
+      raise "Job didn't run" if poll_count >= 10
+    end
+
+    render plain: "OK"
   end
 
   def set_email_metadata
@@ -57,20 +70,31 @@ class AdminTestController < ApplicationController
   def assert_email_count_with_metadata
     value = params[:value]
     count = params[:count].to_i
+    last_timestamp = params[:last_timestamp]
+    last_tag = params[:last_tag]
     api_token = Rails.application.credentials.postmark_api_sandbox_token
     postmark_client = Postmark::ApiClient.new(api_token)
 
     poll_count = 0
     while true
       messages = postmark_client.get_messages(count: 100, offset: 0, metadata_test: value)
-      break if messages&.length == count
+      if messages&.length == count
+        #noinspection RubyNilAnalysis
+        if count != 0 && messages&.first[:metadata]["server_timestamp"] != last_timestamp
+          raise "Last message timestamp doesn't match: #{messages&.first[:metadata]["server_timestamp"]}"
+        end
+
+        if count != 0 && messages&.first[:tag] != last_tag
+          raise "Last message tag doesn't match: #{messages&.first[:tag]}"
+        end
+
+        return render plain: "OK"
+      end
 
       sleep(1)
       poll_count += 1
-      raise "Email count doesn't match: expected #{count}, actual #{messages&.length}" if poll_count >= 10
+      raise "Email count doesn't match: expected #{count}, actual #{messages&.length}" if poll_count >= 20
     end
-
-    render plain: "OK"
   end
 
   def delete_email_metadata
@@ -84,18 +108,20 @@ class AdminTestController < ApplicationController
     render plain: "OK"
   end
 
-  def reschedule_user_jobs
+  def reschedule_user_job
     fill_current_user
 
     query = <<-SQL
       delete from delayed_jobs
-      where (handler like '%class: UpdateRssJob%' or handler like '%class: EmailPostsJob%') and
+      where (handler like '%class: PublishPostsJob%' or
+          handler like '%class: EmailInitialItemJob%' or
+          handler like '%class: EmailPostsJob%' or
+          handler like '%class: EmailFinalItemJob%') and
         handler like concat('%', $1::text, '%')
     SQL
     ActiveRecord::Base.connection.exec_query(query, "SQL", [@current_user.id])
 
-    UpdateRssJob.initial_schedule(@current_user)
-    EmailPostsJob.initial_schedule(@current_user)
+    PublishPostsJob.initial_schedule(@current_user)
     render plain: "OK"
   end
 
@@ -109,7 +135,7 @@ class AdminTestController < ApplicationController
     return render plain: "NotFound" unless user
 
     user.destroy_subscriptions_recursively!
-    UserJobHelper::destroy_daily_jobs(user.id)
+    PublishPostsJob::destroy_user_jobs(user.id)
     user.destroy!
     render plain: "OK"
   end
@@ -145,28 +171,5 @@ class AdminTestController < ApplicationController
     if difference > 60
       raise "Web timestamp #{web_timestamp} doesn't match worker timestamp #{worker_timestamp}"
     end
-  end
-
-  def wait_for_daily_job(job_class)
-    fill_current_user
-
-    utc_now = DateTime.now.utc
-    timezone = TZInfo::Timezone.get(@current_user.user_settings.timezone)
-    local_datetime = timezone.utc_to_local(utc_now)
-    local_date_str = ScheduleHelper::date_str(local_datetime)
-
-    poll_count = 0
-    while true
-      is_scheduled_for_date = UserJobHelper::is_scheduled_for_date(
-        job_class, @current_user.id, local_date_str
-      )
-      break unless is_scheduled_for_date
-
-      sleep(0.1)
-      poll_count += 1
-      raise "Job didn't run" if poll_count >= 10
-    end
-
-    render plain: "OK"
   end
 end

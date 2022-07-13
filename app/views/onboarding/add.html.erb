@@ -40,8 +40,6 @@
       </button>
       <script>
           function showSpinner() {
-              const button = document.getElementById("discover_go");
-              button.classList.add("disabled");
               const label = document.getElementById("discover_go_label");
               label.classList.add("invisible");
               const spinner = document.getElementById("discover_spinner");
@@ -50,8 +48,6 @@
           }
 
           function hideSpinner() {
-              const button = document.getElementById("discover_go");
-              button.classList.remove("disabled");
               const label = document.getElementById("discover_go_label");
               label.classList.remove("invisible");
               const spinner = document.getElementById("discover_spinner");

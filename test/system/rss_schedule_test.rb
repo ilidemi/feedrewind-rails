@@ -1,10 +1,9 @@
 require "application_system_test_case"
 
-class TimezoneScheduleTest < ApplicationSystemTestCase
+class RssScheduleTest < ApplicationSystemTestCase
   timezone_by_email = {
     "test_pst@test.com" => "America/Los_Angeles",
     "test_nz@test.com" => "Pacific/Auckland",
-    "ilidemi@feedrewind.com" => "America/Los_Angeles"
   }
 
   # @formatter:off
@@ -22,36 +21,30 @@ class TimezoneScheduleTest < ApplicationSystemTestCase
     x2_no_today_no_tomorrow:         ScheduleOutput.new([:da, :da],      [:many, :will, :da], 0, [[],         [:da, :da]     ], 0, [[],         [:da, :da]     ], [[],         [:tm, :tm]     ], 0, [[],         [:tm]]),
     x2_init_today_job_tomorrow:      ScheduleOutput.new([:td, :td, :tm], [:many, :have],      2, [[:td, :td], [:tm, :tm, :da]], 2, [[:td, :td], [:tm, :tm, :da]], [[:ys, :ys], [:td, :td, :tm]], 4, [[:el, :td], [:tm]]),
     x2_init_today_no_tomorrow:       ScheduleOutput.new([:td, :td, :da], [:many, :have],      2, [[:td, :td], [:da, :da]     ], 2, [[:td, :td], [:da, :da]     ], [[:ys, :ys], [:tm, :tm]     ], 2, [[:ys, :ys], [:tm]]),
-    email_today_email_tomorrow:      ScheduleOutput.new([:td, :tm, :da], [:one, :will, :td],  0, [[],         [:td, :tm, :da]], 1, [[:td],      [:tm, :da]     ], [[:ys],      [:td, :tm]     ], 1, [[:ys, :td], [:tm]]),
-    init_email_today_email_tomorrow: ScheduleOutput.new([:td, :tm, :da], [:one, :has],        0, [[:td],      [:tm, :da]     ], 1, [[:td],      [:tm, :da]     ], [[:ys],      [:td, :tm]     ], 1, [[:ys, :td], [:tm]]),
-    no_today_email_tomorrow:         ScheduleOutput.new([:tm, :da],      [:one, :will, :tm],  0, [[],         [:tm, :da]     ], 0, [[],         [:tm, :da]     ], [[],         [:td, :tm]     ], 0, [[:td],      [:tm]]),
   }
   # @formatter:on
 
-  ScheduleData = Struct.new(:email, :delivery_channel, :count, :crt_time, :pub_today, :pub_tomorrow, :output_name)
+  ScheduleData = Struct.new(:email, :count, :crt_time, :pub_today, :pub_tomorrow, :output_name)
   schedule_data = [
     # @formatter:off
-    ScheduleData.new("test_pst@test.com",      :rss,   1, :v_early, true,  true,  :job_today_job_tomorrow),
-    ScheduleData.new("test_pst@test.com",      :rss,   1, :v_early, true,  false, :job_today_no_tomorrow),
-    ScheduleData.new("test_pst@test.com",      :rss,   1, :v_early, false, true,  :no_today_job_tomorrow),
-    ScheduleData.new("test_pst@test.com",      :rss,   1, :early,   true,  true,  :init_today_job_tomorrow),
-    ScheduleData.new("test_pst@test.com",      :rss,   1, :early,   true,  false, :init_today_no_tomorrow),
-    ScheduleData.new("test_pst@test.com",      :rss,   1, :early,   false, true,  :no_today_job_tomorrow),
-    ScheduleData.new("test_pst@test.com",      :rss,   1, :day,     true,  true,  :no_today_job_tomorrow),
-    ScheduleData.new("test_pst@test.com",      :rss,   1, :day,     true,  false, :no_today_no_tomorrow),
-    ScheduleData.new("test_pst@test.com",      :rss,   1, :day,     false, true,  :no_today_job_tomorrow),
-    ScheduleData.new("test_nz@test.com",       :rss,   2, :v_early, true,  true,  :x2_job_today_job_tomorrow),
-    ScheduleData.new("test_nz@test.com",       :rss,   2, :v_early, true,  false, :x2_job_today_no_tomorrow),
-    ScheduleData.new("test_nz@test.com",       :rss,   2, :v_early, false, true,  :x2_no_today_job_tomorrow),
-    ScheduleData.new("test_nz@test.com",       :rss,   2, :early,   true,  true,  :x2_init_today_job_tomorrow),
-    ScheduleData.new("test_nz@test.com",       :rss,   2, :early,   true,  false, :x2_init_today_no_tomorrow),
-    ScheduleData.new("test_nz@test.com",       :rss,   2, :early,   false, true,  :x2_no_today_job_tomorrow),
-    ScheduleData.new("test_nz@test.com",       :rss,   2, :day,     true,  true,  :x2_no_today_job_tomorrow),
-    ScheduleData.new("test_nz@test.com",       :rss,   2, :day,     true,  false, :x2_no_today_no_tomorrow),
-    ScheduleData.new("test_nz@test.com",       :rss,   2, :day,     false, true,  :x2_no_today_job_tomorrow),
-    ScheduleData.new("ilidemi@feedrewind.com", :email, 1, :v_early, true,  true,  :email_today_email_tomorrow),
-    ScheduleData.new("ilidemi@feedrewind.com", :email, 1, :early,   true,  true,  :init_email_today_email_tomorrow),
-    ScheduleData.new("ilidemi@feedrewind.com", :email, 1, :day,     true,  true,  :no_today_email_tomorrow)
+    ScheduleData.new("test_pst@test.com", 1, :v_early, true,  true,  :job_today_job_tomorrow),
+    ScheduleData.new("test_pst@test.com", 1, :v_early, true,  false, :job_today_no_tomorrow),
+    ScheduleData.new("test_pst@test.com", 1, :v_early, false, true,  :no_today_job_tomorrow),
+    ScheduleData.new("test_pst@test.com", 1, :early,   true,  true,  :init_today_job_tomorrow),
+    ScheduleData.new("test_pst@test.com", 1, :early,   true,  false, :init_today_no_tomorrow),
+    ScheduleData.new("test_pst@test.com", 1, :early,   false, true,  :no_today_job_tomorrow),
+    ScheduleData.new("test_pst@test.com", 1, :day,     true,  true,  :no_today_job_tomorrow),
+    ScheduleData.new("test_pst@test.com", 1, :day,     true,  false, :no_today_no_tomorrow),
+    ScheduleData.new("test_pst@test.com", 1, :day,     false, true,  :no_today_job_tomorrow),
+    ScheduleData.new("test_nz@test.com",  2, :v_early, true,  true,  :x2_job_today_job_tomorrow),
+    ScheduleData.new("test_nz@test.com",  2, :v_early, true,  false, :x2_job_today_no_tomorrow),
+    ScheduleData.new("test_nz@test.com",  2, :v_early, false, true,  :x2_no_today_job_tomorrow),
+    ScheduleData.new("test_nz@test.com",  2, :early,   true,  true,  :x2_init_today_job_tomorrow),
+    ScheduleData.new("test_nz@test.com",  2, :early,   true,  false, :x2_init_today_no_tomorrow),
+    ScheduleData.new("test_nz@test.com",  2, :early,   false, true,  :x2_no_today_job_tomorrow),
+    ScheduleData.new("test_nz@test.com",  2, :day,     true,  true,  :x2_no_today_job_tomorrow),
+    ScheduleData.new("test_nz@test.com",  2, :day,     true,  false, :x2_no_today_no_tomorrow),
+    ScheduleData.new("test_nz@test.com",  2, :day,     false, true,  :x2_no_today_job_tomorrow),
     # @formatter:on
   ]
 
@@ -61,7 +54,7 @@ class TimezoneScheduleTest < ApplicationSystemTestCase
       output = schedule_outputs[data.output_name]
       timezone = timezone_by_email[data.email]
 
-      today_utc = DateTime.new(2022, 6, 1)
+      today_utc = DateTime.new(2022, 6, 1).utc
       case timezone
       when "America/Los_Angeles"
         today_local = today_utc.advance(hours: 7)
@@ -96,16 +89,8 @@ class TimezoneScheduleTest < ApplicationSystemTestCase
 
       visit_admin "travel_to_v2?timestamp=#{creation_timestamp}"
       assert_equal creation_timestamp, page.document.text
-      visit_admin "reschedule_user_jobs"
+      visit_admin "reschedule_user_job"
       assert_equal "OK", page.document.text
-
-      if data.delivery_channel == :email
-        email_metadata = RandomId::generate_random_bigint
-        visit_admin "set_email_metadata?value=#{email_metadata}"
-        assert_equal "OK", page.document.text
-      else
-        email_metadata = nil
-      end
 
       visit_dev "subscriptions/add"
       fill_in "start_url", with: "https://ilidemi.github.io/dummy-blogs/1a/rss.xml"
@@ -136,6 +121,7 @@ class TimezoneScheduleTest < ApplicationSystemTestCase
 
       # Assert arrival_msg
       expected_arrival_msg_a = ["First"]
+
       case output.arrival_msg[0]
       when :one
         expected_arrival_msg_a << "entry"
@@ -144,6 +130,7 @@ class TimezoneScheduleTest < ApplicationSystemTestCase
       else
         raise "Unexpected arrival entries count: #{output.arrival_msg[0]}"
       end
+
       case output.arrival_msg[1]
       when :will
         expected_arrival_msg_a << "will arrive"
@@ -164,14 +151,17 @@ class TimezoneScheduleTest < ApplicationSystemTestCase
       else
         raise "Unexpected arrival verb: #{output.arrival_msg[1]}"
       end
+
       expected_arrival_msg = expected_arrival_msg_a.join(" ")
       assert_selector "#arrival_msg", text: expected_arrival_msg
 
       subscription_id = /[0-9]+/.match(page.current_path)[0]
-      subscription_path = "/subscriptions/#{subscription_id}"
+      subscription_path = "subscriptions/#{subscription_id}"
 
       # Assert pub_crt
-      check_published_count(data.delivery_channel, subscription_path, email_metadata, output.pub_crt)
+      visit_dev subscription_path
+      published_count = /^[0-9]+/.match(page.find("#published_count").text)[0].to_i
+      assert_equal output.pub_crt, published_count
 
       # Assert preview_crt
       visit_dev subscription_path unless page.current_path == subscription_path
@@ -180,9 +170,11 @@ class TimezoneScheduleTest < ApplicationSystemTestCase
       # Assert pub_late
       visit_admin "travel_to_v2?timestamp=#{late_timestamp}"
       assert_equal late_timestamp, page.document.text
-      visit_admin "wait_for_update_rss_job"
-      visit_admin "wait_for_email_posts_job"
-      check_published_count(data.delivery_channel, subscription_path, email_metadata, output.pub_late)
+      visit_admin "wait_for_publish_posts_job"
+      assert_equal "OK", page.document.text
+      visit_dev subscription_path
+      published_count = /^[0-9]+/.match(page.find("#published_count").text)[0].to_i
+      assert_equal output.pub_late, published_count
 
       # Assert preview_late
       visit_dev subscription_path unless page.current_path == subscription_path
@@ -197,8 +189,11 @@ class TimezoneScheduleTest < ApplicationSystemTestCase
       # Assert pub_tmrw
       visit_admin "travel_to_v2?timestamp=#{tomorrow_timestamp}"
       assert_equal tomorrow_timestamp, page.document.text
-      visit_admin "wait_for_update_rss_job"
-      check_published_count(data.delivery_channel, subscription_path, email_metadata, output.pub_tmrw)
+      visit_admin "wait_for_publish_posts_job"
+      assert_equal "OK", page.document.text
+      visit_dev subscription_path
+      published_count = /^[0-9]+/.match(page.find("#published_count").text)[0].to_i
+      assert_equal output.pub_tmrw, published_count
 
       # Assert preview_tmrw
       visit_dev subscription_path unless page.current_path == subscription_path
@@ -207,27 +202,10 @@ class TimezoneScheduleTest < ApplicationSystemTestCase
       # Cleanup
       visit_admin "travel_back_v2"
       assert_in_delta DateTime.now.utc, DateTime.parse(page.document.text), 60
-      visit_admin "reschedule_user_jobs"
+      visit_admin "reschedule_user_job"
       assert_equal "OK", page.document.text
-      if data.delivery_channel == :email
-        visit_admin "delete_email_metadata"
-        assert_equal "OK", page.document.text
-      end
 
       visit_dev "logout"
-    end
-  end
-
-  def check_published_count(delivery_channel, subscription_path, email_metadata, expected_count)
-    if delivery_channel == :email
-      visit_admin "assert_email_count_with_metadata?value=#{email_metadata}&count=#{expected_count}"
-      assert_equal "OK", page.document.text
-    elsif delivery_channel == :rss
-      visit_dev subscription_path
-      published_count = /^[0-9]+/.match(page.find("#published_count").text)[0].to_i
-      assert_equal expected_count, published_count
-    else
-      raise "Unknown delivery channel: #{delivery_channel}"
     end
   end
 

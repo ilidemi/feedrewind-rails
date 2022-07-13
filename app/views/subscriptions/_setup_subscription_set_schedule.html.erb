@@ -26,6 +26,13 @@
 
       <%= render partial: "schedule_preview", locals: { schedule_preview: schedule_preview } %>
 
+      <% unless delivery_channel_set %>
+        <div class="flex flex-col gap-1">
+          <%= render partial: "users/delivery_channel", locals: { current_delivery_channel: nil } %>
+          <div id="delivery_channel_empty_error" class="text-red-600 text-sm">Pick one</div>
+        </div>
+      <% end %>
+
       <div>
         <button id="save_button" type="button" class="btn-no-disable relative">
           <div id="save_label">Continue</div>
@@ -41,14 +48,18 @@
         let isScheduleValid = true;
 
         function validateForm() {
-            let isFormValid = isNameValid && isScheduleValid
+            let isFormValid = isNameValid && isScheduleValid <%= "&& document.querySelectorAll(\"input[name='delivery_channel']:checked\").length > 0".html_safe unless delivery_channel_set %>;
             let saveButton = document.getElementById("save_button");
-            saveButton.disabled = !isFormValid;
+            if (isFormValid) {
+                saveButton.disabled = false;
+                saveButton.classList.remove("btn-disabled");
+            } else {
+                saveButton.disabled = true;
+                saveButton.classList.add("btn-disabled");
+            }
         }
 
         function showSpinner() {
-            const button = document.getElementById("save_button");
-            button.classList.add("disabled");
             const label = document.getElementById("save_label");
             label.classList.add("invisible");
             const spinner = document.getElementById("save_spinner");
@@ -57,8 +68,6 @@
         }
 
         function hideSpinner() {
-            const button = document.getElementById("save_button");
-            button.classList.remove("disabled");
             const label = document.getElementById("save_label");
             label.classList.remove("invisible");
             const spinner = document.getElementById("save_spinner");
@@ -142,6 +151,14 @@
             }
             isScheduleValid = isValid;
             validateForm();
+        }
+
+        const deliveryChannelRadios = document.querySelectorAll("input[name='delivery_channel']");
+        for (let radio of deliveryChannelRadios) {
+            radio.addEventListener("change", () => {
+                document.getElementById("delivery_channel_empty_error").classList.add("hidden")
+                validateForm();
+            });
         }
     </script>
 

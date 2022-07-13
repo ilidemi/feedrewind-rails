@@ -17,7 +17,7 @@ class MiscSystemTest < ApplicationSystemTestCase
     today_local_1am = today_local.advance(hours: 1)
     visit_admin "travel_to_v2?timestamp=#{today_local_1am}"
     assert_equal today_local_1am, page.document.text
-    visit_admin "reschedule_user_jobs"
+    visit_admin "reschedule_user_job"
     assert_equal "OK", page.document.text
 
     user_rows = visit_admin_sql "select id from users where email = '#{email}'"
@@ -25,7 +25,7 @@ class MiscSystemTest < ApplicationSystemTestCase
 
     initial_job_rows = visit_admin_sql <<-SQL
       select id from delayed_jobs
-      where handler like '%UpdateRssJob%'
+      where handler like '%PublishPostsJob%'
         and handler like E'%\\n  - #{user_id}\\n%'
     SQL
     assert_equal 1, initial_job_rows.length
@@ -57,7 +57,7 @@ class MiscSystemTest < ApplicationSystemTestCase
     SQL
     duplicate_job_rows = visit_admin_sql <<-SQL
       select id from delayed_jobs
-      where handler like '%UpdateRssJob%'
+      where handler like '%PublishPostsJob%'
         and handler like E'%\\n  - #{user_id}\\n%'
     SQL
     assert_equal 2, duplicate_job_rows.length
@@ -65,12 +65,12 @@ class MiscSystemTest < ApplicationSystemTestCase
     today_local_3am = today_local.advance(hours: 3)
     visit_admin "travel_to_v2?timestamp=#{today_local_3am}"
     assert_equal today_local_3am, page.document.text
-    visit_admin "wait_for_update_rss_job"
+    visit_admin "wait_for_publish_posts_job"
 
     # Assert 1 job for tomorrow and 1 published post
     rescheduled_job_rows = visit_admin_sql <<-SQL
       select id from delayed_jobs
-      where handler like '%UpdateRssJob%'
+      where handler like '%PublishPostsJob%'
         and handler like E'%\\n  - #{user_id}\\n%'
     SQL
     assert_equal 1, rescheduled_job_rows.length
@@ -85,7 +85,7 @@ class MiscSystemTest < ApplicationSystemTestCase
     # Cleanup
     visit_admin "travel_back_v2"
     assert_in_delta DateTime.now.utc, DateTime.parse(page.document.text), 60
-    visit_admin "reschedule_user_jobs"
+    visit_admin "reschedule_user_job"
     assert_equal "OK", page.document.text
 
     visit_dev "logout"

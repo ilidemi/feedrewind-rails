@@ -95,6 +95,7 @@ class SubscriptionsController < ApplicationController
     @other_sub_names_by_day = get_other_sub_names_by_day(@subscription.id)
     @days_of_week = DAYS_OF_WEEK
     @schedule_preview = get_schedule_preview(@subscription, @current_user)
+    @delivery_channel = @current_user.user_settings.delivery_channel
   end
 
   def create
@@ -167,9 +168,11 @@ class SubscriptionsController < ApplicationController
       @other_sub_names_by_day = get_other_sub_names_by_day(@subscription.id)
       @days_of_week = DAYS_OF_WEEK
       @schedule_preview = get_schedule_preview(@subscription, @current_user)
+      @delivery_channel_set = @current_user.user_settings.delivery_channel != nil
     end
 
     if @subscription.status == "live"
+      @delivery_channel = @current_user.user_settings.delivery_channel
       published_count = @subscription.subscription_posts.where("published_at is not null").length
       if published_count == 1
         @arrival_message = :arrived_one
@@ -185,10 +188,7 @@ class SubscriptionsController < ApplicationController
         local_date = timezone.utc_to_local(utc_now).to_date
         local_date_str = ScheduleHelper::date_str(local_date)
 
-        # TODO: for email users this should be the email job? think more
-        next_job_schedule_date = get_realistic_next_scheduled_date(
-          UpdateRssJob, @current_user.id, local_date_str
-        )
+        next_job_schedule_date = get_realistic_next_scheduled_date(@current_user.id, local_date_str)
         todays_job_already_ran = next_job_schedule_date > local_date_str
         first_schedule_date = todays_job_already_ran ? local_date.next_day : local_date
         until enabled_days_of_week.include?(ScheduleHelper.day_of_week(first_schedule_date))
@@ -386,7 +386,7 @@ class SubscriptionsController < ApplicationController
     loop do
       result = ActiveRecord::Base.transaction do
         Rails.logger.info("Locking daily jobs")
-        jobs = UserJobHelper::lock_daily_jobs(@current_user.id)
+        jobs = PublishPostsJob::lock(@current_user.id)
         Rails.logger.info("Locked daily jobs #{jobs}")
 
         unless jobs.all? { |job| job.locked_by.nil? }
@@ -394,7 +394,7 @@ class SubscriptionsController < ApplicationController
           next
         end
 
-        schedule_params = params.permit(:id, :name, *DAY_COUNT_NAMES)
+        schedule_params = params.permit(:id, :name, *DAY_COUNT_NAMES, :delivery_channel)
         @subscription = @current_user.subscriptions.find_by(id: schedule_params[:id])
         return redirect_from_not_found unless @subscription
         return if @subscription.status != "setup"
@@ -407,6 +407,22 @@ class SubscriptionsController < ApplicationController
           .values
           .sum
         raise "Expecting some count to not be zero" unless total_count > 0
+
+        user_settings = @current_user.user_settings
+        if schedule_params[:delivery_channel]
+          case schedule_params[:delivery_channel]
+          when "rss"
+            user_settings.delivery_channel = "multiple_feeds"
+          when "email"
+            user_settings.delivery_channel = "email"
+          else
+            raise "Unknown delivery channel: #{schedule_params[:delivery_channel]}"
+          end
+          user_settings.save!
+          PublishPostsJob.initial_schedule(@current_user)
+        elsif user_settings.delivery_channel.nil?
+          raise "Delivery channel is not set for the user and is not passed in the params"
+        end
 
         counts_by_day.each do |day_of_week, count|
           @subscription.schedules.create!(
@@ -422,15 +438,10 @@ class SubscriptionsController < ApplicationController
 
         # If subscription got added early morning, the first post needs to go out the same day, either via the
         # daily job or right away if the update rss job has already ran
-        next_update_rss_job_date = UserJobHelper::get_next_scheduled_date(UpdateRssJob, @current_user.id)
-        todays_update_rss_job_already_ran = next_update_rss_job_date > local_date_str
-        next_email_posts_job_date = UserJobHelper::get_next_scheduled_date(EmailPostsJob, @current_user.id)
-        todays_email_posts_job_already_ran = next_email_posts_job_date > local_date_str
+        next_job_date = PublishPostsJob::get_next_scheduled_date(@current_user.id)
+        todays_job_already_ran = next_job_date > local_date_str
         is_added_early_morning = ScheduleHelper.is_early_morning(local_datetime)
-        should_publish_posts =
-          todays_update_rss_job_already_ran &&
-            is_added_early_morning &&
-            !todays_email_posts_job_already_ran
+        should_publish_rss_posts = todays_job_already_ran && is_added_early_morning
         local_date = local_datetime.to_date
 
         @subscription.name = schedule_params[:name]
@@ -438,9 +449,11 @@ class SubscriptionsController < ApplicationController
         @subscription.finished_setup_at = utc_now
         @subscription.version = 1
         @subscription.is_added_past_midnight = is_added_early_morning
-        @subscription.save! # so that rss update can pick it up
+        @subscription.save! # so that publish posts service can pick it up
 
-        UpdateRssService.init_subscription(@subscription, should_publish_posts, utc_now, local_date)
+        PublishPostsService.init_subscription(
+          @subscription, should_publish_rss_posts, utc_now, local_date, local_date_str
+        )
         Rails.logger.info("Unlocked daily jobs #{jobs}")
         render plain: SubscriptionsHelper.setup_path(@subscription)
       end
@@ -694,8 +707,7 @@ class SubscriptionsController < ApplicationController
     if subscription.status != "live" && ScheduleHelper::is_early_morning(local_datetime)
       next_schedule_date = local_date_str
     else
-      # UpdateRssJob is always the source of truth for schedule preview
-      next_schedule_date = get_realistic_next_scheduled_date(UpdateRssJob, user.id, local_date_str)
+      next_schedule_date = get_realistic_next_scheduled_date(user.id, local_date_str)
     end
     Rails.logger.info("Next schedule date: #{next_schedule_date}")
 
@@ -705,10 +717,10 @@ class SubscriptionsController < ApplicationController
     )
   end
 
-  def get_realistic_next_scheduled_date(job_class, user_id, local_date_str)
-    next_schedule_date = UserJobHelper::get_next_scheduled_date(job_class, user_id)
+  def get_realistic_next_scheduled_date(user_id, local_date_str)
+    next_schedule_date = PublishPostsJob::get_next_scheduled_date(user_id)
     if next_schedule_date < local_date_str
-      Rails.logger.warn("#{job_class} is scheduled in the past for user #{user_id}: #{next_schedule_date} (today is #{local_date_str})")
+      Rails.logger.warn("Job is scheduled in the past for user #{user_id}: #{next_schedule_date} (today is #{local_date_str})")
       local_date_str
     else
       next_schedule_date
