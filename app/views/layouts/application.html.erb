@@ -68,22 +68,22 @@
       <script>
           document.getElementById("user_button").addEventListener("click", () => {
               let userMenu = document.getElementById("user_menu");
-              userMenu.classList.remove("user-menu-disappear");
+              userMenu.classList.remove("dropdown-disappear");
               userMenu.classList.remove("hidden");
-              userMenu.classList.add("user-menu-appear");
+              userMenu.classList.add("dropdown-appear");
               document.getElementById("user_menu_background").classList.remove("hidden");
           });
 
           document.getElementById("user_menu_background").addEventListener("click", () => {
               let userMenu = document.getElementById("user_menu");
-              userMenu.classList.remove("user-menu-appear");
-              userMenu.classList.add("user-menu-disappear");
+              userMenu.classList.remove("dropdown-appear");
+              userMenu.classList.add("dropdown-disappear");
               document.getElementById("user_menu_background").classList.add("hidden");
           });
 
           document.getElementById("user_menu").addEventListener("animationend", (event) => {
               let userMenu = document.getElementById("user_menu");
-              if (event.animationName === "user-menu-disappear") {
+              if (event.animationName === "dropdown-disappear") {
                   userMenu.classList.add("hidden");
               }
           });
