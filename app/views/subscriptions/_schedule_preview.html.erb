@@ -57,6 +57,34 @@
 </div>
 
 <script>
+    const scheduleDayOfWeekFormat = new Intl.DateTimeFormat("en-US", {weekday: "short", timeZone: "UTC"});
+    const scheduleDateFormat = new Intl.DateTimeFormat("en-US", {
+        weekday: "short",
+        month: "long",
+        day: "numeric",
+        timeZone: "UTC"
+    });
+    const scheduleDateShortFormat = new Intl.DateTimeFormat("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        timeZone: "UTC"
+    });
+    const scheduleLongAgoDateFormat = new Intl.DateTimeFormat("en-US", {
+        weekday: "short",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "UTC"
+    });
+    const scheduleLongAgoDateShortFormat = new Intl.DateTimeFormat("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "UTC"
+    });
+
     function advanceDate(date) {
         date.setDate(date.getDate() + 1);
     }
@@ -89,20 +117,13 @@
         } else {
             // Could've done formatting in Ruby as the data is static but want to be 100% uniform with
             // next posts
-            prevPostDate.innerText = postPublishedDate.toLocaleDateString("en-US", {
-                weekday: "short",
-                month: "long",
-                day: "numeric",
-                year: postPublishedDate < yearAgoDate ? "numeric" : undefined,
-                timeZone: "UTC"
-            });
-            prevPostShortDate.innerText = postPublishedDate.toLocaleDateString("en-US", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-                year: postPublishedDate < yearAgoDate ? "numeric" : undefined,
-                timeZone: "UTC"
-            });
+            if (postPublishedDate >= yearAgoDate) {
+                prevPostDate.innerText = scheduleDateFormat.format(postPublishedDate);
+                prevPostShortDate.innerText = scheduleDateShortFormat.format(postPublishedDate);
+            } else {
+                prevPostDate.innerText = scheduleLongAgoDateFormat.format(postPublishedDate);
+                prevPostShortDate.innerText = scheduleLongAgoDateShortFormat.format(postPublishedDate);
+            }
         }
     }
 
@@ -114,9 +135,7 @@
         }
 
         function getDayOfWeek(date) {
-            return date
-                .toLocaleDateString("en-US", {weekday: "short", timeZone: "UTC"})
-                .toLowerCase();
+            return scheduleDayOfWeekFormat.format(date).toLowerCase();
         }
 
         if (countsByDay) {
@@ -133,18 +152,8 @@
                 } else if (date.getTime() === tomorrowDate.getTime()) {
                     nextPostDate.innerText = nextPostShortDate.innerText = "Tomorrow";
                 } else {
-                    nextPostDate.innerText = date.toLocaleDateString("en-US", {
-                        weekday: "short",
-                        month: "long",
-                        day: "numeric",
-                        timeZone: "UTC"
-                    });
-                    nextPostShortDate.innerText = date.toLocaleDateString("en-US", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                        timeZone: "UTC"
-                    });
+                    nextPostDate.innerText = scheduleDateFormat.format(date);
+                    nextPostShortDate.innerText = scheduleDateShortFormat.format(date);
                 }
 
                 postsLeft--;
