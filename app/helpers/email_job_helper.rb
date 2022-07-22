@@ -12,6 +12,7 @@ module EmailJobHelper
       test_metadata = nil
       api_token = Rails.application.credentials.postmark_api_token
     end
+    raise "Postmark API token not found" unless api_token
     postmark_client = Postmark::ApiClient.new(api_token)
 
     [postmark_client, test_metadata]
