@@ -1,0 +1,2 @@
+class PostmarkBounce < ApplicationRecord
+end

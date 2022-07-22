@@ -11,6 +11,12 @@ class ApplicationController < ActionController::Base
 
   def current_user
     @current_user ||= User.find_by(id: session[:user_id]) if session[:user_id]
+    if @current_user
+      @current_user_has_bounced = PostmarkBouncedUser.exists?(@current_user.id)
+    else
+      @current_user_has_bounced = false
+    end
+    @current_user
   end
 
   helper_method :current_user

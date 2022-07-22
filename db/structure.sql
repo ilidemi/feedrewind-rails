@@ -113,6 +113,17 @@ CREATE TYPE public.post_publish_status AS ENUM (
 
 
 --
+-- Name: postmark_message_type; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.postmark_message_type AS ENUM (
+    'sub_initial',
+    'sub_final',
+    'sub_post'
+);
+
+
+--
 -- Name: subscription_status; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -344,6 +355,46 @@ CREATE SEQUENCE public.delayed_jobs_id_seq
 --
 
 ALTER SEQUENCE public.delayed_jobs_id_seq OWNED BY public.delayed_jobs.id;
+
+
+--
+-- Name: postmark_bounced_users; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.postmark_bounced_users (
+    user_id bigint NOT NULL,
+    example_bounce_id bigint NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: postmark_bounces; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.postmark_bounces (
+    id bigint NOT NULL,
+    bounce_type text NOT NULL,
+    message_id text,
+    payload json NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: postmark_messages; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.postmark_messages (
+    message_id text NOT NULL,
+    subscription_post_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    message_type public.postmark_message_type NOT NULL,
+    subscription_id bigint NOT NULL
+);
 
 
 --
@@ -716,6 +767,30 @@ ALTER TABLE ONLY public.delayed_jobs
 
 
 --
+-- Name: postmark_bounced_users postmark_bounced_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postmark_bounced_users
+    ADD CONSTRAINT postmark_bounced_users_pkey PRIMARY KEY (user_id);
+
+
+--
+-- Name: postmark_bounces postmark_bounces_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postmark_bounces
+    ADD CONSTRAINT postmark_bounces_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: postmark_messages postmark_messages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postmark_messages
+    ADD CONSTRAINT postmark_messages_pkey PRIMARY KEY (message_id);
+
+
+--
 -- Name: schedules schedules_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -872,6 +947,14 @@ ALTER TABLE ONLY public.blog_discarded_feed_entries
 
 
 --
+-- Name: postmark_messages fk_rails_897226ae9c; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postmark_messages
+    ADD CONSTRAINT fk_rails_897226ae9c FOREIGN KEY (subscription_post_id) REFERENCES public.subscription_posts(id);
+
+
+--
 -- Name: blog_canonical_equality_configs fk_rails_9b3fd3910a; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -936,6 +1019,14 @@ ALTER TABLE ONLY public.subscriptions
 
 
 --
+-- Name: postmark_bounced_users fk_rails_cf5feb15c9; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postmark_bounced_users
+    ADD CONSTRAINT fk_rails_cf5feb15c9 FOREIGN KEY (example_bounce_id) REFERENCES public.postmark_bounces(id);
+
+
+--
 -- Name: user_settings fk_rails_d1371c6356; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -957,6 +1048,14 @@ ALTER TABLE ONLY public.subscription_posts
 
 ALTER TABLE ONLY public.start_feeds
     ADD CONSTRAINT fk_rails_d91add3512 FOREIGN KEY (start_page_id) REFERENCES public.start_pages(id);
+
+
+--
+-- Name: postmark_messages fk_rails_e906f9105c; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.postmark_messages
+    ADD CONSTRAINT fk_rails_e906f9105c FOREIGN KEY (subscription_id) REFERENCES public.subscriptions(id);
 
 
 --
@@ -1080,6 +1179,15 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220704233753'),
 ('20220707003953'),
 ('20220711225434'),
-('20220713013546');
+('20220713013546'),
+('20220718195318'),
+('20220718195729'),
+('20220718200220'),
+('20220719212625'),
+('20220719212839'),
+('20220719213210'),
+('20220719214503'),
+('20220719215543'),
+('20220721221420');
 
 

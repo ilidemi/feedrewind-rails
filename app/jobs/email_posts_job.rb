@@ -5,15 +5,18 @@ class EmailPostsJob < ApplicationJob
   queue_as :default
 
   def perform(user_id, date_str, scheduled_for_str, final_item_subscription_ids)
-    user = User.find_by(id: user_id)
-    unless user
-      Rails.logger.info("User not found")
-      return
-    end
-
-    postmark_client, test_metadata = EmailJobHelper::get_client_and_metadata
-
     not_sent_count = SubscriptionPost.transaction do
+      user = User.find_by(id: user_id)
+      unless user
+        Rails.logger.info("User #{user_id} not found")
+        return
+      end
+
+      if PostmarkBouncedUser.exists?(user_id)
+        Rails.logger.info("User #{user_id} marked as bounced, not sending anything")
+        return
+      end
+
       posts_to_email = SubscriptionPost
         .where(publish_status: "email_pending")
         .includes(:subscription)
@@ -30,6 +33,8 @@ class EmailPostsJob < ApplicationJob
         next 0
       end
 
+      postmark_client, test_metadata = EmailJobHelper::get_client_and_metadata
+
       messages = []
       posts_to_email.each do |subscription_post|
         messages << SubscriptionPostMailer
@@ -45,7 +50,7 @@ class EmailPostsJob < ApplicationJob
       sent, not_sent = posts_to_email
         .zip(messages, responses)
         .partition { |_, _, response| response[:error_code] == 0 }
-      Rails.logger.info("Sent messages: #{sent.length}")
+      Rails.logger.info("Sent post messages: #{sent.length}")
       not_sent.each do |_, message, response|
         # Possible reasons for partial failure:
         # Rate limit exceeded
@@ -55,8 +60,14 @@ class EmailPostsJob < ApplicationJob
         Rails.logger.warn("Error sending email: #{message.metadata} - #{response}")
       end
 
-      sent.each do |subscription_post, message, _|
-        Rails.logger.info("Sent email: #{message.metadata}")
+      sent.each do |subscription_post, message, response|
+        Rails.logger.info("Sent post email: #{message.metadata} - #{response}")
+        PostmarkMessage.create!(
+          message_id: response[:message_id],
+          message_type: "sub_post",
+          subscription_id: subscription_post.subscription_id,
+          subscription_post_id: subscription_post.id
+        )
         subscription_post.publish_status = "email_sent"
         subscription_post.save!
       end

@@ -43,6 +43,8 @@ Rails.application.routes.draw do
   get "/privacy", to: "misc#privacy"
   get "/about", to: "misc#about"
 
+  post "/postmark/report_bounce", to: "postmark#report_bounce"
+
   get "/admin/add_blog", to: "admin#add_blog"
   post "/admin/post_blog", to: "admin#post_blog"
 

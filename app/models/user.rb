@@ -6,6 +6,7 @@ class User < ApplicationRecord
   has_many :subscriptions, dependent: :destroy
   has_one :user_rss, dependent: :destroy
   has_many :blog_crawl_votes, dependent: :destroy
+  has_one :postmark_bounced_user, dependent: :destroy # Hopefully zero, but up to one
   validates_length_of :password, minimum: 8
   validates_presence_of :email
   validate :email_uniqueness

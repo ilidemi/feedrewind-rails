@@ -185,10 +185,11 @@ class SubscriptionsController < ApplicationController
           .to_h { |schedule| [schedule.day_of_week, schedule.count] }
         utc_now = DateTime.now.utc
         timezone = TZInfo::Timezone.get(@current_user.user_settings.timezone)
-        local_date = timezone.utc_to_local(utc_now).to_date
+        local_datetime = timezone.utc_to_local(utc_now)
+        local_date = local_datetime.to_date
         local_date_str = ScheduleHelper::date_str(local_date)
 
-        next_job_schedule_date = get_realistic_next_scheduled_date(@current_user.id, local_date_str)
+        next_job_schedule_date = get_realistic_next_scheduled_date(@current_user.id, local_datetime)
         todays_job_already_ran = next_job_schedule_date > local_date_str
         first_schedule_date = todays_job_already_ran ? local_date.next_day : local_date
         until enabled_days_of_week.include?(ScheduleHelper.day_of_week(first_schedule_date))
@@ -707,7 +708,7 @@ class SubscriptionsController < ApplicationController
     if subscription.status != "live" && ScheduleHelper::is_early_morning(local_datetime)
       next_schedule_date = local_date_str
     else
-      next_schedule_date = get_realistic_next_scheduled_date(user.id, local_date_str)
+      next_schedule_date = get_realistic_next_scheduled_date(user.id, local_datetime)
     end
     Rails.logger.info("Next schedule date: #{next_schedule_date}")
 
@@ -717,9 +718,16 @@ class SubscriptionsController < ApplicationController
     )
   end
 
-  def get_realistic_next_scheduled_date(user_id, local_date_str)
+  def get_realistic_next_scheduled_date(user_id, local_datetime)
     next_schedule_date = PublishPostsJob::get_next_scheduled_date(user_id)
-    if next_schedule_date < local_date_str
+    local_date_str = ScheduleHelper::date_str(local_datetime)
+    if next_schedule_date.nil?
+      if ScheduleHelper::is_early_morning(local_datetime)
+        local_date_str
+      else
+        ScheduleHelper::date_str(local_datetime.to_date.next_day)
+      end
+    elsif next_schedule_date < local_date_str
       Rails.logger.warn("Job is scheduled in the past for user #{user_id}: #{next_schedule_date} (today is #{local_date_str})")
       local_date_str
     else

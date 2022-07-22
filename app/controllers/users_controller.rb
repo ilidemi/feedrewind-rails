@@ -105,11 +105,13 @@ class UsersController < ApplicationController
           next
         end
 
-        unless jobs.length == 1
+        user_settings = @current_user.user_settings
+        unless (user_settings.delivery_channel && jobs.length == 1) ||
+          (!user_settings.delivery_channel && jobs.length == 0)
+
           Rails.logger.warn("Unexpected amount of job rows for the user: #{jobs}")
           next
         end
-        publish_posts_job = jobs.first
 
         user_settings = @current_user.user_settings
         if user_settings.version >= new_version
@@ -121,14 +123,17 @@ class UsersController < ApplicationController
         user_settings.version = new_version
         user_settings.save!
 
-        job_date_str = PublishPostsJob::get_next_scheduled_date(@current_user.id)
-        job_date = Date.parse(job_date_str)
-        job_hour = PublishPostsJob::get_hour_of_day(user_settings.delivery_channel)
-        job_new_run_at_local = new_timezone.local_datetime(
-          job_date.year, job_date.month, job_date.day, job_hour, 0, 0
-        )
-        job_new_run_at = new_timezone.local_to_utc(job_new_run_at_local)
-        PublishPostsJob::update_run_at(publish_posts_job.id, job_new_run_at)
+        if jobs.length == 1
+          publish_posts_job = jobs.first
+          job_date_str = PublishPostsJob::get_next_scheduled_date(@current_user.id)
+          job_date = Date.parse(job_date_str)
+          job_hour = PublishPostsJob::get_hour_of_day(user_settings.delivery_channel)
+          job_new_run_at_local = new_timezone.local_datetime(
+            job_date.year, job_date.month, job_date.day, job_hour, 0, 0
+          )
+          job_new_run_at = new_timezone.local_to_utc(job_new_run_at_local)
+          PublishPostsJob::update_run_at(publish_posts_job.id, job_new_run_at)
+        end
 
         Rails.logger.info("Unlocked PublishPostsJob #{jobs}")
         head :ok
@@ -177,7 +182,6 @@ class UsersController < ApplicationController
           Rails.logger.warn("Unexpected amount of job rows for the user: #{jobs}")
           next
         end
-        publish_posts_job = jobs.first
 
         if user_settings.version >= new_version
           Rails.logger.info("Version conflict: existing #{user_settings.version}, new #{new_version}")
@@ -190,6 +194,7 @@ class UsersController < ApplicationController
 
         job_date_str = PublishPostsJob::get_next_scheduled_date(@current_user.id)
         if job_date_str
+          publish_posts_job = jobs.first
           job_date = Date.parse(job_date_str)
           job_hour = PublishPostsJob::get_hour_of_day(user_settings.delivery_channel)
           timezone = TZInfo::Timezone.get(user_settings.timezone)
