@@ -3,7 +3,7 @@ class PostmarkController < ApplicationController
 
   def report_bounce
     webhook_secret = request.headers["webhook-secret"]
-    unless webhook_secret == Rails.configuration.postmark_webhook_secret
+    unless webhook_secret == Rails.application.credentials.postmark_webhook_secret!
       raise "Webhook secret not matching: #{webhook_secret}"
     end
 

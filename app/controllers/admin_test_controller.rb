@@ -72,7 +72,7 @@ class AdminTestController < ApplicationController
     count = params[:count].to_i
     last_timestamp = params[:last_timestamp]
     last_tag = params[:last_tag]
-    api_token = Rails.application.credentials.postmark_api_sandbox_token
+    api_token = Rails.application.credentials.postmark_api_sandbox_token!
     postmark_client = Postmark::ApiClient.new(api_token)
 
     poll_count = 0
