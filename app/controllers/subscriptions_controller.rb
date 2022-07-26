@@ -47,14 +47,14 @@ class SubscriptionsController < ApplicationController
   end
 
   ShowSubscription = Struct.new(
-    :id, :name, :is_paused, :status, :version, :is_added_past_midnight, :url, :published_count, :total_count,
-    :has_schedules, keyword_init: true
+    :id, :name, :is_paused, :status, :schedule_version, :is_added_past_midnight, :url, :published_count,
+    :total_count, :has_schedules, keyword_init: true
   )
 
   def show
     query = <<-SQL
       (
-        select 'subscription' as tag, id, name, is_paused, status, version, is_added_past_midnight,
+        select 'subscription' as tag, id, name, is_paused, status, schedule_version, is_added_past_midnight,
           (select url from blogs where id = blog_id) as url,
           (
             select count(published_at) from subscription_posts where subscription_id = subscriptions.id
@@ -80,7 +80,7 @@ class SubscriptionsController < ApplicationController
       name: first_row[2],
       is_paused: first_row[3],
       status: first_row[4],
-      version: first_row[5],
+      schedule_version: first_row[5],
       is_added_past_midnight: first_row[6],
       url: first_row[7],
       published_count: first_row[8],
@@ -448,7 +448,7 @@ class SubscriptionsController < ApplicationController
         @subscription.name = schedule_params[:name]
         @subscription.status = "live"
         @subscription.finished_setup_at = utc_now
-        @subscription.version = 1
+        @subscription.schedule_version = 1
         @subscription.is_added_past_midnight = is_added_early_morning
         @subscription.save! # so that publish posts service can pick it up
 
@@ -476,7 +476,7 @@ class SubscriptionsController < ApplicationController
 
     @subscription.is_paused = true
     @subscription.save!
-    redirect_to action: 'show', id: @subscription.id
+    head :ok
   end
 
   def unpause
@@ -486,18 +486,18 @@ class SubscriptionsController < ApplicationController
 
     @subscription.is_paused = false
     @subscription.save!
-    redirect_to action: 'show', id: @subscription.id
+    head :ok
   end
 
   def update
-    update_params = params.permit(:id, :version, *DAY_COUNT_NAMES)
+    update_params = params.permit(:id, :schedule_version, *DAY_COUNT_NAMES)
     @subscription = @current_user.subscriptions.find_by(id: update_params[:id])
     return redirect_from_not_found unless @subscription
     return if @subscription.status != "live"
 
-    new_version = update_params[:version].to_i
-    if @subscription.version >= new_version
-      return render status: :conflict, json: { version: @subscription.version }
+    new_version = update_params[:schedule_version].to_i
+    if @subscription.schedule_version >= new_version
+      return render status: :conflict, json: { schedule_version: @subscription.schedule_version }
     end
 
     total_count = DAY_COUNT_NAMES
@@ -514,11 +514,11 @@ class SubscriptionsController < ApplicationController
         schedule.save!
       end
 
-      @subscription.version = new_version
+      @subscription.schedule_version = new_version
       @subscription.save!
     end
 
-    render head: :ok
+    head :ok
   end
 
   def destroy

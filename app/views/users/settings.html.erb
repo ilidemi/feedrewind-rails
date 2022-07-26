@@ -69,10 +69,10 @@
                 const abortController = new AbortController();
                 const timeoutId = setTimeout(() => abortController.abort(), 30000);
                 let formData = new FormData();
-                formData.append("timezone", newTimezone);
-                formData.append("client_timezone", clientTimezone); // Just for logging
-                formData.append("client_offset", clientOffset.toString()); // Just for logging
-                formData.append("version", requestVersion);
+                formData.set("timezone", newTimezone);
+                formData.set("client_timezone", clientTimezone); // Just for logging
+                formData.set("client_offset", clientOffset.toString()); // Just for logging
+                formData.set("version", requestVersion);
                 const body = new URLSearchParams(formData);
                 const response = await fetch(
                     "settings/save_timezone",
@@ -173,10 +173,10 @@
                     const abortController = new AbortController();
                     const timeoutId = setTimeout(() => abortController.abort(), 30000);
                     let formData = new FormData();
-                    formData.append("delivery_channel", event.target.value);
-                    formData.append("client_timezone", clientTimezone); // Just for logging
-                    formData.append("client_offset", clientOffset.toString()); // Just for logging
-                    formData.append("version", requestVersion);
+                    formData.set("delivery_channel", event.target.value);
+                    formData.set("client_timezone", clientTimezone); // Just for logging
+                    formData.set("client_offset", clientOffset.toString()); // Just for logging
+                    formData.set("version", requestVersion);
                     const body = new URLSearchParams(formData);
                     const response = await fetch(
                         "settings/save_delivery_channel",

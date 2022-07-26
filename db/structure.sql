@@ -569,12 +569,12 @@ CREATE TABLE public.subscriptions (
     discarded_at timestamp without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    version integer NOT NULL,
     finished_setup_at timestamp without time zone,
     final_item_published_at timestamp without time zone,
     user_id bigint,
     initial_item_publish_status public.post_publish_status,
-    final_item_publish_status public.post_publish_status
+    final_item_publish_status public.post_publish_status,
+    schedule_version integer NOT NULL
 );
 
 
@@ -1188,6 +1188,8 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220719213210'),
 ('20220719214503'),
 ('20220719215543'),
-('20220721221420');
+('20220721221420'),
+('20220726015417'),
+('20220726025440');
 
 

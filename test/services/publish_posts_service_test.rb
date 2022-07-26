@@ -1231,7 +1231,8 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
       status: "live",
       is_paused: false,
       is_added_past_midnight: false,
-      version: 1,
+      schedule_version: 1,
+      pause_version: 1,
       finished_setup_at: finished_setup_at
     )
     subscription.update_attribute(:id, id)

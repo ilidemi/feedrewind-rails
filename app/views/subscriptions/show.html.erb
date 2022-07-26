@@ -31,39 +31,136 @@
     </div>
     <div>
       <span class="font-semibold">Status:</span>
-      <span>
-        <% if @subscription.published_count < @subscription.total_count %>
-          <% if @subscription.is_paused %>
-            Paused
-            <%= button_to SubscriptionsHelper.unpause_path(@subscription),
-                          { method: :post },
-                          form_class: "btn w-min inline" do %>
-              <div class="inline-flex flex-row gap-1 mt-1 items-center text-sm rounded-md border border-gray-300 text-gray-700 bg-gray-50 hover:bg-gray-100 hover:cursor-pointer px-2 py-1 font-semibold">
-                <!-- play icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                Resume
-              </div>
-            <% end %>
-          <% else %>
-            Active
-            <%= button_to SubscriptionsHelper.pause_path(@subscription),
-                          { method: :post } do %>
-              <div class="inline-flex flex-row gap-1 mt-1 items-center text-sm rounded-md border border-gray-300 text-gray-700 bg-gray-50 hover:bg-gray-100 hover:cursor-pointer px-2 py-1 font-semibold">
-                <!-- pause icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                Pause
-              </div>
-            <% end %>
-          <% end %>
-        <% else %>
-          All done
-        <% end %>
-      </span>
+      <% if @subscription.published_count < @subscription.total_count %>
+        <span id="active_status"
+              <% if @subscription.is_paused %> class="hidden" <% end %>
+        >
+          Active
+        </span><span id="paused_status"
+              <% unless @subscription.is_paused %> class="hidden" <% end %>
+        >
+          Paused
+        </span>
+
+        <div class="flex flex-row gap-[0.3125rem] items-center mt-1">
+          <button id="pause_button" class="inline-flex flex-row gap-1 items-center btn-secondary bg-gray-50 <% if @subscription.is_paused %> hidden <% end %>">
+            <!-- pause icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Pause
+          </button>
+          <button id="resume_button" class="inline-flex flex-row gap-1 items-center btn-secondary bg-gray-50 <% unless @subscription.is_paused %> hidden <% end %>">
+            <!-- play icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Resume
+          </button>
+          <div id="paused_save_spinner_container">
+            <div id="paused_save_spinner" class="spinner spinner-light hidden"></div>
+          </div>
+        </div>
+
+        <script>
+            function showPauseSpinner() {
+                let spinner = document.getElementById("paused_save_spinner");
+                spinner.classList.remove("hidden");
+                void spinner.offsetWidth; // trigger reflow
+            }
+
+            function hidePauseSpinner() {
+                let spinner = document.getElementById("paused_save_spinner");
+                spinner.classList.add("hidden");
+            }
+
+            const activeStatus = document.getElementById("active_status");
+            const pausedStatus = document.getElementById("paused_status");
+            const pauseButton = document.getElementById("pause_button");
+            const resumeButton = document.getElementById("resume_button");
+
+            pauseButton.addEventListener("click", async () => {
+                pauseButton.disabled = true;
+                showPauseSpinner();
+
+                try {
+                    const abortController = new AbortController();
+                    const timeoutId = setTimeout(() => abortController.abort(), 30000);
+                    const response = await fetch(
+                        "<%= SubscriptionsHelper.pause_path(@subscription) %>",
+                        {
+                            method: "post",
+                            headers: {
+                                "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            signal: abortController.signal
+                        }
+                    );
+
+                    if (response.status === 200) {
+                        clearTimeout(timeoutId);
+                        hidePauseSpinner();
+                        pauseButton.disabled = false;
+                        activeStatus.classList.add("hidden");
+                        pauseButton.classList.add("hidden");
+                        pausedStatus.classList.remove("hidden");
+                        resumeButton.classList.remove("hidden");
+
+                    } else {
+                        clearTimeout(timeoutId);
+                        hidePauseSpinner();
+                        showRefreshPopup("Something went wrong. Please refresh the page.");
+                    }
+                } catch (err) {
+                    // Timeout
+                    hidePauseSpinner();
+                    showRefreshPopup("Something went wrong. Please refresh the page.");
+                }
+            });
+
+            resumeButton.addEventListener("click", async () => {
+                resumeButton.disabled = true;
+                showPauseSpinner();
+
+                try {
+                    const abortController = new AbortController();
+                    const timeoutId = setTimeout(() => abortController.abort(), 30000);
+                    const response = await fetch(
+                        "<%= SubscriptionsHelper.unpause_path(@subscription) %>",
+                        {
+                            method: "post",
+                            headers: {
+                                "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            signal: abortController.signal
+                        }
+                    );
+
+                    if (response.status === 200) {
+                        clearTimeout(timeoutId);
+                        hidePauseSpinner();
+                        resumeButton.disabled = false;
+                        pausedStatus.classList.add("hidden");
+                        resumeButton.classList.add("hidden");
+                        activeStatus.classList.remove("hidden");
+                        pauseButton.classList.remove("hidden");
+
+                    } else {
+                        clearTimeout(timeoutId);
+                        hidePauseSpinner();
+                        showRefreshPopup("Something went wrong. Please refresh the page.");
+                    }
+                } catch (err) {
+                    // Timeout
+                    hidePauseSpinner();
+                    showRefreshPopup("Something went wrong. Please refresh the page.");
+                }
+            });
+        </script>
+      <% else %>
+        <span>All done</span>
+      <% end %>
     </div>
 
     <% if @subscription.published_count < @subscription.total_count %>
@@ -91,26 +188,19 @@
           %>
         </div>
 
-        <%= number_field_tag "version", @subscription.version, id: "version", class: "hidden" %>
-
         <script>
-            function getScheduleVersion() {
-                let version = document.getElementById("version");
-                return parseInt(version.value);
-            }
-
             let scheduleRequestsInFlight = 0;
             let isScheduleValid = true;
-            let maxSeenVersion = getScheduleVersion();
+            let maxSeenScheduleVersion = <%= @subscription.schedule_version %>;
 
-            function showSpinner() {
+            function showScheduleSpinner() {
                 scheduleRequestsInFlight++;
                 let spinner = document.getElementById("schedule_save_spinner");
                 spinner.classList.remove("hidden");
                 void spinner.offsetWidth; // trigger reflow
             }
 
-            function maybeHideSpinner() {
+            function maybeHideScheduleSpinner() {
                 scheduleRequestsInFlight--;
                 if (scheduleRequestsInFlight === 0) {
                     let spinner = document.getElementById("schedule_save_spinner");
@@ -142,15 +232,16 @@
                 }
 
                 if (isValid && hasSomethingChanged) {
-                    showSpinner();
-                    maxSeenVersion = getScheduleVersion() + 1;
-                    const requestVersion = maxSeenVersion;
-                    document.getElementById("version").value = maxSeenVersion;
+                    showScheduleSpinner();
+                    maxSeenScheduleVersion += 1;
+                    const requestVersion = maxSeenScheduleVersion;
 
                     try {
                         const abortController = new AbortController();
                         const timeoutId = setTimeout(() => abortController.abort(), 30000);
-                        const body = new URLSearchParams(new FormData(document.getElementById("schedule_form")));
+                        const formData = new FormData(document.getElementById("schedule_form"));
+                        formData.set("schedule_version", maxSeenScheduleVersion);
+                        const body = new URLSearchParams(formData);
                         const response = await fetch(
                             window.location,
                             {
@@ -165,26 +256,26 @@
 
                         if (response.status === 200) {
                             clearTimeout(timeoutId);
-                            maybeHideSpinner();
+                            maybeHideScheduleSpinner();
                         } else if (response.status === 409) {
                             const json = await response.json();
                             clearTimeout(timeoutId);
-                            maybeHideSpinner();
-                            if (json.version >= maxSeenVersion) {
+                            maybeHideScheduleSpinner();
+                            if (json.schedule_version >= maxSeenScheduleVersion) {
                                 showRefreshPopup("Schedule is out of date. Please refresh the page.");
                             }
                             // If the version is older, we're expecting some other request to succeed
                         } else {
                             clearTimeout(timeoutId);
-                            maybeHideSpinner();
-                            if (requestVersion === maxSeenVersion) {
+                            maybeHideScheduleSpinner();
+                            if (requestVersion === maxSeenScheduleVersion) {
                                 showRefreshPopup("Something went wrong. Please refresh the page.");
                             }
                             // If the version is older, we're expecting some other request to succeed
                         }
                     } catch (err) {
                         // Timeout
-                        maybeHideSpinner();
+                        maybeHideScheduleSpinner();
                         showRefreshPopup("Something went wrong. Please refresh the page.");
                     }
                 }

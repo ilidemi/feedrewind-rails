@@ -101,15 +101,14 @@
                 .map(t => t.toFixed(3))
                 .join(";");
             let formData = new FormData();
-            formData.append(
-                document.querySelector('meta[name="csrf-param"]').content,
-                document.querySelector('meta[name="csrf-token"]').content
-            );
-            formData.append("client_token", crawlClientToken);
-            formData.append("epoch_durations", epochDurationsStr);
+            formData.set("client_token", crawlClientToken);
+            formData.set("epoch_durations", epochDurationsStr);
             fetch(
                 "./submit_progress_times", {
                     method: "POST",
+                    headers: {
+                        "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+                    },
                     body: formData
                 }
             );

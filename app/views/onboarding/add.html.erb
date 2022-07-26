@@ -189,7 +189,7 @@
                       const abortController = new AbortController();
                       const timeoutId = setTimeout(() => abortController.abort(), 30000);
                       let formData = new FormData();
-                      formData.append("start_feed_id", button.dataset.start_feed_id);
+                      formData.set("start_feed_id", button.dataset.start_feed_id);
                       const body = new URLSearchParams(formData);
                       const response = await fetch(
                           "<%= subscriptions_path %>",

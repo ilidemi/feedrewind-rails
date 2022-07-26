@@ -19,7 +19,7 @@ class Subscription < ApplicationRecord
           name: blog.name,
           status: "setup",
           is_paused: false,
-          version: 0
+          schedule_version: 0,
         )
         subscription.create_subscription_posts_raw!
 
@@ -34,7 +34,7 @@ class Subscription < ApplicationRecord
         name: blog.name,
         status: "waiting_for_blog",
         is_paused: false,
-        version: 0
+        schedule_version: 0,
       )
     end
   end
