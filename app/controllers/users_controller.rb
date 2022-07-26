@@ -16,19 +16,30 @@ class UsersController < ApplicationController
   def create
     user_params = params.permit(:email, "new-password", :timezone, :time_offset)
     User.transaction do
-      existing_user = User.find_by(email: user_params["email"])
+      email = user_params[:email]
+      password = user_params["new-password"]
+      existing_user = User.find_by(email: email)
       if existing_user && existing_user.password_digest.nil?
         @user = existing_user
-        @user.password = user_params["new-password"]
+        @user.password = password
       else
-        @user = User.new({ email: user_params["email"], password: user_params["new-password"] })
+        name = email[...email.index("@")]
+        @user = User.new(
+          {
+            email: email,
+            password: password,
+            name: name
+          }
+        )
 
-        Rails.logger.info("Timezone in: #{user_params["timezone"]}, offset in: #{user_params["time_offset"]}")
-        if TimezoneHelper::TZINFO_ALL_TIMEZONES.include?(user_params["timezone"])
-          @timezone = user_params["timezone"]
+        params_timezone = user_params[:timezone]
+        params_offset = user_params[:time_offset]
+        Rails.logger.info("Timezone in: #{params_timezone}, offset in: #{params_offset}")
+        if TimezoneHelper::TZINFO_ALL_TIMEZONES.include?(params_timezone)
+          @timezone = params_timezone
         else
-          Rails.logger.warn("Unknown timezone: #{user_params["timezone"]}")
-          offset_hours_inverted = (user_params["time_offset"].to_f / 60).round
+          Rails.logger.warn("Unknown timezone: #{params_timezone}")
+          offset_hours_inverted = (params_offset.to_f / 60).round
           if -14 <= offset_hours_inverted && offset_hours_inverted <= 12
             offset_str = offset_hours_inverted >= 0 ? "+#{offset_hours_inverted}" : offset_hours_inverted.to_s
             @timezone = "Etc/GMT#{offset_str}"
@@ -43,7 +54,10 @@ class UsersController < ApplicationController
 
       unless existing_user
         UserSettings.create!(
-          user_id: @user.id, timezone: @timezone, delivery_channel: nil, version: 1
+          user_id: @user.id,
+          timezone: @timezone,
+          delivery_channel: nil,
+          version: 1
         )
       end
 

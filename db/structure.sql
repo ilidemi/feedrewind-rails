@@ -626,7 +626,8 @@ CREATE TABLE public.users (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     auth_token character varying,
-    id bigint NOT NULL
+    id bigint NOT NULL,
+    name text NOT NULL
 );
 
 
@@ -1190,6 +1191,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220719215543'),
 ('20220721221420'),
 ('20220726015417'),
-('20220726025440');
+('20220726025440'),
+('20220726221637');
 
 
