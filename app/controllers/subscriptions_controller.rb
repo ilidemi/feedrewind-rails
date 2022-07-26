@@ -551,7 +551,7 @@ class SubscriptionsController < ApplicationController
   def redirect_if_user_mismatch(subscription)
     if subscription.user_id
       if @current_user.nil?
-        return redirect_to login_path, alert: "Not authorized"
+        return redirect_to SessionsHelper::login_path_with_redirect(request)
       elsif subscription.user_id != @current_user.id
         return redirect_to action: "index"
       end

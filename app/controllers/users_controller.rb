@@ -5,6 +5,10 @@ class UsersController < ApplicationController
   before_action :authorize, except: [:new, :create]
 
   def new
+    if current_user
+      return redirect_to root_path
+    end
+
     @user = User.new
     render "signup_login/signup"
   end

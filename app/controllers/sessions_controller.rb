@@ -2,14 +2,20 @@ class SessionsController < ApplicationController
   layout "login_signup"
 
   def new
+    if current_user
+      return redirect_to root_path
+    end
+
     @errors = []
+    @redirect = request.query_parameters["redirect"]
     render "signup_login/login"
   end
 
   def create
-    user = User.find_by_email(params[:email])
+    login_params = params.permit(:email, "current-password", :redirect)
+    user = User.find_by_email(login_params[:email])
     @errors = []
-    if user && user.authenticate(params["current-password"])
+    if user && user.authenticate(login_params["current-password"])
       session[:user_id] = user.id
 
       if cookies[:anonymous_subscription]
@@ -23,6 +29,8 @@ class SessionsController < ApplicationController
         subscription.user_id = user.id
         subscription.save!
         redirect_to SubscriptionsHelper.setup_path(subscription)
+      elsif login_params[:redirect]
+        redirect_to login_params[:redirect]
       else
         redirect_to subscriptions_path
       end

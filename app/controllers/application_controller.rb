@@ -22,7 +22,7 @@ class ApplicationController < ActionController::Base
   helper_method :current_user
 
   def authorize
-    redirect_to login_path, alert: "Not authorized" if current_user.nil?
+    redirect_to SessionsHelper::login_path_with_redirect(request) if current_user.nil?
   end
 
   def is_admin(user_id)
