@@ -34,7 +34,6 @@ module OnboardingHelper
         SuggestedBlog.new("https://dynomight.net/", "https://dynomight.net/feed.xml", "DYNOMIGHT"),
         SuggestedBlog.new("https://sideways-view.com/", "https://sideways-view.com/feed/", "The sideways view"),
         SuggestedBlog.new("https://meltingasphalt.com/", "https://feeds.feedburner.com/MeltingAsphalt", "Melting Asphalt"),
-        SuggestedBlog.new("https://80000hours.org/latest/", "https://80000hours.org/feed/", "80,000 Hours")
       ]
     )
   ]
