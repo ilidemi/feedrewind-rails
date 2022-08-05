@@ -30,6 +30,16 @@
   </div>
 
   <div class="flex flex-col gap-1">
+    <span><%= form.label :post_categories %> (one per line, https://post-1 Category 1)</span>
+    <%= form.text_area :post_categories, cols: 80 %>
+  </div>
+
+  <div>
+    <span><%= form.label :top_categories %> (Top;Articles;Everything)</span>
+    <%= form.text_field :top_categories %>
+  </div>
+
+  <div class="flex flex-col gap-1">
     <span><%= form.label :same_hosts %> (one per line)</span>
     <%= form.text_area :same_hosts %>
   </div>

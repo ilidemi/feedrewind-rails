@@ -1,3 +1,4 @@
+require 'set'
 require_relative '../lib/guided_crawling/feed_discovery'
 require_relative '../lib/guided_crawling/canonical_link'
 require_relative '../lib/guided_crawling/crawling'
@@ -19,22 +20,18 @@ class AdminController < ApplicationController
 
       direction = params[:direction]
 
-      posts_text = params[:posts]
-      post_lines = posts_text.split("\n").map(&:strip)
-      post_lines.each do |post_line|
-        unless %w[http:// https://].any? { |prefix| post_line.start_with?(prefix) }
-          raise "Line doesn't start with a full url: #{post_line}"
+      post_urls_titles = parse_urls_labels(params[:posts])
+      post_urls_titles.reverse! if direction == "newest_first"
+      post_urls_set = Set.new(post_urls_titles.map { |post| post[:url] })
+
+      post_urls_categories = parse_urls_labels(params[:post_categories])
+      post_urls_categories.each do |url_category|
+        unless post_urls_set.include?(url_category[:url])
+          raise "Unknown categorized url: #{url_category[:url]}"
         end
-        unless post_line.include?(" ")
-          raise "Line doesn't have a space between url and title: #{post_line}"
-        end
-      end
-      post_lines.reverse! if direction == "newest_first"
-      post_urls_titles = post_lines.map do |line|
-        url, _, title = line.partition(" ")
-        { url: url, title: title }
       end
 
+      top_categories = params[:top_categories].split(";")
       same_hosts = params[:same_hosts].split("\n").map(&:strip)
       expect_tumblr_paths = params[:expect_tumblr_paths]
       curi_eq_cfg = CanonicalEqualityConfig.new(same_hosts.to_set, expect_tumblr_paths)
@@ -76,12 +73,29 @@ class AdminController < ApplicationController
           update_action: update_action
         )
 
+        blog_post_ids_by_url = {}
         post_urls_titles.each_with_index do |url_title, index|
-          BlogPost.create!(
+          blog_post = BlogPost.create!(
             blog_id: blog.id,
             index: index,
             url: url_title[:url],
-            title: url_title[:title]
+            title: url_title[:label]
+          )
+          blog_post_ids_by_url[blog_post.url] = blog_post.id
+        end
+
+        post_urls_categories.each do |url_category|
+          BlogPostCategory.create!(
+            category: url_category[:label],
+            blog_post_id: blog_post_ids_by_url[url_category[:url]]
+          )
+        end
+
+        top_categories.each_with_index do |category, index|
+          BlogTopCategory.create!(
+            category: category,
+            index: index,
+            blog_id: blog.id
           )
         end
 
@@ -127,5 +141,22 @@ class AdminController < ApplicationController
     end
 
     lines.join("\n")
+  end
+
+  def parse_urls_labels(text)
+    lines = text.split("\n").map(&:strip)
+    lines.each do |post_line|
+      unless %w[http:// https://].any? { |prefix| post_line.start_with?(prefix) }
+        raise "Line doesn't start with a full url: #{post_line}"
+      end
+      unless post_line.include?(" ")
+        raise "Line doesn't have a space between url and title: #{post_line}"
+      end
+    end
+    urls_labels = lines.map do |line|
+      url, _, label = line.partition(" ")
+      { url: url, label: label }
+    end
+    urls_labels
   end
 end
