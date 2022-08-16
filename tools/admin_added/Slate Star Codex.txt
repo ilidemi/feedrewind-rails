@@ -2609,6 +2609,6 @@ https://slatestarcodex.com/2018/07/03/ssc-journal-club-dissolving-the-fermi-para
 https://slatestarcodex.com/2019/08/27/book-review-reframing-superintelligence/ Top
 https://slatestarcodex.com/2015/10/15/it-was-you-who-made-my-blue-eyes-blue/ Top
 
-Top;Articles;Everything
+Top;Articles
 
 no_op

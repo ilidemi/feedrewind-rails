@@ -57,7 +57,7 @@ class GuidedCrawlingJob < ApplicationJob
               added_count += 1
             end
 
-            if added_count > 0 || category.name == "Everything"
+            if added_count > 0
               categories << { name: category.name, is_top: category.is_top }
             end
           end

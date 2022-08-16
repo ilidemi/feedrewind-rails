@@ -482,6 +482,12 @@ def try_extract_next_page(page, paged_result, feed_entry_links, curi_eq_cfg, log
       curi_eq_cfg
     )
       post_categories = extract_mm_categories(logger)
+    elsif canonical_uri_equal?(
+      paged_state.main_link.curi,
+      CanonicalUri.from_uri(URI("https://www.factorio.com/blog/")),
+      curi_eq_cfg
+    )
+      post_categories = extract_factorio_categories(next_entry_links, logger)
     else
       post_categories = nil
     end

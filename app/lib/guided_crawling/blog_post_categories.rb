@@ -20,12 +20,10 @@ def extract_jvns_categories(page, logger)
   post_links_except_rc = categories
     .filter { |category| !category.name.include?("Recurse center") }
     .flat_map { |category| category.post_links }
-
-  categories.prepend(HistoricalBlogPostCategory.new("Everything", true, []))
   categories.prepend(HistoricalBlogPostCategory.new("Blog posts", true, post_links_except_rc))
 
   categories_strs = categories.map { |category| "#{category.is_top ? "!" : ""}#{category.name} (#{category.post_links.length})" }
-  logger.info("jvns categories: #{categories_strs.join(", ")}")
+  logger.info("Julia Evans categories: #{categories_strs.join(", ")}")
   categories
 end
 
@@ -76,12 +74,11 @@ def extract_pg_categories(logger)
   top_links = top_urls.map { |url| to_canonical_link(url, logger) }
 
   categories = [
-    HistoricalBlogPostCategory.new("Top", true, top_links),
-    HistoricalBlogPostCategory.new("Everything", true, [])
+    HistoricalBlogPostCategory.new("Top", true, top_links)
   ]
 
   categories_strs = categories.map { |category| "#{category.is_top ? "!" : ""}#{category.name} (#{category.post_links.length})" }
-  logger.info("pg categories: #{categories_strs.join(", ")}")
+  logger.info("PG categories: #{categories_strs.join(", ")}")
 
   categories
 end
@@ -119,12 +116,23 @@ def extract_mm_categories(logger)
   start_here_links = start_here_urls.map { |url| to_canonical_link(url, logger) }
 
   categories = [
-    HistoricalBlogPostCategory.new("Start Here", true, start_here_links),
-    HistoricalBlogPostCategory.new("Everything", true, [])
+    HistoricalBlogPostCategory.new("Start Here", true, start_here_links)
   ]
 
   categories_strs = categories.map { |category| "#{category.is_top ? "!" : ""}#{category.name} (#{category.post_links.length})" }
-  logger.info("mm categories: #{categories_strs.join(", ")}")
+  logger.info("Mr. Money Mustache categories: #{categories_strs.join(", ")}")
+
+  categories
+end
+
+def extract_factorio_categories(post_links, logger)
+  fff_links = post_links.filter { |link| link.curi.path.start_with?("/blog/post/fff-") }
+  categories = [
+    HistoricalBlogPostCategory.new("Friday Facts", true, fff_links)
+  ]
+
+  categories_strs = categories.map { |category| "#{category.is_top ? "!" : ""}#{category.name} (#{category.post_links.length})" }
+  logger.info("Factorio categories: #{categories_strs.join(", ")}")
 
   categories
 end

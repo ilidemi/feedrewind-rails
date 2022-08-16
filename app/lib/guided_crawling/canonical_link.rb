@@ -129,6 +129,7 @@ class CanonicalUri
   end
 
   def self.from_db_string(db_str)
+    #noinspection HttpUrlsUsage
     dummy_uri = URI("http://#{db_str}")
     CanonicalUri.from_uri(dummy_uri)
   end
