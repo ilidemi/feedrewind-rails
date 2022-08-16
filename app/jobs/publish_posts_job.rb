@@ -47,6 +47,17 @@ class PublishPostsJob < ApplicationJob
       next_run = timezone.local_to_utc(
         DateTime.new(next_date.year, next_date.month, next_date.day, hour_of_day, 0, 0)
       )
+
+      days_skipped = 0
+      while next_run < utc_now
+        days_skipped += 1
+        next_date = next_date.next_day
+        next_run = timezone.local_to_utc(
+          DateTime.new(next_date.year, next_date.month, next_date.day, hour_of_day, 0, 0)
+        )
+      end
+      Rails.logger.warn("Skipping #{days_skipped} days") if days_skipped > 0
+
       PublishPostsJob
         .set(wait_until: next_run)
         .perform_later(user.id, ScheduleHelper::date_str(next_date), ScheduleHelper::utc_str(next_run))
