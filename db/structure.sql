@@ -261,8 +261,10 @@ ALTER SEQUENCE public.blog_discarded_feed_entries_id_seq OWNED BY public.blog_di
 
 CREATE TABLE public.blog_post_categories (
     id bigint NOT NULL,
-    category text NOT NULL,
-    blog_post_id bigint NOT NULL,
+    blog_id bigint NOT NULL,
+    name text NOT NULL,
+    index integer NOT NULL,
+    is_top boolean NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
 );
@@ -285,6 +287,38 @@ CREATE SEQUENCE public.blog_post_categories_id_seq
 --
 
 ALTER SEQUENCE public.blog_post_categories_id_seq OWNED BY public.blog_post_categories.id;
+
+
+--
+-- Name: blog_post_category_assignments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_post_category_assignments (
+    id bigint NOT NULL,
+    blog_post_id bigint NOT NULL,
+    category_id bigint NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: blog_post_category_assignments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.blog_post_category_assignments_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: blog_post_category_assignments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.blog_post_category_assignments_id_seq OWNED BY public.blog_post_category_assignments.id;
 
 
 --
@@ -330,39 +364,6 @@ CREATE SEQUENCE public.blog_posts_id_seq
 --
 
 ALTER SEQUENCE public.blog_posts_id_seq OWNED BY public.blog_posts.id;
-
-
---
--- Name: blog_top_categories; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.blog_top_categories (
-    id bigint NOT NULL,
-    category text NOT NULL,
-    index integer NOT NULL,
-    blog_id bigint NOT NULL,
-    created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
-);
-
-
---
--- Name: blog_top_categories_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.blog_top_categories_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: blog_top_categories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.blog_top_categories_id_seq OWNED BY public.blog_top_categories.id;
 
 
 --
@@ -718,17 +719,17 @@ ALTER TABLE ONLY public.blog_post_categories ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: blog_post_category_assignments id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_category_assignments ALTER COLUMN id SET DEFAULT nextval('public.blog_post_category_assignments_id_seq'::regclass);
+
+
+--
 -- Name: blog_posts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.blog_posts ALTER COLUMN id SET DEFAULT nextval('public.blog_posts_id_seq'::regclass);
-
-
---
--- Name: blog_top_categories id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.blog_top_categories ALTER COLUMN id SET DEFAULT nextval('public.blog_top_categories_id_seq'::regclass);
 
 
 --
@@ -823,6 +824,14 @@ ALTER TABLE ONLY public.blog_post_categories
 
 
 --
+-- Name: blog_post_category_assignments blog_post_category_assignments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_category_assignments
+    ADD CONSTRAINT blog_post_category_assignments_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: blog_post_locks blog_post_locks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -836,14 +845,6 @@ ALTER TABLE ONLY public.blog_post_locks
 
 ALTER TABLE ONLY public.blog_posts
     ADD CONSTRAINT blog_posts_pkey PRIMARY KEY (id);
-
-
---
--- Name: blog_top_categories blog_top_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.blog_top_categories
-    ADD CONSTRAINT blog_top_categories_pkey PRIMARY KEY (id);
 
 
 --
@@ -1003,27 +1004,11 @@ CREATE UNIQUE INDEX index_users_on_id ON public.users USING btree (id);
 
 
 --
--- Name: blog_post_categories fk_rails_05c035fd50; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.blog_post_categories
-    ADD CONSTRAINT fk_rails_05c035fd50 FOREIGN KEY (blog_post_id) REFERENCES public.blog_posts(id);
-
-
---
 -- Name: user_rsses fk_rails_17396fc3a7; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.user_rsses
     ADD CONSTRAINT fk_rails_17396fc3a7 FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE;
-
-
---
--- Name: blog_top_categories fk_rails_3804c414e3; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.blog_top_categories
-    ADD CONSTRAINT fk_rails_3804c414e3 FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
 
 
 --
@@ -1059,6 +1044,14 @@ ALTER TABLE ONLY public.blog_discarded_feed_entries
 
 
 --
+-- Name: blog_post_category_assignments fk_rails_77d2d90745; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_category_assignments
+    ADD CONSTRAINT fk_rails_77d2d90745 FOREIGN KEY (blog_post_id) REFERENCES public.blog_posts(id);
+
+
+--
 -- Name: postmark_messages fk_rails_897226ae9c; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1080,6 +1073,14 @@ ALTER TABLE ONLY public.blog_canonical_equality_configs
 
 ALTER TABLE ONLY public.blog_posts
     ADD CONSTRAINT fk_rails_9d677c923b FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
+
+
+--
+-- Name: blog_post_categories fk_rails_a7dfb6db3e; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_categories
+    ADD CONSTRAINT fk_rails_a7dfb6db3e FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
 
 
 --
@@ -1128,6 +1129,14 @@ ALTER TABLE ONLY public.blog_post_locks
 
 ALTER TABLE ONLY public.subscriptions
     ADD CONSTRAINT fk_rails_c6353e971b FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
+
+
+--
+-- Name: blog_post_category_assignments fk_rails_c6de9c562d; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_post_category_assignments
+    ADD CONSTRAINT fk_rails_c6de9c562d FOREIGN KEY (category_id) REFERENCES public.blog_post_categories(id);
 
 
 --
@@ -1305,6 +1314,8 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220726025440'),
 ('20220726221637'),
 ('20220805192320'),
-('20220805234147');
+('20220805234147'),
+('20220815191840'),
+('20220815192810');
 
 

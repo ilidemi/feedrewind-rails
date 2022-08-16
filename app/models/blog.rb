@@ -12,7 +12,7 @@ class Blog < ApplicationRecord
   has_many :blog_crawl_votes, dependent: :destroy
   has_many :blog_posts, dependent: :destroy
   has_many :blog_discarded_feed_entries, dependent: :destroy
-  has_many :blog_top_categories, dependent: :destroy
+  has_many :blog_post_categories, dependent: :destroy
 
   # Invariants for a given feed_url:
   # If there is a good blog to use, it is always available at LATEST_VERSION

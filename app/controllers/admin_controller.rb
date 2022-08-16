@@ -32,6 +32,15 @@ class AdminController < ApplicationController
       end
 
       top_categories = params[:top_categories].split(";")
+      top_categories_set = top_categories.to_set
+      post_categories = top_categories.clone
+      post_categories_set = Set.new(post_categories)
+      post_urls_categories.each do |url_category|
+        next if post_categories_set.include?(url_category[:label])
+        post_categories_set << url_category[:label]
+        post_categories << url_category[:label]
+      end
+
       same_hosts = params[:same_hosts].split("\n").map(&:strip)
       expect_tumblr_paths = params[:expect_tumblr_paths]
       curi_eq_cfg = CanonicalEqualityConfig.new(same_hosts.to_set, expect_tumblr_paths)
@@ -84,18 +93,21 @@ class AdminController < ApplicationController
           blog_post_ids_by_url[blog_post.url] = blog_post.id
         end
 
-        post_urls_categories.each do |url_category|
-          BlogPostCategory.create!(
-            category: url_category[:label],
-            blog_post_id: blog_post_ids_by_url[url_category[:url]]
+        category_ids_by_name = {}
+        post_categories.each_with_index do |category_name, index|
+          category = BlogPostCategory.create!(
+            blog_id: blog.id,
+            name: category_name,
+            index: index,
+            is_top: top_categories_set.include?(category_name)
           )
+          category_ids_by_name[category_name] = category.id
         end
 
-        top_categories.each_with_index do |category, index|
-          BlogTopCategory.create!(
-            category: category,
-            index: index,
-            blog_id: blog.id
+        post_urls_categories.each do |url_category|
+          BlogPostCategoryAssignment.create!(
+            blog_post_id: blog_post_ids_by_url[url_category[:url]],
+            category_id: category_ids_by_name[url_category[:label]]
           )
         end
 
