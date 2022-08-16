@@ -172,6 +172,18 @@ def guided_crawl(
       end
     else
       logger.info("Feed is long with #{parsed_feed.entry_links.length} entries")
+
+      #noinspection HttpUrlsUsage
+      if canonical_uri_equal?(
+        feed_link.curi,
+        CanonicalUri.from_uri(URI("http://www.aaronsw.com/2002/feeds/pgessays.rss")),
+        curi_eq_cfg
+      )
+        post_categories = extract_pg_categories(logger)
+      else
+        post_categories = nil
+      end
+
       historical_result = HistoricalResult.new(
         blog_link: initial_blog_link,
         main_link: feed_link,
@@ -179,6 +191,7 @@ def guided_crawl(
         links: parsed_feed.entry_links.to_a,
         count: parsed_feed.entry_links.length,
         discarded_feed_entry_urls: [],
+        post_categories: post_categories,
         extra: ""
       )
     end

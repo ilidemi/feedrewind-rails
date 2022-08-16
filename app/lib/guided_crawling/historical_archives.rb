@@ -12,7 +12,7 @@ ArchivesMediumPinnedEntryResult = Struct.new(
   keyword_init: true
 )
 LongFeedResult = Struct.new(
-  :main_link, :pattern, :links, :speculative_count, :count, :extra, keyword_init: true
+  :main_link, :pattern, :links, :speculative_count, :count, :post_categories, :extra, keyword_init: true
 )
 ArchivesShuffledResults = Struct.new(:main_link, :results, :speculative_count, :count, keyword_init: true)
 
@@ -917,6 +917,7 @@ def try_extract_long_feed(feed_entry_links, page_curis_set, min_links_count, mai
       links: feed_entry_links.to_a,
       speculative_count: feed_entry_links.length,
       count: feed_entry_links.length,
+      post_categories: post_categories,
       extra: ""
     )
   else

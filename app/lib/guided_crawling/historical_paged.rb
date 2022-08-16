@@ -1,4 +1,5 @@
 require 'set'
+require_relative 'blog_post_categories'
 require_relative 'historical_common'
 require_relative 'page_parsing'
 require_relative 'structs'
@@ -8,7 +9,7 @@ Page1Result = Struct.new(
   :main_link, :link_to_page2, :speculative_count, :count, :paged_state, keyword_init: true
 )
 PagedResult = Struct.new(
-  :main_link, :pattern, :links, :speculative_count, :count, :extra, keyword_init: true
+  :main_link, :pattern, :links, :speculative_count, :count, :post_categories, :extra, keyword_init: true
 )
 PartialPagedResult = Struct.new(
   :main_link, :link_to_next_page, :next_page_number, :links, :speculative_count, :count, :paged_state,
@@ -475,12 +476,23 @@ def try_extract_next_page(page, paged_result, feed_entry_links, curi_eq_cfg, log
     logger.info("Best count: #{next_entry_links.length} with #{page_count} pages of #{page_sizes}")
     page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
 
+    if canonical_uri_equal?(
+      paged_state.main_link.curi,
+      CanonicalUri.from_uri(URI("https://www.mrmoneymustache.com/blog")),
+      curi_eq_cfg
+    )
+      post_categories = extract_mm_categories(logger)
+    else
+      post_categories = nil
+    end
+
     PagedResult.new(
       main_link: paged_state.main_link,
       pattern: first_page_links_to_last_page ? "paged_last" : "paged_next",
       links: next_entry_links,
       speculative_count: next_entry_links.count,
       count: next_entry_links.count,
+      post_categories: post_categories,
       extra: "page_count: #{page_count}<br>page_sizes: #{page_size_counts}<br>#{paged_state.xpath_extra}<br>last_page: <a href=\"#{page.fetch_uri}\">#{page.curi}</a><br>paging_pattern: #{paging_pattern}"
     )
   end

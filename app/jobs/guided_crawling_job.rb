@@ -40,17 +40,30 @@ class GuidedCrawlingJob < ApplicationJob
         blog_url = guided_crawl_result.historical_result.blog_link.url
         categories_list_by_link = CanonicalUriMap.new(guided_crawl_result.curi_eq_cfg)
         categories = []
+        post_curis_set = CanonicalUriSet.new(
+          guided_crawl_result.historical_result.links.map(&:curi),
+          guided_crawl_result.curi_eq_cfg
+        )
         if guided_crawl_result.historical_result.post_categories
           guided_crawl_result.historical_result.post_categories.each do |category|
-            categories << { name: category.name, is_top: category.is_top }
+            added_count = 0
             category.post_links.each do |link|
+              unless post_curis_set.include?(link.curi)
+                Rails.logger.warn("Post from category is not present in the list: #{link.url}")
+                next
+              end
               categories_list_by_link.add(link, []) unless categories_list_by_link.include?(link.curi)
               categories_list_by_link[link.curi] << category.name
+              added_count += 1
+            end
+
+            if added_count > 0 || category.name == "Everything"
+              categories << { name: category.name, is_top: category.is_top }
             end
           end
         end
         urls_titles_categories = guided_crawl_result.historical_result.links.map do |link|
-          { url: link.url, title: link.title.value, categories: categories_list_by_link[link.curi] }
+          { url: link.url, title: link.title.value, categories: categories_list_by_link[link.curi] || [] }
         end
         curi_eq_cfg_hash = {
           same_hosts: guided_crawl_result.curi_eq_cfg.same_hosts.to_a,
