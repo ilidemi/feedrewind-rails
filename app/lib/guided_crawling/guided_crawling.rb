@@ -18,7 +18,8 @@ require_relative 'util'
 GuidedCrawlResult = Struct.new(:feed_result, :start_url, :curi_eq_cfg, :historical_result, :historical_error)
 FeedResult = Struct.new(:feed_url, :feed_links, :feed_matching_titles, :feed_matching_titles_status)
 HistoricalResult = Struct.new(
-  :blog_link, :main_link, :pattern, :links, :count, :discarded_feed_entry_urls, :extra, keyword_init: true
+  :blog_link, :main_link, :pattern, :links, :count, :discarded_feed_entry_urls, :post_categories, :extra,
+  keyword_init: true
 )
 
 class GuidedCrawlError < StandardError
@@ -116,7 +117,10 @@ def guided_crawl(
     crawl_ctx.pptr_fetched_curis.update_equality_config(curi_eq_cfg)
     guided_crawl_result.curi_eq_cfg = curi_eq_cfg
 
-    feed_entry_curis_titles_map = CanonicalUriTitleMap.new(parsed_feed.entry_links.to_a, curi_eq_cfg)
+    feed_entry_curis_titles_map = CanonicalUriMap.new(curi_eq_cfg)
+    parsed_feed.entry_links.to_a.each do |entry_link|
+      feed_entry_curis_titles_map.add(entry_link, entry_link.title)
+    end
     initial_blog_link = parsed_feed.root_link || start_page_final_link
 
     historical_error = nil
@@ -143,6 +147,11 @@ def guided_crawl(
             .to_a
             .filter { |entry_link| !historical_curis_set.include?(entry_link.curi) }
             .map(&:url)
+          if crawl_historical_result.class.method_defined?(:post_categories)
+            post_categories = crawl_historical_result.post_categories
+          else
+            post_categories = nil
+          end
 
           historical_result = HistoricalResult.new(
             blog_link: crawl_historical_result.main_link,
@@ -151,6 +160,7 @@ def guided_crawl(
             links: crawl_historical_result.links,
             count: crawl_historical_result.count,
             discarded_feed_entry_urls: discarded_feed_entry_urls,
+            post_categories: post_categories,
             extra: crawl_historical_result.extra
           )
         else
@@ -699,7 +709,8 @@ def postprocess_results(
 end
 
 PostprocessedResult = Struct.new(
-  :main_link, :pattern, :links, :speculative_count, :count, :is_matching_feed, :extra, keyword_init: true
+  :main_link, :pattern, :links, :speculative_count, :count, :is_matching_feed, :post_categories, :extra,
+  keyword_init: true
 )
 
 def print_result(result)
@@ -779,6 +790,7 @@ def postprocess_archives_shuffled_results(
       speculative_count: sorted_links.links.length,
       count: sorted_links.links.length,
       is_matching_feed: sorted_links.are_matching_feed,
+      post_categories: tentative_result.post_categories,
       extra: tentative_result.extra + "<br>sort_date_source: #{sorted_links.date_source}<br>are_matching_feed: #{sorted_links.are_matching_feed}"
     )
   end

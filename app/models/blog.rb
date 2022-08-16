@@ -163,24 +163,56 @@ class Blog < ApplicationRecord
     end
   end
 
-  def init_crawled(url, urls_titles, discarded_feed_urls, curi_eq_cfg_hash)
+  def init_crawled(url, urls_titles_categories, categories, discarded_feed_urls, curi_eq_cfg_hash)
     raise "Can only init posts when status is crawl_in_progress" unless self.status == "crawl_in_progress"
 
     Blog.transaction do
-      posts_count = urls_titles.length
+      posts_count = urls_titles_categories.length
 
       utc_now = DateTime.now.utc
-      blog_posts_fields = urls_titles.map.with_index do |url_title, index|
+      blog_posts_fields = urls_titles_categories.map.with_index do |url_title_categories, index|
         {
           blog_id: self.id,
           index: posts_count - index - 1,
-          url: url_title[:url],
-          title: url_title[:title],
+          url: url_title_categories[:url],
+          title: url_title_categories[:title],
           created_at: utc_now,
           updated_at: utc_now
         }
       end
-      BlogPost.insert_all!(blog_posts_fields)
+      blog_post_ids = BlogPost.insert_all!(blog_posts_fields).map { |row| row["id"] }
+
+      if categories.length > 0
+        blog_post_categories_fields = categories.map.with_index do |category, index|
+          {
+            blog_id: self.id,
+            name: category[:name],
+            index: index,
+            is_top: category[:is_top],
+            created_at: utc_now,
+            updated_at: utc_now
+          }
+        end
+        category_ids = BlogPostCategory.insert_all!(blog_post_categories_fields).map { |row| row["id"] }
+
+        category_ids_by_name = categories
+          .zip(category_ids)
+          .to_h { |category, category_id| [category[:name], category_id] }
+
+        blog_posts_category_assignments_fields = urls_titles_categories
+          .zip(blog_post_ids)
+          .flat_map do |url_title_categories, blog_post_id|
+          url_title_categories[:categories].map do |category_name|
+            {
+              blog_post_id: blog_post_id,
+              category_id: category_ids_by_name[category_name],
+              created_at: utc_now,
+              updated_at: utc_now
+            }
+          end
+        end
+        BlogPostCategoryAssignment.insert_all!(blog_posts_category_assignments_fields)
+      end
 
       BlogCanonicalEqualityConfig.create!(
         blog_id: self.id,

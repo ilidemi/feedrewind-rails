@@ -1,4 +1,5 @@
 require 'set'
+require_relative 'blog_post_categories'
 require_relative 'date_extraction'
 require_relative 'historical_archives_sort'
 require_relative 'historical_common'
@@ -118,7 +119,7 @@ def try_extract_archives(
   else
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       shuffled_result = try_extract_shuffled(
-        extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, nil, star_count, min_links_count,
+        page, extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, nil, star_count, min_links_count,
         page_link, logger
       )
       if shuffled_result
@@ -172,7 +173,7 @@ def try_extract_archives(
   else
     extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
       shuffled_almost_result = try_extract_shuffled(
-        extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, almost_match_threshold, star_count,
+        page, extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, almost_match_threshold, star_count,
         min_links_count, page_link, logger
       )
       if shuffled_almost_result
@@ -698,16 +699,22 @@ def try_extract_almost_matching_feed(
 end
 
 ArchivesShuffledResult = Struct.new(
-  :main_link, :pattern, :links_maybe_dates, :speculative_count, :extra, keyword_init: true
+  :main_link, :pattern, :links_maybe_dates, :speculative_count, :post_categories, :extra, keyword_init: true
 )
 
 def try_extract_shuffled(
-  extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, almost_match_threshold, star_count,
+  page, extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, almost_match_threshold, star_count,
   min_links_count, main_link, logger
 )
   is_almost = !!almost_match_threshold
   almost_suffix = is_almost ? "_almost" : ""
   logger.info("Trying shuffled#{almost_suffix} match with #{star_count} stars")
+
+  if canonical_uri_equal?(main_link.curi, CanonicalUri.from_uri(URI("https://jvns.ca")), curi_eq_cfg)
+    post_categories = extract_jvns_categories(page, logger)
+  else
+    post_categories = nil
+  end
 
   best_links_maybe_dates = nil
   best_xpath = nil
@@ -770,6 +777,7 @@ def try_extract_shuffled(
       pattern: "archives_shuffled#{almost_suffix}",
       links_maybe_dates: best_links_maybe_dates,
       speculative_count: best_links_maybe_dates.count,
+      post_categories: post_categories,
       extra: "xpath: #{best_xpath}#{best_log_str}<br>dates_present: #{dates_present}/#{best_links_maybe_dates.length}"
     )
   else

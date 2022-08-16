@@ -168,45 +168,42 @@ def canonical_uri_equal?(curi1, curi2, curi_eq_cfg)
   curi1.query == curi2.query
 end
 
-class CanonicalUriTitleMap
-  def initialize(links, curi_eq_cfg)
+class CanonicalUriMap
+  def initialize(curi_eq_cfg)
     @curi_eq_cfg = curi_eq_cfg
     @links = []
-    @titles_by_key = {}
+    @values_by_key = {}
     @length = 0
-    links.each do |link|
-      add(link)
-    end
   end
 
   attr_reader :length, :links
 
-  def add(link)
+  def add(link, value)
     key = canonical_uri_get_key(link.curi, @curi_eq_cfg)
-    return if @titles_by_key.include?(key)
+    return if @values_by_key.include?(key)
 
-    @titles_by_key[key] = link.title
+    @values_by_key[key] = value
     @links << link
     @length += 1
   end
 
   def include?(curi)
     key = canonical_uri_get_key(curi, @curi_eq_cfg)
-    @titles_by_key.include?(key)
+    @values_by_key.include?(key)
   end
 
   def [](curi)
     key = canonical_uri_get_key(curi, @curi_eq_cfg)
-    @titles_by_key[key]
+    @values_by_key[key]
   end
 
   def hash
-    @titles_by_key.hash
+    @values_by_key.hash
   end
 
   def eql?(other)
-    other.is_a?(CanonicalUriTitleMap) &&
-      @titles_by_key.eql?(other.instance_variable_get(:@titles_by_key))
+    other.is_a?(CanonicalUriMap) &&
+      @values_by_key.eql?(other.instance_variable_get(:@values_by_key))
   end
 end
 
