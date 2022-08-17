@@ -1,6 +1,7 @@
 require 'set'
 require_relative 'blog_post_categories'
 require_relative 'date_extraction'
+require_relative 'hardcoded_blogs'
 require_relative 'historical_archives_sort'
 require_relative 'historical_common'
 
@@ -710,7 +711,11 @@ def try_extract_shuffled(
   almost_suffix = is_almost ? "_almost" : ""
   logger.info("Trying shuffled#{almost_suffix} match with #{star_count} stars")
 
-  if canonical_uri_equal?(main_link.curi, CanonicalUri.from_uri(URI("https://jvns.ca")), curi_eq_cfg)
+  if canonical_uri_equal?(
+    main_link.curi,
+    CanonicalUri.from_uri(URI(HardcodedBlogs::JULIA_EVANS)),
+    curi_eq_cfg
+  )
     post_categories = extract_jvns_categories(page, logger)
   else
     post_categories = nil
@@ -917,7 +922,6 @@ def try_extract_long_feed(feed_entry_links, page_curis_set, min_links_count, mai
       links: feed_entry_links.to_a,
       speculative_count: feed_entry_links.length,
       count: feed_entry_links.length,
-      post_categories: post_categories,
       extra: ""
     )
   else

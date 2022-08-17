@@ -1,6 +1,7 @@
 require_relative 'canonical_link'
 require_relative 'crawling'
 require_relative 'feed_parsing'
+require_relative 'hardcoded_blogs'
 require_relative 'historical_archives'
 require_relative 'historical_archives_categories'
 require_relative 'historical_archives_sort'
@@ -176,7 +177,7 @@ def guided_crawl(
       #noinspection HttpUrlsUsage
       if canonical_uri_equal?(
         feed_link.curi,
-        CanonicalUri.from_uri(URI("http://www.aaronsw.com/2002/feeds/pgessays.rss")),
+        CanonicalUri.from_uri(URI(HardcodedBlogs::PAUL_GRAHAM)),
         curi_eq_cfg
       )
         post_categories = extract_pg_categories(logger)

@@ -1,5 +1,6 @@
 require 'set'
 require_relative 'blog_post_categories'
+require_relative 'hardcoded_blogs'
 require_relative 'historical_common'
 require_relative 'page_parsing'
 require_relative 'structs'
@@ -478,13 +479,13 @@ def try_extract_next_page(page, paged_result, feed_entry_links, curi_eq_cfg, log
 
     if canonical_uri_equal?(
       paged_state.main_link.curi,
-      CanonicalUri.from_uri(URI("https://www.mrmoneymustache.com/blog")),
+      CanonicalUri.from_uri(URI(HardcodedBlogs::MR_MONEY_MUSTACHE)),
       curi_eq_cfg
     )
       post_categories = extract_mm_categories(logger)
     elsif canonical_uri_equal?(
       paged_state.main_link.curi,
-      CanonicalUri.from_uri(URI("https://www.factorio.com/blog/")),
+      CanonicalUri.from_uri(URI(HardcodedBlogs::FACTORIO)),
       curi_eq_cfg
     )
       post_categories = extract_factorio_categories(next_entry_links, logger)
