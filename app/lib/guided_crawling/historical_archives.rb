@@ -711,16 +711,6 @@ def try_extract_shuffled(
   almost_suffix = is_almost ? "_almost" : ""
   logger.info("Trying shuffled#{almost_suffix} match with #{star_count} stars")
 
-  if canonical_uri_equal?(
-    main_link.curi,
-    CanonicalUri.from_uri(URI(HardcodedBlogs::JULIA_EVANS)),
-    curi_eq_cfg
-  )
-    post_categories = extract_jvns_categories(page, logger)
-  else
-    post_categories = nil
-  end
-
   best_links_maybe_dates = nil
   best_xpath = nil
   best_log_str = nil
@@ -777,13 +767,28 @@ def try_extract_shuffled(
 
   if best_links_maybe_dates
     dates_present = best_links_maybe_dates.count { |_, date| date }
+
+    if canonical_uri_equal?(
+      main_link.curi,
+      CanonicalUri.from_uri(URI(HardcodedBlogs::JULIA_EVANS)),
+      curi_eq_cfg
+    )
+      post_categories = extract_jvns_categories(page, logger)
+      post_categories_str = category_counts_to_s(post_categories)
+      logger.info("Categories: #{post_categories_str}")
+      post_categories_html = "<br>categories: #{post_categories_str}"
+    else
+      post_categories = nil
+      post_categories_html = ""
+    end
+
     ArchivesShuffledResult.new(
       main_link: main_link,
       pattern: "archives_shuffled#{almost_suffix}",
       links_maybe_dates: best_links_maybe_dates,
       speculative_count: best_links_maybe_dates.count,
       post_categories: post_categories,
-      extra: "xpath: #{best_xpath}#{best_log_str}<br>dates_present: #{dates_present}/#{best_links_maybe_dates.length}"
+      extra: "xpath: #{best_xpath}#{best_log_str}<br>dates_present: #{dates_present}/#{best_links_maybe_dates.length}#{post_categories_html}"
     )
   else
     logger.info("No shuffled match with #{star_count} stars")

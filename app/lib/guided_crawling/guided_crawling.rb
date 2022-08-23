@@ -181,8 +181,12 @@ def guided_crawl(
         curi_eq_cfg
       )
         post_categories = extract_pg_categories(logger)
+        post_categories_str = category_counts_to_s(post_categories)
+        logger.info("Categories: #{post_categories_str}")
+        post_categories_html = "categories: #{post_categories_str}"
       else
         post_categories = nil
+        post_categories_html = ""
       end
 
       historical_result = HistoricalResult.new(
@@ -193,7 +197,7 @@ def guided_crawl(
         count: parsed_feed.entry_links.length,
         discarded_feed_entry_urls: [],
         post_categories: post_categories,
-        extra: ""
+        extra: "#{post_categories_html}"
       )
     end
 

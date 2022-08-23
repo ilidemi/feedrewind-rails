@@ -22,12 +22,13 @@ Page2State = Struct.new(
 )
 Page1Extraction = Struct.new(
   :masked_xpath, :links, :xpath_name, :classless_masked_xpath, :log_lines, :title_relative_xpaths, :page_size,
-  :includes_newest_post, :extra_first_link, keyword_init: true
+  :includes_newest_post, :extra_first_link, :post_links_by_category_name, keyword_init: true
 )
 
 NextPageState = Struct.new(
   :paging_pattern, :page_number, :known_entry_curis_set, :classless_masked_xpath, :title_relative_xpaths,
-  :xpath_extra, :page_sizes, :page1, :page1_links, :main_link, keyword_init: true
+  :xpath_extra, :page_sizes, :page1, :page1_links, :main_link, :post_links_by_category_name,
+  keyword_init: true
 )
 
 BloggerMaskedXpathExtraction = Struct.new(
@@ -92,7 +93,6 @@ def try_extract_page1(
   # For all others, just extract all masked xpaths
   unless extractions_by_masked_xpath
     extractions_by_masked_xpath = extractions_by_masked_xpath_by_star_count[1]
-      .merge(extractions_by_masked_xpath_by_star_count[2])
   end
 
   # Filter masked xpaths to only ones that prefix feed
@@ -123,6 +123,7 @@ def try_extract_page1(
     end
 
     page_size = curis.length + (includes_newest_post ? 0 : 1)
+    post_links_by_category_name = get_post_categories(links, masked_xpath)
     page1_extractions << Page1Extraction.new(
       masked_xpath: masked_xpath,
       links: links,
@@ -132,7 +133,8 @@ def try_extract_page1(
       title_relative_xpaths: extraction.title_relative_xpaths,
       page_size: page_size,
       includes_newest_post: includes_newest_post,
-      extra_first_link: extra_first_link
+      extra_first_link: extra_first_link,
+      post_links_by_category_name: post_links_by_category_name
     )
   end
 
@@ -184,6 +186,8 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
   best_title_relative_xpaths = nil
   best_xpath_extra = nil
   page_sizes = nil
+  page1_post_links_by_category_name = nil
+  page2_post_links_by_category_name = nil
 
   page2_links = extract_links(
     page2.document, page2.fetch_uri, [page2.fetch_uri.host], nil, logger, true, false
@@ -251,6 +255,8 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
     log_str = join_log_lines(log_lines)
     best_xpath_extra = "xpath: #{page1_masked_xpath}#{log_str}"
     page_sizes = [page1_size, page2_xpath_links.length]
+    page1_post_links_by_category_name = page1_extraction.post_links_by_category_name
+    page2_post_links_by_category_name = get_post_categories(page2_xpath_links, page1_classless_masked_xpath)
     logger.info("XPath from page 1 looks good for page 2: #{page1_masked_xpath}#{log_str}")
   end
 
@@ -331,6 +337,8 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
       page2_log_str = join_log_lines(page2_log_lines)
       best_xpath_extra = "page1_xpath: #{page1_masked_xpath}#{page1_log_str}<br>page2_xpath: #{page2_classless_masked_xpath}#{page2_log_str}"
       page_sizes = [page1_size, page2_xpath_links.length]
+      page1_post_links_by_category_name = page1_extraction.post_links_by_category_name
+      page2_post_links_by_category_name = get_post_categories(page2_xpath_links, page2_classless_masked_xpath)
       logger.info("XPath looks good for page 1: #{page1_masked_xpath}#{page1_log_str}")
       logger.info("XPath looks good for page 2: #{page2_classless_masked_xpath}#{page2_log_str}")
       break
@@ -343,17 +351,32 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
   end
 
   entry_links = page1_entry_links + page2_entry_links
+  #noinspection RubyNilAnalysis
+  post_links_by_category_name = page1_post_links_by_category_name
+    .merge(page2_post_links_by_category_name) { |_, links1, links2| links1 + links2 }
+
   unless link_to_page3
     logger.info("Best count: #{entry_links.length} with 2 pages of #{page_sizes}")
     #noinspection RubyNilAnalysis
     page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
+    post_categories = post_categories_from_hash(post_links_by_category_name, logger)
+    if post_categories.length > 0
+      post_categories_str = category_counts_to_s(post_categories)
+      logger.info("Categories: #{post_categories_str}")
+      post_categories_html = "<br>categories: #{post_categories_str}"
+    else
+      logger.info("No categories")
+      post_categories_html = ""
+    end
+
     return PagedResult.new(
       main_link: page2_state.main_link,
       pattern: "paged_last",
       links: entry_links,
       speculative_count: entry_links.count,
       count: entry_links.count,
-      extra: "page_count: 2<br>page_sizes: #{page_size_counts}<br>#{best_xpath_extra}<br>last_page:<a href=\"#{page2.fetch_uri}\">#{page2.curi}</a><br>paging_pattern: #{paging_pattern}"
+      post_categories: post_categories,
+      extra: "page_count: 2<br>page_sizes: #{page_size_counts}<br>#{best_xpath_extra}<br>last_page:<a href=\"#{page2.fetch_uri}\">#{page2.curi}</a><br>paging_pattern: #{paging_pattern}#{post_categories_html}"
     )
   end
 
@@ -378,7 +401,8 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
       page_sizes: page_sizes,
       page1: page2_state.page1,
       page1_links: page2_state.page1_links,
-      main_link: page2_state.main_link
+      main_link: page2_state.main_link,
+      post_links_by_category_name: post_links_by_category_name
     )
   )
 end
@@ -439,6 +463,11 @@ def try_extract_next_page(page, paged_result, feed_entry_links, curi_eq_cfg, log
     return nil
   end
 
+  page_post_links_by_category_name = get_post_categories(page_xpath_links, classless_masked_xpath)
+  post_links_by_category_name = paged_state
+    .post_links_by_category_name
+    .merge(page_post_links_by_category_name) { |_, links1, links2| links1 + links2 }
+
   next_entry_links = entry_links + page_xpath_links
   next_known_entry_curis_set = known_entry_curis_set.merge(page_xpath_links.map(&:curi))
   page_sizes = paged_state.page_sizes + [page_xpath_links.length]
@@ -461,7 +490,8 @@ def try_extract_next_page(page, paged_result, feed_entry_links, curi_eq_cfg, log
         page_sizes: page_sizes,
         page1: paged_state.page1,
         page1_links: paged_state.page1_links,
-        main_link: paged_state.main_link
+        main_link: paged_state.main_link,
+        post_links_by_category_name: post_links_by_category_name
       )
     )
   else
@@ -482,15 +512,31 @@ def try_extract_next_page(page, paged_result, feed_entry_links, curi_eq_cfg, log
       CanonicalUri.from_uri(URI(HardcodedBlogs::MR_MONEY_MUSTACHE)),
       curi_eq_cfg
     )
-      post_categories = extract_mm_categories(logger)
+      post_categories = extract_mm_categories
     elsif canonical_uri_equal?(
       paged_state.main_link.curi,
       CanonicalUri.from_uri(URI(HardcodedBlogs::FACTORIO)),
       curi_eq_cfg
     )
-      post_categories = extract_factorio_categories(next_entry_links, logger)
+      post_categories = extract_factorio_categories(next_entry_links)
+    elsif canonical_uri_equal?(
+      paged_state.main_link.curi,
+      CanonicalUri.from_uri(URI(HardcodedBlogs::ACOUP)),
+      curi_eq_cfg
+    )
+      post_categories = extract_acoup_categories(next_entry_links) +
+        post_categories_from_hash(post_links_by_category_name, logger)
     else
-      post_categories = nil
+      post_categories = post_categories_from_hash(post_links_by_category_name, logger)
+    end
+
+    if post_categories.length > 0
+      post_categories_str = category_counts_to_s(post_categories)
+      logger.info("Categories: #{post_categories_str}")
+      post_categories_html = "<br>categories: #{post_categories_str}"
+    else
+      logger.info("No categories")
+      post_categories_html = ""
     end
 
     PagedResult.new(
@@ -500,7 +546,7 @@ def try_extract_next_page(page, paged_result, feed_entry_links, curi_eq_cfg, log
       speculative_count: next_entry_links.count,
       count: next_entry_links.count,
       post_categories: post_categories,
-      extra: "page_count: #{page_count}<br>page_sizes: #{page_size_counts}<br>#{paged_state.xpath_extra}<br>last_page: <a href=\"#{page.fetch_uri}\">#{page.curi}</a><br>paging_pattern: #{paging_pattern}"
+      extra: "page_count: #{page_count}<br>page_sizes: #{page_size_counts}<br>#{paged_state.xpath_extra}<br>last_page: <a href=\"#{page.fetch_uri}\">#{page.curi}</a><br>paging_pattern: #{paging_pattern}#{post_categories_html}"
     )
   end
 end
@@ -684,4 +730,48 @@ def class_xpath_match?(class_xpath, masked_xpath)
       return xpath_remaining == masked_xpath_remaining
     end
   end
+end
+
+def get_post_categories(links, masked_xpath)
+  last_star_index = masked_xpath.rindex("*")
+  levels_at_or_after_star = masked_xpath[last_star_index..].count("/")
+  post_links_by_category_name = {}
+
+  links.each do |link|
+    link_top_parent = link.element
+    levels_at_or_after_star.times do
+      link_top_parent = link_top_parent.parent
+    end
+
+    category_names = link_top_parent
+      .xpath(".//a")
+      .to_a
+      .filter { |sibling_link| sibling_link["rel"] && /\btag\b/.match(sibling_link["rel"]) }
+      .map { |sibling_link| sibling_link.text }
+    category_names.each do |category_name|
+      unless post_links_by_category_name.include?(category_name)
+        post_links_by_category_name[category_name] = []
+      end
+      post_links_by_category_name[category_name] << link
+    end
+  end
+
+  post_links_by_category_name
+end
+
+def post_categories_from_hash(post_links_by_category_name, logger)
+  post_categories_by_downcase_name = {}
+  post_links_by_category_name.map do |category_name, post_links|
+    downcase_name = category_name.downcase
+    if post_categories_by_downcase_name.include?(downcase_name)
+      post_categories_by_downcase_name[downcase_name].post_links.push(*post_links)
+    else
+      post_categories_by_downcase_name[downcase_name] =
+        HistoricalBlogPostCategory.new(category_name, false, post_links)
+    end
+  end
+
+  post_categories = post_categories_by_downcase_name.values
+  post_categories.sort_by! { |category| -category.post_links.length } # descending by link count
+  post_categories
 end
