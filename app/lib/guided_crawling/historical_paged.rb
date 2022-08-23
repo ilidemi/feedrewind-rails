@@ -526,6 +526,13 @@ def try_extract_next_page(page, paged_result, feed_entry_links, curi_eq_cfg, log
     )
       post_categories = extract_acoup_categories(next_entry_links) +
         post_categories_from_hash(post_links_by_category_name, logger)
+    elsif canonical_uri_equal?(
+      paged_state.main_link.curi,
+      CanonicalUri.from_uri(URI(HardcodedBlogs::CRYPTOGRAPHY_ENGINEERING)),
+      curi_eq_cfg
+    )
+      post_categories = extract_cryptography_engineering_categories(logger) +
+        post_categories_from_hash(post_links_by_category_name, logger)
     else
       post_categories = post_categories_from_hash(post_links_by_category_name, logger)
     end

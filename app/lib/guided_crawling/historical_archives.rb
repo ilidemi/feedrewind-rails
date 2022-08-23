@@ -37,6 +37,15 @@ def try_extract_archives(
 )
   return [] unless feed_entry_links.count_included(page_curis_set) >= almost_match_threshold
 
+  if canonical_uri_equal?(
+    page_link.curi,
+    CanonicalUri.from_uri(URI(HardcodedBlogs::CRYPTOGRAPHY_ENGINEERING_ALL)),
+    curi_eq_cfg
+  )
+    logger.info("Skipping archives for Cryptography Engineering to pick up categories from paged")
+    return []
+  end
+
   logger.info("Possible archives page: #{page.curi}")
 
   main_result = nil

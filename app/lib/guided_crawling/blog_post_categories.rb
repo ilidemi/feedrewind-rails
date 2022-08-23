@@ -125,3 +125,41 @@ def extract_acoup_categories(post_links)
   end
   [HistoricalBlogPostCategory.new("Articles", true, articles_links)]
 end
+
+def extract_cryptography_engineering_categories(logger)
+  #noinspection RubyLiteralArrayInspection
+  top_posts_urls = [
+    "https://blog.cryptographyengineering.com/2015/03/03/attack-of-week-freak-or-factoring-nsa/",
+    "https://blog.cryptographyengineering.com/2016/03/21/attack-of-week-apple-imessage/",
+    "https://blog.cryptographyengineering.com/2014/04/24/attack-of-week-triple-handshakes-3shake/",
+    "https://blog.cryptographyengineering.com/2012/10/27/attack-of-week-cross-vm-timing-attacks/",
+    "https://blog.cryptographyengineering.com/2013/09/06/on-nsa/",
+    "https://blog.cryptographyengineering.com/2015/12/22/on-juniper-backdoor/",
+    "https://blog.cryptographyengineering.com/2015/05/22/attack-of-week-logjam/",
+    "https://blog.cryptographyengineering.com/2013/12/03/how-does-nsa-break-ssl/",
+    "https://blog.cryptographyengineering.com/2014/12/29/on-new-snowden-documents/",
+    "https://blog.cryptographyengineering.com/2013/09/18/the-many-flaws-of-dualecdrbg/",
+    "https://blog.cryptographyengineering.com/2013/09/20/rsa-warns-developers-against-its-own/",
+    "https://blog.cryptographyengineering.com/2013/12/28/a-few-more-notes-on-nsa-random-number/",
+    "https://blog.cryptographyengineering.com/2015/01/14/hopefully-last-post-ill-ever-write-on/",
+    "https://blog.cryptographyengineering.com/2014/11/27/zero-knowledge-proofs-illustrated-primer/",
+    "https://blog.cryptographyengineering.com/2011/09/29/what-is-random-oracle-model-and-why-3/",
+    "https://blog.cryptographyengineering.com/2011/10/08/what-is-random-oracle-model-and-why-2/",
+    "https://blog.cryptographyengineering.com/2011/10/20/what-is-random-oracle-model-and-why_20/",
+    "https://blog.cryptographyengineering.com/2011/11/02/what-is-random-oracle-model-and-why/",
+    "https://blog.cryptographyengineering.com/2016/06/15/what-is-differential-privacy/",
+    "https://blog.cryptographyengineering.com/2014/02/21/cryptographic-obfuscation-and/",
+    "https://blog.cryptographyengineering.com/2013/04/11/wonkery-mailbag-ideal-ciphers/",
+    "https://blog.cryptographyengineering.com/2014/10/04/why-cant-apple-decrypt-your-iphone/",
+    "https://blog.cryptographyengineering.com/2014/08/13/whats-matter-with-pgp/",
+    "https://blog.cryptographyengineering.com/2015/08/16/the-network-is-hostile/",
+    "https://blog.cryptographyengineering.com/2012/02/28/how-to-fix-internet/",
+    "https://blog.cryptographyengineering.com/2012/02/21/random-number-generation-illustrated/",
+    "https://blog.cryptographyengineering.com/2012/03/09/surviving-bad-rng/",
+    "https://blog.cryptographyengineering.com/2015/04/02/truecrypt-report/",
+    "https://blog.cryptographyengineering.com/2013/10/14/lets-audit-truecrypt/"
+  ]
+  top_posts_links = top_posts_urls.map { |url| to_canonical_link(url, logger) }
+
+  [HistoricalBlogPostCategory.new("Top Posts", true, top_posts_links)]
+end
