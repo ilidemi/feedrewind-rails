@@ -47,7 +47,7 @@ module OnboardingHelper
     # MiscellaneousBlog.new("https://waitbutwhy.com/archive", "https://waitbutwhy.com/feed", "Wait But Why", "life"),
     MiscellaneousBlog.new("https://www.mrmoneymustache.com/", "https://feeds.feedburner.com/mrmoneymustache", "Mr. Money Mustache", "personal finance"),
     MiscellaneousBlog.new("https://blog.cryptographyengineering.com/", "https://blog.cryptographyengineering.com/feed/", "Cryptographic Engineering", "cryptography"),
-    MiscellaneousBlog.new("https://www.righto.com/", "https://www.righto.com/feeds/posts/default", "Kevin Shirriff", "hardware"),
+    MiscellaneousBlog.new("https://www.righto.com/", "https://www.righto.com/feeds/posts/default", "Ken Shirriff", "hardware"),
     MiscellaneousBlog.new("https://daniellakens.blogspot.com/", "https://daniellakens.blogspot.com/feeds/posts/default", "The 20% Statistician", "statistics"),
   ]
 end
