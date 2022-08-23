@@ -99,6 +99,8 @@ def try_extract_page1(
   page1_extractions = []
   extractions_by_masked_xpath.each do |masked_xpath, extraction|
     links = extraction.unfiltered_links
+    links = links.drop(1) if HardcodedBlogs::is_match(page1_link, HardcodedBlogs::CASEY_HANDMER, curi_eq_cfg)
+
     curis = links.map(&:curi)
     next if curis.any? { |curi| canonical_uri_equal?(curi, link_to_page2.curi, curi_eq_cfg) }
 
@@ -507,29 +509,15 @@ def try_extract_next_page(page, paged_result, feed_entry_links, curi_eq_cfg, log
     logger.info("Best count: #{next_entry_links.length} with #{page_count} pages of #{page_sizes}")
     page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
 
-    if canonical_uri_equal?(
-      paged_state.main_link.curi,
-      CanonicalUri.from_uri(URI(HardcodedBlogs::MR_MONEY_MUSTACHE)),
-      curi_eq_cfg
-    )
+    if HardcodedBlogs::is_match(paged_state.main_link, HardcodedBlogs::MR_MONEY_MUSTACHE, curi_eq_cfg)
       post_categories = extract_mm_categories
-    elsif canonical_uri_equal?(
-      paged_state.main_link.curi,
-      CanonicalUri.from_uri(URI(HardcodedBlogs::FACTORIO)),
-      curi_eq_cfg
-    )
+    elsif HardcodedBlogs::is_match(paged_state.main_link, HardcodedBlogs::FACTORIO, curi_eq_cfg)
       post_categories = extract_factorio_categories(next_entry_links)
-    elsif canonical_uri_equal?(
-      paged_state.main_link.curi,
-      CanonicalUri.from_uri(URI(HardcodedBlogs::ACOUP)),
-      curi_eq_cfg
-    )
+    elsif HardcodedBlogs::is_match(paged_state.main_link, HardcodedBlogs::ACOUP, curi_eq_cfg)
       post_categories = extract_acoup_categories(next_entry_links) +
         post_categories_from_hash(post_links_by_category_name, logger)
-    elsif canonical_uri_equal?(
-      paged_state.main_link.curi,
-      CanonicalUri.from_uri(URI(HardcodedBlogs::CRYPTOGRAPHY_ENGINEERING)),
-      curi_eq_cfg
+    elsif HardcodedBlogs::is_match(
+      paged_state.main_link, HardcodedBlogs::CRYPTOGRAPHY_ENGINEERING, curi_eq_cfg
     )
       post_categories = extract_cryptography_engineering_categories(logger) +
         post_categories_from_hash(post_links_by_category_name, logger)

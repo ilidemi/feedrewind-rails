@@ -163,3 +163,13 @@ def extract_cryptography_engineering_categories(logger)
 
   [HistoricalBlogPostCategory.new("Top Posts", true, top_posts_links)]
 end
+
+def extract_casey_handmer_categories(space_misconceptions_page, logger)
+  top_links = space_misconceptions_page
+    .document
+    .xpath("/html/body/div[1]/div/div/div[1]/main/article/div[1]/ul[*]/li[*]/a")
+    .map { |element| element["href"] }
+    .map { |url| to_canonical_link(url, logger) }
+
+  [HistoricalBlogPostCategory.new("Space Misconceptions", true, top_links)]
+end

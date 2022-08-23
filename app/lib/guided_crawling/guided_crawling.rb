@@ -175,11 +175,7 @@ def guided_crawl(
       logger.info("Feed is long with #{parsed_feed.entry_links.length} entries")
 
       #noinspection HttpUrlsUsage
-      if canonical_uri_equal?(
-        feed_link.curi,
-        CanonicalUri.from_uri(URI(HardcodedBlogs::PAUL_GRAHAM)),
-        curi_eq_cfg
-      )
+      if HardcodedBlogs::is_match(feed_link, HardcodedBlogs::PAUL_GRAHAM, curi_eq_cfg)
         post_categories = extract_pg_categories(logger)
         post_categories_str = category_counts_to_s(post_categories)
         logger.info("Categories: #{post_categories_str}")
@@ -884,6 +880,19 @@ def postprocess_paged_result(
   end
 
   if paged_result
+    if HardcodedBlogs::is_match(paged_result.main_link, HardcodedBlogs::CASEY_HANDMER, curi_eq_cfg)
+      logger.info("Extra request for Casey Handmer categories")
+      link = to_canonical_link(HardcodedBlogs::CASEY_HANDMER_SPACE_MISCONCEPTIONS, logger)
+      progress_logger.log_and_save_count(zero_to_nil(paged_result.links.count(&:title)))
+      page = crawl_request(link, false, crawl_ctx, http_client, progress_logger, logger)
+      progress_logger.log_and_save_postprocessing
+
+      if page && page.is_a?(Page) && page.document
+        paged_result.post_categories = extract_casey_handmer_categories(page, logger)
+        logger.info("Categories: #{category_counts_to_s(paged_result.post_categories)}")
+      end
+    end
+
     progress_logger.log_and_save_count(zero_to_nil(paged_result.links.count(&:title)))
     logger.info("Postprocess paged result finish")
   else

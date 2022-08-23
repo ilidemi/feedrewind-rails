@@ -37,11 +37,7 @@ def try_extract_archives(
 )
   return [] unless feed_entry_links.count_included(page_curis_set) >= almost_match_threshold
 
-  if canonical_uri_equal?(
-    page_link.curi,
-    CanonicalUri.from_uri(URI(HardcodedBlogs::CRYPTOGRAPHY_ENGINEERING_ALL)),
-    curi_eq_cfg
-  )
+  if HardcodedBlogs::is_match(page_link, HardcodedBlogs::CRYPTOGRAPHY_ENGINEERING_ALL, curi_eq_cfg)
     logger.info("Skipping archives for Cryptography Engineering to pick up categories from paged")
     return []
   end
@@ -777,11 +773,7 @@ def try_extract_shuffled(
   if best_links_maybe_dates
     dates_present = best_links_maybe_dates.count { |_, date| date }
 
-    if canonical_uri_equal?(
-      main_link.curi,
-      CanonicalUri.from_uri(URI(HardcodedBlogs::JULIA_EVANS)),
-      curi_eq_cfg
-    )
+    if HardcodedBlogs::is_match(main_link, HardcodedBlogs::JULIA_EVANS, curi_eq_cfg)
       post_categories = extract_jvns_categories(page, logger)
       post_categories_str = category_counts_to_s(post_categories)
       logger.info("Categories: #{post_categories_str}")
