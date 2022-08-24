@@ -47,23 +47,28 @@ class AdminController < ApplicationController
 
       update_action = params[:update_action]
 
-      crawl_ctx = CrawlContext.new
-      http_client = HttpClient.new(false)
-      feed_result = fetch_feed_at_url(feed_url, false, crawl_ctx, http_client, Rails.logger)
-      raise "Couldn't fetch feed" unless feed_result.is_a?(Page)
-
-      feed_link = to_canonical_link(feed_url, Rails.logger)
-      parsed_feed = parse_feed(feed_result.content, feed_link.uri, Rails.logger)
-
       post_curis_set = post_urls_titles
         .map { |url_title| to_canonical_link(url_title[:url], Rails.logger) }
         .map(&:curi)
         .to_canonical_uri_set(curi_eq_cfg)
-      discarded_feed_entry_urls = parsed_feed
-        .entry_links
-        .to_a
-        .filter { |entry_link| !post_curis_set.include?(entry_link.curi) }
-        .map(&:url)
+
+      if params[:skip_feed_validation]
+        discarded_feed_entry_urls = []
+      else
+        crawl_ctx = CrawlContext.new
+        http_client = HttpClient.new(false)
+        feed_result = fetch_feed_at_url(feed_url, false, crawl_ctx, http_client, Rails.logger)
+        raise "Couldn't fetch feed" unless feed_result.is_a?(Page)
+
+        feed_link = to_canonical_link(feed_url, Rails.logger)
+        parsed_feed = parse_feed(feed_result.content, feed_link.uri, Rails.logger)
+
+        discarded_feed_entry_urls = parsed_feed
+          .entry_links
+          .to_a
+          .filter { |entry_link| !post_curis_set.include?(entry_link.curi) }
+          .map(&:url)
+      end
 
       Blog.transaction do
         old_blog = Blog.find_by(feed_url: feed_url, version: Blog::LATEST_VERSION)

@@ -11,6 +11,7 @@ module HardcodedBlogs
   FACTORIO = "https://www.factorio.com/blog/"
   JULIA_EVANS = "https://jvns.ca"
   MR_MONEY_MUSTACHE = "https://www.mrmoneymustache.com/blog"
+  OUR_MACHINERY = "https://ourmachinery.com" # Hardcoded as fake feed, actual post Links are stored in the db
   #noinspection HttpUrlsUsage
   PAUL_GRAHAM = "http://www.aaronsw.com/2002/feeds/pgessays.rss"
 

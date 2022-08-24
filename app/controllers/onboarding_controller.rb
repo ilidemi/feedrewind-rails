@@ -1,4 +1,5 @@
 require_relative '../lib/guided_crawling/crawling'
+require_relative '../lib/guided_crawling/hardcoded_blogs'
 require_relative '../lib/guided_crawling/http_client'
 require_relative '../lib/guided_crawling/feed_discovery'
 
@@ -57,6 +58,12 @@ class OnboardingController < ApplicationController
   FeedsData = Struct.new(:start_url, :feeds, :not_a_url, :are_no_feeds, :could_not_reach, :bad_feed)
 
   def discover_feeds_internal(start_url, user)
+    if start_url == HardcodedBlogs::OUR_MACHINERY
+      blog = Blog::find_by(feed_url: HardcodedBlogs::OUR_MACHINERY)
+      subscription = Subscription::create_for_blog(blog, user)
+      return subscription
+    end
+
     crawl_ctx = CrawlContext.new
     http_client = HttpClient.new(false)
     discovered_feeds = discover_feeds_at_url(start_url, true, crawl_ctx, http_client, Rails.logger)

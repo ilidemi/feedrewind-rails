@@ -12,6 +12,7 @@ module OnboardingHelper
         SuggestedBlog.new("https://brandur.org/articles", "https://brandur.org/articles.atom", "Brandur Leach"),
         SuggestedBlog.new("https://www.brendangregg.com/blog/", "https://www.brendangregg.com/blog/rss.xml", "Brendan Gregg"),
         SuggestedBlog.new("https://yosefk.com/blog/", "https://yosefk.com/blog/feed", "Yossi Krenin"),
+        SuggestedBlog.new("https://www.reddit.com/r/gamedev/comments/wd4qoh/our_machinery_extensible_engine_made_in_c_just/", "https://ourmachinery.com", "Our Machinery"),
         SuggestedBlog.new("https://www.factorio.com/blog/", "https://www.factorio.com/blog/rss", "Factorio")
       ]
     ),
@@ -38,6 +39,7 @@ module OnboardingHelper
     )
   ]
 
+  #noinspection HttpUrlsUsage
   MISCELLANEOUS_BLOGS = [
     MiscellaneousBlog.new("https://acoup.blog/", "https://acoup.blog/feed/", "A Collection of Unmitigated Pedantry", "history"),
     MiscellaneousBlog.new("https://pedestrianobservations.com/", "https://pedestrianobservations.com/feed/", "Pedestrian Observations", "urbanism"),
