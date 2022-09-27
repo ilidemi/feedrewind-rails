@@ -161,7 +161,7 @@ module PublishPostsService
         .reverse
         .to_a
 
-      subscription_url = SubscriptionsHelper.subscription_url(subscription)
+      subscription_url = SubscriptionsHelper::subscription_url(subscription)
       subscription_items = []
       if subscription.final_item_published_at
         Rails.logger.info("Generating final item")
