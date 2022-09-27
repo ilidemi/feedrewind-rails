@@ -146,10 +146,9 @@ class UsersController < ApplicationController
           job_date_str = PublishPostsJob::get_next_scheduled_date(@current_user.id)
           job_date = Date.parse(job_date_str)
           job_hour = PublishPostsJob::get_hour_of_day(user_settings.delivery_channel)
-          job_new_run_at_local = new_timezone.local_datetime(
-            job_date.year, job_date.month, job_date.day, job_hour, 0, 0
+          job_new_run_at = PublishPostsJob::safe_local_to_utc(
+            new_timezone, DateTime.new(job_date.year, job_date.month, job_date.day, job_hour, 0, 0)
           )
-          job_new_run_at = new_timezone.local_to_utc(job_new_run_at_local)
           PublishPostsJob::update_run_at(publish_posts_job.id, job_new_run_at)
         end
 
@@ -216,10 +215,9 @@ class UsersController < ApplicationController
           job_date = Date.parse(job_date_str)
           job_hour = PublishPostsJob::get_hour_of_day(user_settings.delivery_channel)
           timezone = TZInfo::Timezone.get(user_settings.timezone)
-          job_new_run_at_local = timezone.local_datetime(
-            job_date.year, job_date.month, job_date.day, job_hour, 0, 0
+          job_new_run_at = PublishPostsJob::safe_local_to_utc(
+            timezone, DateTime.new(job_date.year, job_date.month, job_date.day, job_hour, 0, 0)
           )
-          job_new_run_at = timezone.local_to_utc(job_new_run_at_local)
           PublishPostsJob::update_run_at(publish_posts_job.id, job_new_run_at)
           Rails.logger.info("Rescheduled PublishPostsJob for #{job_new_run_at}")
         else

@@ -44,16 +44,16 @@ class PublishPostsJob < ApplicationJob
       next_date = date.next_day
       timezone = TZInfo::Timezone.get(user.user_settings.timezone)
       hour_of_day = PublishPostsJob::get_hour_of_day(user.user_settings.delivery_channel)
-      next_run = timezone.local_to_utc(
-        DateTime.new(next_date.year, next_date.month, next_date.day, hour_of_day, 0, 0)
+      next_run = PublishPostsJob::safe_local_to_utc(
+        timezone, DateTime.new(next_date.year, next_date.month, next_date.day, hour_of_day, 0, 0)
       )
 
       days_skipped = 0
       while next_run < utc_now
         days_skipped += 1
         next_date = next_date.next_day
-        next_run = timezone.local_to_utc(
-          DateTime.new(next_date.year, next_date.month, next_date.day, hour_of_day, 0, 0)
+        next_run = PublishPostsJob::safe_local_to_utc(
+          timezone, DateTime.new(next_date.year, next_date.month, next_date.day, hour_of_day, 0, 0)
         )
       end
       Rails.logger.warn("Skipping #{days_skipped} days") if days_skipped > 0
@@ -69,10 +69,14 @@ class PublishPostsJob < ApplicationJob
     date = utc_now.to_date.prev_day
     timezone = TZInfo::Timezone.get(user.user_settings.timezone)
     hour_of_day = PublishPostsJob::get_hour_of_day(user.user_settings.delivery_channel)
-    next_run = timezone.local_to_utc(DateTime.new(date.year, date.month, date.day, hour_of_day, 0, 0))
+    next_run = PublishPostsJob::safe_local_to_utc(
+      timezone, DateTime.new(date.year, date.month, date.day, hour_of_day, 0, 0)
+    )
     while next_run < utc_now
       date = date.next_day
-      next_run = timezone.local_to_utc(DateTime.new(date.year, date.month, date.day, hour_of_day, 0, 0))
+      next_run = PublishPostsJob::safe_local_to_utc(
+        timezone, DateTime.new(date.year, date.month, date.day, hour_of_day, 0, 0)
+      )
     end
 
     PublishPostsJob
@@ -90,6 +94,26 @@ class PublishPostsJob < ApplicationJob
       2
     else
       raise "Unknown delivery channel: #{delivery_channel}"
+    end
+  end
+
+  def self.safe_local_to_utc(timezone, local_datetime)
+    begin
+      return timezone.local_to_utc(local_datetime) do |periods|
+        # Pick an arbitrary one
+        periods.first
+      end
+    rescue TZInfo::PeriodNotFound
+      30.times do |i|
+        delta_hours = i + 1 # 1..30
+        begin
+          return timezone.local_to_utc(local_datetime.advance(hours: delta_hours))
+        rescue TZInfo::PeriodNotFound
+          next
+        end
+      end
+
+      raise # after 30 failures
     end
   end
 
