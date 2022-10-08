@@ -9,12 +9,8 @@ module SubscriptionsHelper
     "/subscriptions/#{subscription.id}/progress"
   end
 
-  def SubscriptionsHelper.all_posts_path(subscription)
-    "/subscriptions/#{subscription.id}/all_posts"
-  end
-
-  def SubscriptionsHelper.confirm_path(subscription)
-    "/subscriptions/#{subscription.id}/confirm"
+  def SubscriptionsHelper.select_posts_path(subscription)
+    "/subscriptions/#{subscription.id}/select_posts"
   end
 
   def SubscriptionsHelper.mark_wrong_path(subscription)
@@ -35,6 +31,10 @@ module SubscriptionsHelper
 
   def SubscriptionsHelper.unpause_path(subscription)
     "/subscriptions/#{subscription.id}/unpause"
+  end
+
+  def SubscriptionsHelper.subscription_delete_path(subscription)
+    "/subscriptions/#{subscription.id}/delete"
   end
 
   def SubscriptionsHelper.subscription_add_feed_path(feed_url)

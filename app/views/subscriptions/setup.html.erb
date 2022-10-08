@@ -17,7 +17,7 @@
     <h2 class="break-word" id="name_header"><%= @subscription.name %></h2>
   </div>
 
-  <div style="overflow-wrap: break-word">
+  <div class="overflow-wrap-break-word">
     <% if @subscription.status == "waiting_for_blog" %>
       <% if @subscription.blog.status == "crawl_in_progress" %>
         <%=
@@ -34,25 +34,32 @@
       <% elsif %w[crawled_voting crawled_confirmed crawled_looks_wrong manually_inserted].include?(
         @subscription.blog.status
       ) %>
-        <%= render partial: "setup_blog_confirm", locals: { subscription: @subscription } %>
+        <%= render partial: "setup_blog_select_posts",
+                   locals: {
+                     subscription: @subscription,
+                     all_blog_posts: @all_blog_posts,
+                     top_categories: @top_categories,
+                     custom_categories: @custom_categories,
+                     checked_blog_post_ids: @checked_blog_post_ids,
+                     checked_top_category_id: @checked_top_category_id,
+                     checked_top_category_name: @checked_top_category_name,
+                     is_checked_everything: @is_checked_everything
+                   }
+        %>
       <% else %>
         <%= raise "Unexpected blog status: #{@subscription.blog.status}" %>
       <% end %>
     <% elsif @subscription.status == "setup" %>
-      <% if @current_user %>
-        <%= render partial: "setup_subscription_set_schedule",
-                   locals: {
-                     subscription: @subscription,
-                     other_sub_names_by_day: @other_sub_names_by_day,
-                     days_of_week: @days_of_week,
-                     name_header_id: "name_header",
-                     schedule_preview: @schedule_preview,
-                     delivery_channel_set: @delivery_channel_set
-                   }
-        %>
-      <% else %>
-        <%= render partial: "setup_subscription_presenting_goods", locals: { subscription: @subscription } %>
-      <% end %>
+      <%= render partial: "setup_subscription_set_schedule",
+                 locals: {
+                   subscription: @subscription,
+                   other_sub_names_by_day: @other_sub_names_by_day,
+                   days_of_week: @days_of_week,
+                   name_header_id: "name_header",
+                   schedule_preview: @schedule_preview,
+                   delivery_channel_set: @delivery_channel_set
+                 }
+      %>
     <% elsif @subscription.status == "live" %>
       <% if @delivery_channel == "email" %>
         <%= render partial: "setup_subscription_heres_email",

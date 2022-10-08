@@ -2,6 +2,7 @@ Dan Luu
 https://danluu.com/atom.xml
 https://danluu.com
 
+https://danluu.com/futurist-predictions/ Futurist prediction methods and accuracy
 https://danluu.com/simple-architectures In defense of simple architectures
 https://danluu.com/nothing-works Why is it so hard to buy things that work well?
 https://danluu.com/talent Misidentifying talent

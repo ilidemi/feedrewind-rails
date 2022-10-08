@@ -22,13 +22,14 @@ Page2State = Struct.new(
 )
 Page1Extraction = Struct.new(
   :masked_xpath, :links, :xpath_name, :classless_masked_xpath, :log_lines, :title_relative_xpaths, :page_size,
-  :includes_newest_post, :extra_first_link, :post_links_by_category_name, keyword_init: true
+  :includes_newest_post, :extra_first_link, :post_links_by_category_name, :post_links_by_tag_name,
+  keyword_init: true
 )
 
 NextPageState = Struct.new(
   :paging_pattern, :page_number, :known_entry_curis_set, :classless_masked_xpath, :title_relative_xpaths,
   :xpath_extra, :page_sizes, :page1, :page1_links, :main_link, :post_links_by_category_name,
-  keyword_init: true
+  :post_links_by_tag_name, keyword_init: true
 )
 
 BloggerMaskedXpathExtraction = Struct.new(
@@ -36,6 +37,7 @@ BloggerMaskedXpathExtraction = Struct.new(
 )
 
 BLOGSPOT_POSTS_BY_DATE_REGEX = /(\(date-outer\)\[)\d+(.+\(post-outer\)\[)\d+/
+UNCATEGORIZED = "Uncategorized"
 
 def try_extract_page1(
   page1_link, page1, page1_links, page_curis_set, feed_entry_links, feed_entry_curis_titles_map,
@@ -125,7 +127,7 @@ def try_extract_page1(
     end
 
     page_size = curis.length + (includes_newest_post ? 0 : 1)
-    post_links_by_category_name = get_post_categories(links, masked_xpath)
+    post_links_by_category_name, post_links_by_tag_name = get_post_categories_tags(links, masked_xpath)
     page1_extractions << Page1Extraction.new(
       masked_xpath: masked_xpath,
       links: links,
@@ -136,7 +138,8 @@ def try_extract_page1(
       page_size: page_size,
       includes_newest_post: includes_newest_post,
       extra_first_link: extra_first_link,
-      post_links_by_category_name: post_links_by_category_name
+      post_links_by_category_name: post_links_by_category_name,
+      post_links_by_tag_name: post_links_by_tag_name
     )
   end
 
@@ -190,6 +193,8 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
   page_sizes = nil
   page1_post_links_by_category_name = nil
   page2_post_links_by_category_name = nil
+  page1_post_links_by_tag_name = nil
+  page2_post_links_by_tag_name = nil
 
   page2_links = extract_links(
     page2.document, page2.fetch_uri, [page2.fetch_uri.host], nil, logger, true, false
@@ -258,7 +263,10 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
     best_xpath_extra = "xpath: #{page1_masked_xpath}#{log_str}"
     page_sizes = [page1_size, page2_xpath_links.length]
     page1_post_links_by_category_name = page1_extraction.post_links_by_category_name
-    page2_post_links_by_category_name = get_post_categories(page2_xpath_links, page1_classless_masked_xpath)
+    page1_post_links_by_tag_name = page1_extraction.post_links_by_tag_name
+    page2_post_links_by_category_name, page2_post_links_by_tag_name = get_post_categories_tags(
+      page2_xpath_links, page1_classless_masked_xpath
+    )
     logger.info("XPath from page 1 looks good for page 2: #{page1_masked_xpath}#{log_str}")
   end
 
@@ -340,7 +348,10 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
       best_xpath_extra = "page1_xpath: #{page1_masked_xpath}#{page1_log_str}<br>page2_xpath: #{page2_classless_masked_xpath}#{page2_log_str}"
       page_sizes = [page1_size, page2_xpath_links.length]
       page1_post_links_by_category_name = page1_extraction.post_links_by_category_name
-      page2_post_links_by_category_name = get_post_categories(page2_xpath_links, page2_classless_masked_xpath)
+      page1_post_links_by_tag_name = page1_extraction.post_links_by_tag_name
+      page2_post_links_by_category_name, page2_post_links_by_tag_name = get_post_categories_tags(
+        page2_xpath_links, page2_classless_masked_xpath
+      )
       logger.info("XPath looks good for page 1: #{page1_masked_xpath}#{page1_log_str}")
       logger.info("XPath looks good for page 2: #{page2_classless_masked_xpath}#{page2_log_str}")
       break
@@ -356,16 +367,25 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
   #noinspection RubyNilAnalysis
   post_links_by_category_name = page1_post_links_by_category_name
     .merge(page2_post_links_by_category_name) { |_, links1, links2| links1 + links2 }
+  #noinspection RubyNilAnalysis
+  post_links_by_tag_name = page1_post_links_by_tag_name
+    .merge(page2_post_links_by_tag_name) { |_, links1, links2| links1 + links2 }
 
   unless link_to_page3
     logger.info("Best count: #{entry_links.length} with 2 pages of #{page_sizes}")
     #noinspection RubyNilAnalysis
     page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
-    post_categories = post_categories_from_hash(post_links_by_category_name, logger)
-    if post_categories.length > 0
+    post_categories = post_categories_or_tags_from_hash(post_links_by_category_name)
+    post_tags = post_categories_or_tags_from_hash(post_links_by_tag_name)
+    #noinspection RubyNilAnalysis
+    if !(post_categories.length == 1 && post_categories.first.name == UNCATEGORIZED)
       post_categories_str = category_counts_to_s(post_categories)
       logger.info("Categories: #{post_categories_str}")
       post_categories_html = "<br>categories: #{post_categories_str}"
+    elsif !(post_tags.length == 1 && post_tags.first.name == UNCATEGORIZED)
+      post_categories_str = category_counts_to_s(post_tags)
+      logger.info("Categories: #{post_categories_str}")
+      post_categories_html = "<br>categories from tags: #{post_categories_str}"
     else
       logger.info("No categories")
       post_categories_html = ""
@@ -404,7 +424,8 @@ def try_extract_page2(page2, page2_state, feed_entry_links, curi_eq_cfg, logger)
       page1: page2_state.page1,
       page1_links: page2_state.page1_links,
       main_link: page2_state.main_link,
-      post_links_by_category_name: post_links_by_category_name
+      post_links_by_category_name: post_links_by_category_name,
+      post_links_by_tag_name: post_links_by_tag_name
     )
   )
 end
@@ -465,10 +486,15 @@ def try_extract_next_page(page, paged_result, feed_entry_links, curi_eq_cfg, log
     return nil
   end
 
-  page_post_links_by_category_name = get_post_categories(page_xpath_links, classless_masked_xpath)
+  page_post_links_by_category_name, page_post_links_by_tag_name = get_post_categories_tags(
+    page_xpath_links, classless_masked_xpath
+  )
   post_links_by_category_name = paged_state
     .post_links_by_category_name
     .merge(page_post_links_by_category_name) { |_, links1, links2| links1 + links2 }
+  post_links_by_tag_name = paged_state
+    .post_links_by_tag_name
+    .merge(page_post_links_by_tag_name) { |_, links1, links2| links1 + links2 }
 
   next_entry_links = entry_links + page_xpath_links
   next_known_entry_curis_set = known_entry_curis_set.merge(page_xpath_links.map(&:curi))
@@ -493,7 +519,8 @@ def try_extract_next_page(page, paged_result, feed_entry_links, curi_eq_cfg, log
         page1: paged_state.page1,
         page1_links: paged_state.page1_links,
         main_link: paged_state.main_link,
-        post_links_by_category_name: post_links_by_category_name
+        post_links_by_category_name: post_links_by_category_name,
+        post_links_by_tag_name: post_links_by_tag_name
       )
     )
   else
@@ -510,25 +537,41 @@ def try_extract_next_page(page, paged_result, feed_entry_links, curi_eq_cfg, log
     page_size_counts = page_sizes.each_with_object(Hash.new(0)) { |size, counts| counts[size] += 1 }
 
     if HardcodedBlogs::is_match(paged_state.main_link, HardcodedBlogs::MR_MONEY_MUSTACHE, curi_eq_cfg)
-      post_categories = extract_mm_categories
+      post_categories_or_tags = extract_mm_categories(logger)
+      post_categories_or_tags_source = "hardcoded"
     elsif HardcodedBlogs::is_match(paged_state.main_link, HardcodedBlogs::FACTORIO, curi_eq_cfg)
-      post_categories = extract_factorio_categories(next_entry_links)
+      post_categories_or_tags = extract_factorio_categories(next_entry_links)
+      post_categories_or_tags_source = "hardcoded"
     elsif HardcodedBlogs::is_match(paged_state.main_link, HardcodedBlogs::ACOUP, curi_eq_cfg)
-      post_categories = extract_acoup_categories(next_entry_links) +
-        post_categories_from_hash(post_links_by_category_name, logger)
+      post_categories_or_tags = extract_acoup_categories(next_entry_links) +
+        post_categories_or_tags_from_hash(post_links_by_tag_name)
+      post_categories_or_tags_source = "hardcoded + from tags"
     elsif HardcodedBlogs::is_match(
       paged_state.main_link, HardcodedBlogs::CRYPTOGRAPHY_ENGINEERING, curi_eq_cfg
     )
-      post_categories = extract_cryptography_engineering_categories(logger) +
-        post_categories_from_hash(post_links_by_category_name, logger)
+      post_categories_or_tags = extract_cryptography_engineering_categories(logger) +
+        post_categories_or_tags_from_hash(post_links_by_tag_name)
+      post_categories_or_tags_source = "hardcoded + from tags"
     else
-      post_categories = post_categories_from_hash(post_links_by_category_name, logger)
+      post_categories = post_categories_or_tags_from_hash(post_links_by_category_name)
+      post_tags = post_categories_or_tags_from_hash(post_links_by_tag_name)
+      #noinspection RubyNilAnalysis
+      if !(post_categories.length == 1 && post_categories.first.name == UNCATEGORIZED)
+        post_categories_or_tags = post_categories
+        post_categories_or_tags_source = ""
+      elsif !(post_tags.length == 1 && post_tags.first.name == UNCATEGORIZED)
+        post_categories_or_tags = post_tags
+        post_categories_or_tags_source = "from tags"
+      else
+        post_categories_or_tags = nil
+        post_categories_or_tags_source = nil
+      end
     end
 
-    if post_categories.length > 0
-      post_categories_str = category_counts_to_s(post_categories)
+    if post_categories_or_tags
+      post_categories_str = category_counts_to_s(post_categories_or_tags)
       logger.info("Categories: #{post_categories_str}")
-      post_categories_html = "<br>categories: #{post_categories_str}"
+      post_categories_html = "<br>categories#{post_categories_or_tags_source}: #{post_categories_str}"
     else
       logger.info("No categories")
       post_categories_html = ""
@@ -540,7 +583,7 @@ def try_extract_next_page(page, paged_result, feed_entry_links, curi_eq_cfg, log
       links: next_entry_links,
       speculative_count: next_entry_links.count,
       count: next_entry_links.count,
-      post_categories: post_categories,
+      post_categories: post_categories_or_tags,
       extra: "page_count: #{page_count}<br>page_sizes: #{page_size_counts}<br>#{paged_state.xpath_extra}<br>last_page: <a href=\"#{page.fetch_uri}\">#{page.curi}</a><br>paging_pattern: #{paging_pattern}#{post_categories_html}"
     )
   end
@@ -727,10 +770,11 @@ def class_xpath_match?(class_xpath, masked_xpath)
   end
 end
 
-def get_post_categories(links, masked_xpath)
+def get_post_categories_tags(links, masked_xpath)
   last_star_index = masked_xpath.rindex("*")
   levels_at_or_after_star = masked_xpath[last_star_index..].count("/")
   post_links_by_category_name = {}
+  post_links_by_tag_name = {}
 
   links.each do |link|
     link_top_parent = link.element
@@ -738,23 +782,39 @@ def get_post_categories(links, masked_xpath)
       link_top_parent = link_top_parent.parent
     end
 
-    category_names = link_top_parent
+    sibling_rel_links = link_top_parent
       .xpath(".//a")
       .to_a
-      .filter { |sibling_link| sibling_link["rel"] && /\btag\b/.match(sibling_link["rel"]) }
+      .filter { |sibling_link| sibling_link["rel"] }
+    category_names = sibling_rel_links
+      .filter { |sibling_link| /\bcategory\b/.match(sibling_link["rel"]) }
       .map { |sibling_link| sibling_link.text }
-    category_names.each do |category_name|
-      unless post_links_by_category_name.include?(category_name)
-        post_links_by_category_name[category_name] = []
+      .uniq { |elem| elem.downcase }
+    tag_names = sibling_rel_links
+      .filter { |sibling_link| /\btag\b/.match(sibling_link["rel"]) }
+      .map { |sibling_link| sibling_link.text }
+      .uniq { |elem| elem.downcase }
+
+    [
+      [category_names, post_links_by_category_name],
+      [tag_names, post_links_by_tag_name]
+    ].each do |collection_names, post_links_by_collection_name|
+      if collection_names.empty?
+        collection_names << UNCATEGORIZED
       end
-      post_links_by_category_name[category_name] << link
+      collection_names.each do |collection_name|
+        unless post_links_by_collection_name.include?(collection_name)
+          post_links_by_collection_name[collection_name] = []
+        end
+        post_links_by_collection_name[collection_name] << link
+      end
     end
   end
 
-  post_links_by_category_name
+  [post_links_by_category_name, post_links_by_tag_name]
 end
 
-def post_categories_from_hash(post_links_by_category_name, logger)
+def post_categories_or_tags_from_hash(post_links_by_category_name)
   post_categories_by_downcase_name = {}
   post_links_by_category_name.map do |category_name, post_links|
     downcase_name = category_name.downcase

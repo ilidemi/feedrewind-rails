@@ -8,7 +8,7 @@
   <div class="flex flex-row gap-3 justify-end">
     <button id="delete_subscription_popup_keep_button" class="btn"></button>
     <%= link_to "", "", # Filled in JavaScript
-                method: :delete,
+                method: :post,
                 id: "delete_subscription_popup_delete_button",
                 class: "btn-red"
     %>
@@ -17,7 +17,7 @@
 
 <script>
     function showDeleteSubscriptionPopup(
-        promptPrefix, subscriptionName, promptSuffix, subscriptionPath, keepLabel, deleteLabel
+        promptPrefix, subscriptionName, promptSuffix, subscriptionDeletePath, keepLabel, deleteLabel
     ) {
         for (let element of document.getElementsByClassName("modal-inert")) {
             element.inert = true;
@@ -30,7 +30,7 @@
 
         let deleteButton = document.getElementById("delete_subscription_popup_delete_button");
         deleteButton.innerText = deleteLabel;
-        deleteButton.href = subscriptionPath;
+        deleteButton.href = subscriptionDeletePath;
 
         let deletePopup = document.getElementById("delete_subscription_popup");
         let deleteBackground = document.getElementById("delete_subscription_popup_background");

@@ -62,8 +62,14 @@ class GuidedCrawlingJob < ApplicationJob
             end
           end
         end
+        categories << { name: "Everything", is_top: true }
         urls_titles_categories = guided_crawl_result.historical_result.links.map do |link|
-          { url: link.url, title: link.title.value, categories: categories_list_by_link[link.curi] || [] }
+          link_categories = (categories_list_by_link[link.curi] || []) + ["Everything"]
+          {
+            url: link.url,
+            title: link.title.value,
+            categories: link_categories
+          }
         end
         curi_eq_cfg_hash = {
           same_hosts: guided_crawl_result.curi_eq_cfg.same_hosts.to_a,

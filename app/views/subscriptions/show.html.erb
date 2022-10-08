@@ -310,8 +310,8 @@
             .getElementById("delete_button")
             .addEventListener("click", () => {
                 showDeleteSubscriptionPopup(
-                    "Delete ", "<%= @subscription.name %>", "? This cannot be undone.",
-                    "<%= subscription_path(@subscription.id) %>", "Keep", "Delete"
+                    "Delete ", "<%== j @subscription.name %>", "? This cannot be undone.",
+                    "<%= SubscriptionsHelper::subscription_delete_path(@subscription) %>", "Keep", "Delete"
                 );
             })
     </script>

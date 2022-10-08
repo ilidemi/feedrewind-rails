@@ -1,7 +1,17 @@
 <div id="posts">
-  <% ordered_blog_posts = subscription.blog.blog_posts.sort_by(&:index) %>
   <% if ordered_blog_posts.length <= 11 %>
-    <%= render partial: "all_posts", locals: { ordered_blog_posts: ordered_blog_posts } %>
+    <div class="flex flex-col gap-1.5">
+      <% ordered_blog_posts.each_with_index do |blog_post, index| %>
+        <div>
+          <a href="<%= blog_post.url %>" class="link text-black" target="_blank"><%= blog_post.title %></a>
+          <% if index == 0 %>
+            <span class="text-gray-500">(oldest)</span>
+          <% elsif index == ordered_blog_posts.length - 1 %>
+            <span class="text-gray-500">(newest)</span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
   <% else %>
     <div class="flex flex-col gap-1.5">
       <% ordered_blog_posts[...5].each_with_index do |blog_post, index| %>
@@ -12,9 +22,17 @@
           <% end %>
         </div>
       <% end %>
-      <div class="flex flex-row gap-[0.3125rem] items-center">
-        <span class="text-gray-400">– <a id="more_posts" class="link text-black"><%= ordered_blog_posts.length - 10 %> more</a> –</span>
-        <div id="more_posts_spinner" class="spinner spinner-light hidden"></div>
+      <div id="show_more_posts_line_<%= suffix %>" class="flex flex-row gap-[0.3125rem] my-[0.3125rem] items-center">
+        <span class="text-gray-400">–</span>
+        <a id="show_more_posts_<%= suffix %>" class="link text-black"><%= ordered_blog_posts.length - 10 %> more</a>
+        <span class="text-gray-400">–</span>
+      </div>
+      <div id="more_posts_<%= suffix %>" class="flex flex-col gap-1.5 hidden">
+        <% ordered_blog_posts[5...-5].each do |blog_post| %>
+          <div>
+            <a href="<%= blog_post.url %>" class="link text-black" target="_blank"><%= blog_post.title %></a>
+          </div>
+        <% end %>
       </div>
       <% ordered_blog_posts[-5..].each_with_index do |blog_post, index| %>
         <div>
@@ -27,48 +45,9 @@
     </div>
 
     <script>
-        function showSpinner() {
-            let spinner = document.getElementById("more_posts_spinner");
-            spinner.classList.remove("hidden");
-            void spinner.offsetWidth; // trigger reflow
-        }
-
-        function hideSpinner() {
-            let spinner = document.getElementById("more_posts_spinner");
-            spinner.classList.add("hidden");
-        }
-
-        document.getElementById("more_posts").addEventListener("click", async () => {
-            showSpinner();
-            try {
-                const abortController = new AbortController();
-                const timeoutId = setTimeout(() => abortController.abort(), 30000);
-                const response = await fetch(
-                    "<%= SubscriptionsHelper.all_posts_path(subscription) %>",
-                    {
-                        method: "post",
-                        headers: {
-                            "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
-                        },
-                        signal: abortController.signal
-                    }
-                );
-
-                if (response.status === 200) {
-                    const postsContent = await response.text();
-                    clearTimeout(timeoutId);
-                    hideSpinner();
-                    document.getElementById("posts").innerHTML = postsContent;
-                } else {
-                    clearTimeout(timeoutId);
-                    hideSpinner();
-                    showRefreshPopup("Something went wrong. Please refresh the page.");
-                }
-            } catch (err) {
-                // Timeout
-                hideSpinner();
-                showRefreshPopup("Something went wrong. Please refresh the page.");
-            }
+        document.getElementById("show_more_posts_<%= suffix %>").addEventListener("click", async () => {
+            document.getElementById("show_more_posts_line_<%= suffix %>").classList.add("hidden");
+            document.getElementById("more_posts_<%= suffix %>").classList.remove("hidden");
         });
     </script>
   <% end %>

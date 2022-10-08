@@ -30,8 +30,8 @@
                       .getElementById("delete_button_<%= subscription.id %>")
                       .addEventListener("click", () => {
                           showDeleteSubscriptionPopup(
-                              "Delete ", "<%= subscription.name %>", "? This cannot be undone.",
-                              "<%= subscription_path(subscription.id) %>",  "Keep", "Delete"
+                              "Delete ", "<%== j subscription.name %>", "? This cannot be undone.",
+                              "<%= SubscriptionsHelper::subscription_delete_path(subscription) %>",  "Keep", "Delete"
                           );
                       })
               </script>
@@ -49,7 +49,7 @@
           <div class="grid grid-cols-[1fr_auto] gap-x-4 gap-y-0.5 items-baseline">
             <% @active_subscriptions.each do |subscription| %>
               <%= link_to subscription.name,
-                          subscription_path(subscription.id),
+                          SubscriptionsHelper::subscription_path(subscription),
                           class: "justify-self-start break-word text-base py-0.5 underline hover:text-blue-900"
               %>
               <span class="justify-self-end text-sm text-gray-500">
@@ -70,7 +70,7 @@
           <div class="grid grid-cols-[1fr_auto] gap-x-4 gap-y-0.5 items-baseline">
             <% @finished_subscriptions.each do |subscription| %>
               <%= link_to subscription.name,
-                          subscription_path(subscription.id),
+                          SubscriptionsHelper::subscription_path(subscription),
                           class: "justify-self-start break-word text-base py-0.5 underline hover:text-blue-900"
               %>
               <span class="justify-self-end text-sm text-gray-500">

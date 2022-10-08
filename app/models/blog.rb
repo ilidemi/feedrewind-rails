@@ -268,11 +268,21 @@ class Blog < ApplicationRecord
         blog_post_lock.destroy! if blog_post_lock
         blog_crawl_votes.destroy_all
 
-        subscriptions = Subscription.with_discarded.where(blog_id: id)
-        subscription_posts_relations = subscriptions
-          .includes(:subscription_posts)
-          .map(&:subscription_posts)
+        subscriptions = Subscription
+          .with_discarded
+          .where(blog_id: id)
+          .includes(:postmark_messages, :subscription_posts)
 
+        postmark_messages_relations = subscriptions.map(&:postmark_messages)
+        postmark_messages_count = postmark_messages_relations.map(&:length).sum
+        if postmark_messages_count > 0
+          Rails.logger.info("Destroying #{postmark_messages_count} postmark messages")
+          postmark_messages_relations.each do |postmark_messages|
+            postmark_messages.destroy_all
+          end
+        end
+
+        subscription_posts_relations = subscriptions.map(&:subscription_posts)
         subscription_posts_count = subscription_posts_relations.map(&:length).sum
         Rails.logger.info("Destroying #{subscription_posts_count} subscription posts")
         subscription_posts_relations.each do |subscription_posts|

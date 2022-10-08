@@ -12,7 +12,7 @@ Rails.application.routes.draw do
   post "settings/save_timezone", to: "users#save_timezone"
   post "settings/save_delivery_channel", to: "users#save_delivery_channel"
 
-  resources :subscriptions, only: [:index, :create, :destroy], param: :id
+  resources :subscriptions, only: [:index, :create], param: :id
   get "/subscriptions/add", to: "onboarding#add"
   get "/subscriptions/add/*start_url", to: "onboarding#add", format: false, defaults: { format: "html" }
   post "/subscriptions/add", to: "onboarding#add_landing"
@@ -24,13 +24,12 @@ Rails.application.routes.draw do
   # all js should be post for CSRF to work
   post "/subscriptions/:id/progress", to: "subscriptions#progress"
   post "/subscriptions/:id/submit_progress_times", to: "subscriptions#submit_progress_times"
-  post "/subscriptions/:id/all_posts", to: "subscriptions#all_posts"
-  post "/subscriptions/:id/confirm", to: "subscriptions#confirm"
+  post "/subscriptions/:id/select_posts", to: "subscriptions#select_posts"
   post "/subscriptions/:id/mark_wrong", to: "subscriptions#mark_wrong"
-  post "/subscriptions/:id/continue_with_wrong", to: "subscriptions#continue_with_wrong"
   post "/subscriptions/:id/schedule", to: "subscriptions#schedule"
   post "/subscriptions/:id/pause", to: "subscriptions#pause"
   post "/subscriptions/:id/unpause", to: "subscriptions#unpause"
+  post "/subscriptions/:id/delete", to: "subscriptions#delete"
   post "/subscriptions/:id", to: "subscriptions#update"
 
   get "/subscriptions/:id/feed", to: "rss#subscription_feed" # Legacy

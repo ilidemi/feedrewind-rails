@@ -5,14 +5,14 @@
   </p>
   <div class="inline-flex flex-row gap-2">
     <%= button_to "Try another",
-                  subscription_path(subscription),
-                  method: :delete,
+                  SubscriptionsHelper::subscription_delete_path(subscription),
+                  method: :post,
                   params: { redirect: :add },
                   class: "btn"
     %>
     <%= button_to "Discard",
-                  subscription_path(subscription),
-                  method: :delete,
+                  SubscriptionsHelper::subscription_delete_path(subscription),
+                  method: :post,
                   class: "btn"
     %>
   </div>

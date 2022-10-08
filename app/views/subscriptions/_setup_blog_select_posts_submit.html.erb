@@ -1,0 +1,53 @@
+<div id="confirm_section_<%= suffix %>" class="flex flex-row items-baseline gap-4">
+  <%= form.submit "Continue", class: "btn", id: "continue_btn_#{suffix}" %>
+  <button type="button" id="looks_wrong_button_<%= suffix %>" class="link-secondary text-sm">
+    Looks wrong?
+  </button>
+</div>
+
+<div id="looks_wrong_section_<%= suffix %>" class="flex flex-col gap-6 hidden">
+  <p>
+    Apologies for the inconvenience! FeedRewind supports over 80% of blogs, but unfortunately not this
+    one.
+  </p>
+
+  <p>Would you like to continue with these posts?</p>
+
+  <div class="flex flex-row gap-4">
+    <%= button_tag class: "btn flex flex-row gap-1 items-center", id: "continue_btn_2_#{suffix}" do %>
+      Continue
+    <% end %>
+    <button formaction="<%= SubscriptionsHelper::subscription_delete_path(subscription) %>"
+            class="btn bg-red-700 hover:bg-red-900"
+    >
+      Discard
+    </button>
+  </div>
+</div>
+
+<div class="text-sm text-red-600 invisible" id="continue_error_<%= suffix %>">
+  Select some posts to continue
+</div>
+
+<script>
+    document
+        .getElementById("looks_wrong_button_<%= suffix %>")
+        .addEventListener("click", () => {
+            // Fire and forget
+            fetch(
+                "<%= SubscriptionsHelper.mark_wrong_path(subscription) %>",
+                {
+                    method: "post",
+                    headers: {
+                        "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+                    }
+                }
+            );
+
+            <%= mark_wrong_func %>("<%= suffix %>");
+            const confirmSection = document.getElementById(`confirm_section_<%= suffix %>`);
+            confirmSection.classList.add("hidden");
+            const looksWrongSection = document.getElementById(`looks_wrong_section_<%= suffix %>`);
+            looksWrongSection.classList.remove("hidden");
+        });
+</script>

@@ -75,6 +75,10 @@
         word-break: break-all;
     }
 
+    .overflow-wrap-break-word {
+        overflow-wrap: break-word;
+    }
+
     .no-tap-highlight {
         -webkit-tap-highlight-color: transparent;
     }
@@ -318,5 +322,85 @@
         animation-name: dropdown-disappear;
         animation-duration: 75ms;
         animation-timing-function: ease-in;
+    }
+
+    .tab {
+        @apply px-5 py-3 text-sm font-semibold cursor-pointer border-b-2 border-gray-200 text-gray-500
+    }
+
+    .active-tab {
+        @apply px-5 py-3 text-sm font-semibold cursor-pointer border-b-2 border-blue-600 text-blue-600
+    }
+
+    .tab-out-left {
+        animation-name: tab-out-left;
+        animation-duration: 75ms;
+        animation-timing-function: ease-out;
+        position: relative;
+    }
+
+    @keyframes tab-out-left {
+        from {
+            opacity: 1;
+            left: 0;
+        }
+        to {
+            opacity: 0;
+            left: -10%;
+        }
+    }
+
+    .tab-in-left {
+        animation-name: tab-in-left;
+        animation-duration: 75ms;
+        animation-timing-function: ease-in;
+        position: relative;
+    }
+
+    @keyframes tab-in-left {
+        from {
+            opacity: 0;
+            left: 10%;
+        }
+        to {
+            opacity: 1;
+            left: 0;
+        }
+    }
+
+    .tab-out-right {
+        animation-name: tab-out-right;
+        animation-duration: 75ms;
+        animation-timing-function: ease-out;
+        position: relative;
+    }
+
+    @keyframes tab-out-right {
+        from {
+            opacity: 1;
+            left: 0;
+        }
+        to {
+            opacity: 0;
+            left: 10%;
+        }
+    }
+
+    .tab-in-right {
+        animation-name: tab-in-right;
+        animation-duration: 75ms;
+        animation-timing-function: ease-in;
+        position: relative;
+    }
+
+    @keyframes tab-in-right {
+        from {
+            opacity: 0;
+            left: -10%;
+        }
+        to {
+            opacity: 1;
+            left: 0;
+        }
     }
 }

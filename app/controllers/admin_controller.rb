@@ -41,6 +41,13 @@ class AdminController < ApplicationController
         post_categories << url_category[:label]
       end
 
+      top_categories_set << "Everything"
+      post_categories << "Everything"
+      post_categories_set << "Everything"
+      post_urls_set.each do |post_url|
+        post_urls_categories << { url: post_url, label: "Everything" }
+      end
+
       same_hosts = params[:same_hosts].split("\n").map(&:strip)
       expect_tumblr_paths = params[:expect_tumblr_paths]
       curi_eq_cfg = CanonicalEqualityConfig.new(same_hosts.to_set, expect_tumblr_paths)
@@ -52,7 +59,7 @@ class AdminController < ApplicationController
         .map(&:curi)
         .to_canonical_uri_set(curi_eq_cfg)
 
-      if params[:skip_feed_validation]
+      if params[:skip_feed_validation] == "1"
         discarded_feed_entry_urls = []
       else
         crawl_ctx = CrawlContext.new

@@ -9,7 +9,7 @@ require_relative '../lib/guided_crawling/feed_discovery'
 
 class SubscriptionsController < ApplicationController
   before_action :authorize, except: [
-    :create, :setup, :submit_progress_times, :all_posts, :confirm, :mark_wrong, :destroy
+    :create, :setup, :submit_progress_times, :select_posts, :mark_wrong, :delete
   ]
 
   DAYS_OF_WEEK = %w[sun mon tue wed thu fri sat]
@@ -127,6 +127,9 @@ class SubscriptionsController < ApplicationController
     end
   end
 
+  TopCategory = Struct.new(:id, :name, :blog_posts)
+  CustomCategory = Struct.new(:id, :name, :checked_count, :blog_posts)
+
   def setup
     fill_current_user
     @subscription = Subscription.find_by(id: params[:id])
@@ -162,6 +165,57 @@ class SubscriptionsController < ApplicationController
       end
 
       @blog_crawl_progress = BlogCrawlProgress.find(@subscription.blog_id)
+    end
+
+    if @subscription.status == "waiting_for_blog" &&
+      %w[crawled_voting crawled_confirmed crawled_looks_wrong manually_inserted].include?(
+        @subscription.blog.status
+      )
+
+      all_categories = @subscription
+        .blog
+        .blog_post_categories
+        .includes(:blog_post_category_assignments)
+        .sort_by(&:index)
+      top_categories, custom_categories = all_categories.partition { |category| category.is_top }
+
+      @all_blog_posts = @subscription.blog.blog_posts.sort_by(&:index)
+      blog_posts_by_id = {}
+      @all_blog_posts.each do |blog_post|
+        blog_posts_by_id[blog_post.id] = blog_post
+      end
+
+      @top_categories = []
+      top_categories.each do |category|
+        category_posts = category
+          .blog_post_category_assignments
+          .to_a
+          .map { |assignment| blog_posts_by_id[assignment.blog_post_id] }
+          .sort_by(&:index)
+        @top_categories << TopCategory.new(category.id, category.name, category_posts)
+      end
+
+      #noinspection RubyNilAnalysis
+      @checked_blog_post_ids = @top_categories.first.blog_posts.map(&:id).to_set
+      #noinspection RubyNilAnalysis
+      @checked_top_category_id = @top_categories.first.id
+      #noinspection RubyNilAnalysis
+      @checked_top_category_name = @top_categories.first.name
+      @is_checked_everything = @top_categories.length == 1
+
+      @custom_categories = []
+      custom_categories.each do |category|
+        category_posts = category
+          .blog_post_category_assignments
+          .to_a
+          .map { |assignment| blog_posts_by_id[assignment.blog_post_id] }
+          .sort_by(&:index)
+
+        checked_count = category_posts.count { |blog_post| @checked_blog_post_ids.include?(blog_post.id) }
+
+        @custom_categories << CustomCategory.new(category.id, category.name, checked_count, category_posts)
+      end
+
     end
 
     if @subscription.status == "setup" && @current_user
@@ -276,29 +330,7 @@ class SubscriptionsController < ApplicationController
     nil
   end
 
-  def all_posts
-    fill_current_user
-    subscription = Subscription.find_by(id: params[:id])
-    return redirect_from_not_found unless subscription
-
-    user_mismatch = redirect_if_user_mismatch(subscription)
-    return user_mismatch if user_mismatch
-
-    unless subscription.status == "waiting_for_blog" || (@current_user.nil? && subscription.status == "setup")
-      return redirect_to action: "setup", id: subscription.id
-    end
-
-    @ordered_blog_posts = subscription
-      .blog
-      .blog_posts
-      .sort_by(&:index)
-
-    respond_to do |format|
-      format.js
-    end
-  end
-
-  def confirm
+  def select_posts
     fill_current_user
     subscription = Subscription.find_by(id: params[:id])
     return redirect_from_not_found unless subscription
@@ -313,16 +345,36 @@ class SubscriptionsController < ApplicationController
       return redirect_to action: "setup", id: subscription.id
     end
 
-    BlogCrawlVote.create!(
-      user_id: @current_user&.id,
-      blog_id: blog.id,
-      value: "confirmed"
-    )
+    top_category_id = nil
+    blog_post_ids = []
+    if params[:top_category_id] != ""
+      top_category_id = params[:top_category_id].to_i
+      if BlogPostCategory.find_by(id: top_category_id, blog_id: blog.id).nil?
+        raise "Category not found: #{top_category_id}"
+      end
+    else
+      params.keys.each do |key|
+        next unless key.start_with?("post_")
+        next unless params[key] == "1"
 
-    commit_blog_votes(blog)
+        blog_post_ids << Integer(key[5..])
+      end
+    end
+
+    if params[:looks_wrong] != "1"
+      BlogCrawlVote.create!(
+        user_id: @current_user&.id,
+        blog_id: blog.id,
+        value: "confirmed"
+      )
+    end
 
     subscription.transaction do
-      subscription.create_subscription_posts_raw!
+      if top_category_id
+        subscription.create_subscription_posts_from_category_raw!(top_category_id)
+      else
+        subscription.create_subscription_posts_from_ids_raw!(blog_post_ids)
+      end
       subscription.status = "setup"
       subscription.save!
     end
@@ -355,29 +407,9 @@ class SubscriptionsController < ApplicationController
       value: "looks_wrong"
     )
 
-    commit_blog_votes(blog)
+    Rails.logger.warn("Blog #{blog.id} (#{blog.name}) marked as wrong")
 
     render body: nil
-  end
-
-  def continue_with_wrong
-    fill_current_user
-    @subscription = Subscription.find_by(id: params[:id])
-    return redirect_from_not_found unless @subscription
-
-    user_mismatch = redirect_if_user_mismatch(@subscription)
-    return user_mismatch if user_mismatch
-
-    blog = @subscription.blog
-    if @subscription.status == "waiting_for_blog" &&
-      %w[crawled_voting crawled_confirmed crawled_looks_wrong manually_inserted].include?(blog.status)
-
-      @subscription.create_subscription_posts_raw!
-      @subscription.status = "setup"
-      @subscription.save!
-    end
-
-    redirect_to action: "setup", id: @subscription.id
   end
 
   def schedule
@@ -521,7 +553,7 @@ class SubscriptionsController < ApplicationController
     head :ok
   end
 
-  def destroy
+  def delete
     fill_current_user
     @subscription = Subscription.find_by(id: params[:id])
     return redirect_from_not_found unless @subscription
@@ -556,33 +588,6 @@ class SubscriptionsController < ApplicationController
         return redirect_to action: "index"
       end
     end
-  end
-
-  def commit_blog_votes(blog)
-    blog_votes = BlogCrawlVote.where(blog_id: blog.id)
-
-    admin_votes = []
-    other_votes = Set.new
-    blog_votes.each do |vote|
-      if is_admin(vote.user_id)
-        admin_votes << [vote.user_id, vote.value]
-      else
-        other_votes << [vote.user_id, vote.value]
-      end
-    end
-    dedup_blog_votes = admin_votes + other_votes.to_a
-
-    return unless dedup_blog_votes.length >= 3
-
-    confirmed_count = dedup_blog_votes.count { |_, value| value == "confirmed" }
-    if confirmed_count * 1.0 / dedup_blog_votes.length > 0.5
-      blog.status = "crawled_confirmed"
-    else
-      blog.status = "crawled_looks_wrong"
-    end
-    blog.status_updated_at = DateTime.now
-
-    blog.save!
   end
 
   def get_other_sub_names_by_day(current_sub_id)

@@ -59,7 +59,7 @@ class OnboardingController < ApplicationController
 
   def discover_feeds_internal(start_url, user)
     if start_url == HardcodedBlogs::OUR_MACHINERY
-      blog = Blog::find_by(feed_url: HardcodedBlogs::OUR_MACHINERY)
+      blog = Blog::find_by(feed_url: HardcodedBlogs::OUR_MACHINERY, version: Blog::LATEST_VERSION)
       subscription = Subscription::create_for_blog(blog, user)
       return subscription
     end

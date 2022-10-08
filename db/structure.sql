@@ -264,9 +264,9 @@ CREATE TABLE public.blog_post_categories (
     blog_id bigint NOT NULL,
     name text NOT NULL,
     index integer NOT NULL,
-    is_top boolean NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    is_top boolean NOT NULL
 );
 
 
@@ -1316,6 +1316,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220805192320'),
 ('20220805234147'),
 ('20220815191840'),
-('20220815192810');
+('20220815192810'),
+('20220919185403');
 
 

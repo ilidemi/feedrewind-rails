@@ -24,7 +24,7 @@ def extract_jvns_categories(page, logger)
   end
 
   post_links_except_rc = categories
-    .filter { |category| !category.name.include?("Recurse center") }
+    .filter { |category| !category.name.include?("Recurse center") && category.name != "Conferences" }
     .flat_map { |category| category.post_links }
   categories.prepend(HistoricalBlogPostCategory.new("Blog posts", true, post_links_except_rc))
   categories
@@ -161,7 +161,7 @@ def extract_cryptography_engineering_categories(logger)
   ]
   top_posts_links = top_posts_urls.map { |url| to_canonical_link(url, logger) }
 
-  [HistoricalBlogPostCategory.new("Top Posts", true, top_posts_links)]
+  [HistoricalBlogPostCategory.new("Top posts", true, top_posts_links)]
 end
 
 def extract_casey_handmer_categories(space_misconceptions_page, logger)
