@@ -84,44 +84,57 @@ class AdminController < ApplicationController
           old_blog.save!
         end
 
+        now_utc = DateTime.now.utc
+
         blog = Blog.create!(
           name: name,
           feed_url: feed_url,
           url: params[:url],
           status: "manually_inserted",
-          status_updated_at: DateTime.now,
+          status_updated_at: now_utc,
           version: Blog::LATEST_VERSION,
           update_action: update_action
         )
 
-        blog_post_ids_by_url = {}
+        blog_posts_fields = []
         post_urls_titles.each_with_index do |url_title, index|
-          blog_post = BlogPost.create!(
-            blog_id: blog.id,
-            index: index,
-            url: url_title[:url],
-            title: url_title[:label]
-          )
-          blog_post_ids_by_url[blog_post.url] = blog_post.id
+          blog_posts_fields <<
+            {
+              blog_id: blog.id,
+              index: index,
+              url: url_title[:url],
+              title: url_title[:label],
+              created_at: now_utc,
+              updated_at: now_utc
+            }
         end
+        blog_posts_result = BlogPost.insert_all!(blog_posts_fields, returning: %w[id url])
+        blog_post_ids_by_url = blog_posts_result.rows.to_h { |id, url| [url, id] }
 
-        category_ids_by_name = {}
+        post_categories_fields = []
         post_categories.each_with_index do |category_name, index|
-          category = BlogPostCategory.create!(
-            blog_id: blog.id,
-            name: category_name,
-            index: index,
-            is_top: top_categories_set.include?(category_name)
-          )
-          category_ids_by_name[category_name] = category.id
+          post_categories_fields <<
+            {
+              blog_id: blog.id,
+              name: category_name,
+              index: index,
+              is_top: top_categories_set.include?(category_name),
+              created_at: now_utc,
+              updated_at: now_utc
+            }
         end
+        post_categories_result = BlogPostCategory.insert_all!(post_categories_fields, returning: %w[id name])
+        category_ids_by_name = post_categories_result.rows.to_h { |id, category_name| [category_name, id] }
 
-        post_urls_categories.each do |url_category|
-          BlogPostCategoryAssignment.create!(
+        category_assignments_fields = post_urls_categories.map do |url_category|
+          {
             blog_post_id: blog_post_ids_by_url[url_category[:url]],
-            category_id: category_ids_by_name[url_category[:label]]
-          )
+            category_id: category_ids_by_name[url_category[:label]],
+            created_at: now_utc,
+            updated_at: now_utc
+          }
         end
+        BlogPostCategoryAssignment.insert_all!(category_assignments_fields)
 
         BlogPostLock.create!(blog_id: blog.id)
 
