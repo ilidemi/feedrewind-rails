@@ -34,6 +34,7 @@ module RssCatchupRails
 
     Rails.autoloaders.main.ignore(Rails.root.join('app/lib'))
 
+    config.middleware.insert_before(Rack::Sendfile, Rack::Deflater)
     config.middleware.use(LogRequest)
 
     config.after_initialize do
