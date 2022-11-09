@@ -23,8 +23,7 @@ module OnboardingHelper
         SuggestedBlog.new("https://distill.pub/", "https://distill.pub/rss.xml", "Distill"),
         SuggestedBlog.new("https://openai.com/blog/", "https://openai.com/blog/rss/", "OpenAI"),
         SuggestedBlog.new("https://bair.berkeley.edu/blog/", "https://bair.berkeley.edu/blog/feed.xml", "BAIR"),
-      # Website is very custom
-      # SuggestedBlog.new("https://www.deepmind.com/blog", "https://www.deepmind.com/blog/rss.xml", "DeepMind")
+        SuggestedBlog.new("https://www.deepmind.com/blog", "https://www.deepmind.com/blog/rss.xml", "DeepMind")
       ]
     ),
     BlogsCategory.new(
