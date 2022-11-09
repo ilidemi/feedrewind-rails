@@ -8,6 +8,15 @@ def historical_archives_sort_add(page, feed_generator, sort_state, logger)
   logger.info("Archives sort add start")
   page_dates_xpaths_sources = []
 
+  meta_published_time = page.document.at_xpath("//meta[@property='article:published_time']")
+  if meta_published_time
+    page_dates_xpaths_sources << {
+      xpath: to_canonical_xpath(meta_published_time.path),
+      date: try_extract_text_date(meta_published_time.attributes["content"].to_s, false),
+      source: :meta
+    }
+  end
+
   page.document.traverse do |element|
     date_source = try_extract_element_date(element, false)
     next unless date_source

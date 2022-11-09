@@ -181,8 +181,7 @@ def is_load_more(page)
 end
 
 def is_medium_list(page)
-  page.document.at_css(MEDIUM_FEED_LINK_SELECTOR) &&
-    page.document.css("button").any? { |button| button.text.downcase == "show more" }
+  page.document.at_css(MEDIUM_FEED_LINK_SELECTOR) && page.document.xpath("//article").length == 10
 end
 
 def is_substack_archive(page)
@@ -207,14 +206,7 @@ def crawl_with_puppeteer_if_match(page, match_curis_set, puppeteer_client, crawl
     end
   elsif is_medium_list(page)
     logger.info("Spotted Medium page, rerunning with puppeteer")
-    pptr_content = puppeteer_client.fetch(
-      page.fetch_uri, match_curis_set, crawl_ctx, progress_logger, logger
-    ) do |pptr_page|
-      pptr_page
-        .query_selector_all("button")
-        .filter { |button| button.evaluate("b => b.textContent").downcase == "show more" }
-        .first
-    end
+    pptr_content = puppeteer_client.fetch(page.fetch_uri, match_curis_set, crawl_ctx, progress_logger, logger)
   elsif is_substack_archive(page)
     logger.info("Spotted Substack archives, rerunning with puppeteer")
     pptr_content = puppeteer_client.fetch(page.fetch_uri, match_curis_set, crawl_ctx, progress_logger, logger)
