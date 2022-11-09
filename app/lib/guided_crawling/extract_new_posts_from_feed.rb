@@ -2,10 +2,16 @@ require_relative 'feed_parsing'
 require_relative 'canonical_link'
 
 def extract_new_posts_from_feed(
-  feed_content, feed_uri, existing_post_curis, discarded_feed_entry_urls, curi_eq_cfg, logger,
-  parse_feed_logger
+  feed_content, feed_uri, existing_post_curis, discarded_feed_entry_urls, missing_from_feed_entry_urls,
+  curi_eq_cfg, logger, parse_feed_logger
 )
-  existing_post_curis_set = existing_post_curis.to_canonical_uri_set(curi_eq_cfg)
+  missing_from_feed_entry_curis = missing_from_feed_entry_urls
+    .map { |url| to_canonical_link(url, logger).curi }
+  missing_from_feed_entry_curis_set = missing_from_feed_entry_curis.to_canonical_uri_set(curi_eq_cfg)
+
+  expected_existing_post_curis = existing_post_curis
+    .filter { |curi| !missing_from_feed_entry_curis_set.include?(curi) }
+  expected_existing_post_curis_set = expected_existing_post_curis.to_canonical_uri_set(curi_eq_cfg)
 
   discarded_feed_entry_curis = discarded_feed_entry_urls.map { |url| to_canonical_link(url, logger).curi }
   discarded_feed_entry_curis_set = discarded_feed_entry_curis.to_canonical_uri_set(curi_eq_cfg)
@@ -14,7 +20,7 @@ def extract_new_posts_from_feed(
   feed_entry_links = parsed_feed.entry_links.except(discarded_feed_entry_curis_set)
   feed_entry_links_list = feed_entry_links.to_a
   new_posts_count = feed_entry_links_list.count do |feed_link|
-    !existing_post_curis_set.include?(feed_link.curi)
+    !expected_existing_post_curis_set.include?(feed_link.curi)
   end
   return [] if new_posts_count == 0
 
@@ -26,7 +32,7 @@ def extract_new_posts_from_feed(
 
   # Not checking if entry_links.is_order_certain because this suffix check is similar but doesn't require
   # the feed to have dates
-  feed_matching_links, _ = feed_entry_links.sequence_is_suffix?(existing_post_curis, curi_eq_cfg)
+  feed_matching_links, _ = feed_entry_links.sequence_is_suffix?(expected_existing_post_curis, curi_eq_cfg)
   unless feed_matching_links
     logger.info("Can't update from feed because the existing posts don't match")
     return nil

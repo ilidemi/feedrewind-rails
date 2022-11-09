@@ -256,6 +256,38 @@ ALTER SEQUENCE public.blog_discarded_feed_entries_id_seq OWNED BY public.blog_di
 
 
 --
+-- Name: blog_missing_from_feed_entries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blog_missing_from_feed_entries (
+    id bigint NOT NULL,
+    blog_id bigint NOT NULL,
+    url text NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: blog_missing_from_feed_entries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.blog_missing_from_feed_entries_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: blog_missing_from_feed_entries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.blog_missing_from_feed_entries_id_seq OWNED BY public.blog_missing_from_feed_entries.id;
+
+
+--
 -- Name: blog_post_categories; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -712,6 +744,13 @@ ALTER TABLE ONLY public.blog_discarded_feed_entries ALTER COLUMN id SET DEFAULT 
 
 
 --
+-- Name: blog_missing_from_feed_entries id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_missing_from_feed_entries ALTER COLUMN id SET DEFAULT nextval('public.blog_missing_from_feed_entries_id_seq'::regclass);
+
+
+--
 -- Name: blog_post_categories id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -813,6 +852,14 @@ ALTER TABLE ONLY public.blog_crawl_votes
 
 ALTER TABLE ONLY public.blog_discarded_feed_entries
     ADD CONSTRAINT blog_discarded_feed_entries_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: blog_missing_from_feed_entries blog_missing_from_feed_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_missing_from_feed_entries
+    ADD CONSTRAINT blog_missing_from_feed_entries_pkey PRIMARY KEY (id);
 
 
 --
@@ -1084,6 +1131,14 @@ ALTER TABLE ONLY public.blog_post_categories
 
 
 --
+-- Name: blog_missing_from_feed_entries fk_rails_aecbb1e2bd; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blog_missing_from_feed_entries
+    ADD CONSTRAINT fk_rails_aecbb1e2bd FOREIGN KEY (blog_id) REFERENCES public.blogs(id);
+
+
+--
 -- Name: schedules fk_rails_b2b9b40998; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1317,6 +1372,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220805234147'),
 ('20220815191840'),
 ('20220815192810'),
-('20220919185403');
+('20220919185403'),
+('20221109212305');
 
 

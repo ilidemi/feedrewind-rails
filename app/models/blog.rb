@@ -12,6 +12,7 @@ class Blog < ApplicationRecord
   has_many :blog_crawl_votes, dependent: :destroy
   has_many :blog_posts, dependent: :destroy
   has_many :blog_discarded_feed_entries, dependent: :destroy
+  has_many :blog_missing_from_feed_entries, dependent: :destroy
   has_many :blog_post_categories, dependent: :destroy
 
   # Invariants for a given feed_url:
@@ -61,9 +62,12 @@ class Blog < ApplicationRecord
     discarded_feed_entry_urls = blog
       .blog_discarded_feed_entries
       .map(&:url)
+    missing_from_feed_entry_urls = blog
+      .blog_missing_from_feed_entries
+      .map(&:url)
     new_links = extract_new_posts_from_feed(
-      start_feed.content, URI(start_feed.final_url), blog_post_curis, discarded_feed_entry_urls, curi_eq_cfg,
-      Rails.logger, Rails.logger
+      start_feed.content, URI(start_feed.final_url), blog_post_curis, discarded_feed_entry_urls,
+      missing_from_feed_entry_urls, curi_eq_cfg, Rails.logger, Rails.logger
     )
 
     if new_links == []
@@ -91,6 +95,7 @@ class Blog < ApplicationRecord
     elsif blog.update_action == "update_from_feed_or_fail"
       if new_links
         Rails.logger.info("Updating blog #{start_feed.final_url} from feed with #{new_links.length} new links")
+        everything_category = blog.blog_post_categories.where(name: "Everything").first
         begin
           utc_now = DateTime.now.utc
           blog.blog_post_lock.with_lock("for update nowait") do
@@ -105,7 +110,18 @@ class Blog < ApplicationRecord
                 updated_at: utc_now
               }
             end
-            BlogPost.insert_all!(blog_posts_fields)
+            blog_posts_result = BlogPost.insert_all!(blog_posts_fields, returning: %w[id])
+            blog_post_ids = blog_posts_result.rows.map(&:first)
+
+            blog_post_category_assignments_fields = blog_post_ids.map do |blog_post_id|
+              {
+                blog_post_id: blog_post_id,
+                category_id: everything_category.id,
+                created_at: utc_now,
+                updated_at: utc_now
+              }
+            end
+            BlogPostCategoryAssignment.insert_all!(blog_post_category_assignments_fields)
           end
           blog.reload
         rescue ActiveRecord::LockWaitTimeout

@@ -54,13 +54,15 @@ class AdminController < ApplicationController
 
       update_action = params[:update_action]
 
-      post_curis_set = post_urls_titles
+      post_links = post_urls_titles
         .map { |url_title| to_canonical_link(url_title[:url], Rails.logger) }
+      post_curis_set = post_links
         .map(&:curi)
         .to_canonical_uri_set(curi_eq_cfg)
 
       if params[:skip_feed_validation] == "1"
         discarded_feed_entry_urls = []
+        missing_from_feed_entry_urls = []
       else
         crawl_ctx = CrawlContext.new
         http_client = HttpClient.new(false)
@@ -69,11 +71,19 @@ class AdminController < ApplicationController
 
         feed_link = to_canonical_link(feed_url, Rails.logger)
         parsed_feed = parse_feed(feed_result.content, feed_link.uri, Rails.logger)
+        feed_entry_links = parsed_feed.entry_links.to_a
 
-        discarded_feed_entry_urls = parsed_feed
-          .entry_links
-          .to_a
+        discarded_feed_entry_urls = feed_entry_links
           .filter { |entry_link| !post_curis_set.include?(entry_link.curi) }
+          .map(&:url)
+        feed_curis_set = feed_entry_links
+          .map(&:curi)
+          .to_canonical_uri_set(curi_eq_cfg)
+        last_feed_post_index = post_links.find_index do |post_link|
+          canonical_uri_equal?(post_link.curi, feed_entry_links.last.curi, curi_eq_cfg)
+        end
+        missing_from_feed_entry_urls = post_links[last_feed_post_index..]
+          .filter { |post_link| !feed_curis_set.include?(post_link.curi) }
           .map(&:url)
       end
 
@@ -146,6 +156,13 @@ class AdminController < ApplicationController
 
         discarded_feed_entry_urls.each do |url|
           BlogDiscardedFeedEntry.create!(
+            blog_id: blog.id,
+            url: url
+          )
+        end
+
+        missing_from_feed_entry_urls.each do |url|
+          BlogMissingFromFeedEntry.create!(
             blog_id: blog.id,
             url: url
           )
