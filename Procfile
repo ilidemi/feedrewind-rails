@@ -1,3 +1,3 @@
 web: bundle exec rails server -p $PORT
-worker: bundle exec bin/delayed_job -n 1 start
+worker: bundle exec foreman start -f Procfile.workers
 release: rake db:migrate
