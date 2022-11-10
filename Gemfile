@@ -42,6 +42,7 @@ group :development do
   gem 'spring'
 
   gem 'sqlite3', '~> 1.4', '>= 1.4.2'
+  gem 'derailed', '~> 0.1', '>= 0.1.0'
 end
 
 group :test do
