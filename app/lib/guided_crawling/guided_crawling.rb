@@ -125,7 +125,7 @@ def guided_crawl(
     initial_blog_link = parsed_feed.root_link || start_page_final_link
 
     historical_error = nil
-    if parsed_feed.entry_links.length <= 100
+    if parsed_feed.entry_links.length <= 50 || parsed_feed.entry_links.length % 100 == 0
       begin
         if parsed_feed.generator != :tumblr
           crawl_historical_result = guided_crawl_historical(
