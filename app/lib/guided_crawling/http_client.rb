@@ -10,13 +10,35 @@ class HttpClient
     @enable_throttling = enable_throttling
   end
 
+  MAX_CONTENT_LENGTH = 50 * 1024 * 1024
+
   def request(uri, should_throttle, logger)
     throttle if @enable_throttling && should_throttle
 
     req = Net::HTTP::Get.new(uri, initheader = { 'User-Agent' => 'FeedRewind/0.1' })
     begin
-      resp = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
-        http.request(req)
+      Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
+        http.request(req) do |resp|
+          if resp.content_length != nil && resp.content_length > MAX_CONTENT_LENGTH
+            return HttpResponse.new("ResponseBodyTooBig", nil, nil, nil)
+          end
+
+          total_length = 0
+          chunks = []
+          resp.read_body do |chunk|
+            total_length += chunk.length
+            chunks << chunk
+            return HttpResponse.new("ResponseBodyTooBig", nil, nil, nil) if total_length > MAX_CONTENT_LENGTH
+          end
+          body = chunks.join
+
+          return HttpResponse.new(
+            resp.code,
+            resp.header["content-type"],
+            resp.header["location"],
+            body
+          )
+        end
       end
     rescue OpenSSL::SSL::SSLError
       return HttpResponse.new("SSLError", nil, nil, nil)
@@ -26,13 +48,6 @@ class HttpClient
       logger.info("HTTP request error: #{error}")
       return HttpResponse.new("Exception", nil, nil, nil)
     end
-
-    HttpResponse.new(
-      resp.code,
-      resp.header["content-type"],
-      resp.header["location"],
-      resp.body
-    )
   end
 
   def get_retry_delay(attempt)
