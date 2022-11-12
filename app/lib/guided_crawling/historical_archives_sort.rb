@@ -10,15 +10,18 @@ def historical_archives_sort_add(page, feed_generator, sort_state, logger)
 
   meta_published_time = page.document.at_xpath("//meta[@property='article:published_time']")
   if meta_published_time
-    page_dates_xpaths_sources << {
-      xpath: to_canonical_xpath(meta_published_time.path),
-      date: try_extract_text_date(meta_published_time.attributes["content"].to_s, false),
-      source: :meta
-    }
+    meta_date = try_extract_text_date(meta_published_time.attributes["content"].to_s, false)
+    if meta_date
+      page_dates_xpaths_sources << {
+        xpath: to_canonical_xpath(meta_published_time.path),
+        date: meta_date,
+        source: :meta
+      }
+    end
   end
 
   page.document.traverse do |element|
-    date_source = try_extract_element_date(element, false)
+    date_source = try_extract_element_date(element, false, logger)
     next unless date_source
 
     page_dates_xpaths_sources << {
@@ -68,6 +71,11 @@ def historical_archives_sort_finish(links_with_known_dates, links, sort_state, l
   logger.info("Archives sort finish start")
   if sort_state
     sort_state.dates_by_xpath_source ||= {}
+    dates_by_xpath_from_meta = sort_state
+      .dates_by_xpath_source
+      .filter { |xpath_source, _| xpath_source[1] == :meta }
+      .map { |xpath_source, dates| [xpath_source[0], dates] }
+      .to_h
     dates_by_xpath_from_time = sort_state
       .dates_by_xpath_source
       .filter { |xpath_source, _| xpath_source[1] == :time }
@@ -76,6 +84,10 @@ def historical_archives_sort_finish(links_with_known_dates, links, sort_state, l
     if sort_state.dates_by_xpath_source.length == 1
       xpath_source, dates = sort_state.dates_by_xpath_source.first
       logger.info("Good shuffled date xpath_source: #{xpath_source}")
+    elsif dates_by_xpath_from_meta.length == 1
+      xpath, dates = dates_by_xpath_from_meta.first
+      xpath_source = [xpath, :meta]
+      logger.info("Good shuffled date xpath from meta: #{xpath}")
     elsif dates_by_xpath_from_time.length == 1
       xpath, dates = dates_by_xpath_from_time.first
       xpath_source = [xpath, :time]
