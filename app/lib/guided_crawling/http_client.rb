@@ -10,7 +10,7 @@ class HttpClient
     @enable_throttling = enable_throttling
   end
 
-  MAX_CONTENT_LENGTH = 50 * 1024 * 1024
+  MAX_CONTENT_LENGTH = 20 * 1024 * 1024
 
   def request(uri, should_throttle, logger)
     throttle if @enable_throttling && should_throttle
