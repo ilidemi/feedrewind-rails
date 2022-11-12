@@ -21,7 +21,7 @@ def historical_archives_sort_add(page, feed_generator, sort_state, logger)
   end
 
   page.document.traverse do |element|
-    date_source = try_extract_element_date(element, false, logger)
+    date_source = try_extract_element_date(element, false)
     next unless date_source
 
     page_dates_xpaths_sources << {
