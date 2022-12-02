@@ -18,7 +18,7 @@ class LogPostgresRowCountJob < ApplicationJob
 
     row_count = query_result.rows.first[0]
     if row_count > 5000000
-      Rails.logger.warning("DB total row count: #{row_count} (over 50%)")
+      Rails.logger.warn("DB total row count: #{row_count} (over 50%)")
     else
       Rails.logger.info("DB total row count: #{row_count}")
     end
