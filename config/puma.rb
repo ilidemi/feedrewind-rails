@@ -33,7 +33,7 @@ pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
 # processes).
 #
 if ENV.fetch("RAILS_ENV", "development") != "development"
-  workers ENV.fetch("WEB_CONCURRENCY") { 1 }
+  workers ENV.fetch("WEB_CONCURRENCY") { 2 }
 
   on_worker_boot do
     # Valid on Rails 4.1+ using the `config/database.yml` method of setting `pool` size
