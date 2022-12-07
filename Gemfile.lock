@@ -294,6 +294,7 @@ DEPENDENCIES
   htmlentities (~> 4.3, >= 4.3.4)
   jbuilder (~> 2.7)
   listen (~> 3.3)
+  mail (= 2.7.1)
   minitest (~> 5.14)
   nokogiri (~> 1.12, >= 1.12.5)
   ox (~> 2.0, >= 2.14.0)

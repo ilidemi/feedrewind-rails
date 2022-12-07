@@ -59,3 +59,6 @@ gem 'htmlentities', '~> 4.3', '>= 4.3.4'
 gem 'barnes', '~> 0.0.9', '>= 0.0.9'
 gem "tailwindcss-rails", "~> 2.0"
 gem "postmark-rails", "~> 0.22", ">= 0.22.0"
+
+# 2.8.0 introduced a dependency on net-imap which depends on net-protocol which overrides constants and spits out warnings
+gem "mail", "2.7.1"
