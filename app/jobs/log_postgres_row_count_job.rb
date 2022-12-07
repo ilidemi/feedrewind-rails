@@ -23,7 +23,7 @@ class LogPostgresRowCountJob < ApplicationJob
       Rails.logger.info("DB total row count: #{row_count}")
     end
 
-    LogPostgresRowCountJob.set(wait: 10.minutes).perform_later
+    LogPostgresRowCountJob.set(wait: 1.hours).perform_later
   end
 end
 
