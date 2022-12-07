@@ -67,6 +67,8 @@ class PuppeteerClient
 
   def fetch(uri, match_curis_set, crawl_ctx, progress_logger, logger, &find_load_more_button)
     logger.info("Puppeteer start: #{uri}")
+    progress_logger.log_and_save_puppeteer_start
+    is_initial_request = true
     puppeteer_start = monotonic_now
 
     timeout_errors_count = 0
@@ -79,7 +81,11 @@ class PuppeteerClient
             %w[image font].include?(request.resource_type) ? request.abort : request.continue
           end
           pptr_page.enable_request_tracking
-          progress_logger.log_and_save_puppeteer_start
+          if is_initial_request
+            is_initial_request = false
+          else
+            progress_logger.log_and_save_puppeteer_start
+          end
           pptr_page.goto(uri.to_s, wait_until: "networkidle0")
           progress_logger.log_and_save_puppeteer
 
