@@ -54,8 +54,8 @@ group :test do
   gem 'minitest', '~> 5.14'
 end
 
-# Windows does not include zoneinfo files, so bundle the tzinfo-data gem
-gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
+# Include tzinfo-data on all platforms so that upgrades are manual
+gem 'tzinfo-data', '1.2022.6'
 
 gem "addressable", "~> 2.2", ">= 2.2.4"
 gem "nokogiri", "~> 1.12", ">= 1.12.5"
