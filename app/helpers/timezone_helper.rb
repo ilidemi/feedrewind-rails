@@ -885,4 +885,7 @@ module TimezoneHelper
       Rails.logger.warn("#{timezone} group from tzdb is not in tzinfo")
     end
   end
+
+  Rails.logger.error("I am next level")
+  Rails.logger.fatal("I am next next level")
 end
