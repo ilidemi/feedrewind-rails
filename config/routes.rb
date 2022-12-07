@@ -12,31 +12,31 @@ Rails.application.routes.draw do
   post "settings/save_timezone", to: "users#save_timezone"
   post "settings/save_delivery_channel", to: "users#save_delivery_channel"
 
-  resources :subscriptions, only: [:index, :create], param: :id
+  resources :subscriptions, only: [:index, :create]
   get "/subscriptions/add", to: "onboarding#add"
   get "/subscriptions/add/*start_url", to: "onboarding#add", format: false, defaults: { format: "html" }
   post "/subscriptions/add", to: "onboarding#add_landing"
   post "/subscriptions/discover_feeds", to: "onboarding#discover_feeds"
 
-  get "/subscriptions/:id", to: "subscriptions#show" # Should come after /add so that it doesn't get treated as id
-  get "/subscriptions/:id/setup", to: "subscriptions#setup"
+  get "/subscriptions/:id", to: "subscriptions#show", constraints: { id: /\d+/ } # Should come after /add so that it doesn't get treated as id
+  get "/subscriptions/:id/setup", to: "subscriptions#setup", constraints: { id: /\d+/ }
 
   # all js should be post for CSRF to work
-  post "/subscriptions/:id/progress", to: "subscriptions#progress"
-  post "/subscriptions/:id/submit_progress_times", to: "subscriptions#submit_progress_times"
-  post "/subscriptions/:id/select_posts", to: "subscriptions#select_posts"
-  post "/subscriptions/:id/mark_wrong", to: "subscriptions#mark_wrong"
-  post "/subscriptions/:id/schedule", to: "subscriptions#schedule"
-  post "/subscriptions/:id/pause", to: "subscriptions#pause"
-  post "/subscriptions/:id/unpause", to: "subscriptions#unpause"
-  post "/subscriptions/:id/delete", to: "subscriptions#delete"
-  post "/subscriptions/:id", to: "subscriptions#update"
+  post "/subscriptions/:id/progress", to: "subscriptions#progress", constraints: { id: /\d+/ }
+  post "/subscriptions/:id/submit_progress_times", to: "subscriptions#submit_progress_times", constraints: { id: /\d+/ }
+  post "/subscriptions/:id/select_posts", to: "subscriptions#select_posts", constraints: { id: /\d+/ }
+  post "/subscriptions/:id/mark_wrong", to: "subscriptions#mark_wrong", constraints: { id: /\d+/ }
+  post "/subscriptions/:id/schedule", to: "subscriptions#schedule", constraints: { id: /\d+/ }
+  post "/subscriptions/:id/pause", to: "subscriptions#pause", constraints: { id: /\d+/ }
+  post "/subscriptions/:id/unpause", to: "subscriptions#unpause", constraints: { id: /\d+/ }
+  post "/subscriptions/:id/delete", to: "subscriptions#delete", constraints: { id: /\d+/ }
+  post "/subscriptions/:id", to: "subscriptions#update", constraints: { id: /\d+/ }
 
-  get "/subscriptions/:id/feed", to: "rss#subscription_feed" # Legacy
-  get "/feeds/single/:id", to: "rss#user_feed"
-  get "/feeds/:id", to: "rss#subscription_feed"
+  get "/subscriptions/:id/feed", to: "rss#subscription_feed", constraints: { id: /\d+/ } # Legacy
+  get "/feeds/single/:id", to: "rss#user_feed", constraints: { id: /\d+/ }
+  get "/feeds/:id", to: "rss#subscription_feed", constraints: { id: /\d+/ }
 
-  get "/blogs/:id/unsupported", to: "blogs#unsupported"
+  get "/blogs/:id/unsupported", to: "blogs#unsupported", constraints: { id: /\d+/ }
 
   get "/terms", to: "misc#terms"
   get "/privacy", to: "misc#privacy"
