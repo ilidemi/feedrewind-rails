@@ -2,11 +2,6 @@ class LogPostgresRowCountJob < ApplicationJob
   queue_as :default
 
   def perform
-
-    Rails.logger.warn("I am previous level")
-    Rails.logger.error("I am next level")
-    Rails.logger.fatal("I am next next level")
-
     # https://stackoverflow.com/a/28668340
     query = <<-SQL
       SELECT
@@ -27,6 +22,8 @@ class LogPostgresRowCountJob < ApplicationJob
     else
       Rails.logger.info("DB total row count: #{row_count}")
     end
+
+    raise "What if a job fails?"
 
     LogPostgresRowCountJob.set(wait: 10.minutes).perform_later
   end
