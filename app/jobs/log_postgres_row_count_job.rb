@@ -23,8 +23,6 @@ class LogPostgresRowCountJob < ApplicationJob
       Rails.logger.info("DB total row count: #{row_count}")
     end
 
-    raise "What if a job fails?"
-
     LogPostgresRowCountJob.set(wait: 10.minutes).perform_later
   end
 end
