@@ -64,4 +64,6 @@ Rails.application.routes.draw do
   end
 
   mount ActionCable.server => "/cable"
+
+  match '*unmatched', to: 'application#route_not_found', via: :all # Avoid RoutingError with fatal log
 end
