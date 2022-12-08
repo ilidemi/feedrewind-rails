@@ -15,7 +15,7 @@ class PostmarkController < ApplicationController
       if PostmarkBounce.exists?(bounce[:id])
         Rails.logger.info("Bounce already seen: #{bounce[:id]}")
       else
-        Rails.logger.info("New bounce: #{bounce[:id]}")
+        Rails.logger.warn("New bounce: #{bounce[:id]}")
         PostmarkBounce.create!(
           id: bounce[:id],
           bounce_type: bounce[:type],

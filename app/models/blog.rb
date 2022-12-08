@@ -142,13 +142,13 @@ class Blog < ApplicationRecord
 
         blog
       else
-        Rails.logger.info("Couldn't update blog #{start_feed.final_url} from feed, marking as failed")
+        Rails.logger.warn("Couldn't update blog #{start_feed.final_url} from feed, marking as failed")
         blog.status = "update_from_feed_failed"
         blog.save!
         blog
       end
     elsif blog.update_action == "fail"
-      Rails.logger.info("Blog #{start_feed.final_url} is marked to fail on update")
+      Rails.logger.warn("Blog #{start_feed.final_url} is marked to fail on update")
       blog.status = "update_from_feed_failed"
       blog.save!
       blog

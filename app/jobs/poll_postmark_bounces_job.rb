@@ -19,7 +19,7 @@ class PollPostmarkBouncesJob < ApplicationJob
       full_bounces.each do |full_bounce|
         next if PostmarkBounce.exists?(full_bounce[:id])
 
-        Rails.logger.info("Inserting Postmark bounce: #{full_bounce.filter { |key, _| key != :content}}")
+        Rails.logger.warn("Inserting Postmark bounce: #{full_bounce.filter { |key, _| key != :content}}")
         PostmarkBounce.create!(
           id: full_bounce[:id],
           bounce_type: full_bounce[:type],
