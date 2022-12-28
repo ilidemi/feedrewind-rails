@@ -1,5 +1,8 @@
 class ApplicationController < ActionController::Base
   before_action :redirect_subdomain
+  rescue_from ActionController::InvalidAuthenticityToken, with: :log_error_as_info
+
+  self.log_warning_on_csrf_failure = false
 
   def route_not_found
     render file: Rails.public_path.join('404.html'), status: :not_found, layout: false
@@ -41,5 +44,16 @@ class ApplicationController < ActionController::Base
 
   def fill_current_user
     current_user
+  end
+
+  private
+
+  def log_error_as_info(e)
+    Rails.logger.info do
+      message = +"#{e.class} (#{e.message}):\n"
+      message << e.annotated_source_code.to_s if e.respond_to?(:annotated_source_code)
+      message << "  " << e.backtrace.join("\n  ")
+      "#{message}\n\n"
+    end
   end
 end
