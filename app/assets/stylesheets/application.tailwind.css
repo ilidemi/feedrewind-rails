@@ -83,6 +83,11 @@
         -webkit-tap-highlight-color: transparent;
     }
 
+    .vertical-text {
+        writing-mode: vertical-rl;
+        transform: rotate(-180deg);
+    }
+
     /*noinspection CssReplaceWithShorthandSafely*/
     .loader-41 {
         position: relative;

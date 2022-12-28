@@ -139,6 +139,39 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: admin_telemetries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.admin_telemetries (
+    id bigint NOT NULL,
+    key text NOT NULL,
+    value double precision NOT NULL,
+    extra json,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: admin_telemetries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.admin_telemetries_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: admin_telemetries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.admin_telemetries_id_seq OWNED BY public.admin_telemetries.id;
+
+
+--
 -- Name: ar_internal_metadata; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -730,6 +763,13 @@ CREATE TABLE public.users (
 
 
 --
+-- Name: admin_telemetries id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.admin_telemetries ALTER COLUMN id SET DEFAULT nextval('public.admin_telemetries_id_seq'::regclass);
+
+
+--
 -- Name: blog_crawl_votes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -804,6 +844,14 @@ ALTER TABLE ONLY public.subscription_posts ALTER COLUMN id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.subscription_rsses ALTER COLUMN id SET DEFAULT nextval('public.subscription_rsses_id_seq'::regclass);
+
+
+--
+-- Name: admin_telemetries admin_telemetries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.admin_telemetries
+    ADD CONSTRAINT admin_telemetries_pkey PRIMARY KEY (id);
 
 
 --
@@ -1374,6 +1422,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220815192810'),
 ('20220919185403'),
 ('20221109212305'),
-('20221202021533');
+('20221202021533'),
+('20221208232337');
 
 

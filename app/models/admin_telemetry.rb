@@ -1,0 +1,2 @@
+class AdminTelemetry < ApplicationRecord
+end

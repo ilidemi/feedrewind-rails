@@ -46,6 +46,7 @@ Rails.application.routes.draw do
 
   get "/admin/add_blog", to: "admin#add_blog"
   post "/admin/post_blog", to: "admin#post_blog"
+  get "/admin/dashboard", to: "admin#dashboard"
 
   if Rails.env.development? || Rails.env.test?
     get "/test/travel_31days", to: "admin_test#travel_31days"

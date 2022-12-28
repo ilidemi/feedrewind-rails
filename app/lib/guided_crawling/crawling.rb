@@ -13,10 +13,12 @@ class CrawlContext
     @puppeteer_requests_made = 0
     @duplicate_fetches = 0
     @title_requests_made = 0
+    @title_fetch_duration = nil
   end
 
   attr_reader :fetched_curis, :pptr_fetched_curis, :redirects
-  attr_accessor :requests_made, :puppeteer_requests_made, :duplicate_fetches, :title_requests_made
+  attr_accessor :requests_made, :puppeteer_requests_made, :duplicate_fetches, :title_requests_made,
+                :title_fetch_duration
 end
 
 PERMANENT_ERROR_CODES =

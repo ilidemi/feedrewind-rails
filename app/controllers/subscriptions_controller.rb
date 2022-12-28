@@ -302,11 +302,13 @@ class SubscriptionsController < ApplicationController
       return nil
     end
 
-    avg_difference = client_durations
-      .zip(server_durations)
-      .map { |client_duration, server_duration| (client_duration - server_duration).abs }
-      .sum / blog_crawl_progress.epoch
-    Rails.logger.info("Avg full difference: #{avg_difference.round(3)}")
+    std_deviation = (
+      client_durations
+        .zip(server_durations)
+        .map { |client_duration, server_duration| (client_duration - server_duration) ** 2 }
+        .sum / blog_crawl_progress.epoch
+    ) ** 0.5
+    Rails.logger.info("Standard deviation (full): #{std_deviation.round(3)}")
 
     client_durations_after_initial_load = client_durations
       .drop(1)
@@ -314,18 +316,49 @@ class SubscriptionsController < ApplicationController
       .drop(1)
     server_durations_after_initial_load = server_durations.last(client_durations_after_initial_load.length)
 
-    avg_difference_after_initial_load = client_durations_after_initial_load
-      .zip(server_durations_after_initial_load)
-      .map { |client_duration, server_duration| (client_duration - server_duration).abs }
-      .sum / blog_crawl_progress.epoch
-    Rails.logger.info("Avg difference after initial load: #{avg_difference_after_initial_load.round(3)}")
-
-    client_durations_initial_load = client_durations.take(
-      client_durations.length - client_durations_after_initial_load.length
+    std_deviation_after_initial_load = (
+      client_durations_after_initial_load
+        .zip(server_durations_after_initial_load)
+        .map { |client_duration, server_duration| (client_duration - server_duration) ** 2 }
+        .sum / blog_crawl_progress.epoch
+    ) ** 0.5
+    Rails.logger.info("Standard deviation after initial load: #{std_deviation_after_initial_load.round(3)}")
+    AdminTelemetry.create!(
+      key: "progress_timing_std_deviation",
+      value: std_deviation_after_initial_load,
+      extra: {
+        feed_url: blog.feed_url,
+        subscription_id: subscription.id
+      }
     )
-    server_durations_initial_load = server_durations.take(client_durations_initial_load.length)
-    initial_load_duration = server_durations_initial_load.sum - client_durations_initial_load.last
-    Rails.logger.info("Initial load duration: #{initial_load_duration.round(3)}")
+
+    # E2E for crawling job getting picked up and reporting the first rectangle
+    initial_load_duration = client_durations.first
+    if initial_load_duration > 10
+      Rails.logger.warn("Initial load duration (exceeds 10 seconds): #{initial_load_duration.round(3)}")
+    else
+      Rails.logger.info("Initial load duration: #{initial_load_duration.round(3)}")
+    end
+    AdminTelemetry.create!(
+      key: "progress_timing_initial_load",
+      value: initial_load_duration,
+      extra: {
+        feed_url: blog.feed_url,
+        subscription_id: subscription.id
+      }
+    )
+
+    # Just the establishing websocket part, at the granularity of throttled crawl requests
+    websocket_wait_duration = [0.0, params[:websocket_wait_duration].to_f - server_durations.first].max
+    Rails.logger.info("Websocket wait duration: #{websocket_wait_duration.round(3)}")
+    AdminTelemetry.create!(
+      key: "websocket_wait_duration",
+      value: websocket_wait_duration,
+      extra: {
+        feed_url: blog.feed_url,
+        subscription_id: subscription.id
+      }
+    )
 
     nil
   end

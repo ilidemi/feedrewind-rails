@@ -4,6 +4,7 @@ class Blog < ApplicationRecord
   include RandomId
 
   LATEST_VERSION = 1000000
+  FAILED_STATUSES = %w[crawl_failed update_from_feed_failed crawled_looks_wrong]
 
   has_one :blog_crawl_client_token, dependent: :destroy
   has_one :blog_crawl_progress, dependent: :destroy
@@ -166,7 +167,7 @@ class Blog < ApplicationRecord
 
   def Blog::reset_failed_blogs(date_cutoff)
     blogs_to_reset = Blog
-      .where("status in ('crawl_failed', 'crawled_looks_wrong', 'update_from_feed_failed')")
+      .where("status in ('#{FAILED_STATUSES.join("', '")}')")
       .where(["version = ?", Blog::LATEST_VERSION])
       .where(["status_updated_at < ?", date_cutoff])
 
@@ -325,6 +326,7 @@ class Blog < ApplicationRecord
 
         self.version = Blog::get_downgrade_version(self.feed_url)
         self.save!
+        self.version
       end
     end
   end

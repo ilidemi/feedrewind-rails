@@ -8,14 +8,24 @@ class GuidedCrawlingJob < ApplicationJob
 
   def perform(blog_id, args_json)
     begin
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       args = JSON.parse(args_json, object_class: GuidedCrawlingJobArgs)
       start_feed = StartFeed.find(args.start_feed_id)
       start_page = start_feed.start_page
+      start_blog = Blog.find(blog_id)
+      has_previously_failed = Blog
+        .where(feed_url: start_blog.feed_url)
+        .where("version != #{Blog::LATEST_VERSION}")
+        .order(version: :desc)
+        .limit(1)
+        .first
+        &.status
+        .in?(Blog::FAILED_STATUSES)
 
       crawl_ctx = CrawlContext.new
       http_client = HttpClient.new
       puppeteer_client = PuppeteerClient.new
-      progress_saver = SubscriptionsHelper::ProgressSaver.new(blog_id)
+      progress_saver = SubscriptionsHelper::ProgressSaver.new(blog_id, start_blog.feed_url)
       begin
         guided_crawl_result = guided_crawl(
           start_page, start_feed, crawl_ctx, http_client, puppeteer_client, progress_saver, Rails.logger
@@ -80,6 +90,7 @@ class GuidedCrawlingJob < ApplicationJob
         blog.init_crawled(
           blog_url, urls_titles_categories, categories, discarded_feed_entry_urls, curi_eq_cfg_hash
         )
+        crawl_succeeded = true
       else
         Rails.logger.info("Historical links not found")
         Blog.transaction do
@@ -87,6 +98,45 @@ class GuidedCrawlingJob < ApplicationJob
           blog.status = "crawl_failed"
           blog.save!
         end
+        crawl_succeeded = false
+      end
+
+      finish_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      elapsed_seconds = finish_time - start_time
+      AdminTelemetry.create!(
+        key: crawl_succeeded ? "guided_crawling_job_success" : "guided_crawling_job_failure",
+        value: elapsed_seconds,
+        extra: {
+          feed_url: start_feed.url
+        }
+      )
+      if crawl_ctx.title_fetch_duration
+        AdminTelemetry.create!(
+          key: "crawling_title_fetch_duration",
+          value: crawl_ctx.title_fetch_duration,
+          extra: {
+            feed_url: start_feed.url,
+            requests_made: crawl_ctx.title_requests_made
+          }
+        )
+      end
+      if crawl_ctx.duplicate_fetches > 0
+        AdminTelemetry.create!(
+          key: "crawling_duplicate_requests",
+          value: crawl_ctx.duplicate_fetches,
+          extra: {
+            feed_url: start_feed.url
+          }
+        )
+      end
+      if has_previously_failed
+        AdminTelemetry.create!(
+          key: "recrawl_status",
+          value: crawl_succeeded ? 1 : 0,
+          extra: {
+            feed_url: start_feed.url
+          }
+        )
       end
     rescue ActiveRecord::RecordNotFound
       Rails.logger.warn("Record not found for blog #{blog_id}")

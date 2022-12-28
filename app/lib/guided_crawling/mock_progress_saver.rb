@@ -19,5 +19,9 @@ class MockProgressSaver
     @count = count
   end
 
+  def emit_telemetry(regressions, kv_bag)
+    @logger.info("Progress regression: #{regressions} #{kv_bag}")
+  end
+
   attr_reader :status_str, :count
 end

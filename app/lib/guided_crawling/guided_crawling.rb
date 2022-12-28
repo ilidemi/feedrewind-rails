@@ -332,6 +332,9 @@ def guided_crawl_historical(
       return result
     else
       logger.info("Got a result with #{result.count} historical links but it looks too small. Continuing just in case")
+
+      # NOTE: count will be out of sync with the next progress rect but it will also show up on the dashboard
+      progress_logger.log_and_save_fetched_count(nil)
     end
   end
 
@@ -394,6 +397,9 @@ def guided_crawl_historical(
       return result
     else
       logger.info("Got a result with #{result.count} historical links but it looks too small. Continuing just in case")
+
+      # NOTE: count will be out of sync with the next progress rect but it will also show up on the dashboard
+      progress_logger.log_and_save_fetched_count(nil)
     end
   end
 
@@ -493,9 +499,9 @@ def guided_crawl_fetch_loop(
       next if crawl_ctx.fetched_curis.include?(link.curi)
 
       page = crawl_request(link, false, crawl_ctx, http_client, progress_logger, logger)
+      progress_logger.save_status
       unless page.is_a?(Page) && page.document
         logger.info("Couldn't fetch link: #{page}")
-        progress_logger.save_status
         next
       end
     elsif link_or_page.is_a?(Page)
@@ -504,8 +510,6 @@ def guided_crawl_fetch_loop(
     else
       raise "Neither link nor page in the queue: #{link_or_page}"
     end
-
-    progress_logger.save_status
 
     pptr_page = crawl_with_puppeteer_if_match(
       page, feed_entry_curis_titles_map, puppeteer_client, crawl_ctx, progress_logger, logger
@@ -854,7 +858,7 @@ def postprocess_page1_result(
 
   paged_result = try_extract_page2(page2, page1_result.paged_state, feed_entry_links, curi_eq_cfg, logger)
   if paged_result
-    progress_logger.log_and_save_count(zero_to_nil(paged_result.links.count(&:title)))
+    progress_logger.log_and_save_fetched_count(zero_to_nil(paged_result.links.count(&:title)))
   end
 
   logger.info("Postprocess page1 result finish")
@@ -866,7 +870,7 @@ def postprocess_paged_result(
 )
   logger.info("Postprocess paged result start")
   while paged_result.is_a?(PartialPagedResult)
-    progress_logger.log_and_save_count(zero_to_nil(paged_result.links.count(&:title)))
+    progress_logger.log_and_save_fetched_count(zero_to_nil(paged_result.links.count(&:title)))
     page = crawl_request(
       paged_result.link_to_next_page, false, crawl_ctx, http_client, progress_logger, logger
     )
@@ -883,7 +887,7 @@ def postprocess_paged_result(
     if HardcodedBlogs::is_match(paged_result.main_link, HardcodedBlogs::CASEY_HANDMER, curi_eq_cfg)
       logger.info("Extra request for Casey Handmer categories")
       link = to_canonical_link(HardcodedBlogs::CASEY_HANDMER_SPACE_MISCONCEPTIONS, logger)
-      progress_logger.log_and_save_count(zero_to_nil(paged_result.links.count(&:title)))
+      progress_logger.log_and_save_fetched_count(zero_to_nil(paged_result.links.count(&:title)))
       page = crawl_request(link, false, crawl_ctx, http_client, progress_logger, logger)
       progress_logger.log_and_save_postprocessing
 
@@ -893,10 +897,10 @@ def postprocess_paged_result(
       end
     end
 
-    progress_logger.log_and_save_count(zero_to_nil(paged_result.links.count(&:title)))
+    progress_logger.log_and_save_fetched_count(zero_to_nil(paged_result.links.count(&:title)))
     logger.info("Postprocess paged result finish")
   else
-    progress_logger.log_and_save_count(nil)
+    progress_logger.log_and_save_fetched_count(nil)
     logger.info("Postprocess paged result failed")
   end
 
@@ -995,6 +999,7 @@ def fetch_missing_titles(
   logger
 )
   logger.info("Fetch missing titles start")
+  start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
   present_titles_count = links.count(&:title)
   missing_titles_count = links.length - present_titles_count
 
@@ -1038,7 +1043,7 @@ def fetch_missing_titles(
     feed_missing_titles_count = missing_titles_count
   end
 
-  progress_logger.log_and_save_count(zero_to_nil(feed_present_titles_count))
+  progress_logger.log_and_save_fetched_count(zero_to_nil(feed_present_titles_count))
   requests_made_start = crawl_ctx.requests_made
 
   links_with_titles = []
@@ -1070,6 +1075,8 @@ def fetch_missing_titles(
   end
 
   crawl_ctx.title_requests_made = crawl_ctx.requests_made - requests_made_start
+  finish_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  crawl_ctx.title_fetch_duration = finish_time - start_time
 
   if page_titles.empty?
     logger.info("Page titles are empty, skipped the prefix/suffix discovery")

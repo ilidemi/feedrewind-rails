@@ -1,3 +1,4 @@
+require 'math'
 require 'set'
 require_relative '../lib/guided_crawling/feed_discovery'
 require_relative '../lib/guided_crawling/canonical_link'
@@ -5,6 +6,7 @@ require_relative '../lib/guided_crawling/crawling'
 
 class AdminController < ApplicationController
   before_action :authorize_admin
+  layout "admin"
 
   def add_blog
   end
@@ -173,6 +175,98 @@ class AdminController < ApplicationController
     end
   rescue => e
     @message = print_nice_error(e)
+  end
+
+  Dashboard = Struct.new(:key, :y_scale, :items)
+  DashboardDate = Struct.new(:date_str)
+  DashboardBar = Struct.new(:value, :value_percent, :hover)
+
+  def dashboard
+    week_ago = DateTime.now.utc.advance(days: -6).beginning_of_day
+    telemetries = AdminTelemetry
+      .all
+      .where(["created_at > ?", week_ago])
+      .order("created_at")
+    telemetries_by_key = {}
+    telemetries.each do |telemetry|
+      unless telemetries_by_key.key?(telemetry.key)
+        telemetries_by_key[telemetry.key] = []
+      end
+      telemetries_by_key[telemetry.key] << telemetry
+    end
+
+    @dashboards = []
+    priority_keys = %w[guided_crawling_job_success guided_crawling_job_failure]
+    sorted_keys = telemetries_by_key
+      .keys
+      .sort_by { |key| [priority_keys.index(key) || priority_keys.length, key] }
+    sorted_keys.each do |key|
+      key_telemetries = telemetries_by_key[key]
+
+      y_max = 0
+      key_telemetries.each do |telemetry|
+        y_max = [telemetry.value, y_max].max
+      end
+      if y_max > 0
+        y_max_10 = 10.0 ** Math.log10(y_max).ceil
+        if y_max_10 / y_max >= 5
+          y_scale_max = y_max_10 / 5
+        elsif y_max_10 / y_max >= 2
+          y_scale_max = y_max_10 / 2
+        else
+          y_scale_max = y_max_10
+        end
+      else
+        y_scale_max = 1.0
+      end
+      y_scale = (0..10).map do |i|
+        ActiveSupport::NumberHelper.number_to_rounded(
+          y_scale_max * (10 - i) / 10,
+          strip_insignificant_zeros: true
+        )
+      end
+
+      items = []
+      prev_date = nil
+      prev_date_str = nil
+      key_telemetries.each do |telemetry|
+        date_str = telemetry.created_at.strftime("%Y-%m-%d")
+        if date_str != prev_date_str
+          if prev_date.nil?
+            prev_date = telemetry.created_at
+            prev_date_str = date_str
+            items << DashboardDate.new(date_str)
+          else
+            while prev_date_str != date_str
+              prev_date = prev_date.advance(days: 1)
+              prev_date_str = prev_date.strftime("%Y-%m-%d")
+              items << DashboardDate.new(prev_date_str)
+            end
+          end
+        end
+
+        formatted_value =
+          ActiveSupport::NumberHelper.number_to_rounded(telemetry.value, strip_insignificant_zeros: true)
+        if telemetry.value >= 0
+          value_percent = telemetry.value * 100 / y_scale_max
+        else
+          value_percent = 5
+        end
+        hover = (telemetry.extra || {})
+          .merge(
+            {
+              value: telemetry.value,
+              timestamp: telemetry.created_at.strftime("%T %Z")
+            }
+          )
+          .to_a
+          .map { |k, v| "#{k}: #{v}" }
+          .join("\n")
+        items << DashboardBar.new(formatted_value, value_percent, hover)
+      end
+
+      @dashboards << Dashboard.new(key, y_scale, items)
+    end
   end
 
   private

@@ -63,8 +63,9 @@ module SubscriptionsHelper
   end
 
   class ProgressSaver
-    def initialize(blog_id)
+    def initialize(blog_id, feed_url)
       @blog_id = blog_id
+      @feed_url = feed_url
       @last_epoch_timestamp = Time.now.utc
     end
 
@@ -109,6 +110,18 @@ module SubscriptionsHelper
         ActionCable.server.broadcast("discovery_#{@blog_id}", { epoch: new_epoch, count: count })
         Rails.logger.info("discovery_#{@blog_id} epoch: #{new_epoch} count: #{count}")
       end
+    end
+
+    def emit_telemetry(regressions, kv_bag)
+      AdminTelemetry.create!(
+        key: "progress_regression",
+        value: 1,
+        extra: {
+          blog_id: @blog_id,
+          feed_url: @feed_url,
+          regressions: regressions,
+        }.merge(kv_bag)
+      )
     end
 
     private

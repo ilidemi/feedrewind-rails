@@ -7,9 +7,16 @@
     let crawlClientToken = null;
     <% end %>
     let crawlEpoch;
-    let crawlEpochTimestamp;
     let crawlEpochDurations = [];
     let crawlWasDone = false;
+
+    function now() {
+        return Date.now() / 1000;
+    }
+
+    let pageLoadTimestamp = now();
+    let crawlEpochTimestamp = pageLoadTimestamp;
+    let websocketStartTimestamp;
 
     function createProgressRect(classes) {
         let rect = document.createElement("div");
@@ -20,15 +27,11 @@
     function displayProgress(data) {
         if (data.hasOwnProperty("epoch") && (!crawlEpoch || data.epoch > crawlEpoch)) {
             crawlEpoch = data.epoch;
-            let newEpochTimestamp = Date.now() / 1000;
+            let newEpochTimestamp = now();
             if (crawlEpoch > 0) {
-                if (crawlEpochTimestamp) {
-                    crawlEpochDurations.push(newEpochTimestamp - crawlEpochTimestamp);
-                } else {
-                    crawlEpochDurations.push(0);
-                }
+                crawlEpochDurations.push(newEpochTimestamp - crawlEpochTimestamp);
+                crawlEpochTimestamp = newEpochTimestamp;
             }
-            crawlEpochTimestamp = newEpochTimestamp;
             while (crawlEpochDurations.length < crawlEpoch) {
                 crawlEpochDurations.push(0);
             }
@@ -100,9 +103,11 @@
             let epochDurationsStr = crawlEpochDurations
                 .map(t => t.toFixed(3))
                 .join(";");
+            let websocketWaitDuration = websocketStartTimestamp - pageLoadTimestamp
             let formData = new FormData();
             formData.set("client_token", crawlClientToken);
             formData.set("epoch_durations", epochDurationsStr);
+            formData.set("websocket_wait_duration", websocketWaitDuration.toString());
             fetch(
                 "./submit_progress_times", {
                     method: "POST",
@@ -119,12 +124,15 @@
 
     let shouldPollProgress = true;
     let [subscription, monitor] = window.discoverySubscribe("<%= blog.id %>", data => {
+        if (!websocketStartTimestamp) {
+            websocketStartTimestamp = now();
+        }
         shouldPollProgress = false;
         displayProgress(data);
     });
 
     async function pollProgressTillWebsocketStarts() {
-        if (shouldPollProgress) return;
+        if (!shouldPollProgress) return;
 
         const response = await fetch(
             "<%= SubscriptionsHelper.progress_path(subscription) %>",
