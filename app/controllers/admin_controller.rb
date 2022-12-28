@@ -1,4 +1,3 @@
-require 'math'
 require 'set'
 require_relative '../lib/guided_crawling/feed_discovery'
 require_relative '../lib/guided_crawling/canonical_link'
