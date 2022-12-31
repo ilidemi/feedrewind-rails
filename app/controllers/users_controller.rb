@@ -61,7 +61,7 @@ class UsersController < ApplicationController
         )
       end
 
-      NotifySlackJob.perform_later("*#{NotifySlackJob::escape(@user.email)}* just signed up")
+      NotifySlackJob.perform_later("*#{NotifySlackJob::escape(@user.email)}* signed up")
 
       session[:user_id] = @user.id
 
