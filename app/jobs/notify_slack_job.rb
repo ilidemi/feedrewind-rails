@@ -4,26 +4,21 @@ require 'uri'
 class NotifySlackJob < ApplicationJob
   queue_as :default
 
-  SIGNUP = "signup"
-
-  def perform(webhook_name, text)
-    case webhook_name
-    when SIGNUP
-      webhook_url = Rails.configuration.slack_signup_webhook
-    else
-      raise "Unknown webhook name: #{webhook_name}"
-    end
-
-    escaped_text = text
-      .gsub("&", "&amp;")
-      .gsub("<", "&lt;")
-      .gsub(">", "&gt;")
+  def perform(text)
+    webhook_url = Rails.configuration.slack_webhook
 
     Net::HTTP.post(
       URI(webhook_url),
-      { "text" => escaped_text }.to_json,
+      { "text" => text }.to_json,
       { "Content-type" => "application/json" }
     )
+  end
+
+  def NotifySlackJob::escape(text)
+    text
+      .gsub("&", "&amp;")
+      .gsub("<", "&lt;")
+      .gsub(">", "&gt;")
   end
 end
 

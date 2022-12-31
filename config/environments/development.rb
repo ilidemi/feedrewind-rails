@@ -86,5 +86,5 @@ Rails.application.configure do
 
   config.admin_user_ids = []
 
-  config.slack_signup_webhook = "REDACTED_DEV_SLACK_WEBHOOK"
+  config.slack_webhook = "REDACTED_DEV_SLACK_WEBHOOK"
 end

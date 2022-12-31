@@ -93,6 +93,7 @@ class GuidedCrawlingJob < ApplicationJob
         crawl_succeeded = true
       else
         Rails.logger.info("Historical links not found")
+        blog_url = nil
         Blog.transaction do
           blog = Blog.find(blog_id)
           blog.status = "crawl_failed"
@@ -110,6 +111,12 @@ class GuidedCrawlingJob < ApplicationJob
           feed_url: start_feed.url
         }
       )
+
+      slack_blog_url = NotifySlackJob::escape(blog_url || start_page&.url || start_blog.feed_url)
+      slack_blog_name = NotifySlackJob::escape(start_blog.name)
+      slack_verb = crawl_succeeded ? "succeeded" : "failed"
+      NotifySlackJob.perform_later("Crawling *<#{slack_blog_url}|#{slack_blog_name}>* #{slack_verb} in #{elapsed_seconds.round(1)} seconds")
+
       if crawl_ctx.title_fetch_duration
         AdminTelemetry.create!(
           key: "crawling_title_fetch_duration",
