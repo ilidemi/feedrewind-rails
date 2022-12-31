@@ -520,6 +520,13 @@ class SubscriptionsController < ApplicationController
         PublishPostsService.init_subscription(
           @subscription, should_publish_rss_posts, utc_now, local_date, local_date_str
         )
+
+        slack_email = NotifySlackJob::escape(@current_user.email)
+        blog = @subscription.blog
+        slack_blog_url = NotifySlackJob::escape(blog.url || blog.feed_url)
+        slack_blog_name = NotifySlackJob::escape(blog.name)
+        NotifySlackJob.perform_later("*#{slack_email}* subscribed to *<#{slack_blog_url}|#{slack_blog_name}>*")
+
         Rails.logger.info("Unlocked daily jobs #{jobs}")
         render plain: SubscriptionsHelper.setup_path(@subscription)
       end
