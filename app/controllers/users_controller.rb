@@ -61,6 +61,8 @@ class UsersController < ApplicationController
         )
       end
 
+      NotifySlackJob.perform_later(NotifySlackJob::SIGNUP, "*#{@user.email}* just signed up")
+
       session[:user_id] = @user.id
 
       if cookies[:anonymous_subscription]

@@ -123,5 +123,7 @@ Rails.application.configure do
     6862710086337347875 # test@test.com
   ]
 
+  config.slack_signup_webhook = "REDACTED_SLACK_WEBHOOK"
+
   config.assets.css_compressor = nil
 end

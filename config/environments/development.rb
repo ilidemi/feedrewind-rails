@@ -85,4 +85,6 @@ Rails.application.configure do
   config.log_tags = [ user_id, session_id, :request_id ]
 
   config.admin_user_ids = []
+
+  config.slack_signup_webhook = "REDACTED_DEV_SLACK_WEBHOOK"
 end
