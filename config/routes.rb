@@ -67,5 +67,6 @@ Rails.application.routes.draw do
   mount ActionCable.server => "/cable"
 
   # Avoid RoutingError with fatal log on 404
+  match '/', to: 'application#route_not_found', via: :all # GET is handled above, this is catch-all
   match '*unmatched', to: 'application#route_not_found', via: :all
 end
