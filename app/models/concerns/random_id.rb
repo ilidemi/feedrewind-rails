@@ -21,6 +21,4 @@ module RandomId
     # unlikely
     self.id = new_id
   end
-
-
 end

@@ -10,7 +10,7 @@ class User < ApplicationRecord
   validates_length_of :password, minimum: 8
   validates_presence_of :email
   validate :email_uniqueness
-  before_create { generate_token(:auth_token) }
+  before_create { generate_auth_token }
 
   def destroy_subscriptions_recursively!
     User.transaction do
@@ -35,16 +35,16 @@ class User < ApplicationRecord
     end
   end
 
-  private
-
-  def generate_token(column)
+  def generate_auth_token
     begin
-      self[column] = SecureRandom.urlsafe_base64
-    end while User.exists?(column => self[column])
+      self.auth_token = SecureRandom.urlsafe_base64
+    end while User.exists?(auth_token: self.auth_token)
   end
 
+  private
+
   def email_uniqueness
-    if User.where(["email = ? and password_digest is not null", self.email]).exists?
+    if User.where(["id != ? and email = ? and password_digest is not null", self.id, self.email]).exists?
       self.errors.add(:base, "We already have an account registered with that email address.")
     end
   end

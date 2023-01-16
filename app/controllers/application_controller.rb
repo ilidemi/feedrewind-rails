@@ -1,3 +1,5 @@
+require 'securerandom'
+
 class ApplicationController < ActionController::Base
   before_action :redirect_subdomain
   rescue_from ActionController::InvalidAuthenticityToken, with: :log_error_as_info
@@ -17,12 +19,25 @@ class ApplicationController < ActionController::Base
   end
 
   def current_user
-    @current_user ||= User.find_by(id: session[:user_id]) if session[:user_id]
+    if session[:auth_token]
+      @current_user ||= User.find_by(auth_token: session[:auth_token])
+    end
+
+    if @current_user
+      @product_user_id = @current_user.product_user_id
+    elsif session[:product_user_id]
+      @product_user_id = session[:product_user_id]
+    else
+      @product_user_id = SecureRandom.uuid
+      session[:product_user_id] = @product_user_id
+    end
+
     if @current_user
       @current_user_has_bounced = PostmarkBouncedUser.exists?(@current_user.id)
     else
       @current_user_has_bounced = false
     end
+
     @current_user
   end
 
@@ -44,6 +59,7 @@ class ApplicationController < ActionController::Base
 
   def fill_current_user
     current_user
+    nil
   end
 
   private

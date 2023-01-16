@@ -86,10 +86,13 @@ class GuidedCrawlingJob < ApplicationJob
           expect_tumblr_paths: guided_crawl_result.curi_eq_cfg.expect_tumblr_paths
         }
         discarded_feed_entry_urls = guided_crawl_result.historical_result.discarded_feed_entry_urls
-        blog = Blog.find(blog_id)
-        blog.init_crawled(
-          blog_url, urls_titles_categories, categories, discarded_feed_entry_urls, curi_eq_cfg_hash
-        )
+        Blog.transaction do
+          blog = Blog.find(blog_id)
+          blog.init_crawled(
+            blog_url, urls_titles_categories, categories, discarded_feed_entry_urls, curi_eq_cfg_hash
+          )
+          log_crawl_finished(blog, "crawl succeeded")
+        end
         crawl_succeeded = true
       else
         Rails.logger.info("Historical links not found")
@@ -98,6 +101,7 @@ class GuidedCrawlingJob < ApplicationJob
           blog = Blog.find(blog_id)
           blog.status = "crawl_failed"
           blog.save!
+          log_crawl_finished(blog, "crawl failed")
         end
         crawl_succeeded = false
       end
@@ -150,6 +154,26 @@ class GuidedCrawlingJob < ApplicationJob
     ensure
       ActionCable.server.broadcast("discovery_#{blog_id}", { done: true })
       Rails.logger.info("discovery_#{blog_id} done: true")
+    end
+  end
+
+  private
+
+  def log_crawl_finished(blog, event_type)
+    Subscription.with_discarded.where(blog_id: blog.id).each do |subscription|
+      product_user_id = subscription.user ?
+        subscription.user.product_user_id :
+        subscription.anon_product_user_id
+      wait_duration = blog.updated_at - subscription.created_at
+      ProductEvent.create!(
+        product_user_id: product_user_id,
+        event_type: event_type,
+        event_properties: {
+          subscription_id: subscription.id,
+          blog_url: blog.best_url,
+          wait_duration: wait_duration
+        }
+      )
     end
   end
 end

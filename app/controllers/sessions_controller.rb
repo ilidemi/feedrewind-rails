@@ -16,7 +16,7 @@ class SessionsController < ApplicationController
     user = User.find_by_email(login_params[:email])
     @errors = []
     if user && user.authenticate(login_params["current-password"])
-      session[:user_id] = user.id
+      session[:auth_token] = user.auth_token
 
       if cookies[:anonymous_subscription]
         subscription = Subscription.find_by(id: cookies[:anonymous_subscription], user_id: nil)

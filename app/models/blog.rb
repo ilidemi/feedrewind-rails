@@ -5,6 +5,7 @@ class Blog < ApplicationRecord
 
   LATEST_VERSION = 1000000
   FAILED_STATUSES = %w[crawl_failed update_from_feed_failed crawled_looks_wrong]
+  CRAWLED_STATUSES = %w[crawled_voting crawled_confirmed manually_inserted]
 
   has_one :blog_crawl_client_token, dependent: :destroy
   has_one :blog_crawl_progress, dependent: :destroy
@@ -182,71 +183,74 @@ class Blog < ApplicationRecord
 
   def init_crawled(url, urls_titles_categories, categories, discarded_feed_urls, curi_eq_cfg_hash)
     raise "Can only init posts when status is crawl_in_progress" unless self.status == "crawl_in_progress"
+    raise "Must be called in a transaction" unless ActiveRecord::Base.connection.transaction_open?
 
-    Blog.transaction do
-      posts_count = urls_titles_categories.length
+    posts_count = urls_titles_categories.length
 
-      utc_now = DateTime.now.utc
-      blog_posts_fields = urls_titles_categories.map.with_index do |url_title_categories, index|
+    utc_now = DateTime.now.utc
+    blog_posts_fields = urls_titles_categories.map.with_index do |url_title_categories, index|
+      {
+        blog_id: self.id,
+        index: posts_count - index - 1,
+        url: url_title_categories[:url],
+        title: url_title_categories[:title],
+        created_at: utc_now,
+        updated_at: utc_now
+      }
+    end
+    blog_post_ids = BlogPost.insert_all!(blog_posts_fields).map { |row| row["id"] }
+
+    if categories.length > 0
+      blog_post_categories_fields = categories.map.with_index do |category, index|
         {
           blog_id: self.id,
-          index: posts_count - index - 1,
-          url: url_title_categories[:url],
-          title: url_title_categories[:title],
+          name: category[:name],
+          index: index,
+          is_top: category[:is_top],
           created_at: utc_now,
           updated_at: utc_now
         }
       end
-      blog_post_ids = BlogPost.insert_all!(blog_posts_fields).map { |row| row["id"] }
+      category_ids = BlogPostCategory.insert_all!(blog_post_categories_fields).map { |row| row["id"] }
 
-      if categories.length > 0
-        blog_post_categories_fields = categories.map.with_index do |category, index|
+      category_ids_by_name = categories
+        .zip(category_ids)
+        .to_h { |category, category_id| [category[:name], category_id] }
+
+      blog_posts_category_assignments_fields = urls_titles_categories
+        .zip(blog_post_ids)
+        .flat_map do |url_title_categories, blog_post_id|
+        url_title_categories[:categories].map do |category_name|
           {
-            blog_id: self.id,
-            name: category[:name],
-            index: index,
-            is_top: category[:is_top],
+            blog_post_id: blog_post_id,
+            category_id: category_ids_by_name[category_name],
             created_at: utc_now,
             updated_at: utc_now
           }
         end
-        category_ids = BlogPostCategory.insert_all!(blog_post_categories_fields).map { |row| row["id"] }
-
-        category_ids_by_name = categories
-          .zip(category_ids)
-          .to_h { |category, category_id| [category[:name], category_id] }
-
-        blog_posts_category_assignments_fields = urls_titles_categories
-          .zip(blog_post_ids)
-          .flat_map do |url_title_categories, blog_post_id|
-          url_title_categories[:categories].map do |category_name|
-            {
-              blog_post_id: blog_post_id,
-              category_id: category_ids_by_name[category_name],
-              created_at: utc_now,
-              updated_at: utc_now
-            }
-          end
-        end
-        BlogPostCategoryAssignment.insert_all!(blog_posts_category_assignments_fields)
       end
-
-      BlogCanonicalEqualityConfig.create!(
-        blog_id: self.id,
-        same_hosts: curi_eq_cfg_hash[:same_hosts],
-        expect_tumblr_paths: curi_eq_cfg_hash[:expect_tumblr_paths]
-      )
-      discarded_feed_urls.each do |discarded_feed_url|
-        BlogDiscardedFeedEntry.create!(
-          blog_id: self.id,
-          url: discarded_feed_url
-        )
-      end
-
-      self.url = url
-      self.status = "crawled_voting"
-      self.save!
+      BlogPostCategoryAssignment.insert_all!(blog_posts_category_assignments_fields)
     end
+
+    BlogCanonicalEqualityConfig.create!(
+      blog_id: self.id,
+      same_hosts: curi_eq_cfg_hash[:same_hosts],
+      expect_tumblr_paths: curi_eq_cfg_hash[:expect_tumblr_paths]
+    )
+    discarded_feed_urls.each do |discarded_feed_url|
+      BlogDiscardedFeedEntry.create!(
+        blog_id: self.id,
+        url: discarded_feed_url
+      )
+    end
+
+    self.url = url
+    self.status = "crawled_voting"
+    self.save!
+  end
+
+  def best_url
+    self.url || self.feed_url
   end
 
   def Blog::crawl_progress_json(blog_id)

@@ -113,14 +113,24 @@ class SubscriptionsController < ApplicationController
       start_feed.save!
 
       updated_blog = Blog::create_or_update(start_feed)
-      subscription_or_blog_not_supported = Subscription::create_for_blog(updated_blog, @current_user)
+      subscription_or_blog_not_supported = Subscription::create_for_blog(
+        updated_blog, @current_user, @product_user_id
+      )
 
       if subscription_or_blog_not_supported.is_a?(Subscription::BlogNotSupported)
+        ProductEventHelper::log_discover_feeds(request, @product_user_id, start_feed.url, "known_unsupported")
         render plain: BlogsHelper.unsupported_path(subscription_or_blog_not_supported.blog)
       else
-        render plain: SubscriptionsHelper.setup_path(subscription_or_blog_not_supported)
+        subscription = subscription_or_blog_not_supported
+        ProductEventHelper::log_discover_feeds(request, @product_user_id, start_feed.url, "feed")
+        ProductEventHelper::log_create_subscription(request, @product_user_id, subscription)
+        redirect_to SubscriptionsHelper.setup_path(subscription)
       end
-    elsif [:discovered_bad_feed, :discovered_timeout_feed].include?(feed_result)
+    elsif feed_result == :discovered_bad_feed
+      ProductEventHelper::log_discover_feeds(request, @product_user_id, start_feed.url, "bad_feed")
+      render plain: "", status: :unsupported_media_type
+    elsif feed_result == :discover_could_not_reach
+      ProductEventHelper::log_discover_feeds(request, @product_user_id, start_feed.url, "could_not_reach")
       render plain: "", status: :unsupported_media_type
     else
       raise "Unexpected result from fetch_feed_at_url: #{feed_result}"
@@ -379,10 +389,12 @@ class SubscriptionsController < ApplicationController
     end
 
     top_category_id = nil
+    top_category = nil
     blog_post_ids = []
     if params[:top_category_id] != ""
       top_category_id = params[:top_category_id].to_i
-      if BlogPostCategory.find_by(id: top_category_id, blog_id: blog.id).nil?
+      top_category = BlogPostCategory.find_by(id: top_category_id, blog_id: blog.id)
+      if top_category.nil?
         raise "Category not found: #{top_category_id}"
       end
     else
@@ -401,6 +413,28 @@ class SubscriptionsController < ApplicationController
         value: "confirmed"
       )
     end
+
+    product_selected_count = top_category ?
+      top_category.blog_post_category_assignments.count :
+      blog_post_ids.length
+    total_posts_count = blog.blog_posts.count
+    product_selection = top_category ?
+      top_category.name == "Everything" ?
+        "everything" :
+        "top_category" :
+      "custom"
+    ProductEvent::from_request!(
+      request,
+      product_user_id: @product_user_id,
+      event_type: "select posts",
+      event_properties: {
+        subscription_id: subscription.id,
+        blog_url: subscription.blog.best_url,
+        selected_count: product_selected_count,
+        selected_fraction: product_selected_count.to_f / total_posts_count,
+        selection: product_selection
+      }
+    )
 
     subscription.transaction do
       if top_category_id
@@ -438,6 +472,16 @@ class SubscriptionsController < ApplicationController
       user_id: @current_user&.id,
       blog_id: blog.id,
       value: "looks_wrong"
+    )
+
+    ProductEvent::from_request!(
+      request,
+      product_user_id: @product_user_id,
+      event_type: "mark wrong",
+      event_properties: {
+        subscription_id: @subscription.id,
+        blog_url: @subscription.blog.best_url
+      }
     )
 
     Rails.logger.warn("Blog #{blog.id} (#{blog.name}) marked as wrong")
@@ -486,6 +530,17 @@ class SubscriptionsController < ApplicationController
           end
           user_settings.save!
           PublishPostsJob.initial_schedule(@current_user)
+          ProductEvent::from_request!(
+            request,
+            product_user_id: @product_user_id,
+            event_type: "pick delivery channel",
+            event_properties: {
+              channel: user_settings.delivery_channel
+            },
+            user_properties: {
+              delivery_channel: user_settings.delivery_channel
+            }
+          )
         elsif user_settings.delivery_channel.nil?
           raise "Delivery channel is not set for the user and is not passed in the params"
         end
@@ -521,11 +576,18 @@ class SubscriptionsController < ApplicationController
           @subscription, should_publish_rss_posts, utc_now, local_date, local_date_str
         )
 
+        product_active_days = counts_by_day.count { |_, count| count > 0 }
+        ProductEventHelper::log_schedule(
+          request, @product_user_id, "schedule", @subscription, total_count, product_active_days
+        )
+
         slack_email = NotifySlackJob::escape(@current_user.email)
         blog = @subscription.blog
-        slack_blog_url = NotifySlackJob::escape(blog.url || blog.feed_url)
+        slack_blog_url = NotifySlackJob::escape(blog.best_url)
         slack_blog_name = NotifySlackJob::escape(blog.name)
-        NotifySlackJob.perform_later("*#{slack_email}* subscribed to *<#{slack_blog_url}|#{slack_blog_name}>*")
+        NotifySlackJob.perform_later(
+          "*#{slack_email}* subscribed to *<#{slack_blog_url}|#{slack_blog_name}>*"
+        )
 
         Rails.logger.info("Unlocked daily jobs #{jobs}")
         render plain: SubscriptionsHelper.setup_path(@subscription)
@@ -548,6 +610,16 @@ class SubscriptionsController < ApplicationController
 
     @subscription.is_paused = true
     @subscription.save!
+
+    ProductEvent::from_request!(
+      request,
+      product_user_id: @product_user_id,
+      event_type: "pause subscription",
+      event_properties: {
+        subscription_id: @subscription.id,
+        blog_url: @subscription.blog.best_url
+      }
+    )
     head :ok
   end
 
@@ -558,6 +630,16 @@ class SubscriptionsController < ApplicationController
 
     @subscription.is_paused = false
     @subscription.save!
+
+    ProductEvent::from_request!(
+      request,
+      product_user_id: @product_user_id,
+      event_type: "unpause subscription",
+      event_properties: {
+        subscription_id: @subscription.id,
+        blog_url: @subscription.blog.best_url
+      }
+    )
     head :ok
   end
 
@@ -578,9 +660,11 @@ class SubscriptionsController < ApplicationController
     raise "Expecting some count to not be zero" unless total_count > 0
 
     Subscription.transaction do
+      product_active_days = 0
       DAY_COUNT_NAMES.each do |day_count_name|
         day_of_week = day_count_name.to_s[...3]
         day_count = update_params[day_count_name].to_i
+        product_active_days += 1 if day_count > 0
         schedule = @subscription.schedules.find_by(day_of_week: day_of_week)
         schedule.count = day_count
         schedule.save!
@@ -588,6 +672,10 @@ class SubscriptionsController < ApplicationController
 
       @subscription.schedule_version = new_version
       @subscription.save!
+
+      ProductEventHelper::log_schedule(
+        request, @product_user_id, "update schedule", @subscription, total_count, product_active_days
+      )
     end
 
     head :ok
@@ -602,6 +690,16 @@ class SubscriptionsController < ApplicationController
     return user_mismatch if user_mismatch
 
     @subscription.discard!
+
+    ProductEvent::from_request!(
+      request,
+      product_user_id: @product_user_id,
+      event_type: "delete subscription",
+      event_properties: {
+        subscription_id: @subscription.id,
+        blog_url: @subscription.blog.best_url
+      }
+    )
 
     if params[:redirect] == "add"
       redirect_to "/subscriptions/add"

@@ -1,3 +1,4 @@
+require 'securerandom'
 require 'tzinfo'
 
 class UsersController < ApplicationController
@@ -22,14 +23,14 @@ class UsersController < ApplicationController
       if existing_user && existing_user.password_digest.nil?
         @user = existing_user
         @user.password = password
+        @user.generate_auth_token # reset logged in sessions
       else
         name = email[...email.index("@")]
         @user = User.new(
-          {
-            email: email,
-            password: password,
-            name: name
-          }
+          email: email,
+          password: password,
+          name: name,
+          product_user_id: session[:product_user_id] || SecureRandom.uuid
         )
 
         params_timezone = user_params[:timezone]
@@ -59,11 +60,17 @@ class UsersController < ApplicationController
           delivery_channel: nil,
           version: 1
         )
+
+        ProductEvent::from_request!(
+          request,
+          product_user_id: @user.product_user_id,
+          event_type: "sign up"
+        )
+
+        NotifySlackJob.perform_later("*#{NotifySlackJob::escape(@user.email)}* signed up")
       end
 
-      NotifySlackJob.perform_later("*#{NotifySlackJob::escape(@user.email)}* signed up")
-
-      session[:user_id] = @user.id
+      session[:auth_token] = @user.auth_token
 
       if cookies[:anonymous_subscription]
         subscription = Subscription.find_by(id: cookies[:anonymous_subscription], user_id: nil)
@@ -133,12 +140,12 @@ class UsersController < ApplicationController
           next
         end
 
-        user_settings = @current_user.user_settings
         if user_settings.version >= new_version
           Rails.logger.info("Version conflict: existing #{user_settings.version}, new #{new_version}")
           next render status: :conflict, json: { version: user_settings.version }
         end
 
+        old_timezone = user_settings.timezone
         user_settings.timezone = new_timezone_id
         user_settings.version = new_version
         user_settings.save!
@@ -153,6 +160,16 @@ class UsersController < ApplicationController
           )
           PublishPostsJob::update_run_at(publish_posts_job.id, job_new_run_at)
         end
+
+        ProductEvent::from_request!(
+          request,
+          product_user_id: @product_user_id,
+          event_type: "update timezone",
+          event_properties: {
+            old_timezone: old_timezone,
+            new_timezone: new_timezone_id
+          }
+        )
 
         Rails.logger.info("Unlocked PublishPostsJob #{jobs}")
         head :ok
@@ -207,6 +224,7 @@ class UsersController < ApplicationController
           next render status: :conflict, json: { version: user_settings.version }
         end
 
+        old_delivery_channel = user_settings.delivery_channel
         user_settings.delivery_channel = new_delivery_channel
         user_settings.version = new_version
         user_settings.save!
@@ -226,6 +244,19 @@ class UsersController < ApplicationController
           PublishPostsJob::initial_schedule(@current_user)
           Rails.logger.info("Did initial schedule for PublishPostsJob")
         end
+
+        ProductEvent::from_request!(
+          request,
+          product_user_id: @product_user_id,
+          event_type: "update delivery channel",
+          event_properties: {
+            old_channel: old_delivery_channel,
+            new_channel: new_delivery_channel
+          },
+          user_properties: {
+            delivery_channel: new_delivery_channel
+          }
+        )
 
         Rails.logger.info("Unlocked PublishPostsJob #{jobs}")
         head :ok

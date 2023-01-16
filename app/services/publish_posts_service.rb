@@ -115,6 +115,15 @@ module PublishPostsService
           subscription.final_item_published_at = utc_now
           final_item_subs << subscription
           Rails.logger.info("Will publish the final item for subscription #{subscription.id}")
+
+          ProductEvent.create!(
+            product_user_id: user.product_user_id,
+            event_type: "finish subscription",
+            event_properties: {
+              subscription_id: subscription.id,
+              blog_url: subscription.blog.best_url
+            }
+          )
         end
       end
 

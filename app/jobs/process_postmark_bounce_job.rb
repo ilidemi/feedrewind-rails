@@ -12,7 +12,8 @@ class ProcessPostmarkBounceJob < ApplicationJob
     # If a bounce came before the message is saved, find will fail, the job will retry later and it's ok
     postmark_message = PostmarkMessage.find(bounce.message_id)
 
-    user = postmark_message.subscription.user
+    subscription = Subscription.with_discarded.find(postmark_message.subscription_id)
+    user = subscription.user
     case bounce.bounce_type
     when "Subscribe", "AutoResponder", "OpenRelayTest"
       Rails.logger.info("Bounce is noise (#{bounce.bounce_type}), skipping")
@@ -67,6 +68,15 @@ class ProcessPostmarkBounceJob < ApplicationJob
       else
         Rails.logger.info("Marking user #{user.id} as bounced")
         PostmarkBouncedUser.create!(user_id: user.id, example_bounce_id: bounce.id)
+
+        ProductEvent.create!(
+          product_user_id: user.product_user_id,
+          event_type: "hard bounce email",
+          event_properties: {
+            subscription_id: subscription.id,
+            blog_url: subscription.blog.best_url
+          }
+        )
       end
     end
   end

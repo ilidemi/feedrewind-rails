@@ -7,15 +7,25 @@ class Subscription < ApplicationRecord
   has_many :schedules, dependent: :destroy
   has_one :subscription_rss, dependent: :destroy
   has_many :postmark_messages, dependent: :destroy
+  validate :refers_to_user
 
   BlogNotSupported = Struct.new(:blog)
 
-  def Subscription::create_for_blog(blog, current_user)
-    if %w[crawl_failed crawled_looks_wrong update_from_feed_failed].include?(blog.status)
+  def Subscription::create_for_blog(blog, current_user, product_user_id)
+    if Blog::FAILED_STATUSES.include?(blog.status)
       BlogNotSupported.new(blog)
     else
+      if current_user
+        user_id = current_user.id
+        anon_product_user_id = nil
+      else
+        user_id = nil
+        anon_product_user_id = product_user_id
+      end
+
       Subscription.create!(
-        user_id: current_user&.id,
+        user_id: user_id,
+        anon_product_user_id: anon_product_user_id,
         blog_id: blog.id,
         name: blog.name,
         status: "waiting_for_blog",
@@ -44,5 +54,13 @@ class Subscription < ApplicationRecord
       where blog_id = $3 and id in (#{blog_post_ids.map(&:to_s).join(", ")});
     SQL
     ActiveRecord::Base.connection.exec_query(query, "SQL", [self.id, Time.current, self.blog_id])
+  end
+
+  private
+
+  def refers_to_user
+    if self.user_id.nil? && self.anon_product_user_id.nil?
+      raise "Must specify either user_id or anon_product_user_id"
+    end
   end
 end

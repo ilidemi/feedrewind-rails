@@ -529,6 +529,43 @@ CREATE TABLE public.postmark_messages (
 
 
 --
+-- Name: product_events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.product_events (
+    id bigint NOT NULL,
+    event_type text NOT NULL,
+    event_properties json,
+    user_properties json,
+    user_agent text,
+    user_ip text,
+    dispatched_at timestamp without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    product_user_id uuid NOT NULL
+);
+
+
+--
+-- Name: product_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.product_events_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: product_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.product_events_id_seq OWNED BY public.product_events.id;
+
+
+--
 -- Name: schedules; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -705,7 +742,8 @@ CREATE TABLE public.subscriptions (
     user_id bigint,
     initial_item_publish_status public.post_publish_status,
     final_item_publish_status public.post_publish_status,
-    schedule_version integer NOT NULL
+    schedule_version integer NOT NULL,
+    anon_product_user_id uuid
 );
 
 
@@ -752,13 +790,14 @@ CREATE TABLE public.user_settings (
 --
 
 CREATE TABLE public.users (
-    email character varying,
-    password_digest character varying,
+    email character varying NOT NULL,
+    password_digest character varying NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    auth_token character varying,
+    auth_token character varying NOT NULL,
     id bigint NOT NULL,
-    name text NOT NULL
+    name text NOT NULL,
+    product_user_id uuid NOT NULL
 );
 
 
@@ -816,6 +855,13 @@ ALTER TABLE ONLY public.blog_posts ALTER COLUMN id SET DEFAULT nextval('public.b
 --
 
 ALTER TABLE ONLY public.delayed_jobs ALTER COLUMN id SET DEFAULT nextval('public.delayed_jobs_id_seq'::regclass);
+
+
+--
+-- Name: product_events id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.product_events ALTER COLUMN id SET DEFAULT nextval('public.product_events_id_seq'::regclass);
 
 
 --
@@ -983,6 +1029,14 @@ ALTER TABLE ONLY public.postmark_messages
 
 
 --
+-- Name: product_events product_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.product_events
+    ADD CONSTRAINT product_events_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: schedules schedules_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1096,6 +1150,13 @@ CREATE INDEX index_start_feeds_on_start_page_id ON public.start_feeds USING btre
 --
 
 CREATE UNIQUE INDEX index_users_on_id ON public.users USING btree (id);
+
+
+--
+-- Name: index_users_on_product_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_users_on_product_user_id ON public.users USING btree (product_user_id);
 
 
 --
@@ -1423,6 +1484,10 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20220919185403'),
 ('20221109212305'),
 ('20221202021533'),
-('20221208232337');
+('20221208232337'),
+('20230105004303'),
+('20230114001637'),
+('20230116214016'),
+('20230116221307');
 
 

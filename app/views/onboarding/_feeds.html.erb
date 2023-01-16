@@ -37,7 +37,7 @@
 <% else %>
   <div id="feeds_error">
     <% if feeds_data.not_a_url %>
-      <a href="https://duckduckgo.com/?q=<%= Addressable::URI.escape(feeds_data.start_url) %>"
+      <a href="https://duckduckgo.com/?q=<%= Addressable::URI.encode_component(feeds_data.start_url, Addressable::URI::CharacterClasses::QUERY) %>"
          target="_blank"
          class="link">
         Search online for a link to "<%= feeds_data.start_url %>" →

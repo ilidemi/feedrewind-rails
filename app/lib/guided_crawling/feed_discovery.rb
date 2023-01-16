@@ -143,8 +143,8 @@ def discover_feeds_at_url(start_url, enforce_timeout, crawl_ctx, http_client, lo
         DiscoveredSingleFeed.new(start_page, fetched_feed)
       elsif single_feed_result == :discovered_bad_feed
         return :discovered_bad_feed
-      elsif single_feed_result == :discovered_timeout_feed
-        DiscoveredSingleFeed.new(start_page, dedup_feeds.first)
+      elsif single_feed_result == :discover_could_not_reach
+        return :discover_could_not_reach
       else
         raise "Unexpected result from fetch_feed_at_url: #{single_feed_result}"
       end
@@ -180,7 +180,7 @@ def fetch_feed_at_url(feed_url, enforce_timeout, crawl_ctx, http_client, logger)
     crawl_result
   rescue Timeout::Error
     logger.info("Timeout while fetching a feed")
-    :discovered_timeout_feed
+    :discover_could_not_reach
   end
 end
 
