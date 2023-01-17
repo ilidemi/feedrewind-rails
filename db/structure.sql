@@ -760,6 +760,43 @@ CREATE TABLE public.test_singletons (
 
 
 --
+-- Name: typed_blog_urls; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.typed_blog_urls (
+    id bigint NOT NULL,
+    typed_url text NOT NULL,
+    stripped_url text NOT NULL,
+    source text NOT NULL,
+    result text NOT NULL,
+    user_id bigint,
+    user_ip text NOT NULL,
+    user_agent text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: typed_blog_urls_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.typed_blog_urls_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: typed_blog_urls_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.typed_blog_urls_id_seq OWNED BY public.typed_blog_urls.id;
+
+
+--
 -- Name: user_rsses; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -890,6 +927,13 @@ ALTER TABLE ONLY public.subscription_posts ALTER COLUMN id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.subscription_rsses ALTER COLUMN id SET DEFAULT nextval('public.subscription_rsses_id_seq'::regclass);
+
+
+--
+-- Name: typed_blog_urls id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.typed_blog_urls ALTER COLUMN id SET DEFAULT nextval('public.typed_blog_urls_id_seq'::regclass);
 
 
 --
@@ -1098,6 +1142,14 @@ ALTER TABLE ONLY public.subscriptions
 
 ALTER TABLE ONLY public.test_singletons
     ADD CONSTRAINT test_singletons_pkey PRIMARY KEY (key);
+
+
+--
+-- Name: typed_blog_urls typed_blog_urls_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.typed_blog_urls
+    ADD CONSTRAINT typed_blog_urls_pkey PRIMARY KEY (id);
 
 
 --
@@ -1489,6 +1541,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20230114001637'),
 ('20230116214016'),
 ('20230116221307'),
-('20230116230348');
+('20230116230348'),
+('20230117220810');
 
 

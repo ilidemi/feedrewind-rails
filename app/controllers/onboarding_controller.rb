@@ -11,16 +11,23 @@ class OnboardingController < ApplicationController
 
   def add
     if params[:start_url]
+      path = "/subscriptions/add?start_url="
       ProductEventHelper::log_visit_add_page(
-        request, @product_user_id, "/subscriptions/add?start_url=", request.referer, @current_user.nil?,
-        { blog_url: params[:start_url] }
+        request, @product_user_id, path, request.referer, @current_user.nil?, { blog_url: params[:start_url] }
       )
       start_url = params[:start_url].strip
-      discover_feeds_result, product_event_result = discover_feeds_internal(
-        start_url, @current_user, @product_user_id
-      )
+      discover_feeds_result, result_code = discover_feeds_internal(start_url, @current_user, @product_user_id)
       ProductEventHelper::log_discover_feeds(
-        request, @product_user_id, @current_user.nil?, start_url, product_event_result
+        request, @product_user_id, @current_user.nil?, start_url, result_code
+      )
+      TypedBlogUrl.create!(
+        typed_url: params[:start_url],
+        stripped_url: start_url,
+        source: path,
+        result: result_code,
+        user_id: @current_user&.id,
+        user_ip: request.ip,
+        user_agent: request.user_agent
       )
       if discover_feeds_result.is_a?(Subscription)
         subscription = discover_feeds_result
@@ -47,11 +54,18 @@ class OnboardingController < ApplicationController
 
   def add_landing
     start_url = params[:start_url].strip
-    discover_feeds_result, product_event_result = discover_feeds_internal(
-      start_url, @current_user, @product_user_id
-    )
+    discover_feeds_result, result_code = discover_feeds_internal(start_url, @current_user, @product_user_id)
     ProductEventHelper::log_discover_feeds(
-      request, @product_user_id, @current_user.nil?, start_url, product_event_result
+      request, @product_user_id, @current_user.nil?, start_url, result_code
+    )
+    TypedBlogUrl.create!(
+      typed_url: params[:start_url],
+      stripped_url: start_url,
+      source: "/",
+      result: result_code,
+      user_id: @current_user&.id,
+      user_ip: request.ip,
+      user_agent: request.user_agent
     )
     if discover_feeds_result.is_a?(Subscription)
       subscription = discover_feeds_result
@@ -67,11 +81,18 @@ class OnboardingController < ApplicationController
 
   def discover_feeds
     start_url = params[:start_url].strip
-    discover_feeds_result, product_event_result = discover_feeds_internal(
-      start_url, @current_user, @product_user_id
-    )
+    discover_feeds_result, result_code = discover_feeds_internal(start_url, @current_user, @product_user_id)
     ProductEventHelper::log_discover_feeds(
-      request, @product_user_id, @current_user.nil?, start_url, product_event_result
+      request, @product_user_id, @current_user.nil?, start_url, result_code
+    )
+    TypedBlogUrl.create!(
+      typed_url: params[:start_url],
+      stripped_url: start_url,
+      source: "/subscriptions/add",
+      result: result_code,
+      user_id: @current_user&.id,
+      user_ip: request.ip,
+      user_agent: request.user_agent
     )
     if discover_feeds_result.is_a?(Subscription)
       subscription = discover_feeds_result
@@ -130,12 +151,8 @@ class OnboardingController < ApplicationController
         subscription_or_blog_not_supported = Subscription::create_for_blog(
           updated_blog, user, product_user_id
         )
-        if subscription_or_blog_not_supported.is_a?(Subscription)
-          product_event_type = "feed"
-        else
-          product_event_type = "known_unsupported"
-        end
-        [subscription_or_blog_not_supported, product_event_type]
+        result_code = subscription_or_blog_not_supported.is_a?(Subscription) ? "feed" : "known_unsupported"
+        [subscription_or_blog_not_supported, result_code]
       else
         start_feed = StartFeed.new(
           url: discovered_feed.url,
