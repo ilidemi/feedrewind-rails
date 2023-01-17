@@ -124,6 +124,7 @@ Rails.application.configure do
   ]
 
   config.slack_webhook = "REDACTED_SLACK_WEBHOOK"
+  config.amplitude_api_key = "REDACTED_AMPLITUDE_API_KEY"
 
   config.assets.css_compressor = nil
 end

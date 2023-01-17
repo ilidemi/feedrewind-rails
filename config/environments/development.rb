@@ -87,4 +87,5 @@ Rails.application.configure do
   config.admin_user_ids = []
 
   config.slack_webhook = "REDACTED_DEV_SLACK_WEBHOOK"
+  config.amplitude_api_key = "REDACTED_DEV_AMPLITUDE_API_KEY"
 end
