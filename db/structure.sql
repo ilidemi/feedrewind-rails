@@ -542,7 +542,7 @@ CREATE TABLE public.product_events (
     dispatched_at timestamp without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    product_user_id uuid NOT NULL
+    product_user_id text NOT NULL
 );
 
 
@@ -1542,6 +1542,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20230116214016'),
 ('20230116221307'),
 ('20230116230348'),
-('20230117220810');
+('20230117220810'),
+('20230117232527');
 
 

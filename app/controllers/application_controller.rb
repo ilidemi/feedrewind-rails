@@ -2,11 +2,22 @@ require 'securerandom'
 
 class ApplicationController < ActionController::Base
   before_action :redirect_subdomain
+  before_action :log_visit
   rescue_from ActionController::InvalidAuthenticityToken, with: :log_error_as_info
 
   self.log_warning_on_csrf_failure = false
 
   def route_not_found
+    ProductEvent.from_request!(
+      request,
+      product_user_id: "dummy-#{SecureRandom.uuid}",
+      event_type: "404",
+      event_properties: {
+        path: request.path,
+        method: request.method,
+        referer: request.referer
+      }
+    )
     render file: Rails.public_path.join('404.html'), status: :not_found, layout: false
   end
 
@@ -16,6 +27,30 @@ class ApplicationController < ActionController::Base
     if request.host == 'www.feedrewind.com'
       redirect_to 'https://feedrewind.com' + request.fullpath, :status => 301
     end
+  end
+
+  def log_visit
+    referer = request.referer
+    if request.referer
+      begin
+        referer_uri = URI(request.referer)
+        if %w[feedrewind.com www.feedrewind.com feedrewind.herokuapp.com].include?(referer_uri.host)
+          referer = "FeedRewind"
+        end
+      rescue
+        # no-op
+      end
+    end
+
+    ProductEvent.from_request!(
+      request,
+      product_user_id: "dummy-#{SecureRandom.uuid}",
+      event_type: "visit",
+      event_properties: {
+        action: "#{params[:controller]}/#{params[:action]}",
+        referer: referer
+      }
+    )
   end
 
   def current_user
