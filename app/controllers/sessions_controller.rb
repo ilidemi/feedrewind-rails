@@ -12,6 +12,8 @@ class SessionsController < ApplicationController
   end
 
   def create
+    fill_current_user # for product analytics
+
     login_params = params.permit(:email, "current-password", :redirect)
     user = User.find_by_email(login_params[:email])
     @errors = []
@@ -24,6 +26,25 @@ class SessionsController < ApplicationController
       else
         subscription = nil
       end
+
+      # Users visiting landing page then signing in need to be excluded from the sign up funnel
+      # Track them twice: first as anonymous, then properly
+      ProductEvent::from_request!(
+        request,
+        product_user_id: @product_user_id,
+        event_type: "log in",
+        event_properties: {
+          user_is_anonymous: true
+        }
+      )
+      ProductEvent::from_request!(
+        request,
+        product_user_id: user.product_user_id,
+        event_type: "log in",
+        event_properties: {
+          user_is_anonymous: false
+        }
+      )
 
       if subscription
         subscription.user_id = user.id
