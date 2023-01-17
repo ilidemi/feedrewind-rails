@@ -14,9 +14,11 @@ class OnboardingController < ApplicationController
       ProductEvent::from_request!(
         request,
         product_user_id: @product_user_id,
-        event_type: "visit add page with start url",
+        event_type: "visit add page",
         event_properties: {
-          blog_url: params[:start_url]
+          path: "/subscriptions/add?start_url=",
+          blog_url: params[:start_url],
+          user_is_anonymous: @current_user.nil?
         }
       )
       start_url = params[:start_url].strip
@@ -24,11 +26,13 @@ class OnboardingController < ApplicationController
         start_url, @current_user, @product_user_id
       )
       ProductEventHelper::log_discover_feeds(
-        request, @product_user_id, start_url, product_event_result
+        request, @product_user_id, @current_user.nil?, start_url, product_event_result
       )
       if discover_feeds_result.is_a?(Subscription)
         subscription = discover_feeds_result
-        ProductEventHelper::log_create_subscription(request, @product_user_id, subscription)
+        ProductEventHelper::log_create_subscription(
+          request, @product_user_id, @current_user.nil?, subscription
+        )
         redirect_to SubscriptionsHelper.setup_path(subscription)
       elsif discover_feeds_result.is_a?(Subscription::BlogNotSupported)
         redirect_to BlogsHelper.unsupported_path(discover_feeds_result.blog)
@@ -40,7 +44,11 @@ class OnboardingController < ApplicationController
       ProductEvent::from_request!(
         request,
         product_user_id: @product_user_id,
-        event_type: "visit add page"
+        event_type: "visit add page",
+        event_properties: {
+          path: "/subscriptions/add",
+          user_is_anonymous: @current_user.nil?
+        }
       )
 
       @feeds_data = nil
@@ -55,11 +63,11 @@ class OnboardingController < ApplicationController
       start_url, @current_user, @product_user_id
     )
     ProductEventHelper::log_discover_feeds(
-      request, @product_user_id, start_url, product_event_result
+      request, @product_user_id, @current_user.nil?, start_url, product_event_result
     )
     if discover_feeds_result.is_a?(Subscription)
       subscription = discover_feeds_result
-      ProductEventHelper::log_create_subscription(request, @product_user_id, subscription)
+      ProductEventHelper::log_create_subscription(request, @product_user_id, @current_user.nil?, subscription)
       redirect_to SubscriptionsHelper.setup_path(subscription)
     elsif discover_feeds_result.is_a?(Subscription::BlogNotSupported)
       redirect_to BlogsHelper.unsupported_path(discover_feeds_result.blog)
@@ -75,11 +83,11 @@ class OnboardingController < ApplicationController
       start_url, @current_user, @product_user_id
     )
     ProductEventHelper::log_discover_feeds(
-      request, @product_user_id, start_url, product_event_result
+      request, @product_user_id, @current_user.nil?, start_url, product_event_result
     )
     if discover_feeds_result.is_a?(Subscription)
       subscription = discover_feeds_result
-      ProductEventHelper::log_create_subscription(request, @product_user_id, subscription)
+      ProductEventHelper::log_create_subscription(request, @product_user_id, @current_user.nil?, subscription)
       render plain: SubscriptionsHelper.setup_path(subscription)
     elsif discover_feeds_result.is_a?(Subscription::BlogNotSupported)
       render plain: BlogsHelper.unsupported_path(discover_feeds_result.blog)

@@ -9,7 +9,11 @@ class LandingController < ApplicationController
     ProductEvent::from_request!(
       request,
       product_user_id: @product_user_id,
-      event_type: "visit landing page"
+      event_type: "visit add page",
+      event_properties: {
+        path: "/",
+        user_is_anonymous: true
+      }
     )
 
     if cookies[:anonymous_subscription]

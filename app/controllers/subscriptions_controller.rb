@@ -118,19 +118,29 @@ class SubscriptionsController < ApplicationController
       )
 
       if subscription_or_blog_not_supported.is_a?(Subscription::BlogNotSupported)
-        ProductEventHelper::log_discover_feeds(request, @product_user_id, start_feed.url, "known_unsupported")
+        ProductEventHelper::log_discover_feeds(
+          request, @product_user_id, @current_user.nil?, start_feed.url, "known_unsupported"
+        )
         render plain: BlogsHelper.unsupported_path(subscription_or_blog_not_supported.blog)
       else
         subscription = subscription_or_blog_not_supported
-        ProductEventHelper::log_discover_feeds(request, @product_user_id, start_feed.url, "feed")
-        ProductEventHelper::log_create_subscription(request, @product_user_id, subscription)
+        ProductEventHelper::log_discover_feeds(
+          request, @product_user_id, @current_user.nil?, start_feed.url, "feed"
+        )
+        ProductEventHelper::log_create_subscription(
+          request, @product_user_id, @current_user.nil?, subscription
+        )
         redirect_to SubscriptionsHelper.setup_path(subscription)
       end
     elsif feed_result == :discovered_bad_feed
-      ProductEventHelper::log_discover_feeds(request, @product_user_id, start_feed.url, "bad_feed")
+      ProductEventHelper::log_discover_feeds(
+        request, @product_user_id, @current_user.nil?, start_feed.url, "bad_feed"
+      )
       render plain: "", status: :unsupported_media_type
     elsif feed_result == :discover_could_not_reach
-      ProductEventHelper::log_discover_feeds(request, @product_user_id, start_feed.url, "could_not_reach")
+      ProductEventHelper::log_discover_feeds(
+        request, @product_user_id, @current_user.nil?, start_feed.url, "could_not_reach"
+      )
       render plain: "", status: :unsupported_media_type
     else
       raise "Unexpected result from fetch_feed_at_url: #{feed_result}"
@@ -432,7 +442,8 @@ class SubscriptionsController < ApplicationController
         blog_url: subscription.blog.best_url,
         selected_count: product_selected_count,
         selected_fraction: product_selected_count.to_f / total_posts_count,
-        selection: product_selection
+        selection: product_selection,
+        user_is_anonymous: @current_user.nil?
       }
     )
 
@@ -480,7 +491,8 @@ class SubscriptionsController < ApplicationController
       event_type: "mark wrong",
       event_properties: {
         subscription_id: @subscription.id,
-        blog_url: @subscription.blog.best_url
+        blog_url: @subscription.blog.best_url,
+        user_is_anonymous: @current_user.nil?
       }
     )
 
