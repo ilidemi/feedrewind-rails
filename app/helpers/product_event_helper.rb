@@ -1,4 +1,22 @@
 module ProductEventHelper
+  def ProductEventHelper::log_visit_add_page(
+    request, product_user_id, path, referer, user_is_anonymous, extra = nil
+  )
+    event_properties = {
+      path: path,
+      referer: referer,
+      user_is_anonymous: user_is_anonymous
+    }
+    event_properties.merge!(extra) if extra
+
+    ProductEvent::from_request!(
+      request,
+      product_user_id: product_user_id,
+      event_type: "visit add page",
+      event_properties: event_properties
+    )
+  end
+
   def ProductEventHelper::log_discover_feeds(request, product_user_id, user_is_anonymous, blog_url, result)
     ProductEvent::from_request!(
       request,
