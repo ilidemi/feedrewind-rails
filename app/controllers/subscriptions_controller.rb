@@ -158,7 +158,7 @@ class SubscriptionsController < ApplicationController
     user_mismatch = redirect_if_user_mismatch(@subscription)
     return user_mismatch if user_mismatch
 
-    if @current_user.nil? && !%w[waiting_for_blog setup].include?(@subscription.status)
+    if @current_user.nil? && @subscription.status != "waiting_for_blog"
       return redirect_to signup_path
     end
 
