@@ -12,6 +12,7 @@ class LandingController < ApplicationController
       event_type: "visit add page",
       event_properties: {
         path: "/",
+        referer: request.referer,
         user_is_anonymous: true
       }
     )

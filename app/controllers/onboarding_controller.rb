@@ -17,6 +17,7 @@ class OnboardingController < ApplicationController
         event_type: "visit add page",
         event_properties: {
           path: "/subscriptions/add?start_url=",
+          referer: request.referer,
           blog_url: params[:start_url],
           user_is_anonymous: @current_user.nil?
         }
@@ -47,6 +48,7 @@ class OnboardingController < ApplicationController
         event_type: "visit add page",
         event_properties: {
           path: "/subscriptions/add",
+          referer: request.referer,
           user_is_anonymous: @current_user.nil?
         }
       )
