@@ -1,5 +1,6 @@
 require_relative "boot"
 require_relative "../lib/middleware/log_request"
+require_relative "../lib/middleware/log_static"
 
 require "rails/all"
 require "json"
@@ -35,6 +36,7 @@ module RssCatchupRails
     Rails.autoloaders.main.ignore(Rails.root.join('app/lib'))
 
     config.middleware.insert_before(Rack::Sendfile, Rack::Deflater)
+    config.middleware.insert_before(ActionDispatch::Static, LogStatic)
     config.middleware.use(LogRequest)
 
     config.after_initialize do

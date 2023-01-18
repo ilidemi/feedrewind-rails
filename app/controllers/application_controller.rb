@@ -8,9 +8,7 @@ class ApplicationController < ActionController::Base
   self.log_warning_on_csrf_failure = false
 
   def route_not_found
-    ProductEvent.from_request!(
-      request,
-      product_user_id: "dummy-#{SecureRandom.uuid}",
+    ProductEvent::dummy_create!(
       event_type: "404",
       event_properties: {
         path: request.path,
@@ -42,9 +40,7 @@ class ApplicationController < ActionController::Base
       end
     end
 
-    ProductEvent.from_request!(
-      request,
-      product_user_id: "dummy-#{SecureRandom.uuid}",
+    ProductEvent::dummy_create!(
       event_type: "visit",
       event_properties: {
         action: "#{params[:controller]}/#{params[:action]}",
