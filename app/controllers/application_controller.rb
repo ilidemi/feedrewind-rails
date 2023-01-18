@@ -9,6 +9,9 @@ class ApplicationController < ActionController::Base
 
   def route_not_found
     ProductEvent::dummy_create!(
+      user_ip: request.ip,
+      user_agent: request.user_agent,
+      allow_bots: false,
       event_type: "404",
       event_properties: {
         path: request.path,
@@ -41,6 +44,9 @@ class ApplicationController < ActionController::Base
     end
 
     ProductEvent::dummy_create!(
+      user_ip: request.ip,
+      user_agent: request.user_agent,
+      allow_bots: true,
       event_type: "visit",
       event_properties: {
         action: "#{params[:controller]}/#{params[:action]}",

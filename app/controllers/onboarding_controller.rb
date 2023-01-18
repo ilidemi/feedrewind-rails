@@ -25,9 +25,7 @@ class OnboardingController < ApplicationController
         stripped_url: start_url,
         source: path,
         result: result_code,
-        user_id: @current_user&.id,
-        user_ip: request.ip,
-        user_agent: request.user_agent
+        user_id: @current_user&.id
       )
       if discover_feeds_result.is_a?(Subscription)
         subscription = discover_feeds_result
@@ -63,9 +61,7 @@ class OnboardingController < ApplicationController
       stripped_url: start_url,
       source: "/",
       result: result_code,
-      user_id: @current_user&.id,
-      user_ip: request.ip,
-      user_agent: request.user_agent
+      user_id: @current_user&.id
     )
     if discover_feeds_result.is_a?(Subscription)
       subscription = discover_feeds_result
@@ -90,9 +86,7 @@ class OnboardingController < ApplicationController
       stripped_url: start_url,
       source: "/subscriptions/add",
       result: result_code,
-      user_id: @current_user&.id,
-      user_ip: request.ip,
-      user_agent: request.user_agent
+      user_id: @current_user&.id
     )
     if discover_feeds_result.is_a?(Subscription)
       subscription = discover_feeds_result

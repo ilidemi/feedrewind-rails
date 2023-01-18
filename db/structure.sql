@@ -537,12 +537,15 @@ CREATE TABLE public.product_events (
     event_type text NOT NULL,
     event_properties json,
     user_properties json,
-    user_agent text,
     user_ip text,
     dispatched_at timestamp without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    product_user_id text NOT NULL
+    product_user_id text NOT NULL,
+    browser text,
+    os_name text,
+    os_version text,
+    bot_name text
 );
 
 
@@ -770,8 +773,6 @@ CREATE TABLE public.typed_blog_urls (
     source text NOT NULL,
     result text NOT NULL,
     user_id bigint,
-    user_ip text NOT NULL,
-    user_agent text,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL
 );
@@ -1543,6 +1544,8 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20230116221307'),
 ('20230116230348'),
 ('20230117220810'),
-('20230117232527');
+('20230117232527'),
+('20230118004928'),
+('20230118010226');
 
 

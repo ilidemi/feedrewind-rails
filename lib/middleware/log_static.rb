@@ -12,6 +12,9 @@ class LogStatic
       env["REQUEST_PATH"].start_with?("/assets")
 
       ProductEvent::dummy_create!(
+        user_ip: env["REMOTE_ADDR"],
+        user_agent: env["HTTP_USER_AGENT"],
+        allow_bots: false,
         event_type: "static asset",
         event_properties: {
           path: env["REQUEST_PATH"]

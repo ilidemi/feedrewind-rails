@@ -14,17 +14,16 @@ class DispatchAmplitudeJob < ApplicationJob
     bot_counts = {}
     failed_count = 0
     ProductEvent.where(dispatched_at: nil).order(:id).each do |product_event|
-      if product_event.user_agent
-        browser = Browser.new(product_event.user_agent)
-        if browser.bot?
-          bot_skipped_count += 1
-          bot_name = browser.bot.name
-          bot_counts[bot_name] = 0 unless bot_counts.include?(bot_name)
-          bot_counts[bot_name] += 1
-          next
-        end
-      else
-        browser = nil
+      if product_event.bot_name &&
+        product_event.user_properties &&
+        !product_event.user_properties["allow_bots"]
+
+        bot_skipped_count += 1
+        bot_name = product_event.bot_name
+        bot_counts[bot_name] = 0 unless bot_counts.include?(bot_name)
+        bot_counts[bot_name] += 1
+
+        next
       end
 
       event = {
@@ -33,11 +32,9 @@ class DispatchAmplitudeJob < ApplicationJob
         "time" => product_event.created_at.to_datetime.strftime('%Q'),
         "event_properties" => product_event.event_properties,
         "user_properties" => product_event.user_properties,
-        "platform" => browser&.name,
-        "os_name" => browser&.platform&.name,
-        "os_version" => browser&.platform&.version,
-        "device_manufacturer" => browser&.device&.id&.to_s,
-        "device_model" => browser&.device&.name,
+        "platform" => product_event.browser,
+        "os_name" => product_event.os_name,
+        "os_version" => product_event.os_version,
         "ip" => product_event.user_ip,
         "event_id" => product_event.id,
         "insert_id" => product_event.id.to_s
