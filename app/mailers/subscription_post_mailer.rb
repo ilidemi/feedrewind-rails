@@ -21,6 +21,7 @@ class SubscriptionPostMailer < ApplicationMailer
 
   def post_email
     subscription_post = params[:subscription_post]
+    @subscription_post = subscription_post
     @blog_post = subscription_post.blog_post
     @subscription = subscription_post.subscription
 

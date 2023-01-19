@@ -98,7 +98,7 @@
   <div class="f-fallback">
     <span style="font-size: 15px;">(by <%= @subscription.name %>)</span>
     <br>
-    <a href="<%= @blog_post.url %>" style="font-size: 19px;"><%= @blog_post.title %></a>
+    <a href="<%= SubscriptionsHelper.post_url(@subscription_post) %>" style="font-size: 19px;"><%= @blog_post.title %></a>
     <br>
     <br>
     <a href="<%= SubscriptionsHelper::subscription_url(@subscription) %>" style="color: #6b7280; font-size: 15px;">

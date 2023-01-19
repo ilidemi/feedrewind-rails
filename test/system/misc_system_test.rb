@@ -39,7 +39,7 @@ class MiscSystemTest < ApplicationSystemTestCase
       sleep(100)
     end
 
-    if page.has_css?("#confirm_section")
+    if page.has_css?("#confirm_section_0")
       click_button "Continue"
     end
 

@@ -37,8 +37,10 @@ class Subscription < ApplicationRecord
 
   def create_subscription_posts_from_category_raw!(category_id)
     query = <<-SQL
-      insert into subscription_posts (subscription_id, blog_post_id, published_at, created_at, updated_at)
-      select $1, blog_post_id, null, $2, $2
+      insert into subscription_posts (
+        subscription_id, blog_post_id, random_id, published_at, created_at, updated_at
+      )
+      select $1, blog_post_id, #{psql_random_id}, null, $2, $2
       from blog_post_category_assignments
       where category_id = $3;
     SQL
@@ -48,8 +50,10 @@ class Subscription < ApplicationRecord
   def create_subscription_posts_from_ids_raw!(blog_post_ids)
     # exec_query doesn't take arrays so blog_post_ids should be sanitized really well
     query = <<-SQL
-      insert into subscription_posts (subscription_id, blog_post_id, published_at, created_at, updated_at)
-      select $1, id, null, $2, $2
+      insert into subscription_posts (
+        subscription_id, blog_post_id, random_id, published_at, created_at, updated_at
+      )
+      select $1, id, #{psql_random_id}, null, $2, $2
       from blog_posts
       where blog_id = $3 and id in (#{blog_post_ids.map(&:to_s).join(", ")});
     SQL
@@ -62,5 +66,12 @@ class Subscription < ApplicationRecord
     if self.user_id.nil? && self.anon_product_user_id.nil?
       raise "Must specify either user_id or anon_product_user_id"
     end
+  end
+
+  def psql_random_id
+    # reimplementation of SecureRandom.urlsafe_base64(16)
+    <<-SQL
+      rtrim(replace(replace(encode(gen_random_bytes(16), 'base64'), '+', '-'), '/', '_'), '=')
+    SQL
   end
 end

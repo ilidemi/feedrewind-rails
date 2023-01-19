@@ -1,6 +1,6 @@
 (by <%= @subscription.name %>)
 <%= @blog_post.title %>
-<%= @blog_post.url %>
+<%= SubscriptionsHelper.post_url(@subscription_post) %>
 
 Manage subscription:
 <%= SubscriptionsHelper::subscription_url(@subscription) %>

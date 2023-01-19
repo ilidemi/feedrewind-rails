@@ -1,5 +1,7 @@
 test:
   id: 0
   email: test@test.com
+  name: test
   password_digest: asdf
   auth_token: asdf
+  product_user_id: 00000000-0000-0000-0000-000000000000

@@ -36,6 +36,8 @@ Rails.application.routes.draw do
   get "/feeds/single/:id", to: "rss#user_feed", constraints: { id: /\d+/ }
   get "/feeds/:id", to: "rss#subscription_feed", constraints: { id: /\d+/ }
 
+  get "/posts/*slug/:random_id", to: "posts#post", constraints: { random_id: /[A-Za-z0-9_-]+/ }
+
   get "/blogs/:id/unsupported", to: "blogs#unsupported", constraints: { id: /\d+/ }
 
   get "/terms", to: "misc#terms"

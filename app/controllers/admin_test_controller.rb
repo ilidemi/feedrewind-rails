@@ -145,6 +145,10 @@ class AdminTestController < ApplicationController
     render plain: JSON.dump(query_result.to_a)
   end
 
+  def log_visit
+    # no-op
+  end
+
   private
 
   def now_pdt

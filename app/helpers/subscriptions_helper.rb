@@ -62,6 +62,25 @@ module SubscriptionsHelper
     Addressable::URI.encode_component(url, Addressable::URI::CharacterClasses::UNRESERVED)
   end
 
+  def SubscriptionsHelper.post_url(subscription_post)
+    slug = SubscriptionsHelper.post_slug(subscription_post.blog_post.title)
+    "https://feedrewind.com/posts/#{slug}/#{subscription_post.random_id}/"
+  end
+
+  def SubscriptionsHelper.post_slug(post_name)
+    slug_tokens = post_name.downcase.scan(/\w+/)[...10]
+    slug_length = slug_tokens.map(&:length).sum + slug_tokens.length - 1
+    while slug_length > 100 and slug_tokens.length > 1
+      slug_length -= (slug_tokens.last.length + 1)
+      slug_tokens = slug_tokens[...-1]
+    end
+    if slug_length > 100
+      slug_tokens.first[...100]
+    else
+      slug_tokens.join("-")
+    end
+  end
+
   class ProgressSaver
     def initialize(blog_id, feed_url)
       @blog_id = blog_id

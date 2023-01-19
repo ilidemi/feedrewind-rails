@@ -190,7 +190,7 @@ module PublishPostsService
         guid = sha256.hexdigest(subscription_post.id.to_s)
         subscription_item = generate_rss_item(
           title: subscription_post.blog_post.title,
-          url: subscription_post.blog_post.url,
+          url: SubscriptionsHelper.post_url(subscription_post),
           guid: guid,
           description: "<a href=\"#{subscription_url}\">Manage</a>",
           pub_date: subscription_post.published_at
@@ -199,7 +199,7 @@ module PublishPostsService
 
         user_item = generate_rss_item(
           title: subscription_post.blog_post.title,
-          url: subscription_post.blog_post.url,
+          url: SubscriptionsHelper.post_url(subscription_post),
           guid: guid,
           description: "from #{subscription.name}<br><br><a href=\"#{subscription_url}\">Manage</a>",
           pub_date: subscription_post.published_at

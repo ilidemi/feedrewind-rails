@@ -100,7 +100,7 @@ class RssScheduleTest < ApplicationSystemTestCase
         sleep(0.1)
       end
 
-      if page.has_css?("#confirm_section")
+      if page.has_css?("#confirm_section_0")
         click_button "Continue"
       end
 

@@ -1,3 +1,4 @@
+require "securerandom"
 require "test_helper"
 
 #noinspection HttpUrlsUsage
@@ -107,14 +108,14 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com/subscriptions/1</link>
     <item>
       <title>Post 2</title>
-      <link>https://blog1/2</link>
+      <link>https://feedrewind.com/posts/post-2/1_2/</link>
       <guid isPermaLink=\"false\">37834f2f25762f23e1f74a531cbe445db73d6765ebe60878a7dfbecd7d4af6e1</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog1/1</link>
+      <link>https://feedrewind.com/posts/post-1/1_1/</link>
       <guid isPermaLink=\"false\">16dc368a89b428b2485484313ba67a3912ca03f2b2b42429174a4f8b3dc84e44</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -140,14 +141,14 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com</link>
     <item>
       <title>Post 2</title>
-      <link>https://blog1/2</link>
+      <link>https://feedrewind.com/posts/post-2/1_2/</link>
       <guid isPermaLink=\"false\">37834f2f25762f23e1f74a531cbe445db73d6765ebe60878a7dfbecd7d4af6e1</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog1/1</link>
+      <link>https://feedrewind.com/posts/post-1/1_1/</link>
       <guid isPermaLink=\"false\">16dc368a89b428b2485484313ba67a3912ca03f2b2b42429174a4f8b3dc84e44</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -208,7 +209,7 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog2/1</link>
+      <link>https://feedrewind.com/posts/post-1/2_1/</link>
       <guid isPermaLink=\"false\">43974ed74066b207c30ffd0fed5146762e6c60745ac977004bc14507c7c42b50</guid>
       <description>from Test Subscription 2&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/2\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Wed, 04 May 2022 00:00:00 +0000</pubDate>
@@ -269,7 +270,7 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog2/1</link>
+      <link>https://feedrewind.com/posts/post-1/2_1/</link>
       <guid isPermaLink=\"false\">43974ed74066b207c30ffd0fed5146762e6c60745ac977004bc14507c7c42b50</guid>
       <description>from Test Subscription 2&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/2\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Wed, 04 May 2022 00:00:00 +0000</pubDate>
@@ -304,14 +305,14 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com/subscriptions/1</link>
     <item>
       <title>Post 2</title>
-      <link>https://blog1/2</link>
+      <link>https://feedrewind.com/posts/post-2/1_2/</link>
       <guid isPermaLink=\"false\">37834f2f25762f23e1f74a531cbe445db73d6765ebe60878a7dfbecd7d4af6e1</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog1/1</link>
+      <link>https://feedrewind.com/posts/post-1/1_1/</link>
       <guid isPermaLink=\"false\">16dc368a89b428b2485484313ba67a3912ca03f2b2b42429174a4f8b3dc84e44</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -337,14 +338,14 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com</link>
     <item>
       <title>Post 2</title>
-      <link>https://blog1/2</link>
+      <link>https://feedrewind.com/posts/post-2/1_2/</link>
       <guid isPermaLink=\"false\">37834f2f25762f23e1f74a531cbe445db73d6765ebe60878a7dfbecd7d4af6e1</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog1/1</link>
+      <link>https://feedrewind.com/posts/post-1/1_1/</link>
       <guid isPermaLink=\"false\">16dc368a89b428b2485484313ba67a3912ca03f2b2b42429174a4f8b3dc84e44</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -358,7 +359,7 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog2/1</link>
+      <link>https://feedrewind.com/posts/post-1/2_1/</link>
       <guid isPermaLink=\"false\">43974ed74066b207c30ffd0fed5146762e6c60745ac977004bc14507c7c42b50</guid>
       <description>from Test Subscription 2&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/2\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Wed, 04 May 2022 00:00:00 +0000</pubDate>
@@ -393,28 +394,28 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com/subscriptions/1</link>
     <item>
       <title>Post 4</title>
-      <link>https://blog1/4</link>
+      <link>https://feedrewind.com/posts/post-4/1_4/</link>
       <guid isPermaLink=\"false\">5ef6fdf32513aa7cd11f72beccf132b9224d33f271471fff402742887a171edf</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 3</title>
-      <link>https://blog1/3</link>
+      <link>https://feedrewind.com/posts/post-3/1_3/</link>
       <guid isPermaLink=\"false\">454f63ac30c8322997ef025edff6abd23e0dbe7b8a3d5126a894e4a168c1b59b</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 2</title>
-      <link>https://blog1/2</link>
+      <link>https://feedrewind.com/posts/post-2/1_2/</link>
       <guid isPermaLink=\"false\">37834f2f25762f23e1f74a531cbe445db73d6765ebe60878a7dfbecd7d4af6e1</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog1/1</link>
+      <link>https://feedrewind.com/posts/post-1/1_1/</link>
       <guid isPermaLink=\"false\">16dc368a89b428b2485484313ba67a3912ca03f2b2b42429174a4f8b3dc84e44</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -440,28 +441,28 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com</link>
     <item>
       <title>Post 4</title>
-      <link>https://blog1/4</link>
+      <link>https://feedrewind.com/posts/post-4/1_4/</link>
       <guid isPermaLink=\"false\">5ef6fdf32513aa7cd11f72beccf132b9224d33f271471fff402742887a171edf</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 3</title>
-      <link>https://blog1/3</link>
+      <link>https://feedrewind.com/posts/post-3/1_3/</link>
       <guid isPermaLink=\"false\">454f63ac30c8322997ef025edff6abd23e0dbe7b8a3d5126a894e4a168c1b59b</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 2</title>
-      <link>https://blog1/2</link>
+      <link>https://feedrewind.com/posts/post-2/1_2/</link>
       <guid isPermaLink=\"false\">37834f2f25762f23e1f74a531cbe445db73d6765ebe60878a7dfbecd7d4af6e1</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog1/1</link>
+      <link>https://feedrewind.com/posts/post-1/1_1/</link>
       <guid isPermaLink=\"false\">16dc368a89b428b2485484313ba67a3912ca03f2b2b42429174a4f8b3dc84e44</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -499,28 +500,28 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com/subscriptions/1</link>
     <item>
       <title>Post 4</title>
-      <link>https://blog1/4</link>
+      <link>https://feedrewind.com/posts/post-4/1_4/</link>
       <guid isPermaLink=\"false\">5ef6fdf32513aa7cd11f72beccf132b9224d33f271471fff402742887a171edf</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 3</title>
-      <link>https://blog1/3</link>
+      <link>https://feedrewind.com/posts/post-3/1_3/</link>
       <guid isPermaLink=\"false\">454f63ac30c8322997ef025edff6abd23e0dbe7b8a3d5126a894e4a168c1b59b</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 2</title>
-      <link>https://blog1/2</link>
+      <link>https://feedrewind.com/posts/post-2/1_2/</link>
       <guid isPermaLink=\"false\">37834f2f25762f23e1f74a531cbe445db73d6765ebe60878a7dfbecd7d4af6e1</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Wed, 04 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog1/1</link>
+      <link>https://feedrewind.com/posts/post-1/1_1/</link>
       <guid isPermaLink=\"false\">16dc368a89b428b2485484313ba67a3912ca03f2b2b42429174a4f8b3dc84e44</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Wed, 04 May 2022 00:00:00 +0000</pubDate>
@@ -546,14 +547,14 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com/subscriptions/2</link>
     <item>
       <title>Post 2</title>
-      <link>https://blog2/2</link>
+      <link>https://feedrewind.com/posts/post-2/2_2/</link>
       <guid isPermaLink=\"false\">c17edaae86e4016a583e098582f6dbf3eccade8ef83747df9ba617ded9d31309</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/2\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog2/1</link>
+      <link>https://feedrewind.com/posts/post-1/2_1/</link>
       <guid isPermaLink=\"false\">43974ed74066b207c30ffd0fed5146762e6c60745ac977004bc14507c7c42b50</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/2\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -579,28 +580,28 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com</link>
     <item>
       <title>Post 2</title>
-      <link>https://blog2/2</link>
+      <link>https://feedrewind.com/posts/post-2/2_2/</link>
       <guid isPermaLink=\"false\">c17edaae86e4016a583e098582f6dbf3eccade8ef83747df9ba617ded9d31309</guid>
       <description>from Test Subscription 2&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/2\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 4</title>
-      <link>https://blog1/4</link>
+      <link>https://feedrewind.com/posts/post-4/1_4/</link>
       <guid isPermaLink=\"false\">5ef6fdf32513aa7cd11f72beccf132b9224d33f271471fff402742887a171edf</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 3</title>
-      <link>https://blog1/3</link>
+      <link>https://feedrewind.com/posts/post-3/1_3/</link>
       <guid isPermaLink=\"false\">454f63ac30c8322997ef025edff6abd23e0dbe7b8a3d5126a894e4a168c1b59b</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog2/1</link>
+      <link>https://feedrewind.com/posts/post-1/2_1/</link>
       <guid isPermaLink=\"false\">43974ed74066b207c30ffd0fed5146762e6c60745ac977004bc14507c7c42b50</guid>
       <description>from Test Subscription 2&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/2\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -614,14 +615,14 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     </item>
     <item>
       <title>Post 2</title>
-      <link>https://blog1/2</link>
+      <link>https://feedrewind.com/posts/post-2/1_2/</link>
       <guid isPermaLink=\"false\">37834f2f25762f23e1f74a531cbe445db73d6765ebe60878a7dfbecd7d4af6e1</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Wed, 04 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog1/1</link>
+      <link>https://feedrewind.com/posts/post-1/1_1/</link>
       <guid isPermaLink=\"false\">16dc368a89b428b2485484313ba67a3912ca03f2b2b42429174a4f8b3dc84e44</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Wed, 04 May 2022 00:00:00 +0000</pubDate>
@@ -659,14 +660,14 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com/subscriptions/1</link>
     <item>
       <title>Post 2</title>
-      <link>https://blog1/2</link>
+      <link>https://feedrewind.com/posts/post-2/1_2/</link>
       <guid isPermaLink=\"false\">37834f2f25762f23e1f74a531cbe445db73d6765ebe60878a7dfbecd7d4af6e1</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog1/1</link>
+      <link>https://feedrewind.com/posts/post-1/1_1/</link>
       <guid isPermaLink=\"false\">16dc368a89b428b2485484313ba67a3912ca03f2b2b42429174a4f8b3dc84e44</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Wed, 04 May 2022 00:00:00 +0000</pubDate>
@@ -692,7 +693,7 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com/subscriptions/2</link>
     <item>
       <title>Post 1</title>
-      <link>https://blog2/1</link>
+      <link>https://feedrewind.com/posts/post-1/2_1/</link>
       <guid isPermaLink=\"false\">43974ed74066b207c30ffd0fed5146762e6c60745ac977004bc14507c7c42b50</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/2\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -718,14 +719,14 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com</link>
     <item>
       <title>Post 2</title>
-      <link>https://blog1/2</link>
+      <link>https://feedrewind.com/posts/post-2/1_2/</link>
       <guid isPermaLink=\"false\">37834f2f25762f23e1f74a531cbe445db73d6765ebe60878a7dfbecd7d4af6e1</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog2/1</link>
+      <link>https://feedrewind.com/posts/post-1/2_1/</link>
       <guid isPermaLink=\"false\">43974ed74066b207c30ffd0fed5146762e6c60745ac977004bc14507c7c42b50</guid>
       <description>from Test Subscription 2&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/2\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -739,7 +740,7 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog1/1</link>
+      <link>https://feedrewind.com/posts/post-1/1_1/</link>
       <guid isPermaLink=\"false\">16dc368a89b428b2485484313ba67a3912ca03f2b2b42429174a4f8b3dc84e44</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Wed, 04 May 2022 00:00:00 +0000</pubDate>
@@ -777,7 +778,7 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com/subscriptions/1</link>
     <item>
       <title>Post 1</title>
-      <link>https://blog1/1</link>
+      <link>https://feedrewind.com/posts/post-1/1_1/</link>
       <guid isPermaLink=\"false\">16dc368a89b428b2485484313ba67a3912ca03f2b2b42429174a4f8b3dc84e44</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Wed, 04 May 2022 00:00:00 +0000</pubDate>
@@ -803,7 +804,7 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com/subscriptions/2</link>
     <item>
       <title>Post 1</title>
-      <link>https://blog2/1</link>
+      <link>https://feedrewind.com/posts/post-1/2_1/</link>
       <guid isPermaLink=\"false\">43974ed74066b207c30ffd0fed5146762e6c60745ac977004bc14507c7c42b50</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/2\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -829,7 +830,7 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com</link>
     <item>
       <title>Post 1</title>
-      <link>https://blog2/1</link>
+      <link>https://feedrewind.com/posts/post-1/2_1/</link>
       <guid isPermaLink=\"false\">43974ed74066b207c30ffd0fed5146762e6c60745ac977004bc14507c7c42b50</guid>
       <description>from Test Subscription 2&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/2\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -843,7 +844,7 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog1/1</link>
+      <link>https://feedrewind.com/posts/post-1/1_1/</link>
       <guid isPermaLink=\"false\">16dc368a89b428b2485484313ba67a3912ca03f2b2b42429174a4f8b3dc84e44</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Wed, 04 May 2022 00:00:00 +0000</pubDate>
@@ -881,35 +882,35 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com/subscriptions/1</link>
     <item>
       <title>Post 5</title>
-      <link>https://blog1/5</link>
+      <link>https://feedrewind.com/posts/post-5/1_5/</link>
       <guid isPermaLink=\"false\">1253e9373e781b7500266caa55150e08e210bc8cd8cc70d89985e3600155e860</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 4</title>
-      <link>https://blog1/4</link>
+      <link>https://feedrewind.com/posts/post-4/1_4/</link>
       <guid isPermaLink=\"false\">5ef6fdf32513aa7cd11f72beccf132b9224d33f271471fff402742887a171edf</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 3</title>
-      <link>https://blog1/3</link>
+      <link>https://feedrewind.com/posts/post-3/1_3/</link>
       <guid isPermaLink=\"false\">454f63ac30c8322997ef025edff6abd23e0dbe7b8a3d5126a894e4a168c1b59b</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 2</title>
-      <link>https://blog1/2</link>
+      <link>https://feedrewind.com/posts/post-2/1_2/</link>
       <guid isPermaLink=\"false\">37834f2f25762f23e1f74a531cbe445db73d6765ebe60878a7dfbecd7d4af6e1</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog1/1</link>
+      <link>https://feedrewind.com/posts/post-1/1_1/</link>
       <guid isPermaLink=\"false\">16dc368a89b428b2485484313ba67a3912ca03f2b2b42429174a4f8b3dc84e44</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -947,21 +948,21 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     </item>
     <item>
       <title>Post 3</title>
-      <link>https://blog1/3</link>
+      <link>https://feedrewind.com/posts/post-3/1_3/</link>
       <guid isPermaLink=\"false\">454f63ac30c8322997ef025edff6abd23e0dbe7b8a3d5126a894e4a168c1b59b</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 2</title>
-      <link>https://blog1/2</link>
+      <link>https://feedrewind.com/posts/post-2/1_2/</link>
       <guid isPermaLink=\"false\">37834f2f25762f23e1f74a531cbe445db73d6765ebe60878a7dfbecd7d4af6e1</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog1/1</link>
+      <link>https://feedrewind.com/posts/post-1/1_1/</link>
       <guid isPermaLink=\"false\">16dc368a89b428b2485484313ba67a3912ca03f2b2b42429174a4f8b3dc84e44</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -1006,28 +1007,28 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     </item>
     <item>
       <title>Post 4</title>
-      <link>https://blog1/4</link>
+      <link>https://feedrewind.com/posts/post-4/1_4/</link>
       <guid isPermaLink=\"false\">5ef6fdf32513aa7cd11f72beccf132b9224d33f271471fff402742887a171edf</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 3</title>
-      <link>https://blog1/3</link>
+      <link>https://feedrewind.com/posts/post-3/1_3/</link>
       <guid isPermaLink=\"false\">454f63ac30c8322997ef025edff6abd23e0dbe7b8a3d5126a894e4a168c1b59b</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 2</title>
-      <link>https://blog1/2</link>
+      <link>https://feedrewind.com/posts/post-2/1_2/</link>
       <guid isPermaLink=\"false\">37834f2f25762f23e1f74a531cbe445db73d6765ebe60878a7dfbecd7d4af6e1</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog1/1</link>
+      <link>https://feedrewind.com/posts/post-1/1_1/</link>
       <guid isPermaLink=\"false\">16dc368a89b428b2485484313ba67a3912ca03f2b2b42429174a4f8b3dc84e44</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -1065,28 +1066,28 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     </item>
     <item>
       <title>Post 5</title>
-      <link>https://blog1/5</link>
+      <link>https://feedrewind.com/posts/post-5/1_5/</link>
       <guid isPermaLink=\"false\">1253e9373e781b7500266caa55150e08e210bc8cd8cc70d89985e3600155e860</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 4</title>
-      <link>https://blog1/4</link>
+      <link>https://feedrewind.com/posts/post-4/1_4/</link>
       <guid isPermaLink=\"false\">5ef6fdf32513aa7cd11f72beccf132b9224d33f271471fff402742887a171edf</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 3</title>
-      <link>https://blog1/3</link>
+      <link>https://feedrewind.com/posts/post-3/1_3/</link>
       <guid isPermaLink=\"false\">454f63ac30c8322997ef025edff6abd23e0dbe7b8a3d5126a894e4a168c1b59b</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 2</title>
-      <link>https://blog1/2</link>
+      <link>https://feedrewind.com/posts/post-2/1_2/</link>
       <guid isPermaLink=\"false\">37834f2f25762f23e1f74a531cbe445db73d6765ebe60878a7dfbecd7d4af6e1</guid>
       <description>&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -1150,21 +1151,21 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     <link>https://feedrewind.com</link>
     <item>
       <title>Post 1</title>
-      <link>https://blog2/1</link>
+      <link>https://feedrewind.com/posts/post-1/2_1/</link>
       <guid isPermaLink=\"false\">43974ed74066b207c30ffd0fed5146762e6c60745ac977004bc14507c7c42b50</guid>
       <description>from Test Subscription 2&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/2\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 2</title>
-      <link>https://blog1/2</link>
+      <link>https://feedrewind.com/posts/post-2/1_2/</link>
       <guid isPermaLink=\"false\">37834f2f25762f23e1f74a531cbe445db73d6765ebe60878a7dfbecd7d4af6e1</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog1/1</link>
+      <link>https://feedrewind.com/posts/post-1/1_1/</link>
       <guid isPermaLink=\"false\">16dc368a89b428b2485484313ba67a3912ca03f2b2b42429174a4f8b3dc84e44</guid>
       <description>from Test Subscription 1&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/1\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Fri, 06 May 2022 00:00:00 +0000</pubDate>
@@ -1178,7 +1179,7 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
     </item>
     <item>
       <title>Post 1</title>
-      <link>https://blog3/1</link>
+      <link>https://feedrewind.com/posts/post-1/3_1/</link>
       <guid isPermaLink=\"false\">c3ea99f86b2f8a74ef4145bb245155ff5f91cd856f287523481c15a1959d5fd1</guid>
       <description>from Test Subscription 3&lt;br&gt;&lt;br&gt;&lt;a href=\"https://feedrewind.com/subscriptions/3\"&gt;Manage&lt;/a&gt;</description>
       <pubDate>Thu, 05 May 2022 00:00:00 +0000</pubDate>
@@ -1232,7 +1233,6 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
       is_paused: false,
       is_added_past_midnight: false,
       schedule_version: 1,
-      pause_version: 1,
       finished_setup_at: finished_setup_at
     )
     subscription.update_attribute(:id, id)
@@ -1258,6 +1258,7 @@ class PublishPostsServiceTest < ActiveSupport::TestCase
         id: post_id,
         blog_post_id: post_id,
         subscription_id: subscription.id,
+        random_id: "#{subscription.id}_#{index}",
         published_at: index <= published_count ? finished_setup_at : nil
       )
     end

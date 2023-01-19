@@ -671,7 +671,8 @@ CREATE TABLE public.subscription_posts (
     updated_at timestamp(6) without time zone NOT NULL,
     published_at timestamp without time zone,
     published_at_local_date character varying,
-    publish_status public.post_publish_status
+    publish_status public.post_publish_status,
+    random_id text NOT NULL
 );
 
 
@@ -1199,6 +1200,13 @@ CREATE INDEX index_start_feeds_on_start_page_id ON public.start_feeds USING btre
 
 
 --
+-- Name: index_subscription_posts_on_random_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_subscription_posts_on_random_id ON public.subscription_posts USING btree (random_id);
+
+
+--
 -- Name: index_users_on_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1546,6 +1554,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20230117220810'),
 ('20230117232527'),
 ('20230118004928'),
-('20230118010226');
+('20230118010226'),
+('20230119010446');
 
 
