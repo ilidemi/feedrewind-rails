@@ -26,11 +26,16 @@ class UsersController < ApplicationController
         @user.generate_auth_token # reset logged in sessions
       else
         name = email[...email.index("@")]
+        if session[:product_user_id] && !User.exists?(product_user_id: session[:product_user_id])
+          product_user_id = session[:product_user_id]
+        else
+          product_user_id = SecureRandom.uuid
+        end
         @user = User.new(
           email: email,
           password: password,
           name: name,
-          product_user_id: session[:product_user_id] || SecureRandom.uuid
+          product_user_id: product_user_id
         )
 
         params_timezone = user_params[:timezone]
