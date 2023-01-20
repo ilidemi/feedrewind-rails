@@ -46,6 +46,11 @@ module PublishPostsService
             subscription.subscription_posts.where(published_at: nil).length == new_posts.length
 
             subscription.final_item_published_at = utc_now
+            # So that self.publish_rss_feeds knows about the update too
+            subscriptions
+              .filter { |sub| sub.id == subscription.id }
+              .first
+              .final_item_published_at = subscription.final_item_published_at
             Rails.logger.info("Will publish the final item for subscription #{subscription.id}")
           end
         else
