@@ -44,7 +44,13 @@ class User < ApplicationRecord
   private
 
   def email_uniqueness
-    if User.where(["id != ? and email = ? and password_digest is not null", self.id, self.email]).exists?
+    if self.id
+      where_clause = ["id != ? and email = ? and password_digest is not null", self.id, self.email]
+    else
+      where_clause = ["email = ? and password_digest is not null", self.email]
+    end
+
+    if User.where(where_clause).exists?
       self.errors.add(:base, "We already have an account registered with that email address.")
     end
   end
