@@ -41,7 +41,7 @@ class ProcessPostmarkBounceJob < ApplicationJob
       wait_time = wait_times_by_attempt_count[attempt_count]
       unless wait_time
         Rails.logger.error("Soft bounce after #{attempt_count} attempts, handling as hard bounce")
-        mark_user_bounced(user, bounce)
+        mark_user_bounced(user, subscription, bounce)
         return
       end
 
@@ -55,13 +55,13 @@ class ProcessPostmarkBounceJob < ApplicationJob
         Rails.logger.error("Hard bounce (#{bounce.bounce_type})")
       end
 
-      mark_user_bounced(user, bounce)
+      mark_user_bounced(user, subscription, bounce)
     end
   end
 
   private
 
-  def mark_user_bounced(user, bounce)
+  def mark_user_bounced(user, subscription, bounce)
     PostmarkBouncedUser.transaction do
       if PostmarkBouncedUser.exists?(user.id)
         Rails.logger.info("User #{user.id} already marked as bounced, nothing to do")
