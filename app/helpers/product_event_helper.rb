@@ -1,10 +1,8 @@
 module ProductEventHelper
-  def ProductEventHelper::log_visit_add_page(
-    request, product_user_id, path, referer, user_is_anonymous, extra = nil
-  )
+  def ProductEventHelper::log_visit_add_page(request, product_user_id, path, user_is_anonymous, extra = nil)
     event_properties = {
       path: path,
-      referer: referer,
+      referer: ProductEventHelper::collapse_referer(request.referer),
       user_is_anonymous: user_is_anonymous
     }
     event_properties.merge!(extra) if extra
@@ -59,5 +57,20 @@ module ProductEventHelper
         posts_per_active_day: weekly_count.to_f / active_days
       }
     )
+  end
+
+  def ProductEventHelper::collapse_referer(referer)
+    return nil if referer.nil?
+
+    begin
+      referer_uri = URI(referer)
+      if %w[feedrewind.com www.feedrewind.com feedrewind.herokuapp.com].include?(referer_uri.host)
+        return "FeedRewind"
+      end
+    rescue
+      # no-op
+    end
+
+    return referer
   end
 end

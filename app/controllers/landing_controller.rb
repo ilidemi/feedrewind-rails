@@ -6,7 +6,7 @@ class LandingController < ApplicationController
       return redirect_to "/subscriptions"
     end
 
-    ProductEventHelper::log_visit_add_page(request, @product_user_id, "/", request.referer, true)
+    ProductEventHelper::log_visit_add_page(request, @product_user_id, "/", true)
 
     if cookies[:anonymous_subscription]
       @subscription = Subscription.find_by(id: cookies[:anonymous_subscription], user_id: nil)

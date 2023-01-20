@@ -31,18 +31,7 @@ class ApplicationController < ActionController::Base
   end
 
   def log_visit
-    referer = request.referer
-    if request.referer
-      begin
-        referer_uri = URI(request.referer)
-        if %w[feedrewind.com www.feedrewind.com feedrewind.herokuapp.com].include?(referer_uri.host)
-          referer = "FeedRewind"
-        end
-      rescue
-        # no-op
-      end
-    end
-
+    referer = ProductEventHelper::collapse_referer(request.referer)
     ProductEvent::dummy_create!(
       user_ip: request.ip,
       user_agent: request.user_agent,

@@ -13,7 +13,7 @@ class OnboardingController < ApplicationController
     if params[:start_url]
       path = "/subscriptions/add?start_url="
       ProductEventHelper::log_visit_add_page(
-        request, @product_user_id, path, request.referer, @current_user.nil?, { blog_url: params[:start_url] }
+        request, @product_user_id, path, @current_user.nil?, { blog_url: params[:start_url] }
       )
       start_url = params[:start_url].strip
       discover_feeds_result, result_code = discover_feeds_internal(start_url, @current_user, @product_user_id)
@@ -41,7 +41,7 @@ class OnboardingController < ApplicationController
       end
     else
       ProductEventHelper::log_visit_add_page(
-        request, @product_user_id, "/subscriptions/add", request.referer, @current_user.nil?
+        request, @product_user_id, "/subscriptions/add", @current_user.nil?
       )
 
       @feeds_data = nil
