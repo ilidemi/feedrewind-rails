@@ -29,7 +29,7 @@
                    blog_crawl_progress: @blog_crawl_progress
                  }
         %>
-      <% elsif @subscription.blog.status == "crawl_failed" %>
+      <% elsif %w[crawl_failed update_from_feed_failed].include?(@subscription.blog.status) %>
         <%= render partial: "setup_blog_failed", locals: { subscription: @subscription } %>
       <% elsif %w[crawled_voting crawled_confirmed crawled_looks_wrong manually_inserted].include?(
         @subscription.blog.status
