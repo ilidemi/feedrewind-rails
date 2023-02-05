@@ -66,6 +66,8 @@ class UsersController < ApplicationController
           version: 1
         )
 
+        PublishPostsService.create_empty_user_feed(@user)
+
         ProductEvent::from_request!(
           request,
           product_user_id: @user.product_user_id,

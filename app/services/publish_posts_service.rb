@@ -75,8 +75,9 @@ module PublishPostsService
       when "email"
         # The job won't be visible until the transaction is committed
         EmailInitialItemJob.perform_later(user.id, subscription.id, ScheduleHelper::utc_str(utc_now))
-
         publish_status = "email_pending"
+
+        create_empty_subscription_feed(subscription)
       else
         raise "Unknown delivery channel: #{user.user_settings.delivery_channel}"
       end
@@ -234,11 +235,7 @@ module PublishPostsService
         user_dates_items << [subscription.finished_setup_at, initial_item]
       end
 
-      subscription_rss_text = generate_rss(
-        title: "#{subscription.name} · FeedRewind",
-        url: subscription_url,
-        items: subscription_items
-      )
+      subscription_rss_text = generate_subscription_rss(subscription, subscription_url, subscription_items)
       Rails.logger.info("Total subscription items: #{subscription_items.length}")
 
       subscription_rss = SubscriptionRss.find_or_initialize_by(subscription_id: subscription.id)
@@ -258,16 +255,45 @@ module PublishPostsService
 
     new_user_items_count = new_posts_by_sub_id.values.map(&:length).sum
     Rails.logger.info("Total user items: #{merged_user_items.length} (#{new_user_items_count} new)")
-    user_rss_text = generate_rss(
-      title: "FeedRewind",
-      url: "https://feedrewind.com",
-      items: merged_user_items
-    )
+    user_rss_text = generate_user_rss(merged_user_items)
 
     user_rss = UserRss.find_or_initialize_by(user_id: user.id)
     user_rss.body = user_rss_text
     user_rss.save!
     Rails.logger.info("Saved user RSS")
+  end
+
+  def self.create_empty_subscription_feed(subscription)
+    subscription_url = SubscriptionsHelper::subscription_url(subscription)
+    subscription_rss_text = generate_subscription_rss(subscription, subscription_url, [])
+    subscription_rss = SubscriptionRss.find_or_initialize_by(subscription_id: subscription.id)
+    subscription_rss.body = subscription_rss_text
+    subscription_rss.save!
+    Rails.logger.info("Created empty subscription RSS")
+  end
+
+  def self.create_empty_user_feed(user)
+    user_rss_text = generate_user_rss([])
+    user_rss = UserRss.find_or_initialize_by(user_id: user.id)
+    user_rss.body = user_rss_text
+    user_rss.save!
+    Rails.logger.info("Created empty user RSS")
+  end
+
+  def self.generate_subscription_rss(subscription, subscription_url, items)
+    generate_rss(
+      title: "#{subscription.name} · FeedRewind",
+      url: subscription_url,
+      items: items
+    )
+  end
+
+  def self.generate_user_rss(items)
+    generate_rss(
+      title: "FeedRewind",
+      url: "https://feedrewind.com",
+      items: items
+    )
   end
 
   def self.generate_rss(title:, url:, items:)
