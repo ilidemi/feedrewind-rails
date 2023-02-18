@@ -1,7 +1,20 @@
 <div class="min-h-screen p-6 pb-14 flex flex-col">
   <header class="flex flex-row gap-x-6 gap-y-2 flex-wrap justify-between items-center">
     <h1 class="text-2xl xs:text-4xl">
-      <a href="/" class="hover:cursor-pointer">FeedRewind</a>
+      <a href="/" class="hover:cursor-pointer">
+        <% if defined?(@logo_path) %>
+          <!-- TODO: remove after logo test -->
+          <img id="logo" src="<%= @logo_path %>">
+          <script>
+            const logo = document.getElementById("logo");
+            logo.onload = () => {
+                logo.width /= 1.75;
+            };
+          </script>
+        <% else %>
+          FeedRewind
+        <% end %>
+      </a>
     </h1>
     <div class="flex flex-row gap-2">
       <%= link_to "Sign in", login_path, class: "text-sm text-slate-700 border border-gray-300 hover:border-slate-900 rounded-full px-3 py-1.5 hover:cursor-pointer" %>

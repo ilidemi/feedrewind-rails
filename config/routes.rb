@@ -2,6 +2,17 @@ Rails.application.routes.draw do
   root "landing#index"
   post "/discard", to: "landing#discard"
 
+  # TODO: remove after logo test
+  get "logo1", to: "landing#index"
+  get "logo1.1", to: "landing#index"
+  get "logo1.2", to: "landing#index"
+  get "logo2", to: "landing#index"
+  get "logo3", to: "landing#index"
+  get "logo4", to: "landing#index"
+  get "logo5", to: "landing#index"
+  get "logo5.1", to: "landing#index"
+  get "logo6", to: "landing#index"
+
   get "signup", to: "users#new", as: "signup"
   post "signup", to: "users#create"
   get "login", to: "sessions#new", as: "login"
