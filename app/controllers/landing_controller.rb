@@ -8,11 +8,6 @@ class LandingController < ApplicationController
 
     ProductEventHelper::log_visit_add_page(request, @product_user_id, "/", true)
 
-    # TODO: remove after logo test
-    if request.path != "/"
-      @logo_path = request.path + ".png"
-    end
-
     if cookies[:anonymous_subscription]
       @subscription = Subscription.find_by(id: cookies[:anonymous_subscription], user_id: nil)
     else

@@ -1,7 +1,9 @@
 <div class="flex flex-col gap-6">
-  <h1 class="text-4xl text-center">
-    <a href="/" class="hover:cursor-pointer">FeedRewind</a>
-  </h1>
+  <div class="flex flex-row justify-center">
+    <a href="/" class="hover:cursor-pointer">
+      <img src="/logo_icon.svg" class="w-12" alt="Logo">
+    </a>
+  </div>
   <div class="text-2xl text-center">Sign in to FeedRewind</div>
 
   <%= form_tag login_path, id: "login_form", novalidate: true do %>

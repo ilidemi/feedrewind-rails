@@ -40,15 +40,15 @@
     }
 
     .btn {
-        @apply text-white font-semibold bg-slate-700 hover:bg-slate-900 rounded-md px-3 py-2 hover:cursor-pointer disabled:hover:bg-slate-700 disabled:opacity-50 disabled:hover:cursor-default
+        @apply text-white font-semibold bg-primary-700 hover:bg-primary-900 rounded-md px-3 py-2 hover:cursor-pointer disabled:hover:bg-primary-700 disabled:opacity-50 disabled:hover:cursor-default
     }
 
     .btn-no-disable {
-        @apply text-white font-semibold bg-slate-700 hover:bg-slate-900 rounded-md px-3 py-2 hover:cursor-pointer disabled:hover:bg-slate-700 disabled:hover:cursor-default
+        @apply text-white font-semibold bg-primary-700 hover:bg-primary-900 rounded-md px-3 py-2 hover:cursor-pointer disabled:hover:bg-primary-700 disabled:hover:cursor-default
     }
 
     .btn-disabled {
-        @apply disabled:hover:bg-slate-700 disabled:opacity-50 disabled:hover:cursor-default
+        @apply disabled:hover:bg-primary-700 disabled:opacity-50 disabled:hover:cursor-default
     }
 
     .btn-red {
@@ -94,16 +94,16 @@
         background: linear-gradient(
                 -45deg,
                 transparent 47%,
-                rgb(148 163 184) /* slate-400 */ 50%,
-                rgb(148 163 184) /* slate-400 */ 50%,
+                theme("colors.primary.400") 50%,
+                theme("colors.primary.400") 50%,
                 transparent 53%,
                 transparent
         ),
         linear-gradient(
                 45deg,
                 transparent 47%,
-                rgb(148 163 184) /* slate-400 */ 50%,
-                rgb(148 163 184) /* slate-400 */ 50%,
+                theme("colors.primary.400") 50%,
+                theme("colors.primary.400") 50%,
                 transparent 53%,
                 transparent
         );
@@ -127,16 +127,16 @@
         background: linear-gradient(
                 -45deg,
                 transparent 47%,
-                rgb(71 85 105) /* slate-600 */ 50%,
-                rgb(71 85 105) /* slate-600 */ 50%,
+                theme("colors.primary.600") 50%,
+                theme("colors.primary.600") 50%,
                 transparent 53%,
                 transparent
         ),
         linear-gradient(
                 45deg,
                 transparent 47%,
-                rgb(71 85 105) /* slate-600 */ 50%,
-                rgb(71 85 105) /* slate-600 */ 50%,
+                theme("colors.primary.600") 50%,
+                theme("colors.primary.600") 50%,
                 transparent 53%,
                 transparent
         );
@@ -267,13 +267,13 @@
     }
 
     .spinner-light {
-        border-color: rgb(243 244 246); /* gray-100 */
-        border-top-color: rgb(203 213 225); /* slate-300 */
+        border-color: theme("colors.gray.100");
+        border-top-color: theme("colors.primary.300");
     }
 
     .spinner-dark {
-        border-color: rgb(156 163 175); /* gray-400 */
-        border-top-color: rgb(241 245 249); /* slate-100 */
+        border-color: theme("colors.gray.400");
+        border-top-color: theme("colors.primary.100");
     }
 
     .spinner {

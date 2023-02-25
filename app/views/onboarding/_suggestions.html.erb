@@ -12,7 +12,7 @@
               <a href="<%= blog.url %>" target="_blank" class="external-link"><span class="link text-black"><%= blog.name %></span></a>
             </span>
 
-            <a class="text-white bg-slate-700 hover:bg-slate-900 rounded-md px-1 py-1 hover:cursor-pointer self-start" href="<%= SubscriptionsHelper.subscription_add_feed_path(blog.feed_url) %>">
+            <a class="text-white bg-primary-700 hover:bg-primary-900 rounded-md px-1 py-1 hover:cursor-pointer self-start" href="<%= SubscriptionsHelper.subscription_add_feed_path(blog.feed_url) %>">
               <!-- plus-sm icon -->
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
@@ -34,9 +34,9 @@
             <a href="<%= blog.url %>" target="_blank" class="external-link"><span class="link text-black break-word"><%= blog.name %></span></a>
           </span>
 
-          <div class="rounded-full bg-slate-100 text-sm px-2"><%= blog.tag.gsub(" ", "\u00A0") %></div>
+          <div class="rounded-full bg-primary-100 text-sm px-2"><%= blog.tag.gsub(" ", "\u00A0") %></div>
 
-          <a class="text-white bg-slate-700 hover:bg-slate-900 rounded-md px-1 py-1 hover:cursor-pointer self-start" href="<%= SubscriptionsHelper.subscription_add_feed_path(blog.feed_url) %>">
+          <a class="text-white bg-primary-700 hover:bg-primary-900 rounded-md px-1 py-1 hover:cursor-pointer self-start" href="<%= SubscriptionsHelper.subscription_add_feed_path(blog.feed_url) %>">
             <!-- plus icon -->
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>

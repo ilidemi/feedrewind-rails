@@ -3,6 +3,7 @@
 <head>
   <title>FeedRewind</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <%= icon_tags %>
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
   <%= stylesheet_link_tag "tailwind" %>
@@ -27,9 +28,9 @@
   <% end %>
   <div class="min-h-screen p-6 pb-14 flex flex-col gap-6">
     <header class="flex flex-row flex-wrap gap-x-6 gap-y-1 justify-between items-center">
-      <h1 id="logo" class="text-4xl">
-        <a href="/" class="hover:cursor-pointer">FeedRewind</a>
-      </h1>
+      <a id="logo" href="/" class="hover:cursor-pointer">
+        <img src="/logo.svg" class="w-40" alt="Logo">
+      </a>
       <% if current_user %>
         <div class="relative inline-block text-sm">
           <button id="user_button"

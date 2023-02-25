@@ -20,7 +20,7 @@
             </button>
             <button id="<%= day %>_template"
                     type="button"
-                    class="hidden rounded-md text-sm font-semibold text-white bg-slate-500 hover:bg-slate-700 border border-slate-500 hover:border-slate-700 hover:cursor-pointer px-2 py-1 mt-2">
+                    class="hidden rounded-md text-sm font-semibold text-white bg-primary-500 hover:bg-primary-700 border border-primary-500 hover:border-primary-700 hover:cursor-pointer px-2 py-1 mt-2">
                 <span class="flex flex-row gap-1">
                   <span class="font-mono min-w-[10px]">-</span>
                   <span class="truncate schedule-sub-name" title="<%= subscription_name %>"><%= subscription_name %></span>
@@ -30,12 +30,12 @@
         <% end %>
       </div>
       <% if other_sub_names_by_day.values.map(&:length).sum > 0 %>
-        <div class="w-full h-px bg-slate-300"></div>
+        <div class="w-full h-px bg-primary-300"></div>
         <div class="flex flex-row gap-2">
           <% days_of_week.each do |day| %>
             <div class="flex-1 min-w-0 flex flex-col gap-2">
               <% other_sub_names_by_day[day].each do |other_sub_name| %>
-                <div class="bg-slate-100 border border-slate-100 rounded-md px-2 py-1 flex flex-row gap-1 items-center">
+                <div class="bg-primary-100 border border-primary-100 rounded-md px-2 py-1 flex flex-row gap-1 items-center">
                   <div>
                     <!-- rss icon -->
                     <svg width="10" height="11" viewBox="0 0 10 11" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -44,7 +44,7 @@
                       <path d="M1.401 10.5C2.17474 10.5 2.80199 9.87274 2.80199 9.09899C2.80199 8.32525 2.17474 7.698 1.401 7.698C0.627247 7.698 0 8.32525 0 9.09899C0 9.87274 0.627247 10.5 1.401 10.5Z" fill="#CBD5E1"/>
                     </svg>
                   </div>
-                  <div class="text-sm text-slate-700 truncate" title="<%= other_sub_name %>"><%= other_sub_name %></div>
+                  <div class="text-sm text-primary-700 truncate" title="<%= other_sub_name %>"><%= other_sub_name %></div>
                 </div>
               <% end %>
             </div>
@@ -69,14 +69,14 @@
              class="flex flex-col gap-2">
           <button id="<%= day %>_template_mobile"
                   type="button"
-                  class="hidden rounded-md text-sm font-semibold text-white bg-slate-500 hover:bg-slate-700 border border-slate-500 hover:border-slate-700 hover:cursor-pointer px-2 py-1">
+                  class="hidden rounded-md text-sm font-semibold text-white bg-primary-500 hover:bg-primary-700 border border-primary-500 hover:border-primary-700 hover:cursor-pointer px-2 py-1">
               <span class="flex flex-row gap-1">
                 <span class="font-mono min-w-[10px]">-</span>
                 <span class="truncate schedule-sub-name" title="<%= subscription_name %>"><%= subscription_name %></span>
               </span>
           </button>
           <% other_sub_names_by_day[day].each do |other_sub_name| %>
-            <div class="bg-slate-100 border border-slate-100 rounded-md px-2 py-1 flex flex-row gap-1 items-center">
+            <div class="bg-primary-100 border border-primary-100 rounded-md px-2 py-1 flex flex-row gap-1 items-center">
               <div>
                 <!-- rss icon -->
                 <svg width="10" height="11" viewBox="0 0 10 11" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -85,7 +85,7 @@
                   <path d="M1.401 10.5C2.17474 10.5 2.80199 9.87274 2.80199 9.09899C2.80199 8.32525 2.17474 7.698 1.401 7.698C0.627247 7.698 0 8.32525 0 9.09899C0 9.87274 0.627247 10.5 1.401 10.5Z" fill="#CBD5E1"/>
                 </svg>
               </div>
-              <div class="text-sm text-slate-700 truncate" title="<%= other_sub_name %>"><%= other_sub_name %></div>
+              <div class="text-sm text-primary-700 truncate" title="<%= other_sub_name %>"><%= other_sub_name %></div>
             </div>
           <% end %>
         </div>
