@@ -70,7 +70,7 @@ class EmailPostsJob < ApplicationJob
         )
         subscription_post.publish_status = "email_sent"
         subscription_post.save!
-        ProductEvent.create!(
+        ProductEvent.atomic_create!(
           product_user_id: user.product_user_id,
           event_type: "send post email",
           event_properties: {

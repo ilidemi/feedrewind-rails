@@ -1186,6 +1186,13 @@ CREATE INDEX delayed_jobs_priority ON public.delayed_jobs USING btree (priority,
 
 
 --
+-- Name: index_blog_post_category_assignments_on_category_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_blog_post_category_assignments_on_category_id ON public.blog_post_category_assignments USING btree (category_id);
+
+
+--
 -- Name: index_blogs_on_feed_url_and_version; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1557,6 +1564,7 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20230118010226'),
 ('20230119010446'),
 ('20230205064728'),
-('20230205065219');
+('20230205065219'),
+('20230308011655');
 
 

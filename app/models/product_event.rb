@@ -6,7 +6,8 @@ class ProductEvent < ApplicationRecord
     request, product_user_id:, event_type:, event_properties: nil, user_properties: nil
   )
     user_platform = ProductEvent::resolve_user_agent(request.user_agent)
-    ProductEvent.create!(
+    now_utc = DateTime.now.utc
+    ProductEvent.insert!(
       product_user_id: product_user_id,
       event_type: event_type,
       event_properties: event_properties,
@@ -15,7 +16,18 @@ class ProductEvent < ApplicationRecord
       browser: user_platform.browser,
       os_name: user_platform.os_name,
       os_version: user_platform.os_version,
-      bot_name: user_platform.bot_name
+      bot_name: user_platform.bot_name,
+      created_at: now_utc,
+      updated_at: now_utc
+    )
+  end
+
+  def ProductEvent::atomic_create!(attributes)
+    now_utc = DateTime.now.utc
+    ProductEvent.insert!(
+      created_at: now_utc,
+      updated_at: now_utc,
+      **attributes
     )
   end
 
@@ -23,7 +35,8 @@ class ProductEvent < ApplicationRecord
     user_ip:, user_agent:, allow_bots:, event_type:, event_properties: nil
   )
     user_platform = ProductEvent::resolve_user_agent(user_agent)
-    ProductEvent.create!(
+    now_utc = DateTime.now.utc
+    ProductEvent.insert!(
       product_user_id: "dummy-#{SecureRandom.uuid}",
       event_type: event_type,
       event_properties: event_properties,
@@ -35,7 +48,9 @@ class ProductEvent < ApplicationRecord
       browser: user_platform.browser,
       os_name: user_platform.os_name,
       os_version: user_platform.os_version,
-      bot_name: user_platform.bot_name
+      bot_name: user_platform.bot_name,
+      created_at: now_utc,
+      updated_at: now_utc
     )
   end
 

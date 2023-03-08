@@ -53,7 +53,7 @@ module PublishPostsService
               .final_item_published_at = subscription.final_item_published_at
             Rails.logger.info("Will publish the final item for subscription #{subscription.id}")
 
-            ProductEvent.create!(
+            ProductEvent.atomic_create!(
               product_user_id: user.product_user_id,
               event_type: "finish subscription",
               event_properties: {
@@ -131,7 +131,7 @@ module PublishPostsService
           final_item_subs << subscription
           Rails.logger.info("Will publish the final item for subscription #{subscription.id}")
 
-          ProductEvent.create!(
+          ProductEvent.atomic_create!(
             product_user_id: user.product_user_id,
             event_type: "finish subscription",
             event_properties: {

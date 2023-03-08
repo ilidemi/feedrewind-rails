@@ -4,7 +4,7 @@ class RssController < ApplicationController
     @rss = SubscriptionRss.find_by(subscription_id: @subscription.id)
     if !@subscription.is_paused && @subscription.final_item_published_at.nil?
       product_rss_client = resolve_rss_client
-      ProductEvent.create!(
+      ProductEvent.atomic_create!(
         product_user_id: @subscription.user.product_user_id,
         event_type: "poll feed",
         event_properties: {
@@ -26,7 +26,7 @@ class RssController < ApplicationController
     end
     if has_active_subscriptions
       product_rss_client = resolve_rss_client
-      ProductEvent.create!(
+      ProductEvent.atomic_create!(
         product_user_id: @user.product_user_id,
         event_type: "poll feed",
         event_properties: {

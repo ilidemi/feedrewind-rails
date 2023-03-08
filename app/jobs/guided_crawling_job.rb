@@ -165,7 +165,7 @@ class GuidedCrawlingJob < ApplicationJob
         subscription.user.product_user_id :
         subscription.anon_product_user_id
       wait_duration = blog.updated_at - subscription.created_at
-      ProductEvent.create!(
+      ProductEvent.atomic_create!(
         product_user_id: product_user_id,
         event_type: event_type,
         event_properties: {

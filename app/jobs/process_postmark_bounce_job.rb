@@ -69,7 +69,7 @@ class ProcessPostmarkBounceJob < ApplicationJob
         Rails.logger.info("Marking user #{user.id} as bounced")
         PostmarkBouncedUser.create!(user_id: user.id, example_bounce_id: bounce.id)
 
-        ProductEvent.create!(
+        ProductEvent.atomic_create!(
           product_user_id: user.product_user_id,
           event_type: "hard bounce email",
           event_properties: {
