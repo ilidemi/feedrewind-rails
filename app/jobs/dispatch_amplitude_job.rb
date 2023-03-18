@@ -9,11 +9,14 @@ class DispatchAmplitudeJob < ApplicationJob
     amplitude_uri = URI("https://api.amplitude.com/2/httpapi")
     api_key = Rails.configuration.amplitude_api_key
 
+    events_to_dispatch = ProductEvent.where(dispatched_at: nil).order(:id)
+    Rails.logger.info("Dispatching #{events_to_dispatch.length} events")
+
     dispatched_count = 0
     bot_skipped_count = 0
     bot_counts = {}
     failed_count = 0
-    ProductEvent.where(dispatched_at: nil).order(:id).each do |product_event|
+    events_to_dispatch.each do |product_event|
       if product_event.bot_name &&
         product_event.user_properties &&
         !product_event.user_properties["allow_bots"]
