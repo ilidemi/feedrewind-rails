@@ -1,3 +1,4 @@
+-- bigquery-public-data.hacker_news.full is fresh, others end in 2016
 select up_url, sum_score, count
 from (
          select max(up_url)                              as up_url,
@@ -6,7 +7,7 @@ from (
                 count(*)                                 as count
          from (
                   select regexp_replace(url, '(/[0-9]+)*/[^/]+/?$', '') as up_url, score
-                  from ` bigquery- public - data.hacker_news.full `
+                  from `bigquery-public-data.hacker_news.full`
                   where url is not null
                     and url not like '%jobs'
                     and url not like '%careers'
