@@ -6,7 +6,8 @@ require_relative 'historical_archives_sort'
 require_relative 'historical_common'
 
 ArchivesSortedResult = Struct.new(
-  :main_link, :pattern, :links, :speculative_count, :count, :has_dates, :extra, keyword_init: true
+  :main_link, :pattern, :links, :speculative_count, :count, :has_dates, :post_categories, :extra,
+  keyword_init: true
 )
 ArchivesMediumPinnedEntryResult = Struct.new(
   :main_link, :pattern, :pinned_entry_link, :other_links_dates, :speculative_count, :count, :extra,
@@ -365,6 +366,21 @@ def try_extract_sorted(
   end
 
   if best_links
+    if HardcodedBlogs::is_match(main_link, HardcodedBlogs::KALZUMEUS, curi_eq_cfg)
+      post_categories = extract_kalzumeus_categories(logger)
+      post_categories_str = category_counts_to_s(post_categories)
+      logger.info("Categories: #{post_categories_str}")
+      post_categories_html = "<br>categories: #{post_categories_str}"
+    elsif HardcodedBlogs::is_match(main_link, HardcodedBlogs::BENKUHN, curi_eq_cfg)
+      post_categories = extract_benkuhn_categories(logger)
+      post_categories_str = category_counts_to_s(post_categories)
+      logger.info("Categories: #{post_categories_str}")
+      post_categories_html = "<br>categories: #{post_categories_str}"
+    else
+      post_categories = nil
+      post_categories_html = ""
+    end
+
     ArchivesSortedResult.new(
       main_link: main_link,
       pattern: best_pattern,
@@ -372,7 +388,8 @@ def try_extract_sorted(
       speculative_count: best_links.length,
       count: best_links.length,
       has_dates: best_has_dates,
-      extra: "xpath: #{best_xpath}#{best_log_str}"
+      post_categories: post_categories,
+      extra: "xpath: #{best_xpath}#{best_log_str}#{post_categories_html}"
     )
   else
     logger.info("No sorted match with #{star_count} stars")

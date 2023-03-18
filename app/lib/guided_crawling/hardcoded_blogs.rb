@@ -14,6 +14,8 @@ module HardcodedBlogs
   OUR_MACHINERY = "https://ourmachinery.com" # Hardcoded as fake feed, actual post Links are stored in the db
   #noinspection HttpUrlsUsage
   PAUL_GRAHAM = "http://www.aaronsw.com/2002/feeds/pgessays.rss"
+  KALZUMEUS = "https://kalzumeus.com/archive/"
+  BENKUHN = "https://www.benkuhn.net/all/"
 
   def self.is_match(link, url, curi_eq_cfg)
     canonical_uri_equal?(

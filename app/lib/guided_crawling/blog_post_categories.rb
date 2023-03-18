@@ -173,3 +173,43 @@ def extract_casey_handmer_categories(space_misconceptions_page, logger)
 
   [HistoricalBlogPostCategory.new("Space Misconceptions", true, top_links)]
 end
+
+def extract_kalzumeus_categories(logger)
+  #noinspection RubyLiteralArrayInspection
+  top_posts_urls = [
+    "https://www.kalzumeus.com/2012/01/23/salary-negotiation/",
+    "https://www.kalzumeus.com/2011/10/28/dont-call-yourself-a-programmer/",
+    "https://www.kalzumeus.com/2011/03/13/some-perspective-on-the-japan-earthquake/",
+    "https://www.kalzumeus.com/2010/08/25/the-hardest-adjustment-to-self-employment/",
+    "https://www.kalzumeus.com/2010/06/17/falsehoods-programmers-believe-about-names/",
+    "https://www.kalzumeus.com/2010/04/20/building-highly-reliable-websites-for-small-companies/",
+    "https://www.kalzumeus.com/2010/03/20/running-a-software-business-on-5-hours-a-week/",
+    "https://www.kalzumeus.com/2010/01/24/startup-seo/",
+    "https://www.kalzumeus.com/2009/09/05/desktop-aps-versus-web-apps/",
+    "https://www.kalzumeus.com/2009/03/07/how-to-successfully-compete-with-open-source-software/",
+  ]
+  top_posts_links = top_posts_urls.map { |url| to_canonical_link(url, logger) }
+
+  [HistoricalBlogPostCategory.new("Most Popular", true, top_posts_links)]
+end
+
+def extract_benkuhn_categories(logger)
+  #noinspection RubyLiteralArrayInspection
+  top_posts_urls = [
+    "https://www.benkuhn.net/abyss/",
+    "https://www.benkuhn.net/outliers/",
+    "https://www.benkuhn.net/listen/",
+    "https://www.benkuhn.net/blub/",
+    "https://www.benkuhn.net/attention/",
+    "https://www.benkuhn.net/conviction/",
+    "https://www.benkuhn.net/hard/",
+    "https://www.benkuhn.net/lux/",
+    "https://www.benkuhn.net/emco/",
+    "https://www.benkuhn.net/autocomplete/",
+    "https://www.benkuhn.net/squared/",
+    "https://www.benkuhn.net/cf-plants/",
+  ]
+  top_posts_links = top_posts_urls.map { |url| to_canonical_link(url, logger) }
+
+  [HistoricalBlogPostCategory.new("Essays", true, top_posts_links)]
+end
