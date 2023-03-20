@@ -193,23 +193,12 @@ def extract_kalzumeus_categories(logger)
   [HistoricalBlogPostCategory.new("Most Popular", true, top_posts_links)]
 end
 
-def extract_benkuhn_categories(logger)
-  #noinspection RubyLiteralArrayInspection
-  top_posts_urls = [
-    "https://www.benkuhn.net/abyss/",
-    "https://www.benkuhn.net/outliers/",
-    "https://www.benkuhn.net/listen/",
-    "https://www.benkuhn.net/blub/",
-    "https://www.benkuhn.net/attention/",
-    "https://www.benkuhn.net/conviction/",
-    "https://www.benkuhn.net/hard/",
-    "https://www.benkuhn.net/lux/",
-    "https://www.benkuhn.net/emco/",
-    "https://www.benkuhn.net/autocomplete/",
-    "https://www.benkuhn.net/squared/",
-    "https://www.benkuhn.net/cf-plants/",
-  ]
-  top_posts_links = top_posts_urls.map { |url| to_canonical_link(url, logger) }
+def extract_ben_kuhn_categories(main_page, logger)
+  essays_links = main_page
+    .document
+    .xpath("/html/body/div[1]/div[1]/div[*]/h2/a")
+    .map { |element| element["href"] }
+    .map { |url| to_canonical_link(url, logger, main_page.fetch_uri) }
 
-  [HistoricalBlogPostCategory.new("Essays", true, top_posts_links)]
+  [HistoricalBlogPostCategory.new("Essays", true, essays_links)]
 end

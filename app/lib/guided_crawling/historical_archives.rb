@@ -371,11 +371,6 @@ def try_extract_sorted(
       post_categories_str = category_counts_to_s(post_categories)
       logger.info("Categories: #{post_categories_str}")
       post_categories_html = "<br>categories: #{post_categories_str}"
-    elsif HardcodedBlogs::is_match(main_link, HardcodedBlogs::BENKUHN, curi_eq_cfg)
-      post_categories = extract_benkuhn_categories(logger)
-      post_categories_str = category_counts_to_s(post_categories)
-      logger.info("Categories: #{post_categories_str}")
-      post_categories_html = "<br>categories: #{post_categories_str}"
     else
       post_categories = nil
       post_categories_html = ""

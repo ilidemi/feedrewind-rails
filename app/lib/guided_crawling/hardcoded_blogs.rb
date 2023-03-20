@@ -12,10 +12,11 @@ module HardcodedBlogs
   JULIA_EVANS = "https://jvns.ca"
   MR_MONEY_MUSTACHE = "https://www.mrmoneymustache.com/blog"
   OUR_MACHINERY = "https://ourmachinery.com" # Hardcoded as fake feed, actual post Links are stored in the db
-  #noinspection HttpUrlsUsage
+  # noinspection HttpUrlsUsage
   PAUL_GRAHAM = "http://www.aaronsw.com/2002/feeds/pgessays.rss"
   KALZUMEUS = "https://kalzumeus.com/archive/"
-  BENKUHN = "https://www.benkuhn.net/all/"
+  BEN_KUHN = "https://www.benkuhn.net/"
+  BEN_KUHN_ARCHIVES = BEN_KUHN + "all/"
 
   def self.is_match(link, url, curi_eq_cfg)
     canonical_uri_equal?(

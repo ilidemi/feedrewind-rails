@@ -174,7 +174,7 @@ def guided_crawl(
     else
       logger.info("Feed is long with #{parsed_feed.entry_links.length} entries")
 
-      #noinspection HttpUrlsUsage
+      # noinspection HttpUrlsUsage
       if HardcodedBlogs::is_match(feed_link, HardcodedBlogs::PAUL_GRAHAM, curi_eq_cfg)
         post_categories = extract_pg_categories(logger)
         post_categories_str = category_counts_to_s(post_categories)
@@ -660,7 +660,13 @@ def postprocess_results(
     result = sorted_results.shift
     logger.info("Postprocessing #{print_result(result)}")
     if result.count
-      pp_result = result
+      if result.is_a?(ArchivesSortedResult)
+        pp_result = postprocess_archives_sorted_result(
+          result, curi_eq_cfg, crawl_ctx, http_client, progress_logger, logger
+        )
+      else
+        pp_result = result
+      end
     else
       if result.is_a?(ArchivesMediumPinnedEntryResult)
         pp_result = postprocess_archives_medium_pinned_entry_result(
@@ -733,6 +739,36 @@ PostprocessedResult = Struct.new(
 
 def print_result(result)
   "[#{result.class.name}, #{result.main_link.url}, #{result.speculative_count}]"
+end
+
+def postprocess_archives_sorted_result(
+  archives_result, curi_eq_cfg, crawl_ctx, http_client, progress_logger, logger
+)
+  if HardcodedBlogs::is_match(archives_result.main_link, HardcodedBlogs::BEN_KUHN_ARCHIVES, curi_eq_cfg)
+    logger.info("Postprocess archives result start")
+    logger.info("Extra request for Ben Kuhn categories")
+    link = to_canonical_link(HardcodedBlogs::BEN_KUHN, logger)
+    progress_logger.log_and_save_fetched_count(zero_to_nil(archives_result.links.count(&:title)))
+    page = crawl_request(link, false, crawl_ctx, http_client, progress_logger, logger)
+    progress_logger.log_and_save_postprocessing
+
+    if page && page.is_a?(Page) && page.document
+      post_categories = extract_ben_kuhn_categories(page, logger)
+      logger.info("Categories: #{category_counts_to_s(post_categories)}")
+      logger.info("Postprocess archives result finish")
+      return PostprocessedResult.new(
+        main_link: archives_result.main_link,
+        pattern: archives_result.pattern,
+        links: archives_result.links,
+        count: archives_result.count,
+        post_categories: post_categories,
+        extra: archives_result.extra
+      )
+    end
+    logger.info("Postprocess archives result finish")
+  end
+
+  archives_result
 end
 
 def postprocess_archives_medium_pinned_entry_result(
@@ -1086,7 +1122,7 @@ def fetch_missing_titles(
 
   # Find out if page titles have a common prefix/suffix that needs to be removed
   first_page_title = page_titles.first
-  #noinspection RubyNilAnalysis
+  # noinspection RubyNilAnalysis
   prefix_length = suffix_length = first_page_title.length
   page_titles.drop(1).each do |page_title|
     prefix_length = [page_title.length, prefix_length].min
