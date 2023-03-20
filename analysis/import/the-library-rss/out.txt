@@ -1,0 +1,2702 @@
+1/2039
+https://www.scratchapixel.com has 0 feeds
+2/2039
+https://bivector.net has 0 feeds
+3/2039
+https://graphtoy.com has 0 feeds
+4/2039
+http://tooslowexception.com has 0 feeds
+5/2039
+https://www.memorymanagement.org has 0 feeds
+6/2039
+https://www.nand2tetris.org has 0 feeds
+7/2039
+http://semver.org has 0 feeds
+8/2039
+https://fontdrop.info has 0 feeds
+9/2039
+https://webrtcforthecurious.com has 0 feeds
+10/2039
+https://turingmachinesimulator.com has 0 feeds
+11/2039
+http://immersivemath.com has 0 feeds
+12/2039
+https://dataorienteddesign.com has 0 feeds
+13/2039
+http://gameprogrammingpatterns.com has 0 feeds
+14/2039
+https://research.swtch.com has 0 feeds
+15/2039
+https://poly.google.com has 0 feeds
+16/2039
+https://nfrechette.github.io has 0 feeds
+17/2039
+https://hdrihaven.com has 0 feeds
+18/2039
+https://www.virtualglobebook.com has 0 feeds
+19/2039
+https://letsdecentralize.org has 0 feeds
+20/2039
+https://sharplab.io has 0 feeds
+21/2039
+https://gamemath.com/ has 0 feeds
+22/2039
+https://open.spotify.com/episode/2F9bVVpmhRZcGc2G0uGGx8 Status 404 Not Found
+23/2039
+http://puredata.info/ has 0 feeds
+24/2039
+https://www.renditioninfosec.com/files/Rendition_Infosec_Meltdown_and_Spectre.pdf Get "https://www.renditioninfosec.com/files/Rendition_Infosec_Meltdown_and_Spectre.pdf": dial tcp: lookup www.renditioninfosec.com: no such host
+25/2039
+https://user-images.githubusercontent.com/5618797/149837998-0fe2cc4b-f0b0-4b42-854c-e0b004a85b9e.png Not a html
+26/2039
+https://open.spotify.com/album/30WhcR5ZIZ9FvT9LwMV9Pw Status 404 Not Found
+27/2039
+https://qualapps.blogspot.com/2010/05/understanding-readdirectorychangesw.html has 1 feeds
+28/2039
+https://www.researchgate.net/publication/220252153_Adaptive_polygonization_of_implicit_surfaces Status 403 Forbidden
+29/2039
+https://www.researchgate.net/publication/238996602_Compile_time_garbage_collection_using_reference_count_analysis Status 403 Forbidden
+30/2039
+https://www.researchgate.net/publication/296415959_More_Than_50_Years_of_Artificial_Reverberation Status 403 Forbidden
+31/2039
+https://open.spotify.com/track/5hgYylN9AY8YVYEboR8KoQ Status 404 Not Found
+32/2039
+https://www.researchgate.net/publication/47735229_Handbook_of_Floating-Point_Arithmetic Status 403 Forbidden
+33/2039
+https://www.researchgate.net/publication/235832233_Fast_Percentage_Closer_Soft_Shadows_using_Temporal_Coherence Status 403 Forbidden
+34/2039
+https://www.researchgate.net/publication/320436353_Energy_efficiency_across_programming_languages_how_do_energy_time_and_memory_relate Status 403 Forbidden
+35/2039
+http://cslibrary.stanford.edu/ has 0 feeds
+36/2039
+https://people.freedesktop.org/~marcheu/linuxgraphicsdrivers.pdf Not a html
+37/2039
+http://gameprogrammingpatterns.com/ has 0 feeds
+38/2039
+https://yakvi.github.io/handmade-hero-notes/ has 0 feeds
+39/2039
+http://advances.realtimerendering.com/s2009/Light_Propagation_Volumes.pdf Not a html
+40/2039
+https://pomb.us/build-your-own-react/ has 1 feeds
+41/2039
+http://hacksoflife.blogspot.com/2015/06/beating-experts.html has 1 feeds
+42/2039
+https://www.handprint.com/HP/WCL/tech10.html Status 403 Forbidden
+43/2039
+http://raytracey.blogspot.com/2016/09/gpu-path-tracing-tutorial-4-optimised.html?m=1 has 1 feeds
+44/2039
+https://ngildea.blogspot.com/2014/09/dual-contouring-chunked-terrain.html has 1 feeds
+45/2039
+https://ngildea.blogspot.com/2014/11/implementing-dual-contouring.html has 1 feeds
+46/2039
+https://gamemath.com/book/intro.html has 0 feeds
+47/2039
+https://www.cg.tuwien.ac.at/research/publications/2021/SCHUETZ-2021-PCC/SCHUETZ-2021-PCC-paper.pdf Not a html
+48/2039
+https://blog.josephmorag.com/posts/mcc0/ has 0 feeds
+49/2039
+https://wooo.sh/articles/adler32.html Status 404 Not Found
+50/2039
+http://asg.unige.ch/site/papers/Dami91a.pdf Get "http://asg.unige.ch/site/papers/Dami91a.pdf": dial tcp: lookup asg.unige.ch: no such host
+51/2039
+http://undoc.airesoft.co.uk/ has 0 feeds
+52/2039
+https://www.blackhat.com/docs/us-16/materials/us-16-Yason-Windows-10-Segment-Heap-Internals.pdf Not a html
+53/2039
+https://dreamtolearn.com/ryan/1001_datasets Get "https://dreamtolearn.com/ryan/1001_datasets": dial tcp: lookup dreamtolearn.com: no such host
+54/2039
+http://advances.realtimerendering.com/s2015/AlexEvans_SIGGRAPH-2015-sml.pdf Not a html
+55/2039
+http://8bitworkshop.com/v2.1.0/?platform=vcs&file=examples%2Fhello Status 404 Not Found
+56/2039
+http://www.corsix.org/content/galois-field-instructions-2021-cpus Status 404 Not Found
+57/2039
+http://cslibrary.stanford.edu/101/EssentialC.pdf Not a html
+58/2039
+https://static.googleusercontent.com/media/landing.google.com/en//sre/static/pdf/SRS.pdf Status 404 Not Found
+59/2039
+https://sha256algorithm.com/ has 0 feeds
+60/2039
+http://www.mitsuba-renderer.org/ has 0 feeds
+61/2039
+http://www.eprg.org/G53DOC/pdfs/knuth-plass-breaking.pdf Not a html
+62/2039
+http://programming.sirrida.de/bit_perm.html Get "http://programming.sirrida.de/bit_perm.html": EOF
+63/2039
+http://www.sweetwater.com/store/detail/AudioBoxiOne?adpos=1o2&creative=55225944121&device=c&matchtype=&network=g&product_id=AudioBoxiOne&gclid=CjwKEAjwwOvABRC08aedoZ_lnTMSJACs_cbuoUCsbuBbwMG0g6scWfabVZ0oDHtZ_ebGehTb2RypwxoC0Tfw_wcB Status 403 Forbidden
+64/2039
+http://bears.ece.ucsb.edu/class/ece253/compiler_opt/c1.pdf Not a html
+65/2039
+http://programming.sirrida.de/calcperm.php Get "http://programming.sirrida.de/calcperm.php": EOF
+66/2039
+https://raw.githubusercontent.com/in3rsha/sha256-animation/master/images/sha256.gif Not a html
+67/2039
+http://harmful.cat-v.org/software/OO_programming/_pdf/Pitfalls_of_Object_Oriented_Programming_GCAP_09.pdf Not a html
+68/2039
+http://www.ericbrasseur.org/gamma.html has 0 feeds
+69/2039
+http://peterwonka.net/Publications/pdfs/2006.SG.Wonka.GuidedVisibilitySampling.final.pdf Not a html
+70/2039
+http://www.ppsloan.org/publications/lmap-sabrief18.pdf Not a html
+71/2039
+http://www.ppsloan.org/publications/shdering.pdf Not a html
+72/2039
+http://web.physics.ucsb.edu/~mark/ms-qft-DRAFT.pdf Not a html
+73/2039
+http://www.cemyuksel.com/research/papers/DACS_HPG2018.pdf Not a html
+74/2039
+http://www.cs.toronto.edu/~fbacchus/Papers/liu.pdf Not a html
+75/2039
+http://nominolo.blogspot.com/2012/07/implementing-fast-interpreters.html has 1 feeds
+76/2039
+http://showard.sdsmt.edu/Math373/_AppliedNumMethodsText_SMH/07_Root_Finding/Lily-RootFindingMethods.pdf Not a html
+77/2039
+http://cslibrary.stanford.edu/102/PointersAndMemory.pdf Not a html
+78/2039
+https://morgan3d.github.io/advanced-ray-tracing-course/reading-research.pdf Not a html
+79/2039
+http://www.cs.umd.edu/~hjs/slides/siggraph2016-tutorial.anim.pdf Not a html
+80/2039
+http://broiler.astrometry.net/~kilian/The_Art_of_Computer_Programming%20-%20Vol%201.pdf Not a html
+81/2039
+http://binf.gmu.edu/jafri/HPParallelProgrammingGuide.pdf Not a html
+82/2039
+http://graphics.ucsd.edu/~henrik/papers/coherent_path_tracing.pdf Not a html
+83/2039
+http://terathon.com/font_rendering_sota_lengyel.pdf Not a html
+84/2039
+http://academy.cba.mit.edu/classes/scanning_printing/MarchingCubes.pdf Not a html
+85/2039
+http://www-personal.umich.edu/~paullric/AM341.pdf Not a html
+86/2039
+http://ndevilla.free.fr/median/median.pdf Not a html
+87/2039
+http://www.humus.name/Articles/PracticalClusteredShading.pdf Not a html
+88/2039
+http://www.humus.name/Articles/Persson_LowLevelThinking.pdf Not a html
+89/2039
+http://www.melconway.com/Home/pdf/committees.pdf Not a html
+90/2039
+http://www.visionday.dk/VD07/graphical/vendler.pdf Not a html
+91/2039
+https://perspectiveresources.blogspot.com/p/how-to.html has 1 feeds
+92/2039
+http://bitsquid.blogspot.com/2014/08/building-data-oriented-entity-system.html has 1 feeds
+93/2039
+https://ourmachinery.com/post/data-structures-part-1-bulk-data/ Get "https://ourmachinery.com/post/data-structures-part-1-bulk-data/": dial tcp: lookup ourmachinery.com: no such host
+94/2039
+https://ourmachinery.com/ Get "https://ourmachinery.com/": dial tcp: lookup ourmachinery.com: no such host
+95/2039
+https://ourmachinery.com/files/guidebook.md.html Get "https://ourmachinery.com/files/guidebook.md.html": dial tcp: lookup ourmachinery.com: no such host
+96/2039
+https://ourmachinery.com/post/data-structures-part-2-indices/ Get "https://ourmachinery.com/post/data-structures-part-2-indices/": dial tcp: lookup ourmachinery.com: no such host
+97/2039
+https://ourmachinery.com/post/dig-shallow-graves/ Get "https://ourmachinery.com/post/dig-shallow-graves/": dial tcp: lookup ourmachinery.com: no such host
+98/2039
+https://ourmachinery.com/post/step-by-step-programming-incrementally/ Get "https://ourmachinery.com/post/step-by-step-programming-incrementally/": dial tcp: lookup ourmachinery.com: no such host
+99/2039
+https://ourmachinery.com/post/a-taxonomy-of-bugs/ Get "https://ourmachinery.com/post/a-taxonomy-of-bugs/": dial tcp: lookup ourmachinery.com: no such host
+100/2039
+https://ourmachinery.com/post/porting-the-machinery-to-linux/ Get "https://ourmachinery.com/post/porting-the-machinery-to-linux/": dial tcp: lookup ourmachinery.com: no such host
+101/2039
+https://ourmachinery.com/post/writing-a-low-level-sound-system/ Get "https://ourmachinery.com/post/writing-a-low-level-sound-system/": dial tcp: lookup ourmachinery.com: no such host
+102/2039
+https://ourmachinery.com/post/a-debugging-story/ Get "https://ourmachinery.com/post/a-debugging-story/": dial tcp: lookup ourmachinery.com: no such host
+103/2039
+http://www.reedbeta.com/blog/quick-and-easy-gpu-random-numbers-in-d3d11/ has 1 feeds
+104/2039
+https://locomotionvault.github.io/ has 0 feeds
+105/2039
+https://m.youtube.com/playlist?list=PLBS08eIaKMjniUWf2mKM3kj5Z60W1H5ST has 0 feeds
+106/2039
+https://32ipi028l5q82yhj72224m8j-wpengine.netdna-ssl.com/wp-content/uploads/2016/03/GdcVdrLottes.pdf Get "https://32ipi028l5q82yhj72224m8j-wpengine.netdna-ssl.com/wp-content/uploads/2016/03/GdcVdrLottes.pdf": dial tcp: lookup 32ipi028l5q82yhj72224m8j-wpengine.netdna-ssl.com: no such host
+107/2039
+https://backworlds.com/under-pressure/ Get "https://backworlds.com/under-pressure/": dial tcp: lookup backworlds.com: no such host
+108/2039
+http://backworlds.com/wp-content/uploads/2013/07/pressure_app.zip` Get "http://backworlds.com/wp-content/uploads/2013/07/pressure_app.zip%60": dial tcp: lookup backworlds.com: no such host
+109/2039
+http://www.pong-story.com/LAWN_TENNIS.pdf Not a html
+110/2039
+http://www.bcamath.org/documentos_public/archivos/publicaciones/kth-ctl-4044.pdf Not a html
+111/2039
+http://graphics.cs.aueb.gr/graphics/docs/papers/RadianceHintsPreprint.pdf Not a html
+112/2039
+https://arbook.icg.tugraz.at/schmalstieg/Schmalstieg_351.pdf Not a html
+113/2039
+https://www.copetti.org/writings/consoles/playstation-3/ has 1 feeds
+114/2039
+https://sites.google.com/site/richgel99/home Status 404 Not Found
+115/2039
+https://www.copetti.org/writings/consoles/ has 1 feeds
+116/2039
+https://www.copetti.org/writings/consoles/xbox-360/ has 1 feeds
+117/2039
+https://sandervanrossen.blogspot.com/2017/09/half-edge-data-structure-considered.html has 1 feeds
+118/2039
+http://nothings.org/gamedev/compositing_tree/ has 0 feeds
+119/2039
+https://youtube.com/playlist?list=PLHQ0utQyFw5Jth5qOhb7X-p8JgmLOikcJ has 0 feeds
+120/2039
+https://youtube.com/playlist?list=PLZCIHSjpQ12woLj0sjsnqDH8yVuXwTy3p has 0 feeds
+121/2039
+https://youtube.com/playlist?list=PLb0Tx2oJWuYIpNE23qYHGQD42TIR3ThNz has 0 feeds
+122/2039
+https://copypastepixel.blogspot.com/search/label/light%20volumes has 1 feeds
+123/2039
+https://youtube.com/playlist?list=PLsgwB9-SGvkA43MDmseV701T3gTdA-2Il has 0 feeds
+124/2039
+https://m.youtube.com/watch?v=XUsD3xrNJH0 has 0 feeds
+125/2039
+https://m.youtube.com/watch?v=h0gbw-Ur_do has 0 feeds
+126/2039
+https://interrupt.memfault.com/blog/c-struct-padding-initialization has 1 feeds
+127/2039
+http://www.jp.square-enix.com/tech/library/pdf/Adaptive%20Ray-bundle%20Tracing%20with%20Memory%20Usage%20Prediction.pdf Not a html
+128/2039
+https://datagenetics.com/blog/august32013/index.html Get "https://datagenetics.com/blog/august32013/index.html": x509: certificate signed by unknown authority
+129/2039
+http://mattn.ufoai.org/files/MAPFiles.pdf Get "http://mattn.ufoai.org/files/MAPFiles.pdf": dial tcp: lookup mattn.ufoai.org: no such host
+130/2039
+http://www.codercorner.com/SAP.pdf Not a html
+131/2039
+http://pages.tacc.utexas.edu/~eijkhout/istc/istc.html Get "http://pages.tacc.utexas.edu/~eijkhout/istc/istc.html": dial tcp: lookup pages.tacc.utexas.edu: no such host
+132/2039
+http://pages.tacc.utexas.edu/~eijkhout/Articles/EijkhoutIntroToHPC.pdf Get "http://pages.tacc.utexas.edu/~eijkhout/Articles/EijkhoutIntroToHPC.pdf": dial tcp: lookup pages.tacc.utexas.edu: no such host
+133/2039
+https://www.copetti.org/projects/consoles/master-system/ has 0 feeds
+134/2039
+http://blog.wolfire.com/2010/04/Catching-baked-shadows has 1 feeds
+135/2039
+http://scdownloader.net/download Get "http://scdownloader.net/download": EOF
+136/2039
+http://blog.andreaskahler.com/2009/06/creating-icosphere-mesh-in-code.html?m=1 has 1 feeds
+137/2039
+https://youtube.com/user/MechanicalComputing has 0 feeds
+138/2039
+http://www.seanriddle.com/furbysource.pdf Not a html
+139/2039
+https://www.nowherenearithaca.com/2013/05/robert-floyds-tiny-and-beautiful.html has 1 feeds
+140/2039
+https://sites.google.com/site/letsmakeavoxelengine/ has 0 feeds
+141/2039
+https://podcasts.google.com/?feed=aHR0cHM6Ly9mZWVkcy5wYWNpZmljLWNvbnRlbnQuY29tL2NvbW1hbmRsaW5laGVyb2Vz has 0 feeds
+142/2039
+http://dmitrysoshnikov.com/ Status 410 Gone
+143/2039
+http://const.me/articles/simd/simd.pdf Not a html
+144/2039
+http://www.craftinginterpreters.com/contents.html has 0 feeds
+145/2039
+https://www.nvidia.com/docs/IO/88972/nvr-2010-001.pdf Not a html
+146/2039
+http://holgerweb.net/PhD/Research/papers/DoGToonNPAR11.pdf Not a html
+147/2039
+http://the-witness.net/news/2011/07/irradiance-caching-part-1/ Status 500 Internal Server Error
+148/2039
+http://the-witness.net/news/2010/04/graphics-tech-multi-lightmaps/ Status 500 Internal Server Error
+149/2039
+http://the-witness.net/news/2022/02/a-shader-trick/ Status 500 Internal Server Error
+150/2039
+http://the-witness.net/news/2010/03/graphics-tech-texture-parameterization/ Status 500 Internal Server Error
+151/2039
+http://the-witness.net/news/2010/09/hemicube-rendering-and-integration/ Status 500 Internal Server Error
+152/2039
+https://www.rhyscitlema.com/algorithms/expression-parsing-algorithm/ Get "https://www.rhyscitlema.com/algorithms/expression-parsing-algorithm/": read tcp 192.168.1.164:54005->45.43.231.155:443: wsarecv: An existing connection was forcibly closed by the remote host.
+153/2039
+http://nothings.org/computer/judy/ has 0 feeds
+154/2039
+https://kristoffer-dyrkorn.github.io/triangle-rasterizer/ has 0 feeds
+155/2039
+http://craftinginterpreters.com/ has 0 feeds
+156/2039
+http://www.jstatsoft.org/v05/i08/paper Not a html
+157/2039
+http://silviojemma.com/public/papers/lighting/spherical-harmonic-lighting.pdf Status 410 Gone
+158/2039
+https://datagenetics.com/blog/july12019/index.html Get "https://datagenetics.com/blog/july12019/index.html": x509: certificate signed by unknown authority
+159/2039
+http://poynton.ca/GammaFAQ.html has 0 feeds
+160/2039
+http://www.statisticslectures.com/ has 0 feeds
+161/2039
+https://img.ly/blog/ultimate-guide-to-ffmpeg/ has 1 feeds
+162/2039
+https://www.davetech.co.uk/gamedevscreenshake Get "https://www.davetech.co.uk/gamedevscreenshake": x509: certificate has expired or is not yet valid: 
+163/2039
+http://simson.net/ref/ugh.pdf Not a html
+164/2039
+http://code4k.blogspot.com/2010/12/crinkler-secrets-4k-intro-executable.html has 1 feeds
+165/2039
+http://www.visual6502.org/JSSim/ has 0 feeds
+166/2039
+https://www.getrevue.co/profile/xordev/issues/gm-shaders-mini-fractal-texturing-1408552 Status 503 Service Unavailable
+167/2039
+http://undocumented.ntinternals.net/ has 0 feeds
+168/2039
+https://docs.google.com/spreadsheets/d/16DIsQE3yfUfxqC3t9Yk6D7VmLitzAa1ulFLsT2gJd5s/edit#gid=0 Status 404 Not Found
+169/2039
+https://users.cg.tuwien.ac.at/zsolnai/gfx/rendering-course/ has 2 feeds
+170/2039
+https://cdecl.org/ has 0 feeds
+171/2039
+https://piotte13.github.io/SIMD-Visualiser/ has 0 feeds
+172/2039
+http://stereopsis.com/async/ has 0 feeds
+173/2039
+http://www.peroxide.dk/papers/collision/collision.pdf Not a html
+174/2039
+https://drive.google.com/file/d/0Bxv0SsvibDMTcHNXalEtYkVtU00/view Status 404 Not Found
+175/2039
+https://copetti.org/projects/consoles/ has 0 feeds
+176/2039
+http://research.michael-schwarz.com/publ/files/procmodcourse-siga15.pdf Not a html
+177/2039
+https://ethernethistory.typepad.com/papers/EthernetSpec.pdf Not a html
+178/2039
+http://www.catb.org/jargon/html/ has 0 feeds
+179/2039
+https://simblob.blogspot.com/2023/02/making-of-draggable-objects.html has 1 feeds
+180/2039
+https://monkeywritescode.blogspot.com/p/c-exceptions-under-hood.html has 1 feeds
+181/2039
+https://docs.google.com/spreadsheets/d/1QhFyPfYSjHv7PjibGrslF3mNW_CIDXWv9o-iQgLbu1o/htmlview Status 404 Not Found
+182/2039
+https://ihorszlachtycz.blogspot.com/2021/07/optimizing-grid-simulations-with-simd.html?m=1&fbclid=IwAR36hOx3rN2--hxwAcMeoAaS7sZwPqMDwmSbbpOiP7g0fqLi2GdLnmPBtjU has 1 feeds
+183/2039
+https://www.maa.org/external_archive/devlin/LockhartsLament.pdf Not a html
+184/2039
+http://poynton.ca/ColorFAQ.html has 0 feeds
+185/2039
+https://www.albertford.com/shadowcasting/ has 0 feeds
+186/2039
+https://advances.realtimerendering.com/s2020/RenderingDoomEternal.pdf Not a html
+187/2039
+https://www.vergiliusproject.com/ has 0 feeds
+188/2039
+https://graphics.stanford.edu/papers/gpu_kdtree/kdtree.pdf Not a html
+189/2039
+http://visual6502.org/sim/varm/armgl.html Status 403 Forbidden
+190/2039
+http://www.knosof.co.uk/ESEUR/ has 0 feeds
+191/2039
+http://www.mega-nerd.com/SRC/ has 0 feeds
+192/2039
+https://www.bhphotovideo.com/c/product/948650-REG/senal_xu_1648_xlr_usb_sig_adpt_gain_hp_48v_monmix_cb.html Status 403 Forbidden
+193/2039
+https://maciejczyzewski.github.io/fast_gpu_voronoi/slides_small.pdf Not a html
+194/2039
+http://www.cs.cmu.edu/~baraff/pbm/ has 0 feeds
+195/2039
+https://ai.googleblog.com/2006/06/extra-extra-read-all-about-it-nearly.html has 0 feeds
+196/2039
+http://runtimeterror.com/pages/badsector/3dica/ has 0 feeds
+197/2039
+http://www.cs.umd.edu/~zwicker/projectpages/TemporalGradientPathTracing-TOG16.html Status 403 Forbidden
+198/2039
+http://www.fefe.de/intof.html has 0 feeds
+199/2039
+https://www.geometrictools.com/Documentation/Quaternions.pdf Not a html
+200/2039
+http://www.rcollins.org/secrets/opcodes/ has 0 feeds
+201/2039
+http://rmitz.org/stjohn.html has 0 feeds
+202/2039
+https://systemd-by-example.com/ has 0 feeds
+203/2039
+https://in4k.github.io/ has 0 feeds
+204/2039
+https://meistdan.github.io/publications/bvh_star/paper.pdf Not a html
+205/2039
+https://www.warp.dev/blog/adventures-text-rendering-kerning-glyph-atlases Get "https://www.warp.dev/blog/adventures-text-rendering-kerning-glyph-atlases": unexpected EOF
+206/2039
+https://procworld.blogspot.com/ has 1 feeds
+207/2039
+https://val-sagrario.github.io/Dynamics%20of%20First%20Order%20Systems%20for%20game%20devs%20-%20Jan%202020.pdf Not a html
+208/2039
+https://research.activision.com/t5/Publications/Precomputed-lighting-in-Call-Of-Duty-Infinite-Warfare/ba-p/10346417 Status 404 Not Found
+209/2039
+https://www.cse.cuhk.edu.hk/~ttwong/papers/udpoint/udpoint.pdf Not a html
+210/2039
+https://old.reddit.com/r/roguelikedev/wiki/faq_friday Status 429 Too Many Requests
+211/2039
+https://cr.yp.to/bib/1995/wirth.pdf Not a html
+212/2039
+http://www.computinghistory.org.uk/ Status 403 Forbidden
+213/2039
+https://procworld.blogspot.com/2010/11/from-voxels-to-polygons.html has 1 feeds
+214/2039
+https://icg.gwu.edu/sites/g/files/zaxdzs1481/f/dkim.pdf Not a html
+215/2039
+http://point-blank-games.com/theses/Sara_Budde_Thesis.pdf Not a html
+216/2039
+https://s-matyukevich.github.io/raspberry-pi-os/ has 0 feeds
+217/2039
+https://dougallj.github.io/applecpu/firestorm.html has 0 feeds
+218/2039
+https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7168457&tag=1 Status 418 Unknown
+219/2039
+http://docplayer.net/59790815-Numerical-algorithms-and-digital-representation-knut-morken.html read tcp 192.168.1.164:52375->138.201.34.122:80: wsarecv: An existing connection was forcibly closed by the remote host.
+220/2039
+https://www.open-std.org/jtc1/sc22/WG14/www/docs/n3065.pdf Not a html
+221/2039
+https://overthewire.org/wargames/ has 0 feeds
+222/2039
+https://www.davidsilver.uk/wp-content/uploads/2020/03/coop-path-AIWisdom.pdf Not a html
+223/2039
+https://slembcke.github.io/2020/10/12/CustomAllocators.html Status 404 Not Found
+224/2039
+https://mu.krj.st/ has 0 feeds
+225/2039
+http://www.sci.utah.edu/~bigler/images/msthesis/The%20irradiance%20volume.pdf Not a html
+226/2039
+https://www.w3.org/TR/2003/REC-SVG11-20030114/REC-SVG11-20030114.pdf Not a html
+227/2039
+http://www.realtimerendering.com/raytracing/Ray%20Tracing%20in%20a%20Weekend.pdf Not a html
+228/2039
+https://users.aalto.fi/~silvena4/Publications/SIGGRAPH_2015_Remedy_Notes.pdf Status 404 Not Found
+229/2039
+http://machinezero.github.io/ Status 404 Not Found
+230/2039
+https://www.cs.cmu.edu/~garland/Papers/simp.pdf Not a html
+231/2039
+https://www.cs.cmu.edu/~aldrich/papers/ecoop05pmd.pdf Not a html
+232/2039
+https://www.corsix.org/content/fast-crc32c-4k Status 404 Not Found
+233/2039
+http://www.cs.uu.nl/docs/vakken/magr/2015-2016/slides/lecture%2003%20-%20the%20perfect%20BVH.pdf Not a html
+234/2039
+http://www.cs.mun.ca/~dchurchill/pdf/ecgg15_chapter-rts_ai.pdf Not a html
+235/2039
+http://wstein.org/ent/ent.pdf Not a html
+236/2039
+https://sagecell.sagemath.org/ has 0 feeds
+237/2039
+https://bellard.org/libnc/ has 0 feeds
+238/2039
+http://miciwan.com/SIGGRAPH2013/Lighting%20Technology%20of%20The%20Last%20Of%20Us.pdf Not a html
+239/2039
+http://cbloomrants.blogspot.com/2020/07/robust-win32-io.html has 1 feeds
+240/2039
+https://www.ea.com/seed/news/graphical-glitch-detection-in-video-games Status 404 Not Found
+241/2039
+http://procworld.blogspot.com/ has 1 feeds
+242/2039
+http://sigslot.sourceforge.net/sigslot.pdf Not a html
+243/2039
+https://www.chrishecker.com/images/e/e7/Gdmphys3.pdf Not a html
+244/2039
+https://matthias-research.github.io/pages/publications/airMeshesPreprint.pdf Not a html
+245/2039
+https://marctenbosch.com/ndphysics/ has 0 feeds
+246/2039
+https://osblog.stephenmarz.com/index.html has 0 feeds
+247/2039
+https://philpapers.org/archive/ANATDO-4.pdf Not a html
+248/2039
+http://intro-to-dxr.cwyman.org/ has 0 feeds
+249/2039
+http://otac0n.com/SortSim/sort.html has 0 feeds
+250/2039
+https://developersdevelopersdevelopers.dev/elopers/ has 0 feeds
+251/2039
+https://kholdstare.github.io/technical/2020/05/26/faster-integer-parsing.html has 1 feeds
+252/2039
+https://colin-scott.github.io/personal_website/research/interactive_latency.html Status 404 Not Found
+253/2039
+https://www.siliconstudio.co.jp/middleware/enlighten/jp/blog/2018/20180406/pdf/gdc2018-enlighten-global-illumination-that-scales.pdf Not a html
+254/2039
+https://users.aalto.fi/~laines9/publications/kontkanen2006jgt_paper.pdf Not a html
+255/2039
+https://constraints.cs.washington.edu/solvers/cassowary-tochi.pdf Not a html
+256/2039
+https://www.cs.umd.edu/~zwicker/publications/FeaturePatchesForGPTReconstruction-EG16.pdf Not a html
+257/2039
+http://icube-icps.unistra.fr/img_auth.php/d/db/ModernC.pdf Status 403 Forbidden
+258/2039
+https://www.multicians.org/unix.html Status 403 Forbidden
+259/2039
+https://www.multicians.org/fjcc4.html Status 403 Forbidden
+260/2039
+https://ircdocs.horse/ has 0 feeds
+261/2039
+https://gltf-viewer.donmccurdy.com/ has 0 feeds
+262/2039
+https://pagedout.institute/download/PagedOut_001_beta1.pdf Not a html
+263/2039
+https://blog.selfshadow.com/publications/s2015-shading-course/rad/s2015_pbs_rad_slides.pdf Not a html
+264/2039
+https://pagedout.institute/download/PagedOut_002_beta2.pdf Not a html
+265/2039
+https://xiph.org/video/vid1.shtml has 1 feeds
+266/2039
+https://i.imgur.com/PeryFXB.jpg Not a html
+267/2039
+https://www.elopezr.com/temporal-aa-and-the-quest-for-the-holy-trail/ Status 404 Not Found
+268/2039
+http://www.elopezr.com/a-macro-view-of-nanite/ Status 404 Not Found
+269/2039
+http://www.elopezr.com/the-rendering-of-rise-of-the-tomb-raider/ Status 404 Not Found
+270/2039
+http://www.surina.net/soundtouch/ has 0 feeds
+271/2039
+https://sifflez.org/lectures/ASE/C3.pdf Not a html
+272/2039
+http://miciwan.com/EGSR2017/AmbientDice.pdf Not a html
+273/2039
+http://www.gingerbill.org/article/2019/02/01/memory-allocation-strategies-001/ Status 404 Not Found
+274/2039
+https://www.lua.org/doc/sblp2005.pdf Not a html
+275/2039
+https://www.talisman.org/~erlkonig/misc/shoemake92-arcball.pdf Not a html
+276/2039
+http://graphics.pixar.com/pbm2001/ has 0 feeds
+277/2039
+https://www.euclideanspace.com/ has 0 feeds
+278/2039
+http://www.logix.cz/michal/doc/i386/ Get "https://www.logix.cz/michal/doc/i386/": x509: certificate is valid for logix.cz, secure.logix.cz, not www.logix.cz
+279/2039
+https://ora.ox.ac.uk/objects/uuid:69c743d9-73de-4aff-8e6f-b4dd7c010907/download_file?file_format=pdf&safe_filename=GJK.PDF&type_of_work=Journal+article Not a html
+280/2039
+http://rastertek.com/tutdx11.html has 0 feeds
+281/2039
+https://www.dataorienteddesign.com/dodbook/ has 0 feeds
+282/2039
+https://arxiv.org/pdf/1902.08318.pdf Get "https://arxiv.org/pdf/1902.08318.pdf": EOF
+283/2039
+http://number-none.com/blow/john_carmack_on_inlined_code.html has 0 feeds
+284/2039
+https://www.nytimes.com./2020/06/09/us/george-floyd-who-is.html Get "https://www.nytimes.com./2020/06/09/us/george-floyd-who-is.html": x509: certificate is valid for nytimes.com, www.homedelivery.nytimes.com, *.api.dev.nytimes.com, *.api.nytimes.com, *.api.stg.nytimes.com, *.blogs.nytimes.com, *.blogs.stg.nytimes.com, *.dev.nyt.com, *.dev.nyt.net, *.dev.nytimes.com, *.newsdev.nyt.net, *.newsdev.nytimes.com, *.nyt.com, *.nyt.net, *.nytco.com, *.nytimes.com, *.payflow.sbx.nytimes.com, *.sbx.nytimes.com, *.stg.newsdev.nyt.net, *.stg.newsdev.nytimes.com, *.stg.nyt.com, *.stg.nyt.net, *.stg.nytimes.com, *.timestalks.com, nyt.com, nyt.net, nytco.com, timestalks.com, *.myaccount-preview.stg.nytimes.com, not www.nytimes.com.
+285/2039
+http://www.humus.name/index.php?page=3D&ID=69 has 1 feeds
+286/2039
+https://xiph.org/video/vid2.shtml has 1 feeds
+287/2039
+https://aomediacodec.github.io/av1-spec/av1-spec.pdf Not a html
+288/2039
+http://williambundy.github.io/rpn-pplane/embed-swf.html has 0 feeds
+289/2039
+http://advances.realtimerendering.com/ has 0 feeds
+290/2039
+https://www.ioccc.org/1992/buzzard.2.design Not a html
+291/2039
+https://practicaltypography.com/ has 0 feeds
+292/2039
+https://mechanicsfoundry.github.io/Physically-Based-Rendering-and-BRDFs/ Status 404 Not Found
+293/2039
+https://research.activision.com/publications/2020-10/raytraced-shadows-in-call-of-duty--modern-warfare Status 404 Not Found
+294/2039
+http://number-none.com/product/index.html has 0 feeds
+295/2039
+https://arxiv.org/pdf/1108.5083.pdf Not a html
+296/2039
+https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/ampere/pdf/NVIDIA-ampere-GA102-GPU-Architecture-Whitepaper-V1.pdf Not a html
+297/2039
+https://www.math.brown.edu/~jhs/frintch1ch6.pdf Not a html
+298/2039
+http://www.moserware.com/2009/09/stick-figure-guide-to-advanced.html has 1 feeds
+299/2039
+https://bootlin.com/doc/books/ldd3.pdf Not a html
+300/2039
+http://rmitz.org/carmack.on.opengl.html has 0 feeds
+301/2039
+https://gdbooks.gitbooks.io/3dcollisions has 0 feeds
+302/2039
+https://isthatarabic.com/ has 0 feeds
+303/2039
+http://www.dataorienteddesign.com/dodbook/ has 0 feeds
+304/2039
+https://wwwimages2.adobe.com/content/dam/acom/en/devnet/pdf/swf-file-format-spec.pdf Status 404 Not Found
+305/2039
+https://computers-are-fast.github.io/ has 0 feeds
+306/2039
+https://www.disneyresearch.com/publication/skinning-with-optimized-cors/ Status 403 Forbidden
+307/2039
+https://akkadia.org/drepper/cpumemory.pdf Not a html
+308/2039
+http://www.mamoniem.com/wp-content/uploads/2022/05/postFeaturedImage_banner.png Not a html
+309/2039
+http://s3rg.io/post/2016/10/20/how-the-milton-renderer-works/ Status 404 Not Found
+310/2039
+https://graphicscodex.courses.nvidia.com/app.html has 0 feeds
+311/2039
+https://pron.github.io/tlaplus has 1 feeds
+312/2039
+https://sleef.org/ Not a html
+313/2039
+https://ossia.io/posts/minimum-viable/ Status 404 Not Found
+314/2039
+https://imtui.ggerganov.com/ has 0 feeds
+315/2039
+https://physicallybased.info/ Get "https://physicallybased.info/": unexpected EOF
+316/2039
+https://predr.ag/blog/falsehoods-programmers-believe-about-undefined-behavior/ Get "https://predr.ag/blog/falsehoods-programmers-believe-about-undefined-behavior/": unexpected EOF
+317/2039
+https://unixism.net/loti/ has 0 feeds
+318/2039
+http://ismail.badawi.io/blog/2015/09/08/a-bug-caused-by-using-0-instead-of-null/ Status 404 Not Found
+319/2039
+https://arxiv.org/pdf/2010.12695.pdf Not a html
+320/2039
+https://steamcdn-a.akamaihd.net/apps/valve/2006/SIGGRAPH06_Course_ShadingInValvesSourceEngine.pdf Not a html
+321/2039
+https://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf Status 403 Forbidden
+322/2039
+https://traineq.org/imgui_manual/src/imgui_manual.html has 0 feeds
+323/2039
+https://vmcall.blog/battleye-stack-walking/ Status 403 Forbidden
+324/2039
+http://ianfinlayson.net/class/cpsc305/ has 0 feeds
+325/2039
+https://compilers.iecc.com/crenshaw/ has 0 feeds
+326/2039
+https://wunkolo.github.io/post/2022/10/vfixupimm-signum/ Status 404 Not Found
+327/2039
+https://cg.ivd.kit.edu/publications/2018/rwmc/reweighting-fireflies-preprint.pdf Not a html
+328/2039
+https://www.render-blog.com/2020/10/03/gpu-motunui/ Status 404 Not Found
+329/2039
+https://developer.chrome.com/blog/renderingng-architecture/ has 3 feeds
+330/2039
+https://www.cl.cam.ac.uk/~mgk25/ucs/utf-8-history.txt Not a html
+331/2039
+https://vanderworp.org/wp-content/uploads/2019/06/jargon.pdf Not a html
+332/2039
+https://arxiv.org/pdf/2102.11198.pdf Not a html
+333/2039
+https://arxiv.org/pdf/2107.14210.pdf Not a html
+334/2039
+https://people.cs.kuleuven.be/~philip.dutre/GI/TotalCompendium.pdf Not a html
+335/2039
+https://graphics.stanford.edu/courses/cs148-10-summer/docs/2006--degreve--reflection_refraction.pdf Not a html
+336/2039
+https://perso.ensta-paris.fr/~manzaner/Download/IAD/Grevera_04.pdf Not a html
+337/2039
+https://courses.csail.mit.edu/6.857/2019/project/20-Chau-Ko-Tang.pdf Not a html
+338/2039
+http://cobweb.cs.uga.edu/~anton/projects/P3/ Status 403 Forbidden
+339/2039
+https://www.briansteffens.com/2017/06/19/split-buffers.html Get "https://www.briansteffens.com/2017/06/19/split-buffers.html": dial tcp: lookup www.briansteffens.com: no such host
+340/2039
+http://www.maizure.org/projects/index.html has 0 feeds
+341/2039
+https://www.lucaversari.it/FJXL_and_FPNGE.pdf Not a html
+342/2039
+https://googleprojectzero.blogspot.com/2019/02/the-curious-case-of-convexity-confusion.html has 1 feeds
+343/2039
+https://googleprojectzero.blogspot.com/2016/02/the-definitive-guide-on-win32-to-nt.html has 1 feeds
+344/2039
+https://googleprojectzero.blogspot.co.at/2018/01/reading-privileged-memory-with-side.html has 1 feeds
+345/2039
+https://resources.mpi-inf.mpg.de/ProjectiveBlueNoise/ProjectiveBlueNoise.pdf Not a html
+346/2039
+http://www.red3d.com/cwr/steer/ has 0 feeds
+347/2039
+http://www.bayfronttechnologies.com/mc_workshop.html has 0 feeds
+348/2039
+https://www.indiegogo.com/projects/foundations-of-game-engine-development-volume-2#/ Status 403 Forbidden
+349/2039
+https://www.andersriggelsen.dk/glblendfunc.php Status 406 Not Acceptable
+350/2039
+https://mediatech.aalto.fi/publications/graphics/GPT/ has 0 feeds
+351/2039
+http://nandgame.com/ has 0 feeds
+352/2039
+https://media.contentapi.ea.com/content/dam/eacom/frostbite/files/gdc2018-precomputedgiobalilluminationinfrostbite.pdf Not a html
+353/2039
+https://mankrip.tumblr.com/post/631533857388314624/graphical-breakthroughs-in-the-retroquad-engine Get "https://mankrip.tumblr.com/post/631533857388314624/graphical-breakthroughs-in-the-retroquad-engine": EOF
+354/2039
+http://members.chello.at/easyfilter/bresenham.html has 0 feeds
+355/2039
+https://www.freedos.org/c/ has 0 feeds
+356/2039
+https://blog.golang.org/ismmkeynote has 0 feeds
+357/2039
+http://immersivemath.com/ila/index.html has 0 feeds
+358/2039
+https://fuckingfunctionpointers.com/ has 0 feeds
+359/2039
+https://graspablemath.com/ has 0 feeds
+360/2039
+https://www.andre-gaschler.com/rotationconverter/ has 0 feeds
+361/2039
+http://www.humus.name/index.php?page=3D&ID=91 has 1 feeds
+362/2039
+http://twvideo01.ubm-us.net/o1/vault/gdc2012/slides/Programming%20Track/Cupisz_Robert_Light_Probe_Interpolation.pdf Not a html
+363/2039
+https://gasiulis.name/vector-graphics-on-gpu/ has 0 feeds
+364/2039
+http://brookmiles.ca/2020/05/25/curving-corner-texture-uvs/ Status 403 Forbidden
+365/2039
+http://graphics.cs.kuleuven.be/publications/LD06AWTCECC/LD06AWTCECC_paper.pdf Not a html
+366/2039
+https://www.optimization101.org/ has 1 feeds
+367/2039
+http://franciscotufro.com/2016/11/basic-hot-reload-architecture-of-my-game/ has 0 feeds
+368/2039
+https://eater.net/quaternions has 0 feeds
+369/2039
+https://docs.broadcom.com/docs/12358545 Status 404 Not Found
+370/2039
+https://www.musicdsp.org/_/downloads/en/latest/pdf/ Not a html
+371/2039
+https://research.cs.wisc.edu/areas/os/Qual/papers/hydra.pdf Not a html
+372/2039
+https://notendur.hi.is/hei2/teaching/Polya_HowToSolveIt.pdf Status 404 Not Found
+373/2039
+https://tadeuzagallo.com/blog/writing-a-trampoline-in-assembly/ has 0 feeds
+374/2039
+http://www.mattduck.com/undo-redo-text-editors.html has 0 feeds
+375/2039
+http://box2d.org/downloads/ Status 404 Not Found
+376/2039
+https://www.apple.com/child-safety/pdf/CSAM_Detection_Technical_Summary.pdf Not a html
+377/2039
+http://q-gears.sourceforge.net/gears.pdf Not a html
+378/2039
+https://sasluca.github.io/cmm has 0 feeds
+379/2039
+http://jg.sn.sg/ir/ has 0 feeds
+380/2039
+https://procgen.space/resources has 0 feeds
+381/2039
+https://isetta.io/ has 0 feeds
+382/2039
+https://pastebin.com/KHNrNX4f has 0 feeds
+383/2039
+https://gamehacker1999.github.io/posts/retargetingpass/ has 1 feeds
+384/2039
+http://im.snibgo.com/ has 0 feeds
+385/2039
+http://modelingwithdata.org/about_the_book.html has 0 feeds
+386/2039
+https://faust.grame.fr/ has 0 feeds
+387/2039
+http://computers-are-fast.github.io/ has 0 feeds
+388/2039
+http://www.quelsolaar.com/love/development.html has 0 feeds
+389/2039
+http://www.cr31.co.uk/stagecast/wang/intro.html Status 403 Forbidden
+390/2039
+https://deadlockempire.github.io/ has 0 feeds
+391/2039
+http://thebookofshaders.com/10/ has 0 feeds
+392/2039
+https://deplinenoise.files.wordpress.com/2016/03/gdc16_fredriksson_jaguar.pdf Not a html
+393/2039
+https://www.forkingpaths.dev/17-12-16_vector_graphics_p1.html Status 404 Not Found
+394/2039
+https://aaltodoc.aalto.fi/bitstream/handle/123456789/11068/publication6.pdf Not a html
+395/2039
+http://www.gilbertbernstein.com/resources/booleans2009.pdf Not a html
+396/2039
+http://web.stanford.edu/~cantwell/AA200_Course_Material/AA200_References/Jones_Classical_Aerodynamic_Theory.pdf Not a html
+397/2039
+https://floooh.github.io/tiny8bit/ has 0 feeds
+398/2039
+http://www.gameaipro.com/ has 0 feeds
+399/2039
+https://johv.dk/blog/bare-metal-assembly-tutorial.html has 1 feeds
+400/2039
+https://www.in.tu-clausthal.de/fileadmin/homes/CG/data_pub/paper/GlobalRayBundlesVMV2010.pdf Status 404 Not Found
+401/2039
+http://blackpawn.com/texts/lightmaps/default.html has 0 feeds
+402/2039
+http://i7-dungeon.sourceforge.net/math_hard.pdf Not a html
+403/2039
+https://binji.github.io/posts/raw-wasm-making-a-maze-race/ Status 404 Not Found
+404/2039
+https://libcom.org/files/Seeing%20Like%20a%20State%20-%20James%20C.%20Scott.pdf Not a html
+405/2039
+http://www.bizzley.com/ has 0 feeds
+406/2039
+https://www.volume-gfx.com/volume-rendering/ has 1 feeds
+407/2039
+https://www.naughtydog.com/blog/making_crash_bandicoot_by_andy_gavin_and_jason_rubin has 0 feeds
+408/2039
+https://boksajak.github.io/blog/BRDF Status 404 Not Found
+409/2039
+https://easychair.org/publications/preprint_download/h5RF Not a html
+410/2039
+https://www.bottlecaps.de/rr/ui#nonterminal Not a html
+411/2039
+https://www.ii.uni.wroc.pl/~anl/cgfiles/TotalCompendium.pdf Not a html
+412/2039
+https://www.grc.com/inspectre.htm Get "https://www.grc.com/inspectre.htm": net/http: TLS handshake timeout
+413/2039
+https://desena.org/dropbox/aes_tutorial/Tutorial_at_AES_VR_AR_2020_Conference.pdf Not a html
+414/2039
+https://sinerider.com/ has 0 feeds
+415/2039
+https://gameprogrammingpatterns.com/ has 0 feeds
+416/2039
+https://bit.ly/perf_book Not a html
+417/2039
+http://sourcemaking.com/ has 0 feeds
+418/2039
+https://gamehacker1999.github.io/posts/bluenoiseerrors/ has 1 feeds
+419/2039
+https://www.bespokesynth.com/ has 0 feeds
+420/2039
+https://www.impulseadventure.com/photo/jpeg-huffman-coding.html Get "https://www.impulseadventure.com/photo/jpeg-huffman-coding.html": net/http: TLS handshake timeout
+421/2039
+https://www.gridsagegames.com/rexpaint/index.html Get "https://www.gridsagegames.com/rexpaint/index.html": net/http: TLS handshake timeout
+422/2039
+https://people.eecs.berkeley.edu/~jrs/274s19/bsptreefaq.html Get "https://people.eecs.berkeley.edu/~jrs/274s19/bsptreefaq.html": net/http: TLS handshake timeout
+423/2039
+https://people.eecs.berkeley.edu/~wkahan/ieee754status/754story.html Get "https://people.eecs.berkeley.edu/~wkahan/ieee754status/754story.html": net/http: TLS handshake timeout
+424/2039
+http://www.adriancourreges.com/blog/2017/05/09/beware-of-transparent-pixels/ has 1 feeds
+425/2039
+https://www.cs.utexas.edu/~EWD/transcriptions/EWD03xx/EWD340.html Get "https://www.cs.utexas.edu/~EWD/transcriptions/EWD03xx/EWD340.html": net/http: TLS handshake timeout
+426/2039
+https://astralcode.blogspot.com/2018/11/reverse-engineering-rendering-of.html has 1 feeds
+427/2039
+http://notabs.org/fpuaccuracy/ has 0 feeds
+428/2039
+https://support.microsoft.com/en-us/help/99456/win32-equivalents-for-c-run-time-functions Status 404 Not Found
+429/2039
+http://asciiflow.com/ has 0 feeds
+430/2039
+https://www.naughtydog.com/blog/naughty_dog_at_siggraph_2020 has 0 feeds
+431/2039
+https://www.uclibc.org/docs/tls.pdf Not a html
+432/2039
+https://compileroptimizations.com/ Get "https://compileroptimizations.com/": net/http: TLS handshake timeout
+433/2039
+https://www.bepuentertainment.com/ Get "https://www.bepuentertainment.com/": net/http: TLS handshake timeout
+434/2039
+https://www.boost.org/doc/libs/1_55_0/doc/html/atomic/usage_examples.html Get "https://www.boost.org/doc/libs/1_55_0/doc/html/atomic/usage_examples.html": net/http: TLS handshake timeout
+435/2039
+https://wg21.link/p2168 Not a html
+436/2039
+https://www.thestrangeloop.com/2018/fact-a-new-language-for-constant-time-programming.html Status 403 Forbidden
+437/2039
+https://www.hyrumslaw.com/ Get "https://www.hyrumslaw.com/": net/http: TLS handshake timeout
+438/2039
+https://members.loria.fr/PZimmermann/mca/mca-0.2.1.pdf Not a html
+439/2039
+https://github.blog/2023-01-23-pwning-the-all-google-phone-with-a-non-google-bug/ Get "https://github.blog/2023-01-23-pwning-the-all-google-phone-with-a-non-google-bug/": unexpected EOF
+440/2039
+https://kilograham.github.io/rp2040-doom/ has 0 feeds
+441/2039
+https://www.fredrikholmqvist.com/posts/brooks-wirth-go Get "https://www.fredrikholmqvist.com/posts/brooks-wirth-go": net/http: TLS handshake timeout
+442/2039
+https://zero-radiance.github.io/post/z-buffer/ has 1 feeds
+443/2039
+http://catb.org/esr/writings/unix-koans/ has 0 feeds
+444/2039
+http://norvig.com/21-days.html#answers has 0 feeds
+445/2039
+https://www.destroyallsoftware.com/postcard has 0 feeds
+446/2039
+https://iquilezles.org/articles/premultipliedalpha/ has 0 feeds
+447/2039
+https://www.rastergrid.com/category/blog/gpu-tech/ Get "https://www.rastergrid.com/category/blog/gpu-tech/": net/http: TLS handshake timeout
+448/2039
+https://www.sql-practice.com/ has 0 feeds
+449/2039
+http://cidrdb.org/cidr2022/papers/p13-crotty.pdf Not a html
+450/2039
+https://www.aaai.org/Papers/AIIDE/2005/AIIDE05-020.pdf Status 404 Not Found
+451/2039
+https://learnxinyminutes.com/ has 0 feeds
+452/2039
+https://marabos.nl/atomics/ has 0 feeds
+453/2039
+https://dassur.ma/things/c-to-webassembly/ has 1 feeds
+454/2039
+https://pikuma.com/ Get "https://pikuma.com/": net/http: TLS handshake timeout
+455/2039
+https://j00ru.vexillium.org/2009/08/suspending-processes-in-windows/ Get "https://j00ru.vexillium.org/2009/08/suspending-processes-in-windows/": net/http: TLS handshake timeout
+456/2039
+https://monster6502.com/ has 0 feeds
+457/2039
+http://pcg.wikidot.com/ has 0 feeds
+458/2039
+https://evanw.github.io/float-toy/ has 0 feeds
+459/2039
+http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html Status 404 Not Found
+460/2039
+https://icculus.org/finger/flibitijibibo Get "https://icculus.org/finger/flibitijibibo": net/http: TLS handshake timeout
+461/2039
+https://www.puredevsoftware.com/blog/2019/01/21/gamma-encoding/ Get "https://www.puredevsoftware.com/blog/2019/01/21/gamma-encoding/": net/http: TLS handshake timeout
+462/2039
+https://joyofcryptography.com/ has 0 feeds
+463/2039
+https://setosa.io/ev/markov-chains/ has 0 feeds
+464/2039
+https://www.emacswiki.org/emacs/IncrementNumber has 6 feeds
+465/2039
+https://thebookofshaders.com/ has 0 feeds
+466/2039
+https://www.habrador.com/tutorials/math/ has 0 feeds
+467/2039
+https://chisel.cis.upenn.edu/index.html has 0 feeds
+468/2039
+https://ocw.mit.edu/courses/mathematics/18-06-linear-algebra-spring-2010/video-lectures/ Status 902 
+469/2039
+https://users.cs.northwestern.edu/~robby/courses/322-2013-spring/mytkowicz-wrong-data.pdf Not a html
+470/2039
+http://theory.stanford.edu/~amitp/GameProgramming/ has 1 feeds
+471/2039
+https://www.gingerbill.org/article/ Get "https://www.gingerbill.org/article/": net/http: TLS handshake timeout
+472/2039
+https://gfycat.com/gifs/detail/IcyInsecureImperialeagle Status 404 Not Found
+473/2039
+https://web.cs.wpi.edu/~emmanuel/courses/cs563/S12/slides/cs563_xin_wang_lpv_wk7_p2.pdf Not a html
+474/2039
+https://www.math.ucla.edu/~qiguo/Hybrid_MPM.pdf Status 404 Not Found
+475/2039
+https://graphics.cg.uni-saarland.de/papers/perard-2019-siggraph-rodent.pdf Not a html
+476/2039
+https://www.forrestthewoods.com/blog/benchmarking-malloc-with-doom3/ has 1 feeds
+477/2039
+https://basesandframes.files.wordpress.com/2020/04/even_faster_math_functions_green_2020.pdf Not a html
+478/2039
+http://www.cs.ucr.edu/~vbz/resources/quatut.pdf Status 404 Not Found
+479/2039
+https://raytracing.github.io/ has 0 feeds
+480/2039
+http://perso.univ-lyon1.fr/thierry.excoffier/ZMW/rr_2003_03_11.pdf Not a html
+481/2039
+https://www.cs.umb.edu/~offner/files/flow_graph.pdf Not a html
+482/2039
+https://the-stack-overflow-podcast.simplecast.com/episodes/you-dont-need-a-math-phd-to-play-dwarf-fortress-just-to-code-it/transcript has 0 feeds
+483/2039
+http://www.cis.upenn.edu/~mhnaik/papers/ccs18.pdf Not a html
+484/2039
+https://magcius.github.io/xplain/article/ has 1 feeds
+485/2039
+https://acko.net/files/gltalks/toolsforthought/#28 Status 403 Forbidden
+486/2039
+https://www.gabrielgambetta.com/client-server-game-architecture.html has 0 feeds
+487/2039
+https://www.adobe.com/content/dam/acom/en/devnet/acrobat/pdfs/pdf_reference_1-7.pdf Status 404 Not Found
+488/2039
+https://www.oilshell.org/blog/2017/03/31.html has 0 feeds
+489/2039
+https://hal.archives-ouvertes.fr/hal-02073696v2/document Not a html
+490/2039
+https://www.microsoft.com/en-us/research/wp-content/uploads/2005/01/p1000-loop.pdf Not a html
+491/2039
+https://codeblog.jonskeet.uk/2019/03/27/storing-utc-is-not-a-silver-bullet/ Get "https://codeblog.jonskeet.uk/2019/03/27/storing-utc-is-not-a-silver-bullet/": dial tcp: lookup codeblog.jonskeet.uk: no such host
+492/2039
+http://jdebp.eu./FGA/operating-system-books.html Get "http://jdebp.eu./FGA/operating-system-books.html": dial tcp: lookup jdebp.eu.: no such host
+493/2039
+https://www.gamasutra.com/view/feature/131720/coordinated_unit_movement.php Get "https://www.gamasutra.com/view/feature/131720/coordinated_unit_movement.php": dial tcp: lookup www.gamasutra.com: no such host
+494/2039
+http://www.gamasutra.com/blogs/ErikJohnson/20190129/335035/The_State_of_the_Algorithm_Whats_Happening_to_Indies_on_Steam.php Get "http://www.gamasutra.com/blogs/ErikJohnson/20190129/335035/The_State_of_the_Algorithm_Whats_Happening_to_Indies_on_Steam.php": dial tcp: lookup www.gamasutra.com: no such host
+495/2039
+https://greggman.github.io/webgl-lint/ Get "https://greggman.github.io/webgl-lint/": dial tcp: lookup greggman.github.io: no such host
+496/2039
+https://magcius.github.io/xplain/article/x-basics.html has 1 feeds
+497/2039
+https://comicbook.com/gaming/2018/12/24/marvels-spider-man-ps4-lighting/ Get "https://comicbook.com/gaming/2018/12/24/marvels-spider-man-ps4-lighting/": dial tcp: lookup comicbook.com: no such host
+498/2039
+https://ciechanow.ski/alpha-compositing/ has 0 feeds
+499/2039
+http://cs.brown.edu/courses/cs173/2012/book/book.pdf Not a html
+500/2039
+http://www.jezzamon.com/fourier/ has 0 feeds
+501/2039
+https://www.gradientspace.com/tutorials/2018/2/20/implicit-surface-modeling Status 429 Too Many Requests
+502/2039
+https://talk.commonmark.org/t/why-is-md4c-so-fast-c/2520 Get "https://talk.commonmark.org/t/why-is-md4c-so-fast-c/2520": net/http: TLS handshake timeout
+503/2039
+https://arxiv.org/abs/1807.08416v4 Status 404 NOT FOUND
+504/2039
+https://arxiv.org/abs/2211.03622 Status 404 NOT FOUND
+505/2039
+https://api.unrealengine.com/udk/Three/DistanceFieldShadows.html Get "https://api.unrealengine.com/udk/Three/DistanceFieldShadows.html": net/http: TLS handshake timeout
+506/2039
+http://developer.download.nvidia.com/presentations/2008/GDC/GDC08_SoftShadowMapping.pdf Not a html
+507/2039
+https://cgg.mff.cuni.cz/~jaroslav/papers/2008-irradiance_caching_class/08-pascal-gpu-notes.pdf Not a html
+508/2039
+https://arxiv.org/abs/1509.05053 Status 404 NOT FOUND
+509/2039
+https://mathweb.ucsd.edu/~sbuss/ResearchWeb/EnhancedSweepPrune/SAP_paper_online.pdf Not a html
+510/2039
+https://sillycross.github.io/2022/11/22/2022-11-22/ has 1 feeds
+511/2039
+https://www.cs.utah.edu/~ladislav/kavan11least/kavan11least.pdf Not a html
+512/2039
+https://float.exposed/0x3901742e has 0 feeds
+513/2039
+https://nothings.org/gamedev/herringbone/ has 0 feeds
+514/2039
+http://marctenbosch.com/quaternions/ has 0 feeds
+515/2039
+https://www.david-colson.com/2021/11/30/ps1-style-renderer.html Status 404 Not Found
+516/2039
+https://jsantell.com/3d-projection has 0 feeds
+517/2039
+http://web.engr.oregonstate.edu/~mjb/cs557/Handouts/compute.shader.1pp.pdf Not a html
+518/2039
+https://liu.diva-portal.org/smash/get/diva2:1605200/FULLTEXT01.pdf Not a html
+519/2039
+https://arxiv.org/abs/2201.07845 Status 404 NOT FOUND
+520/2039
+http://www.dwarfstd.org/doc/Debugging%20using%20DWARF-2012.pdf Not a html
+521/2039
+https://rittersp.com/wp-content/uploads/2014/03/Chambliss-Mundanity-of-Excellence.pdf Not a html
+522/2039
+https://web.mit.edu/~simsong/www/ugh.pdf Not a html
+523/2039
+https://easings.net/ has 0 feeds
+524/2039
+https://resources.mpi-inf.mpg.de/departments/d1/teaching/ss10/Seminar_CGGC/Slides/07_Bock_MS.pdf Get "https://resources.mpi-inf.mpg.de/departments/d1/teaching/ss10/Seminar_CGGC/Slides/07_Bock_MS.pdf": net/http: TLS handshake timeout
+525/2039
+https://webglfundamentals.org/webgl/lessons/resources/webgl-state-diagram.html Status 404 Not Found
+526/2039
+https://www.cs.rice.edu/~jwarren/papers/dmc.pdf Not a html
+527/2039
+https://iquilezles.org/articles/distfunctions2d/ has 0 feeds
+528/2039
+https://iquilezles.org/www/articles/fbmsdf/fbmsdf.htm Status 404 Not Found
+529/2039
+https://www.gamedevs.org/ has 0 feeds
+530/2039
+https://twvideo01.ubm-us.net/o1/vault/gdc2018/presentations/CAURANT_GUILLAUME_The_Lighting_Technology.pdf Not a html
+531/2039
+https://nothings.org/computer/lexing.html has 0 feeds
+532/2039
+http://buildyourownlisp.com/ has 0 feeds
+533/2039
+https://plus.google.com/+Dataorienteddesign/posts/c2GcbYWcPDK has 0 feeds
+534/2039
+https://www.codenong.com/jsabc4adafd625/ has 0 feeds
+535/2039
+https://walbourn.github.io/care-and-feeding-of-modern-swapchains/ has 0 feeds
+536/2039
+https://benedikt-bitterli.me/histogram-tiling/ Get "https://benedikt-bitterli.me/histogram-tiling/": net/http: TLS handshake timeout
+537/2039
+https://viewsourcecode.org/snaptoken/kilo/ Get "https://viewsourcecode.org/snaptoken/kilo/": net/http: TLS handshake timeout
+538/2039
+https://www.gdcvault.com/gdmag has 0 feeds
+539/2039
+https://idea-instructions.com/ has 1 feeds
+540/2039
+https://www.csl.mtu.edu/cs4411.ck/www/NOTES/non-local-goto/coroutine.html Status 403 Forbidden
+541/2039
+https://pixelmager.github.io/linelight/banding.html Status 404 Not Found
+542/2039
+https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/tools/include/nolibc/ has 1 feeds
+543/2039
+https://www.zephray.me/post/rpi_pico_driving_el/ has 0 feeds
+544/2039
+https://archive.computerhistory.org/resources/access/text/2014/05/102746834-05-01-acc.pdf Not a html
+545/2039
+https://devlog.hexops.com/2021/perfecting-glfw-for-zig-and-finding-undefined-behavior has 0 feeds
+546/2039
+https://ciechanow.ski/lights-and-shadows/ has 0 feeds
+547/2039
+http://worrydream.com/LearnableProgramming/ has 0 feeds
+548/2039
+https://erich.realtimerendering.com/ptinpoly/ has 0 feeds
+549/2039
+http://neugierig.org/software/blog/2018/07/options.html has 1 feeds
+550/2039
+http://www.cs.binghamton.edu/~zdu/parsdemo/gramintro.html has 0 feeds
+551/2039
+https://blog.otterstack.com/posts/202212-doom-calculator/ Status 404 Not Found
+552/2039
+https://caseymuratori.com/blog_0032 has 0 feeds
+553/2039
+https://renderdoc.org/vulkan-in-30-minutes.html has 0 feeds
+554/2039
+https://handmade.network/library has 0 feeds
+555/2039
+https://erkaman.github.io/articles.html has 1 feeds
+556/2039
+https://6004.mit.edu/web/_static/spring19/resources/lectures Status 404 Not Found
+557/2039
+https://6004.mit.edu/web/spring19/resources/lectures Status 404 Not Found
+558/2039
+https://www.sublimetext.com/blog/articles/use-mmap-with-care Status 403 Forbidden
+559/2039
+http://www.humus.name/index.php?page=3D has 1 feeds
+560/2039
+http://wdobbie.com/post/gpu-text-rendering-with-vector-textures/ has 1 feeds
+561/2039
+https://catonmat.net/ldd-arbitrary-code-execution has 1 feeds
+562/2039
+https://highperformancegraphics.org/slides22/Journey_to_Nanite.pdf Not a html
+563/2039
+https://www.cs.cmu.edu/afs/cs/academic/class/15213-f15/www/schedule.html Status 403 Forbidden
+564/2039
+http://opus-codec.org/docs/ has 1 feeds
+565/2039
+https://brevzin.github.io/c++/2023/01/02/rust-cpp-format/ Status 404 Not Found
+566/2039
+http://www.dsdambuster.com/blog/lsao-part-2 has 0 feeds
+567/2039
+https://news.ycombinator.com/item?id=18415031 has 0 feeds
+568/2039
+https://milty.nl/project/graduation/ Status 404 Not Found
+569/2039
+https://bymuno.com/post/01/local.gif Not a html
+570/2039
+http://hoytech.github.io/sorting-networks/ has 0 feeds
+571/2039
+https://cgg.mff.cuni.cz/~pepca/lectures/pdf/pg2-05-brdf.en.pdf Not a html
+572/2039
+https://mrmotarius.itch.io/mrmo-halftone has 1 feeds
+573/2039
+https://soundcloud.com/podcastcode has 0 feeds
+574/2039
+https://nagarrosecurity.com/blog/interactive-buffer-overflow-exploitation has 0 feeds
+575/2039
+https://docs.google.com/document/d/1_S7gv6UGLAKuo9g1tNoNbU2OR_5DBYEdquvYeqgkPMk/edit# Status 404 Not Found
+576/2039
+https://www.redblobgames.com/articles/visibility/ has 1 feeds
+577/2039
+https://ampl.com/REFS/rounding.pdf Not a html
+578/2039
+https://www.seas.upenn.edu/~cis565/LECTURE2010/VolumeRendering2010.pdf Status 404 Not Found
+579/2039
+https://kripken.github.io/blog/wasm/2020/07/27/wasmboxc.html Status 404 Not Found
+580/2039
+https://www.jcgt.org/published/0009/03/02/paper.pdf Not a html
+581/2039
+http://fumufumu.q-games.com/archives/Cascaded_Voxel_Cone_Tracing_final_speaker_notes.pdf Not a html
+582/2039
+https://news.ycombinator.com/item?id=13082825 has 0 feeds
+583/2039
+https://products.easyperf.net/perf-ninja has 0 feeds
+584/2039
+http://www.dsdambuster.com/blog/lsao-part-1 has 0 feeds
+585/2039
+https://hnarayanan.github.io/springer-books/ has 0 feeds
+586/2039
+http://pastebin.com/F1GmqnK7 has 0 feeds
+587/2039
+https://danluu.com/deconstruct-files/ has 0 feeds
+588/2039
+https://devtalk.nvidia.com/default/topic/777618/scenix/announcing-nvpro-pipeline-a-research-rendering-pipeline/ Status 404 Not Found
+589/2039
+http://iquilezles.org/www/articles/sdfbounding/sdfbounding.htm Status 404 Not Found
+590/2039
+http://www.debuginfo.com/articles/effminidumps.html Get "https://www.debuginfo.com/articles/effminidumps.html": net/http: TLS handshake timeout
+591/2039
+https://www.adriancourreges.com/blog/2020/12/29/graphics-studies-compilation/ has 1 feeds
+592/2039
+https://geometrian.com/programming/tutorials/write-games-not-engines/ has 0 feeds
+593/2039
+https://kevingal.com/blog/twos.html has 0 feeds
+594/2039
+http://iquilezles.org/apps/graphtoy/index.html Status 404 Not Found
+595/2039
+https://blog.acolyer.org/2015/11/23/hashed-and-hierarchical-timing-wheels/ Get "https://blog.acolyer.org/2015/11/23/hashed-and-hierarchical-timing-wheels/": net/http: TLS handshake timeout
+596/2039
+http://csapp.cs.cmu.edu/3e/labs.html has 0 feeds
+597/2039
+https://prideout.net/blog/distance_fields/ has 0 feeds
+598/2039
+http://www.khetarpal.org/polygon-splitting/ has 2 feeds
+599/2039
+http://cs.smith.edu/~jorourke/books/ftp.html has 0 feeds
+600/2039
+http://www.evanmiller.org/you-cant-dig-upwards.html has 1 feeds
+601/2039
+https://gerlacdt.github.io/posts/classic-papers/ has 1 feeds
+602/2039
+http://www.developerdotstar.com/mag/articles/PDF/DevDotStar_Reeves_CodeAsDesign.pdf Not a html
+603/2039
+https://www.phatcode.net/res/223/files/html/toc.html Status 403 Forbidden
+604/2039
+https://lokathor.github.io/prng/ has 0 feeds
+605/2039
+https://marc-b-reynolds.github.io/distribution/2021/03/18/CheapGaussianApprox.html has 1 feeds
+606/2039
+https://archive.org/details/TheoryOfElasticity Status 404 Not Found
+607/2039
+https://xlgames-inc.github.io/posts/sphericalharmonics2/ Status 404 Not Found
+608/2039
+https://preshing.com/images/probability-distribution.png Not a html
+609/2039
+http://clintonbrennan.com/2013/12/lockstep-implementation-in-unity3d/ has 2 feeds
+610/2039
+https://www.etlcpp.com/flat_set.html has 0 feeds
+611/2039
+https://my.mindnode.com/24sx5yV3S7FLayi5Msvhysx5HZ8aAPzUqJ6rStKi#1733.0,1333.9,2 has 0 feeds
+612/2039
+https://blog.m-ou.se/floats/ has 0 feeds
+613/2039
+https://marctenbosch.com/quaternions/ read tcp 192.168.1.164:52433->50.87.253.200:443: wsarecv: An existing connection was forcibly closed by the remote host.
+614/2039
+https://www.boolean-algebra.com/kmap has 0 feeds
+615/2039
+https://nigeltao.github.io/blog/2020/eisel-lemire.html Status 404 Not Found
+616/2039
+http://www.jezzamon.com/fourier/index.html has 0 feeds
+617/2039
+http://www.ioccc.org/2000/tomx.c Not a html
+618/2039
+http://www.erasmatazz.com/ read tcp 192.168.1.164:53268->162.241.24.59:443: wsarecv: An existing connection was forcibly closed by the remote host.
+619/2039
+https://db.cs.cmu.edu/papers/2015/p707-arulraj.pdf Not a html
+620/2039
+https://www.npcglib.org/index.php has 2 feeds
+621/2039
+https://learn.adacore.com/index.html has 0 feeds
+622/2039
+https://karpathy.ai/zero-to-hero.html has 0 feeds
+623/2039
+https://www.inkandswitch.com/inkbase/ has 0 feeds
+624/2039
+https://paroj.github.io/gltut/ has 0 feeds
+625/2039
+https://www.sceen.net/x1/ has 1 feeds
+626/2039
+https://halt.software/libraries-in-c-prefix-or-not/ has 1 feeds
+627/2039
+http://andrewduncan.net/cmt/ has 0 feeds
+628/2039
+http://www.cs.binghamton.edu/~zdu/parsdemo/recintro.html has 0 feeds
+629/2039
+https://www.executionunit.com/blog/2017/07/14/in-defence-of-writing-your-own-engine/ Status 404 Not Found
+630/2039
+https://blog.pimaker.at/texts/rvc1/ has 1 feeds
+631/2039
+https://nyansatan.github.io/lightning/ has 0 feeds
+632/2039
+https://www.dr-lex.be/info-stuff/volumecontrols.html has 0 feeds
+633/2039
+https://nvmexpress.org/wp-content/uploads/NVM-Express-1_4a-2020.03.09-Ratified.pdf Not a html
+634/2039
+http://databookuw.com/ has 0 feeds
+635/2039
+https://gfycat.com/FittingSlowDouglasfirbarkbeetle has 0 feeds
+636/2039
+http://www.bbc.co.uk/programmes/b09ly60f Get "https://www.bbc.co.uk/programmes/b09ly60f": net/http: TLS handshake timeout
+637/2039
+https://beatriceco.com/bti/porticus/bell/pdf/bell_labs_journals/bell_labs_technical_journal_autumn_1997_3.pdf Not a html
+638/2039
+https://wwwtyro.net/2019/11/18/instanced-lines.html Get "https://wwwtyro.net/2019/11/18/instanced-lines.html": net/http: TLS handshake timeout
+639/2039
+https://arxiv.org/abs/1709.00084 Status 404 NOT FOUND
+640/2039
+https://www.vobarian.com/collisions/2dcollisions2.pdf Not a html
+641/2039
+https://qoiformat.org/qoi-specification.pdf Not a html
+642/2039
+https://diagrams.net/ has 0 feeds
+643/2039
+https://cseweb.ucsd.edu//~ricko/rt_lt.rule.html has 0 feeds
+644/2039
+https://people.freebsd.org/~gallatin/talks/euro2021.pdf Not a html
+645/2039
+https://nigeltao.github.io/blog/2022/zstandard-part-1-concepts.html Status 404 Not Found
+646/2039
+https://64.github.io/tonemapping/ has 0 feeds
+647/2039
+http://tylerneylon.com/a/lsh1/ has 0 feeds
+648/2039
+https://www.mersenneforum.org/showthread.php?p=614191 has 0 feeds
+649/2039
+https://www.cc.gatech.edu/~riedl/pubs/guzdial-riedl-aiide18.pdf Not a html
+650/2039
+https://dl.acm.org/citation.cfm?id=74363 has 0 feeds
+651/2039
+https://ishitatsuyuki.github.io/post/latencyflex/ has 0 feeds
+652/2039
+https://www.gabrielgambetta.com/computer-graphics-from-scratch/introduction.html has 0 feeds
+653/2039
+http://research.cs.vt.edu/AVresearch/hashing/index.php has 0 feeds
+654/2039
+https://www.nostarch.com/microprocessors has 0 feeds
+655/2039
+http://code.alaiwan.org/blog/collision-aabb.html has 0 feeds
+656/2039
+https://docs.oracle.com/cd/E19683-01/816-1386/index.html has 0 feeds
+657/2039
+https://www.magnumdb.com/ has 0 feeds
+658/2039
+https://www.systemverilog.io/ddr4-initialization-and-calibration has 0 feeds
+659/2039
+https://algorithmica.org/en/eytzinger has 0 feeds
+660/2039
+https://c3.handmade.network/blog/p/8341-do_you_know_why_your_language_will_fail Get "https://c3.handmade.network/blog/p/8341-do_you_know_why_your_language_will_fail": net/http: TLS handshake timeout
+661/2039
+http://code.alaiwan.org/blog/collision-disk.html has 0 feeds
+662/2039
+https://hal.archives-ouvertes.fr/hal-01633123/document Not a html
+663/2039
+https://windows-internals.com/i-o-rings-when-one-i-o-operation-is-not-enough/ has 1 feeds
+664/2039
+https://www.xtof.info/blog/?p=837 has 1 feeds
+665/2039
+https://core.ac.uk/download/pdf/187613369.pdf Not a html
+666/2039
+http://bjoern.hoehrmann.de/utf-8/decoder/dfa/ Status 403 Forbidden
+667/2039
+https://arxiv.org/abs/2101.11408 Status 404 NOT FOUND
+668/2039
+https://www.redblobgames.com/ has 1 feeds
+669/2039
+https://code.luasoftware.com/tutorials/windows/windows-10-persistent-map-drive-to-folder/ has 0 feeds
+670/2039
+https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-851-advanced-data-structures-spring-2012/lecture-videos/ has 0 feeds
+671/2039
+https://alain.xyz/blog/raw-webgpu has 1 feeds
+672/2039
+https://www.strchr.com/multi-stage_tables has 1 feeds
+673/2039
+https://topic.alibabacloud.com/a/objective-c-memory-layout_1_33_32392370.html Status 404 Not Found
+674/2039
+http://marc-b-reynolds.github.io/math/2020/03/11/SinCosPi.html has 1 feeds
+675/2039
+http://stevelosh.com/blog/2013/09/teach-dont-tell/ Get "https://stevelosh.com/blog/2013/09/": stopped after 10 redirects
+676/2039
+https://flatassembler.net/docs.php?article=ufasm has 1 feeds
+677/2039
+http://advances.realtimerendering.com/s2021/index.html has 0 feeds
+678/2039
+https://simoncoenen.com/blog/programming/graphics/DoomEternalStudy.html Status 404 Not Found
+679/2039
+https://tls.ulfheim.net/ has 0 feeds
+680/2039
+https://www.snapnet.dev/docs/core-concepts/input-delay-vs-prediction/ has 0 feeds
+681/2039
+https://shader-tutorial.dev/ has 0 feeds
+682/2039
+https://lwn.net/Articles/851184/ has 2 feeds
+683/2039
+https://eheitzresearch.wordpress.com/722-2/ has 1 feeds
+684/2039
+https://component.gallery/components has 0 feeds
+685/2039
+http://www.pbr-book.org/3ed-2018/Utilities/Parallelism.html has 0 feeds
+686/2039
+https://jorenjoestar.github.io/post/shader_augment_for_pipelines/shader_augment_for_pipelines/ Status 404 Not Found
+687/2039
+https://marcin.juszkiewicz.com.pl/download/tables/arm-socs.html Status 403 Forbidden
+688/2039
+https://www.syntorial.com/ has 1 feeds
+689/2039
+https://building.enlyze.com/posts/modern-visual-studio-meets-ancient-windows/ has 1 feeds
+690/2039
+http://canonical.org/~kragen/memory-models/ has 0 feeds
+691/2039
+https://people.freebsd.org/~lstewart/articles/cpumemory.pdf Not a html
+692/2039
+https://i.imgur.com/v9ke9iA.png Not a html
+693/2039
+https://i.imgur.com/IgYTlOk.jpeg Not a html
+694/2039
+https://www.etlcpp.com/flat_map.html has 0 feeds
+695/2039
+https://rudyfaile.com/2020/04/17/a-commitment-to-handmade/ has 2 feeds
+696/2039
+https://tuts4you.com/ has 0 feeds
+697/2039
+https://blog.ffwll.ch/2013/01/i915gem-crashcourse-overview.html has 1 feeds
+698/2039
+https://www.mattkeeter.com/blog/2022-10-04-ssra/ has 1 feeds
+699/2039
+https://research.csiro.au/tsblog/debugging-stories-stack-alignment-matters/ has 1 feeds
+700/2039
+https://web.archive.org/web/20180828191149/http://valerieaurora.org/synthesis/SynthesisOS/ch1.html Status 403 Forbidden
+701/2039
+https://www.nayuki.io/page/qr-code-generator-library Not a html
+702/2039
+https://misc.flogisoft.com/bash/tip_colors_and_formatting has 2 feeds
+703/2039
+https://developer.amd.com/wp-content/resources/RDNA3_Shader_ISA_December2022.pdf Not a html
+704/2039
+https://arxiv.org/abs/2201.02089 Status 404 NOT FOUND
+705/2039
+https://www.realworldtech.com/forum/?threadid=189711&curpostid=189723 has 2 feeds
+706/2039
+http://i.imgur.com/6qhtZa1.gifv has 0 feeds
+707/2039
+https://tonsky.me/blog/disenchantment/ has 1 feeds
+708/2039
+https://2dengine.com/?p=platformers has 0 feeds
+709/2039
+https://geidav.wordpress.com/2014/08/18/advanced-octrees-2-node-representations/ has 2 feeds
+710/2039
+https://cglearn.eu/pub/advanced-computer-graphics/volumetric-rendering has 0 feeds
+711/2039
+http://blog.leahhanson.us/post/recursecenter2016/haiku_icons.html has 1 feeds
+712/2039
+http://gee.cs.oswego.edu/dl/html/malloc.html has 0 feeds
+713/2039
+https://www.pcg-random.org/index.html has 1 feeds
+714/2039
+https://www.cs.purdue.edu/homes/cmh/distribution/books/geo.html Status 404 Not Found
+715/2039
+http://toastytech.com/guis/abuse.html has 0 feeds
+716/2039
+https://alain.xyz/blog/raytracing-denoising has 1 feeds
+717/2039
+https://alain.xyz/blog/comparison-of-modern-graphics-apis has 1 feeds
+718/2039
+http://kesen.realtimerendering.com/sig2022.html has 0 feeds
+719/2039
+http://chrishecker.com/Physics_References has 1 feeds
+720/2039
+https://www.ea.com/seed/publications Get "https://www.ea.com/seed": read tcp 192.168.1.164:52310->23.210.16.237:443: wsarecv: An existing connection was forcibly closed by the remote host.
+721/2039
+https://www.ea.com/frostbite/news/scope-stack-allocation Get "https://www.ea.com/frostbite/news/scope-stack-allocation": read tcp 192.168.1.164:52310->23.210.16.237:443: wsarecv: An existing connection was forcibly closed by the remote host.
+722/2039
+http://www.aortiz.me/2018/12/21/CG.html Status 404 Not Found
+723/2039
+https://www.muppetlabs.com/~breadbox/txt/mopb.html has 0 feeds
+724/2039
+https://kristerw.github.io/2021/10/19/fast-math/ has 1 feeds
+725/2039
+http://alextardif.com/eden.html has 0 feeds
+726/2039
+https://lmax-exchange.github.io/disruptor/disruptor.html has 0 feeds
+727/2039
+https://blogs.windows.com/windowsexperience/2015/02/23/windows-shapes-the-worlds-languages/ has 1 feeds
+728/2039
+https://discord.gg/fu8HKa4C has 0 feeds
+729/2039
+https://lexfridman.com/ai/ has 0 feeds
+730/2039
+http://advances.realtimerendering.com/s2022/index.html#Lumen has 0 feeds
+731/2039
+http://codepodcast.com/ has 1 feeds
+732/2039
+https://www.mattkeeter.com/research/mpr/ has 1 feeds
+733/2039
+https://gcc.gnu.org/wiki/Atomic/GCCMM/AtomicSync has 1 feeds
+734/2039
+http://etodd.io/ has 1 feeds
+735/2039
+https://www.guerrilla-games.com/read/publications has 0 feeds
+736/2039
+https://lisperator.net/pltut/ has 1 feeds
+737/2039
+https://ciechanow.ski/gps/ has 0 feeds
+738/2039
+https://ciechanow.ski/curves-and-surfaces/ has 0 feeds
+739/2039
+https://www.google.com/amp/s/michaldrobot.com/2014/04/01/gcn-execution-patterns-in-full-screen-passes/amp/ Status 404 Not Found
+740/2039
+http://info.sonicretro.org/Sonic_Physics_Guide has 1 feeds
+741/2039
+http://www.jp.square-enix.com/tech/publications.html has 0 feeds
+742/2039
+https://www.spinellis.gr/blog/20060626/ has 1 feeds
+743/2039
+https://alextardif.com/DX12Tutorial.html read tcp 192.168.1.164:52380->162.241.244.121:443: wsarecv: An existing connection was forcibly closed by the remote host.
+744/2039
+https://mazzo.li/posts/vectorized-atan2.html has 1 feeds
+745/2039
+http://www.flashgamehistory.com/ has 0 feeds
+746/2039
+http://www.iquilezles.org/www/articles/texturerepetition/texturerepetition.htm Status 404 Not Found
+747/2039
+https://www.flipcode.com/archives/07-15-2002.shtml has 0 feeds
+748/2039
+https://www.twitch.tv/handmade_hero has 0 feeds
+749/2039
+https://www.projectborealis.com/wind-and-air-drag-system Get "https://projectborealis.com/wind-and-air-drag-system": net/http: TLS handshake timeout
+750/2039
+https://arstechnica.com/gaming/2011/08/accuracy-takes-power-one-mans-3ghz-quest-to-build-a-perfect-snes-emulator/ has 1 feeds
+751/2039
+https://blog.stephencleary.com/2012/02/async-and-await.html has 1 feeds
+752/2039
+http://www.leancrew.com/all-this/2011/12/more-shell-less-egg/ has 1 feeds
+753/2039
+https://seri.tools/blog/compiling-rust-for-legacy-windows/ has 1 feeds
+754/2039
+https://www.vitanuova.com/inferno/papers/hotchips.html has 0 feeds
+755/2039
+https://guyonbits.com/from-rodata-to-rwdata-introduction-to-memory-mapping-and-ld-scripts/ has 1 feeds
+756/2039
+http://kunststube.net/encoding/ has 0 feeds
+757/2039
+https://qroph.github.io/2018/07/30/smooth-paths-using-catmull-rom-splines.html has 1 feeds
+758/2039
+https://heliosphan.org/zigguratalgorithm/zigguratalgorithm.html Status 403 Forbidden
+759/2039
+https://www.bell-labs.com/usr/dmr/www/chist.html has 0 feeds
+760/2039
+https://tavianator.com/2011/ray_box.html Status 403 Forbidden
+761/2039
+https://noclip.website/: Status 404 Not Found
+762/2039
+https://bymuno.com/post/rollback Status 404 Not Found
+763/2039
+http://www.albahari.com/threading/ has 0 feeds
+764/2039
+https://kingdomakrillic.tumblr.com/post/178254875891/i-figured-out-how-to-get-esrgan-and-sftgan has 1 feeds
+765/2039
+https://magpi.raspberrypi.com/issues/116?utm_source=Raspberry+Pi+Press+Newsletter&utm_campaign=4388b2f1a0-EMAIL_CAMPAIGN_MagPi_77_COPY_01&utm_medium=email&utm_term=0_e2ce89f288-4388b2f1a0-496005772&mc_cid=4388b2f1a0&mc_eid=205d82461f has 0 feeds
+766/2039
+http://www.cemyuksel.com/research/pointlightattenuation/ has 0 feeds
+767/2039
+https://wildfiregames.com/forum/index.php?/topic/17365-freetype-ttf-fonts-in-opengl/#comment-278452 read tcp 192.168.1.164:54008->136.243.44.163:443: wsarecv: An existing connection was forcibly closed by the remote host.
+768/2039
+https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Articles/ocrtHowMessagingWorks.html#//apple_ref/doc/uid/TP40008048-CH104-SW1 Status 403 Forbidden
+769/2039
+https://therealmjp.github.io/posts/gpu-memory-pool/ has 0 feeds
+770/2039
+http://www.bugman123.com/Hypercomplex/index.html has 0 feeds
+771/2039
+https://vimeo.com/232230096 has 0 feeds
+772/2039
+https://wg21.link/p0009 has 0 feeds
+773/2039
+https://msrc-blog.microsoft.com/2021/01/11/building-faster-amd64-memset-routines/ Status 404 Not Found
+774/2039
+http://paulbourke.net/miscellaneous/interpolation/ has 0 feeds
+775/2039
+https://www.alanzucconi.com/2021/01/24/linear-interpolation/ has 2 feeds
+776/2039
+https://blog.mozilla.org/blog/2017/11/29/announcing-the-initial-release-of-mozillas-open-source-speech-recognition-model-and-voice-dataset/ has 1 feeds
+777/2039
+https://qntm.org/clean has 0 feeds
+778/2039
+http://www.codercorner.com/blog/?page_id=1632 has 2 feeds
+779/2039
+https://nostarch.com/art-webassembly has 0 feeds
+780/2039
+https://www.askvg.com/beginners-guide-to-configure-windows-10-services/ has 1 feeds
+781/2039
+http://www.flipcode.com/archives/Lightmaps_Static_Shadowmaps.shtml has 0 feeds
+782/2039
+https://eli.thegreenplace.net/2008/07/18/reading-c-type-declarations has 1 feeds
+783/2039
+https://therealmjp.github.io/posts/shadow-maps/ has 0 feeds
+784/2039
+https://garry.blog/making-a-game-2022/ has 2 feeds
+785/2039
+https://en.algorithmica.org/hpc/ has 0 feeds
+786/2039
+https://michaldrobot.com/2014/04/01/gcn-execution-patterns-in-full-screen-passes/ has 2 feeds
+787/2039
+https://designingelectronics.com/ has 0 feeds
+788/2039
+https://gcc.gnu.org/onlinedocs/gcc-12.2.0/gcc/_005f_005fatomic-Builtins.html has 0 feeds
+789/2039
+https://note.com/ruiu/n/n9948f0cc3ed3 Status 404 Not Found
+790/2039
+https://webgl2fundamentals.org/webgl/lessons/resources/webgl-state-diagram.html Status 404 Not Found
+791/2039
+https://developer.android.com/games/sdk/frame-pacing has 0 feeds
+792/2039
+https://people.freebsd.org/~gallatin/talks/euro2022.pdf Not a html
+793/2039
+https://forum.unity.com/threads/the-quest-for-efficient-per-texel-lighting.529948/ has 1 feeds
+794/2039
+https://blog.mattbierner.com/stupid-template-tricks-super-template-tetris/ has 1 feeds
+795/2039
+https://observablehq.com/@pallada-92/3d-engine-in-dna-code has 3 feeds
+796/2039
+https://emeryberger.com/research/stabilizer/ has 2 feeds
+797/2039
+https://quuxplusone.github.io/blog/2021/02/15/devirtualization/ has 1 feeds
+798/2039
+https://realtimevfx.com/uploads/default/original/2X/1/1ff761b19b6df461fc5befeab1e8f979ba17a040.png Get "https://realtimevfx.com/uploads/default/original/2X/1/1ff761b19b6df461fc5befeab1e8f979ba17a040.png": net/http: TLS handshake timeout
+799/2039
+https://yurichev.org/SSH1/ has 0 feeds
+800/2039
+https://sf2platinum.wordpress.com/2020/10/15/row-scrolling-for-parallax-effects/ has 2 feeds
+801/2039
+https://pdos.csail.mit.edu/6.828/2020/schedule.html has 0 feeds
+802/2039
+https://www.bungie.net/en/News/Article/50666 has 0 feeds
+803/2039
+https://procedural-generation.tumblr.com/ has 1 feeds
+804/2039
+https://vitalik.ca/general/2020/07/20/homomorphic.html has 1 feeds
+805/2039
+https://aschrein.github.io/jekyll/update/2019/06/13/whatsup-with-my-branches-on-gpu.html has 1 feeds
+806/2039
+https://www.technologyreview.com/s/612358/an-ai-physicist-can-derive-the-natural-laws-of-imagined-universes/ Status 404 Not Found
+807/2039
+https://www.askvg.com/windows-10-fix-too-many-svchost-exe-service-host-process-running-in-task-manager/ has 1 feeds
+808/2039
+https://code.visualstudio.com/blogs/2018/03/23/text-buffer-reimplementation has 1 feeds
+809/2039
+https://www.learnopencv.com/histogram-of-oriented-gradients/ has 2 feeds
+810/2039
+https://luau-lang.org/performance has 1 feeds
+811/2039
+https://shahriyarshahrabi.medium.com/introduction-to-color-theory-for-games-art-and-tech-67bd4c8607d7 has 0 feeds
+812/2039
+https://gamedev.stackexchange.com/questions/81979/plot-hdr-tonemap-curves has 1 feeds
+813/2039
+http://www.codercorner.com/RadixSortRevisited.htm has 0 feeds
+814/2039
+https://www.symbolab.com/solver/linear-equation-calculator/ has 0 feeds
+815/2039
+https://pandasauce.org/post/linux-fonts/ has 0 feeds
+816/2039
+https://www.officedaytime.com/tips/simd.html Status 403 Forbidden
+817/2039
+https://qvault.io/2020/07/08/how-sha-2-works-step-by-step-sha-256/ has 0 feeds
+818/2039
+https://elixir.bootlin.com/linux/latest/source Status 404 Not Found
+819/2039
+http://www.artofluis.com/3d-work/the-art-of-the-witness/clouds/ has 1 feeds
+820/2039
+http://c-faq.com/decl/spiral.anderson.html has 0 feeds
+821/2039
+http://www.aclockworkberry.com/shader-derivative-functions/ has 2 feeds
+822/2039
+http://doc.cgal.org/latest/Minkowski_sum_2/ has 0 feeds
+823/2039
+https://www.cs.cmu.edu/~kmcrane/Projects/MonteCarloGeometryProcessing/index.html has 0 feeds
+824/2039
+https://dl.acm.org/doi/pdf/10.1145/3371595.3372264?download=true Status 404 Not Found
+825/2039
+https://yarchive.net/comp/linux/utf8.html read tcp 192.168.1.164:53312->216.146.217.154:443: wsarecv: An existing connection was forcibly closed by the remote host.
+826/2039
+https://theorangeduck.com/page/spring-roll-call has 1 feeds
+827/2039
+http://www.drdobbs.com/parallel/rasterization-on-larrabee/217200602 has 2 feeds
+828/2039
+https://www.drdobbs.com/architecture-and-design/optimizing-pixomatic-for-x86-processors/184405765?queryText=michael%2Babrash has 2 feeds
+829/2039
+https://link.springer.com/book/10.1007/978-3-319-11080-6 Status 404 Not Found
+830/2039
+https://blogs.unity3d.com/2020/10/01/fixing-time-deltatime-in-unity-2020-2-for-smoother-gameplay-what-did-it-take/ Status 404 Not Found
+831/2039
+http://cs.brown.edu/courses/cs173/2012/Videos/ has 0 feeds
+832/2039
+https://www.flipcode.com/harmless/issue01.htm has 0 feeds
+833/2039
+https://www.lo-phi.com/blog/handmade-programming-the-c-library read tcp 192.168.1.164:52465->199.34.228.41:443: wsarecv: An existing connection was forcibly closed by the remote host.
+834/2039
+https://blog.bearcats.nl/accurate-sleep-function/ has 0 feeds
+835/2039
+https://reindernijhoff.net/2019/03/wolfenstein-raytracing-on-using-webgl1/ has 1 feeds
+836/2039
+https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Text_Rendering_01 has 1 feeds
+837/2039
+https://abi-laboratory.pro/index.php?view=tracker read tcp 192.168.1.164:53472->37.46.132.111:443: wsarecv: An existing connection was forcibly closed by the remote host.
+838/2039
+https://theorangeduck.com/page/code-vs-data-driven-displacement has 1 feeds
+839/2039
+http://colinm.org/sigbovik/ has 1 feeds
+840/2039
+https://www.silbinarywolf.com/post/189934380218/you-cant-just-query-if-a-controller-is-for-xbox has 1 feeds
+841/2039
+http://paulbourke.net/geometry/polygonise/ has 0 feeds
+842/2039
+https://momentsingraphics.de/PathTracingWorkshop.html has 1 feeds
+843/2039
+https://sookocheff.com/post/time/how-does-ntp-work/ Status 404 Not Found
+844/2039
+https://virtuallyfun.com/wordpress/2020/05/22/examining-windows-1-0-hello-c/ has 2 feeds
+845/2039
+https://builtin.com/gaming/how-to-become-a-game-developer has 0 feeds
+846/2039
+https://hillelwayne.com/post/why-dont-people-use-formal-methods/ has 1 feeds
+847/2039
+http://www.oocities.org/tablizer/oopbad.htm has 0 feeds
+848/2039
+https://www.destroyallsoftware.com/talks/ideology has 0 feeds
+849/2039
+https://techcommunity.microsoft.com/t5/windows-kernel-internals/hotpatching-on-windows/ba-p/2959541 has 1 feeds
+850/2039
+https://wallisc.github.io/rendering/2020/05/02/Volumetric-Rendering-Part-1.html has 1 feeds
+851/2039
+https://page.mi.fu-berlin.de/rojas/neural/ has 0 feeds
+852/2039
+https://google.github.io/filament/Filament.md.html has 1 feeds
+853/2039
+http://www.adriancourreges.com/blog/2016/09/09/doom-2016-graphics-study/ has 1 feeds
+854/2039
+https://gpfault.net/posts/asm-tut-0.txt.html has 1 feeds
+855/2039
+https://spdload.com/blog/poc-vs-prototype-vs-mvp/ has 2 feeds
+856/2039
+http://higherorderfun.com/blog/2012/05/20/the-guide-to-implementing-2d-platformers/ has 2 feeds
+857/2039
+https://dl.acm.org/toc/pacmpl/2020/4/HOPL Status 404 Not Found
+858/2039
+https://archive.org/details/AssemblyLinesCompleteWagner Status 404 Not Found
+859/2039
+https://carld.github.io/2017/06/29/a-small-compiler-example.html has 1 feeds
+860/2039
+https://renderdiagrams.org/ has 1 feeds
+861/2039
+http://pastebin.com/6eKpz7gj has 0 feeds
+862/2039
+https://aras-p.info/blog/2022/02/03/Speeding-up-Blender-.obj-export/ has 1 feeds
+863/2039
+https://alexanderameye.github.io/notes/rendering-outlines/ has 0 feeds
+864/2039
+https://conclave-team.github.io/conclave-site/#coding-the-crdt has 1 feeds
+865/2039
+https://carld.github.io/2017/06/20/lisp-in-less-than-200-lines-of-c.html has 1 feeds
+866/2039
+https://www.usenix.org/legacy/publications/compsystems/1990/win_massalin.pdf Not a html
+867/2039
+https://pastebin.com/ejKc5h5f has 0 feeds
+868/2039
+https://www.morganclaypool.com/toc/cac/1/1 Get "https://www.morganclaypool.com/toc/cac/1/1": dial tcp 216.40.34.41:443: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.
+869/2039
+http://dtecta.com/files/GDC16_VanDenBergen_Gino_Rotational_Joint_Limits.pdf Get "http://dtecta.com/files/GDC16_VanDenBergen_Gino_Rotational_Joint_Limits.pdf": dial tcp 84.82.207.211:80: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.
+870/2039
+http://tom.cs.byu.edu/~557/text/cagd.pdf Get "http://tom.cs.byu.edu/~557/text/cagd.pdf": dial tcp 128.187.105.66:80: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.
+871/2039
+https://arstechnica.com/gadgets/2019/08/unix-at-50-it-starts-with-a-mainframe-a-gator-and-three-dedicated-researchers/ has 1 feeds
+872/2039
+https://www.cs.columbia.edu/~suman/secure_sw_devel/Basic_Program_Analysis_CF.pdf Not a html
+873/2039
+http://theorangeduck.com/page/spring-roll-call has 1 feeds
+874/2039
+https://takinginitiative.wordpress.com/ has 1 feeds
+875/2039
+http://www.ruska.it/michal/flicker.html Get "http://www.ruska.it/michal/flicker.html": dial tcp 2.238.75.151:80: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.
+876/2039
+https://www.destroyallsoftware.com/talks/wat has 0 feeds
+877/2039
+https://transvoxel.org/ has 0 feeds
+878/2039
+https://www.destroyallsoftware.com/talks/a-whole-new-world has 0 feeds
+879/2039
+https://www.gnu.org/software/emacs/manual/html_node/elisp/Rx-Notation.html has 0 feeds
+880/2039
+https://jamchamb.github.io/2018/06/09/animal-crossing-developer-mode.html has 1 feeds
+881/2039
+https://media.handmade-seattle.com/ has 0 feeds
+882/2039
+https://media.handmade-seattle.com/fabian-giesen/ has 0 feeds
+883/2039
+https://en.cppreference.com/w/cpp/algorithm/ranges/starts_with>/<https://en.cppreference.com/w/cpp/algorithm/ranges/ends_with Status 400 Bad Request
+884/2039
+https://jakearchibald.com/2020/avif-has-landed/ has 1 feeds
+885/2039
+https://www.officedaytime.com/simd512e/simd.html has 0 feeds
+886/2039
+https://jerryjones.dev/2020/05/04/accessibility-101-for-content-creators/ has 2 feeds
+887/2039
+https://www.khronos.org/opengl/wiki/Common_Mistakes has 1 feeds
+888/2039
+https://www.khronos.org/blog/vulkan-releases-unified-samples-repository has 2 feeds
+889/2039
+https://blog.bearcats.nl/perfect-sleep-function/ has 0 feeds
+890/2039
+https://www.sebastiansylvan.com/post/the-perils-of-future-coding/ has 1 feeds
+891/2039
+https://www.sebastiansylvan.com/post/matrix_naming_convention/ has 1 feeds
+892/2039
+https://fabiensanglard.net/anotherWorld_code_review/ has 0 feeds
+893/2039
+https://blender.stackexchange.com/questions/46825/render-with-a-wider-dynamic-range-in-cycles-to-produce-photorealistic-looking-im has 1 feeds
+894/2039
+http://www.simonandschuster.co.uk/books/The-Greatest-Story-Ever-Told-So-Far/Lawrence-Krauss/9781471158377 Status 404 Not Found
+895/2039
+http://hec.gov.pk/english/services/universities/RevisedCurricula/Documents/2011-2012/Avionic-2011-12.pdf Not a html
+896/2039
+https://www.humprog.org/~stephen/#publications has 0 feeds
+897/2039
+http://sigslot.sourceforge.net/ has 0 feeds
+898/2039
+http://www.ioccc.org/2011/akari/akari.c Not a html
+899/2039
+http://www.ioccc.org/1998/banks.c Not a html
+900/2039
+http://www.ioccc.org/2001/westley.c Not a html
+901/2039
+https://beta.observablehq.com/@mbostock/predator-and-prey has 2 feeds
+902/2039
+https://www.microsoft.com/en-us/research/uploads/prod/2019/06/mimalloc-tr-v1.pdf Not a html
+903/2039
+http://fabiensanglard.net/gebb/index.html has 1 feeds
+904/2039
+https://social.msdn.microsoft.com/Profile/Fabian%2bGiesen%2b(RAD%2bGame%2bTools)/activity has 2 feeds
+905/2039
+http://renderingpipeline.com/2012/07/texture-compression/ has 2 feeds
+906/2039
+https://benhoyt.com/writings/count-words/ has 1 feeds
+907/2039
+https://www.agner.org/optimize/instruction_tables.pdf Not a html
+908/2039
+https://winasm.tripod.com/Clib.html has 0 feeds
+909/2039
+https://nullprogram.com/blog/2023/01/08/ has 1 feeds
+910/2039
+https://scs.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=d8c83d3a-8074-4afe-ae3b-693e2250999a Status 403 Forbidden
+911/2039
+http://jcgt.org/published/0003/04/01/paper.pdf Not a html
+912/2039
+https://ottverse.com/eme-cenc-cdm-aes-keys-drm-digital-rights-management/ has 2 feeds
+913/2039
+http://www.math.harvard.edu/~shlomo/ has 0 feeds
+914/2039
+https://www.html5rocks.com/en/tutorials/internals/howbrowserswork/ has 1 feeds
+915/2039
+https://hacks.mozilla.org/2022/11/improving-firefox-stability-with-this-one-weird-trick has 1 feeds
+916/2039
+https://www.khronos.org/blog/liaison-between-khronos-and-open-geospatial-consortium-leads-to-3d-tiles-community-standard-built-on-gltf-for-streaming-massive-models has 2 feeds
+917/2039
+https://pdfs.semanticscholar.org/eeb5/014f86750c54a87f214b03246799e970d114.pdf Status 404 Not Found
+918/2039
+http://www.adammil.net/blog/v125_Roguelike_Vision_Algorithms.html has 1 feeds
+919/2039
+https://blogs.windows.com/windowsdeveloper/2021/01/21/making-win32-apis-more-accessible-to-more-languages/ has 0 feeds
+920/2039
+https://benhoyt.com/writings/hash-table-in-c/ has 1 feeds
+921/2039
+https://www.cocos.com/en/building-collision-detection-using-signed-distance-field has 0 feeds
+922/2039
+https://blog.bruce-hill.com/6-useful-snippets has 0 feeds
+923/2039
+http://www.aupress.ca/books/120226/ebook/99Z_Morin_2013-Open_Data_Structures.pdf has 1 feeds
+924/2039
+https://golang.design/history/ has 0 feeds
+925/2039
+http://www.ioccc.org/2011/akari/ Status 404 Not Found
+926/2039
+https://www.deconstructconf.com/2019/dan-luu-files has 0 feeds
+927/2039
+http://eastfarthing.com/blog/2020-09-14-decoder/ has 1 feeds
+928/2039
+https://www.gameuidatabase.com/index.php has 0 feeds
+929/2039
+https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions/ has 1 feeds
+930/2039
+https://iradicator.com/fast-inverse-smoothstep/ has 1 feeds
+931/2039
+http://www.ipol.im/ has 6 feeds
+932/2039
+https://blog.nelhage.com/post/computers-can-be-understood/ has 1 feeds
+933/2039
+http://uops.info/table.html has 0 feeds
+934/2039
+https://knarkowicz.wordpress.com/2014/07/20/lightmapping-in-anomaly-2-mobile/ has 2 feeds
+935/2039
+https://josephg.com/blog/crdts-go-brrr/ has 1 feeds
+936/2039
+https://cgg.mff.cuni.cz/~jaroslav/papers/2008-irradiance_caching_class/ has 0 feeds
+937/2039
+https://docs.unrealengine.com/en-us/Engine/Rendering/LightingAndShadows/DistanceFieldAmbientOcclusion has 0 feeds
+938/2039
+http://ssabook.gforge.inria.fr/latest/book.pdf Get "http://ssabook.gforge.inria.fr/latest/book.pdf": dial tcp 128.93.193.15:80: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.
+939/2039
+https://wbenny.github.io/2018/11/04/wow64-internals.html has 1 feeds
+940/2039
+https://dougallj.wordpress.com/2022/05/22/faster-crc32-on-the-apple-m1/ has 2 feeds
+941/2039
+https://hackaday.com/2017/01/27/forth-the-hackers-language/ has 2 feeds
+942/2039
+https://handmade.network/wiki/7246-file_dialogs Status 404 Not Found
+943/2039
+https://handmade.network/forums/wip/t/7330-implementing_a_font_reader_and_rasterizer_from_scratch,_part_1__ttf_font_reader Status 404 Not Found
+944/2039
+http://www.ioccc.org/2001/herrmann1.c Not a html
+945/2039
+https://specifications.freedesktop.org/wm-spec/wm-spec-1.3.html has 0 feeds
+946/2039
+https://bitbucket.org/wolfpld/tracy has 0 feeds
+947/2039
+https://torust.me/rendering/irradiance-caching/spherical-gaussians/2018/09/21/spherical-gaussians.html has 1 feeds
+948/2039
+http://aras-p.info/blog/2017/10/23/Best-unknown-MSVC-flag-d2cgsummary/ has 1 feeds
+949/2039
+https://rosenzweig.io/blog/asahi-gpu-part-2.html has 1 feeds
+950/2039
+https://knightcolumbia.org/content/protocols-not-platforms-a-technological-approach-to-free-speech has 1 feeds
+951/2039
+https://opensource.apple.com/source/ld64/ld64-136/doc/design/linker.html Status 404 Not Found
+952/2039
+https://tomverbeure.github.io/rtl/2018/11/26/Racing-the-Beam-Ray-Tracer.html has 1 feeds
+953/2039
+https://www.cs.cornell.edu/~asampson/blog/llvm.html has 1 feeds
+954/2039
+https://cellperformance.beyond3d.com/articles/2006/06/understanding-strict-aliasing.html has 1 feeds
+955/2039
+https://people.xiph.org/~xiphmont/demo/neil-young.html has 0 feeds
+956/2039
+https://code.fb.com/developer-tools/f14/ has 1 feeds
+957/2039
+https://pomax.github.io/bezierinfo/ has 1 feeds
+958/2039
+https://www.twitch.tv/videos/1175284002 has 0 feeds
+959/2039
+https://www.airs.com/blog/index.php?s=linkers has 3 feeds
+960/2039
+https://writing.kemitchell.com/2016/09/21/MIT-License-Line-by-Line.html has 2 feeds
+961/2039
+https://blog.molecular-matters.com/2015/08/24/job-system-2-0-lock-free-work-stealing-part-1-basics/ has 2 feeds
+962/2039
+https://en.cppreference.com/w/cpp/language/injected-class-name has 1 feeds
+963/2039
+https://en.cppreference.com/w/cpp/header/execution has 1 feeds
+964/2039
+https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.45.4152&rep=rep1&type=pdf Not a html
+965/2039
+https://blog.grijjy.com/2018/08/29/creating-high-performance-udp-servers-on-windows-and-linux/ has 2 feeds
+966/2039
+https://fabiensanglard.net/sf2_sheets/index.html has 1 feeds
+967/2039
+https://webrtchacks.com/real-time-video-processing-with-webcodecs-and-streams-processing-pipelines-part-1/ has 2 feeds
+968/2039
+https://handmade.network/forums/wip/t/2363-implementing_a_basic_png_reader_the_handmade_way Status 404 Not Found
+969/2039
+https://handmade.network/library/all has 0 feeds
+970/2039
+https://blog.reverberate.org/2012/12/hello-jit-world-joy-of-simple-jits.html has 1 feeds
+971/2039
+https://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf Not a html
+972/2039
+https://blog.cloudflare.com/branch-predictor/ has 1 feeds
+973/2039
+http://www.ioccc.org/years.html has 0 feeds
+974/2039
+http://www.ioccc.org/2001/bellard.c Not a html
+975/2039
+https://developer.nvidia.com/nvidia-pro-pipeline has 0 feeds
+976/2039
+https://a-b-street.github.io/docs/tech/map/geometry/index.html has 0 feeds
+977/2039
+https://papl.cs.brown.edu/2020/index.html has 0 feeds
+978/2039
+https://nullprogram.com/blog/2021/12/30/ has 1 feeds
+979/2039
+https://www.cg.tuwien.ac.at/research/publications/2013/LUKSCH-2013-FLM/ has 0 feeds
+980/2039
+https://thenumbat.github.io/Exponential-Rotations/ has 1 feeds
+981/2039
+https://ir.lib.uwo.ca/cgi/viewcontent.cgi?article=8883&context=etd Not a html
+982/2039
+https://www.geometrictools.com/Documentation/FastAndAccurateSlerp.pdf Not a html
+983/2039
+http://www.catb.org/esr/structure-packing/ has 0 feeds
+984/2039
+https://raw.githubusercontent.com/huxingyi/dust3d/master/docs/examples/modeling-ant/modeling-ant-dust3d-screenshot.png Status 404 Not Found
+985/2039
+https://raw.githubusercontent.com/wiki/oracle/binutils-gdb/files/ctf-spec.pdf Not a html
+986/2039
+https://raw.githubusercontent.com/osnr/horrifying-pdf-experiments/master/breakout.pdf Not a html
+987/2039
+https://raw.githubusercontent.com/MethodicalAcceleratorDesign/MADdocs/master/luajit/luajit-doc.pdf Not a html
+988/2039
+http://aras-p.info/blog/2017/10/24/Slow-to-Compile-Table-Initializers/ has 1 feeds
+989/2039
+http://mattmahoney.net/dc/dce.html has 0 feeds
+990/2039
+https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/ has 1 feeds
+991/2039
+http://www.realtimerendering.com/raytracing/Ray%20Tracing_%20the%20Rest%20of%20Your%20Life.pdf Not a html
+992/2039
+http://www.realtimerendering.com/raytracing/Ray%20Tracing_%20The%20Next%20Week.pdf Not a html
+993/2039
+https://drossbucket.com/2021/06/30/hacker-news-folk-wisdom-on-visual-programming/ has 2 feeds
+994/2039
+https://unlimited3d.wordpress.com/2020/01/08/srgb-color-space-in-opengl/ has 2 feeds
+995/2039
+https://hero.handmade.network/forums/code-discussion/t/94 Status 404 Not Found
+996/2039
+https://ccrma.stanford.edu/~jos/pasp/ has 0 feeds
+997/2039
+https://www.exploringbinary.com/decimal-precision-of-binary-floating-point-numbers/ has 3 feeds
+998/2039
+https://randomascii.wordpress.com/ has 1 feeds
+999/2039
+http://www.keithschwarz.com/darts-dice-coins/ has 0 feeds
+1000/2039
+https://ericlippert.com/2020/02/27/hundred-year-mistakes/ has 2 feeds
+1001/2039
+https://sanctum.geek.nz/arabesque/series/unix-as-ide/ has 2 feeds
+1002/2039
+https://blog.tuxedolabs.com/2021/02/22/background.html has 1 feeds
+1003/2039
+https://www.joelonsoftware.com/2005/05/11/making-wrong-code-look-wrong/ has 1 feeds
+1004/2039
+https://www.microsoft.com/en-us/research/uploads/prod/2019/04/fork-hotos19.pdf Not a html
+1005/2039
+https://weinholt.se/articles/non-posix-filesystems/ has 1 feeds
+1006/2039
+https://lospec.com/palette-list has 0 feeds
+1007/2039
+http://antongerdelan.net/opengl/d3d11.html has 0 feeds
+1008/2039
+https://wiki.vg/Main_Page has 1 feeds
+1009/2039
+https://themaister.net/blog/2018/08/25/pseudo-bandlimited-pixel-art-filtering-in-3d-a-mathematical-derivation/ has 2 feeds
+1010/2039
+https://en.cppreference.com/w/cpp/utility/functional/invoke has 1 feeds
+1011/2039
+https://fasterthanli.me/articles/i-want-off-mr-golangs-wild-ride has 1 feeds
+1012/2039
+https://fasterthanli.me/series/dont-shell-out has 1 feeds
+1013/2039
+https://fasterthanli.me/blog/2020/whats-in-a-linux-executable/ has 1 feeds
+1014/2039
+https://fabiensanglard.net/cpsb/ has 1 feeds
+1015/2039
+http://www.codersblock.org/blog/multiplayer-fps-part-1 Status 429 Too Many Requests
+1016/2039
+https://aras-p.info/blog/2022/02/25/Curious-lack-of-sprintf-scaling/ has 1 feeds
+1017/2039
+https://graphics.stanford.edu/~seander/bithacks.html has 0 feeds
+1018/2039
+https://blog.uhawkvr.com/rendering/rendering-volumetric-clouds-using-signed-distance-fields/ has 2 feeds
+1019/2039
+https://stackoverflow.com/questions/25437632/cmake-run-built-executable-before-building-another has 1 feeds
+1020/2039
+http://beej.us/guide/bgnet/html has 0 feeds
+1021/2039
+https://www.elsevier.com/books/computer-organization-and-design-risc-v-edition/patterson/978-0-12-812275-4 Status 404 Not Found
+1022/2039
+http://concurrencyfreaks.blogspot.com/ has 1 feeds
+1023/2039
+https://berthub.eu/articles/posts/reed-solomon-for-programmers/ has 1 feeds
+1024/2039
+http://mattgemmell.com/what-have-you-tried/ has 1 feeds
+1025/2039
+https://www.pentestpartners.com/security-blog/sinking-container-ships-by-hacking-load-plan-software/ has 1 feeds
+1026/2039
+https://www.toptal.com/game/video-game-physics-part-ii-collision-detection-for-solid-objects has 0 feeds
+1027/2039
+https://www.nature.com/articles/s41586-022-05172-4#Sec9 Status 404 Not Found
+1028/2039
+https://blog.demofox.org/2016/02/29/fast-voronoi-diagrams-and-distance-dield-textures-on-the-gpu-with-the-jump-flooding-algorithm/ has 1 feeds
+1029/2039
+https://pavelfatin.com/low-latency-painting-in-awt-and-swing/#showing-delay has 2 feeds
+1030/2039
+https://developer.nvidia.com/nv-path-rendering-videos has 0 feeds
+1031/2039
+https://www.destructoid.com/he-worked-on-it-for-three-years-and-then-threw-it-away-231507.phtml has 2 feeds
+1032/2039
+https://www.openmainframeproject.org/all-projects/cobolprogrammingcourse has 1 feeds
+1033/2039
+https://flipcode.com/archives/articles.shtml has 0 feeds
+1034/2039
+https://pikuma.com/blog/game-console-history-for-programmers has 0 feeds
+1035/2039
+https://www.w3.org/TR/wai-aria-practices-1.2/ has 1 feeds
+1036/2039
+http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.233.104&rep=rep1&type=pdf Not a html
+1037/2039
+http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.230.6374&rep=rep1&type=pdf Not a html
+1038/2039
+http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.2.2862&rep=rep1&type=pdf Not a html
+1039/2039
+http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.219.7269&rep=rep1&type=pdf Not a html
+1040/2039
+https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.113.2992&rep=rep1&type=pdf Not a html
+1041/2039
+https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.103.6084&rep=rep1&type=pdf Not a html
+1042/2039
+https://www.dsprelated.com/showarticle/139.php Status 404 Not Found
+1043/2039
+https://blog.cloudflare.com/when-bloom-filters-dont-bloom/ has 1 feeds
+1044/2039
+http://www.metanetsoftware.com/dev/tutorials has 1 feeds
+1045/2039
+https://blog.regehr.org/archives/28 has 2 feeds
+1046/2039
+https://aras-p.info/blog/2020/12/08/Texture-Compression-in-2020/ has 1 feeds
+1047/2039
+https://en.cppreference.com/w/cpp/io/basic_spanstream has 1 feeds
+1048/2039
+https://en.cppreference.com/w/cpp/utility/functional/move_only_function/move_only_function has 1 feeds
+1049/2039
+http://blog.reverberate.org/2016/11/07/introducing-bloaty-mcbloatface.html has 1 feeds
+1050/2039
+http://stackoverflow.com/questions/1583193/what-functions-does-winmaincrtstartup-perform has 1 feeds
+1051/2039
+https://www.udemy.com/course/programming-games-for-the-atari-2600/ has 0 feeds
+1052/2039
+http://terathon.com/blog/projective-geometric-algebra-done-right/ has 2 feeds
+1053/2039
+https://fabiensanglard.net/doom_fire_psx/ has 1 feeds
+1054/2039
+https://mattdesl.svbtle.com/drawing-lines-is-hard has 1 feeds
+1055/2039
+https://visualgo.net/en has 0 feeds
+1056/2039
+https://bitbucket.org/wolfpld/tracy/src/master/ has 0 feeds
+1057/2039
+https://graphitemaster.github.io/fibers/ has 0 feeds
+1058/2039
+https://blog.mapbox.com/a-dive-into-spatial-search-algorithms-ebd0c5e39d2a has 0 feeds
+1059/2039
+https://www.slideshare.net/DICEStudio/high-dynamic-range-color-grading-and-display-in-frostbite has 1 feeds
+1060/2039
+http://sites.utexas.edu/jdm4372/2018/07/23/comments-on-timing-short-code-sections-on-intel-processors/ has 1 feeds
+1061/2039
+http://www.codinglabs.net/tutorial_compute_shaders_filters.aspx has 0 feeds
+1062/2039
+https://fermatslibrary.com/s/measuring-the-earth-with-traceroute Status 404 Not Found
+1063/2039
+http://lousodrome.net/blog/light/2020/01/04/physically-based-rendering-references-at-the-end-of-2019/ has 2 feeds
+1064/2039
+https://begriffs.com/posts/2018-11-15-c-portability.html has 1 feeds
+1065/2039
+http://www.joshcaratelli.com/blog/struct-packing has 0 feeds
+1066/2039
+https://research.nvidia.com/publication/restart-trail-stackless-bvh-traversal Status 404 Not Found
+1067/2039
+https://www.slideshare.net/DevCentralAMD/vertex-shader-tricks-bill-bilodeau has 1 feeds
+1068/2039
+https://devblogs.microsoft.com/oldnewthing/20220311-00/?p=106340 Get "https://devblogs.microsoft.com/oldnewthing/20220311-00/?p=106340": stream error: stream ID 1; INTERNAL_ERROR; received from peer
+1069/2039
+https://devblogs.microsoft.com/oldnewthing/20191209-00/?p=103195 Get "https://devblogs.microsoft.com/oldnewthing/20191209-00/?p=103195": stream error: stream ID 25; INTERNAL_ERROR; received from peer
+1070/2039
+https://devblogs.microsoft.com/premier-developer/managed-object-internals-part-3-the-layout-of-a-managed-array-3/ Get "https://devblogs.microsoft.com/premier-developer/managed-object-internals-part-3-the-layout-of-a-managed-array-3/": stream error: stream ID 21; INTERNAL_ERROR; received from peer
+1071/2039
+https://devblogs.microsoft.com/oldnewthing/20220307-00/?p=106317 Get "https://devblogs.microsoft.com/oldnewthing/20220307-00/?p=106317": stream error: stream ID 13; INTERNAL_ERROR; received from peer
+1072/2039
+https://devblogs.microsoft.com/premier-developer/managed-object-internals-part-2-object-header-layout-and-the-cost-of-locking/ Get "https://devblogs.microsoft.com/premier-developer/managed-object-internals-part-2-object-header-layout-and-the-cost-of-locking/": stream error: stream ID 23; INTERNAL_ERROR; received from peer
+1073/2039
+https://devblogs.microsoft.com/windows-music-dev/unofficial-windows-10-audio-workstation-build-and-tweak-guide-part-2/ Get "https://devblogs.microsoft.com/windows-music-dev/unofficial-windows-10-audio-workstation-build-and-tweak-guide-part-2/": stream error: stream ID 7; INTERNAL_ERROR; received from peer
+1074/2039
+https://devblogs.microsoft.com/oldnewthing/20220308-00/?p=106321 Get "https://devblogs.microsoft.com/oldnewthing/20220308-00/?p=106321": stream error: stream ID 11; INTERNAL_ERROR; received from peer
+1075/2039
+https://devblogs.microsoft.com/premier-developer/managed-object-internals-part-4-fields-layout/ Get "https://devblogs.microsoft.com/premier-developer/managed-object-internals-part-4-fields-layout/": stream error: stream ID 3; INTERNAL_ERROR; received from peer
+1076/2039
+https://devblogs.microsoft.com/oldnewthing/20220309-00/?p=106331 Get "https://devblogs.microsoft.com/oldnewthing/20220309-00/?p=106331": stream error: stream ID 5; INTERNAL_ERROR; received from peer
+1077/2039
+https://devblogs.microsoft.com/oldnewthing/20220321-00/?p=106367 stream error: stream ID 19; INTERNAL_ERROR; received from peer
+1078/2039
+https://eatplayhate.me/2013/09/29/d3d11-texture-update-costs/ has 2 feeds
+1079/2039
+http://feertech.com/legion/software/game/2021/05/21/game-from-scratch-01.html has 1 feeds
+1080/2039
+https://codeberg.org/drummyfish/tinyphysicsengine/ has 2 feeds
+1081/2039
+https://bartwronski.com/2021/01/18/is-this-a-branch/ has 2 feeds
+1082/2039
+https://bartwronski.com/2020/02/03/separate-your-filters-svd-and-low-rank-approximation-of-image-filters/ has 2 feeds
+1083/2039
+https://interplayoflight.wordpress.com/2022/07/02/order-independent-transparency-part-2/ has 2 feeds
+1084/2039
+http://fabiensanglard.net/Game_Engine_Black_Book_Release_Date/index.php has 0 feeds
+1085/2039
+http://fabiensanglard.net/anotherWorld_code_review/index.php has 0 feeds
+1086/2039
+http://fabiensanglard.net/doom_psx/index.html has 1 feeds
+1087/2039
+https://www.anthropicstudios.com/2022/01/13/asking-windows-nicely/ has 1 feeds
+1088/2039
+https://eatplayhate.me/2013/09/17/adventures-in-engine-construction-rectangle-packing/ has 2 feeds
+1089/2039
+https://acko.net/blog/teardown-frame-teardown/ has 1 feeds
+1090/2039
+https://bottosson.github.io/ has 1 feeds
+1091/2039
+https://sonniss.com/gameaudiogdc has 1 feeds
+1092/2039
+https://bartwronski.com/2021/02/15/bilinear-down-upsampling-pixel-grids-and-that-half-pixel-offset/ has 2 feeds
+1093/2039
+https://interplayoflight.wordpress.com/2022/06/25/order-independent-transparency-part-1/ has 2 feeds
+1094/2039
+https://open.substack.com/pub/ryanfleury/p/in-defense-of-linked-lists?r=1njgru&utm_campaign=post&utm_medium=web Status 404 Not Found
+1095/2039
+https://floooh.github.io/2021/12/17/cycle-stepped-z80.html has 1 feeds
+1096/2039
+https://www.geometrictools.com/Source/Mathematics.html Status 403 Forbidden
+1097/2039
+https://nearcyan.com/you-probably-dont-need-recaptcha/ has 1 feeds
+1098/2039
+https://www.geometrictools.com/Source/Intersection2D.html Status 403 Forbidden
+1099/2039
+http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p2440r1.html has 0 feeds
+1100/2039
+https://a13xp0p0v.github.io/2022/05/24/pwn-fuchsia.html has 1 feeds
+1101/2039
+https://bottosson.github.io/posts/oklab/ has 1 feeds
+1102/2039
+https://randomascii.wordpress.com/2019/03/20/exercises-in-emulation-xbox-360s-fma-instruction/ has 2 feeds
+1103/2039
+https://www.scribd.com/document/306024224/Offline-Learnopengl Status 410 Gone
+1104/2039
+https://discord.com/channels/239737791225790464/846803924005552172/880108904191770696 Status 404 Not Found
+1105/2039
+https://discord.com/channels/239737791225790464/600063880533770251/994224981821104238 Status 404 Not Found
+1106/2039
+https://discord.com/channels/239737791225790464/241302871927291915/944020351006965800 Status 404 Not Found
+1107/2039
+https://discord.com/channels/239737791225790464/600063880533770251/939559895693422612 Status 404 Not Found
+1108/2039
+https://discord.com/channels/239737791225790464/241518132928315392/696835241222078556 Status 404 Not Found
+1109/2039
+https://developer.nvidia.com/reflex has 0 feeds
+1110/2039
+https://factorio.com/blog/post/fff-317 has 1 feeds
+1111/2039
+https://research.nvidia.com/publication/2017-07_Efficient-Incoherent-Ray Status 404 Not Found
+1112/2039
+https://csantosbh.wordpress.com/2014/02/05/automatically-detecting-the-texture-filter-threshold-for-pixelated-magnifications/ has 2 feeds
+1113/2039
+https://gpuopen.com/amd-vega-7nm-instruction-set-architecture-documentation/ read tcp 192.168.1.164:52624->104.71.132.96:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1114/2039
+https://gpuopen.com/rdna2-isa-available/ Get "https://gpuopen.com/rdna2-isa-available/": read tcp 192.168.1.164:52624->104.71.132.96:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1115/2039
+https://gpuopen.com/compute-product/amd-rdna-1-0-instruction-set-architecture/ Get "https://gpuopen.com/compute-product/amd-rdna-1-0-instruction-set-architecture/": read tcp 192.168.1.164:52624->104.71.132.96:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1116/2039
+https://gpuopen.com/discovering-rdna/ read tcp 192.168.1.164:52624->104.71.132.96:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1117/2039
+https://gpuopen.com/events/gdc-2022/ read tcp 192.168.1.164:52624->104.71.132.96:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1118/2039
+https://blog.regehr.org/archives/1063 has 2 feeds
+1119/2039
+https://preshing.com/20171218/how-to-write-your-own-cpp-game-engine/ has 1 feeds
+1120/2039
+https://developer.amd.com/wp-content/resources/RDNA2_Shader_ISA_November2020.pdf Not a html
+1121/2039
+https://sonniss.com/gameaudiogdc18/ has 1 feeds
+1122/2039
+https://blog.toit.io/hash-maps-that-dont-hate-you-1a96150b492a has 0 feeds
+1123/2039
+https://csantosbh.wordpress.com/2014/01/25/manual-texture-filtering-for-pixelated-games-in-webgl/ has 2 feeds
+1124/2039
+https://blog.selfshadow.com/2022/08/13/siggraph-2022-links/ Status 403 Forbidden
+1125/2039
+https://blog.selfshadow.com/publications/s2020-shading-course/ has 0 feeds
+1126/2039
+https://www.gdcvault.com/play/1012073/Immediate-Mode-GUI-in has 0 feeds
+1127/2039
+https://www.gdcvault.com/play/1025407/Advanced-Graphics-Techniques-Tutorial-The has 0 feeds
+1128/2039
+https://www.gdcvault.com/play/1026755/Tools-Summit-Geometry-in-Milliseconds has 0 feeds
+1129/2039
+https://www.gdcvault.com/play/1023340/Taming-the-Jaguar-x86-Optimization has 0 feeds
+1130/2039
+http://www.ngedit.com/a_wm_keydown_wm_char.html has 0 feeds
+1131/2039
+https://www.matthewball.vc/all/epicprimer1 Status 429 Too Many Requests
+1132/2039
+http://blog.selfshadow.com/publications/s2013-shading-course/hoffman/s2013_pbs_physics_math_notes.pdf Status 403 Forbidden
+1133/2039
+https://floooh.github.io/2018/06/17/handles-vs-pointers.html has 1 feeds
+1134/2039
+https://danlark.org/2022/04/20/changing-stdsort-at-googles-scale-and-beyond/ has 2 feeds
+1135/2039
+https://blog.discord.com/how-discord-stores-billions-of-messages-7fa6ec7ee4c7 has 1 feeds
+1136/2039
+http://www.righto.com/2023/01/inside-8086-processors-instruction.html has 1 feeds
+1137/2039
+http://blog.selfshadow.com/publications/s2013-shading-course/#course_content has 0 feeds
+1138/2039
+https://www.engadget.com/2018/11/13/nasa-and-autodesk-testing-new-lander-designs/ has 1 feeds
+1139/2039
+https://thumpergame.com/blog/2013/10/29/engine-tech-easy-collaboration-with-object-urls has 1 feeds
+1140/2039
+https://www.gdcvault.com/play/1024365/Math-for-Game-Programmers-Noise has 0 feeds
+1141/2039
+https://www.gdcvault.com/play/1026327/Controller-to-Display-Latency-in has 0 feeds
+1142/2039
+https://unixism.net/2020/04/io-uring-by-example-article-series/ has 2 feeds
+1143/2039
+https://www.gdcvault.com/play/1024912/Beyond-Killzone-Creating-New-AI has 0 feeds
+1144/2039
+https://unixism.net/2019/04/linux-applications-performance-introduction/ has 2 feeds
+1145/2039
+https://www.gdcvault.com/play/1025031/Advanced-Graphics-Techniques-Tutorial-The has 0 feeds
+1146/2039
+https://developer.nvidia.com/content/depth-precision-visualized Status 404 Not Found
+1147/2039
+http://www.gdcvault.com/play/1014351/Forensic-Debugging-How-to-Autopsy has 0 feeds
+1148/2039
+https://www.gdcvault.com/play/1025695/Exploring-the-Tech-and-Design has 0 feeds
+1149/2039
+https://web.archive.org/web/20161109222018/https://research.neustar.biz/2012/02/02/choosing-a-good-hash-function-part-3/ has 1 feeds
+1150/2039
+https://www.gdcvault.com/play/1020606/Physics-for-Game-Programmers has 0 feeds
+1151/2039
+https://blog.demofox.org/2020/03/01/using-low-discrepancy-sequences-blue-noise-in-loot-drop-tables-for-games/ has 2 feeds
+1152/2039
+https://developer.nvidia.com/content/life-triangle-nvidias-logical-pipeline Status 404 Not Found
+1153/2039
+https://www.hanshq.net/zip.html has 1 feeds
+1154/2039
+https://web.archive.org/web/20141221050705/http://forum.devmaster.net/t/advanced-rasterization/6145 Status 404 Not Found
+1155/2039
+https://developer.nvidia.com/books/raytracing/raytracing_gems_preview Status 404 Not Found
+1156/2039
+https://www.gdcvault.com/play/1020624/Advanced-Visual-Effects-with-DirectX has 0 feeds
+1157/2039
+https://blog.demofox.org/2017/11/21/floating-point-precision/ has 2 feeds
+1158/2039
+https://0fps.net/2012/06/30/meshing-in-a-minecraft-game/ has 2 feeds
+1159/2039
+https://elixir.bootlin.com/linux/v6.2-rc4/source/tools/include/nolibc Status 404 Not Found
+1160/2039
+https://thesephist.com/posts/pl/ has 1 feeds
+1161/2039
+https://bruop.github.io/frustum_culling/ has 1 feeds
+1162/2039
+http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.119.1445 Status 404 Not Found
+1163/2039
+http://www.ludicon.com/castano/blog/2016/09/lightmap-compression-in-the-witness/ has 2 feeds
+1164/2039
+https://raphlinus.github.io/ui/graphics/2020/09/13/compositor-is-evil.html has 1 feeds
+1165/2039
+https://maxliani.wordpress.com/2022/07/27/anatomy-of-a-task-scheduler/ has 2 feeds
+1166/2039
+https://devblogs.microsoft.com/dotnet/how-async-await-really-works/ stream error: stream ID 27; INTERNAL_ERROR; received from peer
+1167/2039
+https://raphlinus.github.io/text/2020/10/26/text-layout.html has 1 feeds
+1168/2039
+https://0fps.net/2012/07/12/smooth-voxel-terrain-part-2/ has 2 feeds
+1169/2039
+https://thume.ca/2019/07/27/two-performance-aesthetics/ has 1 feeds
+1170/2039
+https://developer.nvidia.com/gpugems/gpugems2/part-ii-shading-lighting-and-shadows/chapter-12-tile-based-texture-mapping has 1 feeds
+1171/2039
+https://maxliani.wordpress.com/2021/09/01/undo-the-art-of-part-1/ has 2 feeds
+1172/2039
+https://raphlinus.github.io/ui/graphics/gpu/2021/10/22/swapchain-frame-pacing.html has 1 feeds
+1173/2039
+https://developer.nvidia.com/blog/ray-tracing-gems-ii-available-today-as-free-digital-download/?ncid=so-twit-478282-vt10#cid=dl13_so-twit_en-us has 1 feeds
+1174/2039
+https://code2flow.com/ has 0 feeds
+1175/2039
+https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/acrobat-20.pdf Not a html
+1176/2039
+https://krystalgamer.github.io/avengers-emulator/ has 1 feeds
+1177/2039
+http://www.ludicon.com/castano/blog/2017/10/lightmap-optimizations-ios/ has 2 feeds
+1178/2039
+https://webkit.org/blog/10308/speculation-in-javascriptcore/ has 2 feeds
+1179/2039
+https://oneraynyday.github.io/dev/2020/05/03/Analyzing-The-Simplest-C++-Program/ Status 404 Not Found
+1180/2039
+http://www.ludicon.com/castano/blog/2014/07/irradiance-caching-continued/ has 2 feeds
+1181/2039
+http://www.realtimerendering.com/ has 0 feeds
+1182/2039
+http://www.realtimerendering.com/intersections.html has 0 feeds
+1183/2039
+http://www.realtimerendering.com/books.html has 0 feeds
+1184/2039
+https://community.arm.com/developer/tools-software/graphics/b/blog/posts/mali-performance-7-accelerating-2d-rendering-using-opengl-es has 4 feeds
+1185/2039
+https://indieweb.org/why has 1 feeds
+1186/2039
+https://www.musicdsp.org/en/latest/index.html Status 404 Not Found
+1187/2039
+https://web.stanford.edu/~ouster/cgi-bin/cs140-winter13/lecture.php?topic=linkers Status 404 Not Found
+1188/2039
+http://jamie-wong.com/post/color/ has 1 feeds
+1189/2039
+https://blog.bruce-hill.com/packrat-parsing-from-scratch has 0 feeds
+1190/2039
+https://web.archive.org/web/20160404230818/http://research.neustar.biz/2011/12/29/choosing-a-good-hash-function-part-2/ has 2 feeds
+1191/2039
+https://web.archive.org/web/20200620014648/http://syscalls.kernelgrok.com/ has 0 feeds
+1192/2039
+http://kylehalladay.com/blog/2020/05/20/Rendering-With-Notepad.html has 1 feeds
+1193/2039
+http://filmicworlds.com/blog/linear-space-lighting-i-e-gamma/ has 1 feeds
+1194/2039
+https://devblogs.nvidia.com/vulkan-raytracing/ has 1 feeds
+1195/2039
+http://jamie-wong.com/post/color has 1 feeds
+1196/2039
+https://blogs.msdn.microsoft.com/oldnewthing/20190307-00/?p=101115 has 1 feeds
+1197/2039
+https://developer.nvidia.com/gpugems/GPUGems2/gpugems2_chapter16.html has 1 feeds
+1198/2039
+https://www.agner.org/optimize/optimizing_cpp.pdf Not a html
+1199/2039
+https://www.agner.org/optimize/ has 0 feeds
+1200/2039
+https://preshing.com/20110504/hash-collision-probabilities/ has 1 feeds
+1201/2039
+http://docs.gl/ has 0 feeds
+1202/2039
+https://developer.nvidia.com/gpugems/ has 1 feeds
+1203/2039
+https://www.microsoft.com/en-us/research/people/lamport/ Get "https://www.microsoft.com/en-us/research/people/lamport/": stream error: stream ID 5; INTERNAL_ERROR; received from peer
+1204/2039
+https://www.jendrikillner.com/article_database/ has 0 feeds
+1205/2039
+https://os.phil-opp.com/ has 1 feeds
+1206/2039
+http://www.mamoniem.com/behind-the-pretty-frames-elden-ring/ has 2 feeds
+1207/2039
+https://stackoverflow.blog/2020/07/08/improving-performance-with-simd-intrinsics-in-three-use-cases/ has 2 feeds
+1208/2039
+https://doronshamiasadeh.medium.com/the-rise-and-fall-of-programing-language-x-8563231a6f2b has 0 feeds
+1209/2039
+http://filmicworlds.com/blog/filmic-tonemapping-with-piecewise-power-curves/ has 1 feeds
+1210/2039
+https://www.manning.com/books/real-world-cryptography?a_aid=Realworldcrypto&a_bid=ad500e09 has 0 feeds
+1211/2039
+https://www.manning.com/books/geometry-for-programmers has 0 feeds
+1212/2039
+http://www.realtimerendering.com/blog/gpus-prefer-premultiplication/ has 2 feeds
+1213/2039
+https://pvk.ca/Blog/more_numerical_experiments_in_hashing.html has 1 feeds
+1214/2039
+https://stackoverflow.blog/2021/07/28/700000-lines-of-code-20-years-and-one-developer-how-dwarf-fortress-is-built/ has 2 feeds
+1215/2039
+https://chipsandcheese.com/2022/11/05/amds-zen-4-part-1-frontend-and-execution-engine/ has 2 feeds
+1216/2039
+https://abitawake.com/news/articles/enemy-ai-chasing-a-player-without-navigation2d-or-a-star-pathfinding has 2 feeds
+1217/2039
+https://chipsandcheese.com/2022/11/08/amds-zen-4-part-2-memory-subsystem-and-conclusion/ has 2 feeds
+1218/2039
+https://wiki.blender.org/wiki/Source/Modeling/BMesh/Design has 1 feeds
+1219/2039
+https://msdn.microsoft.com/en-us/library/tzkfha43.aspx has 0 feeds
+1220/2039
+https://www.rfleury.com/ has 1 feeds
+1221/2039
+https://www.rfleury.com/p/untangling-lifetimes-the-arena-allocator has 1 feeds
+1222/2039
+https://fgiesen.wordpress.com/2018/09/27/reading-bits-in-far-too-many-ways-part-3/ has 2 feeds
+1223/2039
+https://fgiesen.wordpress.com/2011/07/09/a-trip-through-the-graphics-pipeline-2011-index/ has 2 feeds
+1224/2039
+https://fgiesen.wordpress.com/2013/02/10/optimizing-the-basic-rasterizer/ has 2 feeds
+1225/2039
+https://travisdowns.github.io/blog/2019/11/19/toupper.html has 1 feeds
+1226/2039
+https://fgiesen.wordpress.com/2018/03/05/a-whirlwind-introduction-to-dataflow-graphs/ has 2 feeds
+1227/2039
+https://devblogs.microsoft.com/premier-developer/managed-object-internals-part-1-layout/ has 2 feeds
+1228/2039
+https://devblogs.microsoft.com/oldnewthing/20211022-00/?p=105822 has 1 feeds
+1229/2039
+https://travisdowns.github.io/blog/2020/01/17/avxfreq1.html has 1 feeds
+1230/2039
+https://docs.microsoft.com/en-us/gaming/accessibility/guidelines has 0 feeds
+1231/2039
+https://www.scribd.com/document/335150171/The-Hows-and-Whys-of-Level-Design has 0 feeds
+1232/2039
+https://travisdowns.github.io/blog/2019/06/11/speed-limits.html has 1 feeds
+1233/2039
+https://nightblade9.github.io/game-design-library/ has 0 feeds
+1234/2039
+http://www.righto.com/2022/11/how-8086-processors-microcode-engine.html has 1 feeds
+1235/2039
+https://web.archive.org/web/20160418004148/http://freespace.virgin.net/hugo.elias/radiosity/radiosity.htm has 0 feeds
+1236/2039
+https://travisdowns.github.io/blog/2019/05/22/sorting.html has 1 feeds
+1237/2039
+https://zhangdoa.com/posts/rendering-analysis-cyberpunk-2077 has 1 feeds
+1238/2039
+https://www.positech.co.uk/cliffsblog/2021/03/09/cpu-gpu-concurrency-in-video-games/ has 2 feeds
+1239/2039
+https://www.positech.co.uk/cliffsblog/2019/04/01/cliffs-guide-to-optimisation-tools-for-c-games-in-2019/?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+cliffski+%28Cliffski%27s+Blog%29 has 2 feeds
+1240/2039
+https://www.gamedev.net/articles/programming/graphics/contact-hardening-soft-shadows-made-fast-r4906/ has 0 feeds
+1241/2039
+https://www.codeproject.com/Articles/1185449/Performance-of-a-Circular-Buffer-vs-Vector-Deque-a has 3 feeds
+1242/2039
+https://cohost.org/tomforsyth/post/891823-rotation-with-three Status 404 Not Found
+1243/2039
+https://devblogs.microsoft.com/oldnewthing/20220310-00/?p=106335 has 1 feeds
+1244/2039
+https://www.codeproject.com/Articles/5314559/Multi-Level-Cache-that-Does-Up-To-A-Billion-Lookup has 3 feeds
+1245/2039
+https://www.positech.co.uk/cliffsblog/2020/02/12/rethinking-the-game-dev-productivity-gap/ has 2 feeds
+1246/2039
+https://www.codeproject.com/Articles/13601/COM-in-plain-C#C has 3 feeds
+1247/2039
+https://www.codeproject.com/Articles/3479/The-Bip-Buffer-The-Circular-Buffer-with-a-Twist has 3 feeds
+1248/2039
+https://www.codeproject.com/Articles/1202772/Color-Topics-for-Programmers has 3 feeds
+1249/2039
+https://www.scribd.com/document/509803012/luajit-doc has 0 feeds
+1250/2039
+https://mu.krj.st/wave/ has 0 feeds
+1251/2039
+https://www.studytonight.com/computer-networks/overview-of-computer-networks Get "http://www.studytonight.com:8080/computer-networks/?subject=computer-networks": dial tcp 65.2.112.116:8080: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.
+1252/2039
+https://learn.microsoft.com/en-us/windows/win32/medfound/recommended-8-bit-yuv-formats-for-video-rendering?redirectedfrom=MSDN has 0 feeds
+1253/2039
+https://microsoft.github.io/windows-docs-rs/doc/windows/ Status 404 Not Found
+1254/2039
+https://docs.microsoft.com/en-us/windows/win32/sbscs/application-manifests#heaptype has 0 feeds
+1255/2039
+https://web.archive.org/web/20120511102019/http://freespace.virgin.net:80/hugo.elias/graphics/x_posure.htm has 0 feeds
+1256/2039
+https://docs.microsoft.com/en-us/windows/win32/uxguide/how-to-design-desktop-ux has 0 feeds
+1257/2039
+https://docs.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds-pguide has 0 feeds
+1258/2039
+https://www.shadertoy.com/view/MlB3D3 Status 404 Not Found
+1259/2039
+https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-mouse_event#remarks has 0 feeds
+1260/2039
+https://zeux.io/2020/08/02/eight-years-at-roblox/ has 1 feeds
+1261/2039
+https://www.shadertoy.com/view/Md3XRf Status 404 Not Found
+1262/2039
+https://thephd.dev/ever-closer-c23-improvements has 2 feeds
+1263/2039
+https://flothesof.github.io/farthest-neighbors.html has 0 feeds
+1264/2039
+https://thephd.dev/c23-is-coming-here-is-what-is-on-the-menu has 2 feeds
+1265/2039
+https://docs.microsoft.com/fr-fr/windows/win32/direct3d10/d3d10-graphics-programming-guide-resources-block-compression?redirectedfrom=MSDN has 0 feeds
+1266/2039
+https://www.shadertoy.com/view/4sf3RN Status 404 Not Found
+1267/2039
+https://www.shadertoy.com/view/3dGSWR Status 404 Not Found
+1268/2039
+https://www.shadertoy.com/view/XdBGzd Status 404 Not Found
+1269/2039
+https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#BCFormats Status 404 Not Found
+1270/2039
+https://gafferongames.com/post/deterministic_lockstep/ has 1 feeds
+1271/2039
+http://tfpsly.free.fr/bookmarks.html has 0 feeds
+1272/2039
+http://jcgt.org/published/0005/02/01/paper-lowres.pdf Not a html
+1273/2039
+https://docs.microsoft.com/en-us/previous-versions/windows/desktop/dnacc/guidelines-for-keyboard-user-interface-design has 0 feeds
+1274/2039
+http://www.jagregory.com/abrash-black-book/ has 0 feeds
+1275/2039
+https://sourcehut.org/blog/2022-07-06-sourcehut-and-irc/ has 1 feeds
+1276/2039
+http://jcgt.org/published/0006/01/03/paper-lowres.pdf Not a html
+1277/2039
+https://jcgt.org/published/0002/02/09/paper-lowres.pdf Not a html
+1278/2039
+https://zeux.io/2020/02/27/writing-an-efficient-vulkan-renderer/ has 1 feeds
+1279/2039
+https://gafferongames.com/post/fix_your_timestep/ has 1 feeds
+1280/2039
+https://gafferongames.com/post/collision_response_and_coulomb_friction/ has 1 feeds
+1281/2039
+https://gafferongames.com/post/introduction_to_networked_physics/ has 1 feeds
+1282/2039
+https://www.blackhat.com/docs/us-16/materials/us-16-Yason-Windows-10-Segment-Heap-Internals-wp.pdf Not a html
+1283/2039
+http://antirez.com/news/127 has 1 feeds
+1284/2039
+https://zeuxcg.org/2019/02/17/flavors-of-simd/ has 1 feeds
+1285/2039
+https://zeux.io/2022/01/08/on-proebstings-law/ has 1 feeds
+1286/2039
+https://maskray.me/blog/2021-10-31-relative-relocations-and-relr has 1 feeds
+1287/2039
+https://writings.stephenwolfram.com/2020/04/finally-we-may-have-a-path-to-the-fundamental-theory-of-physics-and-its-beautiful/ has 3 feeds
+1288/2039
+https://maskray.me/blog/2021-11-07-init-ctors-init-array has 1 feeds
+1289/2039
+https://stopa.io/post/269 has 2 feeds
+1290/2039
+https://lemire.me/blog/2020/10/20/ridiculously-fast-unicode-utf-8-validation/ has 2 feeds
+1291/2039
+https://lemire.me/blog/2020/03/10/fast-float-parsing-in-practice/ has 2 feeds
+1292/2039
+https://dolphin-emu.org/blog/2017/07/30/ubershaders/ has 1 feeds
+1293/2039
+https://software.intel.com/en-us/articles/intel-sdm Get "https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html": read tcp 192.168.1.164:52628->104.124.147.110:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1294/2039
+https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research/samples.html Get "https://www.intel.com/content/www/us/en/developer/topic-technology/graphics-research": read tcp 192.168.1.164:52628->104.124.147.110:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1295/2039
+https://01.org/linuxgraphics/hardware-specification-prms/2019-intelr-processors-based-ice-lake-platform Get "https://www.intel.com/content/www/us/en/docs/graphics-for-linux/developer-reference/1-0/ice-lake.html": read tcp 192.168.1.164:52628->104.124.147.110:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1296/2039
+https://www.intel.com/content/www/us/en/developer/articles/technical/technical-look-control-flow-enforcement-technology.html Get "https://www.intel.com/content/www/us/en/developer/articles/technical": read tcp 192.168.1.164:52628->104.124.147.110:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1297/2039
+https://software.intel.com/en-us/blogs/2014/07/15/an-investigation-of-fast-real-time-gpu-based-image-blur-algorithms Get "https://www.intel.com/content/www/us/en/developer/articles/technical/an-investigation-of-fast-real-time-gpu-based-image-blur-algorithms.html": read tcp 192.168.1.164:52628->104.124.147.110:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1298/2039
+https://software.intel.com/content/dam/develop/external/us/en/documents/floating-point-reference-sheet-v2-13.pdf Get "https://www.intel.com/content/dam/develop/external/us/en/documents/floating-point-reference-sheet-v2-13.pdf": read tcp 192.168.1.164:52628->104.124.147.110:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1299/2039
+https://software.intel.com/content/www/us/en/develop/articles/introduction-to-x64-assembly.html Get "https://www.intel.com/content/www/us/en/develop/articles/introduction-to-x64-assembly.html": read tcp 192.168.1.164:52628->104.124.147.110:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1300/2039
+https://www.intel.com/content/www/us/en/developer/articles/code-sample/sample-application-for-direct3d-12-flip-model-swap-chains.html Get "https://www.intel.com/content/www/us/en/developer/articles/code-sample": read tcp 192.168.1.164:52628->104.124.147.110:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1301/2039
+https://software.intel.com/sites/landingpage/IntrinsicsGuide/ Get "https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html": read tcp 192.168.1.164:52628->104.124.147.110:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1302/2039
+https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/fast-crc-computation-generic-polynomials-pclmulqdq-paper.pdf Get "https://www.intel.com/content/www/us/en/404.html?ref=https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/fast-crc-computation-generic-polynomials-pclmulqdq-paper.pdf": read tcp 192.168.1.164:52628->104.124.147.110:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1303/2039
+https://software.intel.com/content/www/us/en/develop/download/intel-64-and-ia-32-architectures-sdm-combined-volumes-1-2a-2b-2c-2d-3a-3b-3c-3d-and-4.html Get "https://www.intel.com/content/www/us/en/develop/download/intel-64-and-ia-32-architectures-sdm-combined-volumes-1-2a-2b-2c-2d-3a-3b-3c-3d-and-4.html": read tcp 192.168.1.164:52628->104.124.147.110:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1304/2039
+https://software.intel.com/en-us/articles/memory-layout-transformations Get "https://www.intel.com/content/www/us/en/developer/articles/technical/memory-layout-transformations.html": read tcp 192.168.1.164:52628->104.124.147.110:443: wsarecv: An existing connection was forcibly closed by the remote host.
+1305/2039
+https://cohost.org/rgmechex has 1 feeds
+1306/2039
+https://jcgt.org/published/0010/03/02/ has 0 feeds
+1307/2039
+http://jcgt.org/published/0006/02/02/ has 0 feeds
+1308/2039
+http://sv-journal.org/2014-1/06/en/index.php?lang=en Status 403 Forbidden
+1309/2039
+https://software.intel.com/content/dam/develop/external/us/en/documents-tps/architecture-instruction-set-extensions-programming-reference.pdf Not a html
+1310/2039
+https://www.cambridge.org/core/books/quantum-computing-for-computer-scientists/8AEA723BEE5CC9F5C03FDD4BA850C711 Status 404 Not Found
+1311/2039
+https://software.intel.com/content/www/us/en/develop/articles/api-without-secrets-introduction-to-vulkan-preface.html Status 404 Not Found
+1312/2039
+http://www.nic.uoregon.edu/~khuck/ts/acumem-report/manual_html/ch_intro_caches.html has 0 feeds
+1313/2039
+https://learning-modules.mit.edu/materials/index.html?uuid=/course/6/fa18/6.172#materials has 0 feeds
+1314/2039
+https://www.amazon.co.uk/d/cka/Maps-Meaning-Architecture-Belief-Jordan-B-Peterson/0415922224/ref=pd_cart_bxgy_1_4?_encoding=UTF8&psc=1&refRID=Y42Y7PN7901RM6J10ZHQ Status 404 Not Found
+1315/2039
+http://0pointer.de/blog/projects/systemd.html has 2 feeds
+1316/2039
+https://medium.com/@MattThorson/celeste-and-towerfall-physics-d24bd2ae0fc5 has 0 feeds
+1317/2039
+https://medium.com/@jasonbooth_86226/my-approach-to-optimization-bfcafc1f8768 has 1 feeds
+1318/2039
+https://medium.com/@evanwallace/easy-scalable-text-rendering-on-the-gpu-c3f4d782c5ac has 1 feeds
+1319/2039
+https://medium.com/game-dev-daily/the-srgb-learning-curve-773b7f68cf7a Status 410 Gone
+1320/2039
+https://medium.com/@cscalfani/goodbye-object-oriented-programming-a59cda4c0e53 has 1 feeds
+1321/2039
+https://medium.com/game-dev-daily/four-ways-to-create-a-mesh-for-a-sphere-d7956b825db4 Status 410 Gone
+1322/2039
+https://medium.com/@ilyasz/object-oriented-programming-the-trillion-dollar-disaster-%EF%B8%8F-92a4b666c7c7 has 1 feeds
+1323/2039
+https://medium.com/@ajmmertens/why-vanilla-ecs-is-not-enough-d7ed4e3bebe5 has 1 feeds
+1324/2039
+https://medium.com/@bgolus/anti-aliased-alpha-test-the-esoteric-alpha-to-coverage-8b177335ae4f has 1 feeds
+1325/2039
+https://medium.com/@bromanz/how-to-create-awesome-accelerators-the-surface-area-heuristic-e14b5dec6160 has 1 feeds
+1326/2039
+https://medium.com/hipster-color-science/a-beginners-guide-to-colorimetry-401f1830b65a has 1 feeds
+1327/2039
+https://medium.com/velan-studios/introducing-viper-273d41b8c507 has 1 feeds
+1328/2039
+https://medium.com/@michelheily/hello-gba-journey-of-making-an-emulator-part-1-8793000e8606 has 1 feeds
+1329/2039
+https://medium.com/@alen.ladavac/the-elusive-frame-timing-168f899aec92 has 1 feeds
+1330/2039
+https://medium.com/@behreajj/3d-rotations-in-processing-vectors-matrices-quaternions-10e2fed5f0a3 has 1 feeds
+1331/2039
+https://ndotl.wordpress.com/2016/02/02/rendering-painted-world-in-jg/ has 2 feeds
+1332/2039
+https://mynameismjp.wordpress.com/2018/09/08/breaking-down-barriers-part-5-back-to-the-real-world/ has 2 feeds
+1333/2039
+https://mynameismjp.wordpress.com/2016/10/09/sg-series-part-1-a-brief-and-incomplete-history-of-baked-lighting-representations/ has 2 feeds
+1334/2039
+https://mynameismjp.wordpress.com/2013/09/10/shadow-maps/ has 2 feeds
+1335/2039
+https://www.3dgep.com/category/graphics-programming/directx/ has 2 feeds
+1336/2039
+https://ndotl.wordpress.com/2018/08/29/baking-artifact-free-lightmaps/ has 2 feeds
+1337/2039
+https://blog.yiningkarlli.com/2019/05/nested-dielectrics.html has 1 feeds
+1338/2039
+https://blog.yiningkarlli.com/2021/09/neon-vs-sse.html has 1 feeds
+1339/2039
+http://developer.amd.com/wordpress/media/2012/10/ShaderX_DiffuseCubeMapping.pdf has 0 feeds
+1340/2039
+https://developer.amd.com/wordpress/media/2012/10/Tatarchuk_Irradiance_Volumes.pdf has 0 feeds
+1341/2039
+https://developer.amd.com/wordpress/media/2012/10/S2008-Chen-Lighting_and_Material_of_Halo3.pdf has 0 feeds
+1342/2039
+https://probablydance.com/2019/03/09/a-programmers-take-on-six-memos-for-the-next-millenium/ has 2 feeds
+1343/2039
+https://probablydance.com/2020/08/31/on-modern-hardware-the-min-max-heap-beats-a-binary-heap/ has 2 feeds
+1344/2039
+https://www.dropbox.com/s/89pvx9obhv6m0pk/High%20Quality,%20High%20Performance%20Graphics%20in%20Filament%20(Handout).pdf?dl=0 Status 404 Not Found
+1345/2039
+https://probablydance.com/2019/08/28/a-new-algorithm-for-controlled-randomness/ has 2 feeds
+1346/2039
+https://probablydance.com/2018/06/16/fibonacci-hashing-the-optimization-that-the-world-forgot-or-a-better-alternative-to-integer-modulo/ has 2 feeds
+1347/2039
+https://probablydance.com/2019/12/30/measuring-mutexes-spinlocks-and-how-bad-the-linux-scheduler-really-is/ has 2 feeds
+1348/2039
+https://media.ccc.de/v/27c3-4295-en-high_speed_high_security_cryptography has 7 feeds
+1349/2039
+http://d2l.ai/index.html has 0 feeds
+1350/2039
+https://godoc.org/github.com/mitranim/sqlb Status 400 Bad Request
+1351/2039
+http://extremelearning.com.au/ has 1 feeds

@@ -1,0 +1,23 @@
+https://gpuopen.com/feed/
+https://www.codeproject.com/*
+https://www.joelonsoftware.com/feed/
+https://stackoverflow.blog/feed/
+https://www.slideshare.net/rss/latest
+https://xiph.org/video/atom-feed.xml
+http://feeds.arstechnica.com/arstechnica/index
+https://en.cppreference.com/*
+https://blog.cloudflare.com/rss/
+https://developer.nvidia.com/*
+https://feeds.soundcloud.com/users/soundcloud:users:201515747/sounds.rss
+https://hacks.mozilla.org/feed/
+https://code.visualstudio.com/feed.xml
+https://blog.mozilla.org/en/feed/
+https://www.microsoft.com/en-us/research/feed/
+https://techcommunity.microsoft.com/gxcuf89792/rss/message?board.id=WindowsOSPlatform&message.id=506 -> https://techcommunity.microsoft.com/gxcuf89792/rss/board?board.id=WindowsOSPlatform
+https://stackoverflow.com/feeds/question/25437632
+https://knightcolumbia.org/rss?v=2
+https://www.destructoid.com/feed/
+https://www.openmainframeproject.org/feed
+https://wiki.blender.org/*
+https://research.csiro.au/tsblog/debugging-stories-stack-alignment-matters/feed/ -> https://research.csiro.au/tsblog/feed
+https://www.drdobbs.com/rss/all

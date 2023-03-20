@@ -1,0 +1,2191 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"Slic",
+				"SliceStable"
+			],
+			[
+				"fil",
+				"filteredOutPrefixes"
+			],
+			[
+				"filter",
+				"filteredOutUrls"
+			],
+			[
+				"filteredOutPref",
+				"filteredOutPrefixes = append(filteredOutPrefixes, )"
+			],
+			[
+				"Trim",
+				"TrimLeft"
+			],
+			[
+				"New",
+				"NewScanner"
+			],
+			[
+				"stat",
+				"statsByFeedLink"
+			],
+			[
+				"Op",
+				"OpenFile"
+			],
+			[
+				"Read",
+				"ReadFile"
+			],
+			[
+				"mess",
+				"messageIdsByLink"
+			],
+			[
+				"message",
+				"messageIdsByLink"
+			],
+			[
+				"FP",
+				"Fprintf"
+			],
+			[
+				"Write",
+				"WriteString"
+			],
+			[
+				"find",
+				"findFeedLinksRecursively"
+			],
+			[
+				"fe",
+				"feedFoundAt"
+			],
+			[
+				"feed",
+				"feedFoundAt"
+			],
+			[
+				"Index",
+				"LastIndex"
+			],
+			[
+				"blo",
+				"blockedHosts"
+			],
+			[
+				"s",
+				"String"
+			],
+			[
+				"Fprint",
+				"Fprintln"
+			],
+			[
+				"std",
+				"os.Stderr"
+			],
+			[
+				"Fpr",
+				"Fprint"
+			],
+			[
+				"feedBur",
+				"feedBurnerRegex2"
+			],
+			[
+				"Mat",
+				"MatchString"
+			],
+			[
+				"cou",
+				"countsByLink"
+			],
+			[
+				"is",
+				"isRssOrAtom"
+			],
+			[
+				"Sl",
+				"SliceStable"
+			],
+			[
+				"boi",
+				"boilingDurationInput"
+			],
+			[
+				"Print",
+				"Println"
+			],
+			[
+				"instr",
+				"instructionIndices2"
+			],
+			[
+				"byte",
+				"byte1KnownBits"
+			],
+			[
+				"byt",
+				"byte2KnownBits"
+			],
+			[
+				"by",
+				"byte1KnownBits"
+			],
+			[
+				"op",
+				"opcode"
+			],
+			[
+				"InstructionInd",
+				"InstructionIndicesSet{}"
+			],
+			[
+				"sec",
+				"secondByteTableIndices"
+			],
+			[
+				"Inst",
+				"InstructionSecondByteTablesByFirstByte"
+			],
+			[
+				"Instr",
+				"InstructionsByFirstByte"
+			],
+			[
+				"inst",
+				"instructionTableSourceLines"
+			],
+			[
+				"ex",
+				"expectedInstructionIndexStr"
+			],
+			[
+				"Par",
+				"ParseInt"
+			],
+			[
+				"ins",
+				"instructionTableLine"
+			],
+			[
+				"secondByteTable",
+				"secondByteTableIndicesByKey"
+			],
+			[
+				"seco",
+				"secondByteTableIndicesByJoinedInstructions"
+			],
+			[
+				"secondByteKn",
+				"secondByteKnownBitsStart"
+			],
+			[
+				"secon",
+				"secondByteBits345Length"
+			],
+			[
+				"fir",
+				"firstByteSuffixLength"
+			],
+			[
+				"first",
+				"firstByteSuffix"
+			],
+			[
+				"firs",
+				"firstBytePrefixLength"
+			],
+			[
+				"rema",
+				"uint8(remainderLength)"
+			],
+			[
+				"firstBy",
+				"firstByteSuffix"
+			],
+			[
+				"firstB",
+				"firstBytePrefixLength"
+			],
+			[
+				"fi",
+				"firstByteSuffix"
+			],
+			[
+				"Parse",
+				"ParseInt"
+			],
+			[
+				"str",
+				"strconv"
+			],
+			[
+				"W",
+				"WriteString"
+			],
+			[
+				"co",
+				"Contains"
+			],
+			[
+				"Wr",
+				"WriteString"
+			],
+			[
+				"sub",
+				"substackRootUrls"
+			],
+			[
+				"sum",
+				"sumdb"
+			],
+			[
+				"su",
+				"sumScoresByRootUrl"
+			],
+			[
+				"file",
+				"outFile"
+			],
+			[
+				"par",
+				"ParseInt"
+			],
+			[
+				"Pars",
+				"ParseUint"
+			],
+			[
+				"Immediat",
+				"MakeImmediateOperandRelative"
+			],
+			[
+				"Pri",
+				"Printf"
+			],
+			[
+				"BitsRm",
+				"BitsRMRegAlwaysW"
+			],
+			[
+				"Reg",
+				"RegisterOperand"
+			],
+			[
+				"Ins",
+				"InstructionFlag"
+			],
+			[
+				"BitsD",
+				"BitsData"
+			],
+			[
+				"BitsDi",
+				"BitsDispAlwaysW"
+			],
+			[
+				"Memory",
+				"ReadMemory"
+			],
+			[
+				"Se",
+				"SegmentOffset"
+			],
+			[
+				"Imm",
+				"ImmediateOperand{}"
+			],
+			[
+				"Addre",
+				"AddressOperand{}"
+			],
+			[
+				"Effe",
+				"EffectiveAddressTerm"
+			],
+			[
+				"Instructi",
+				"InstructionEncoding"
+			],
+			[
+				"dis",
+				"disAsmByteCount"
+			],
+			[
+				"Mem",
+				"MemoryAccessMask"
+			],
+			[
+				"Fi",
+				"os.File"
+			],
+			[
+				"en",
+				"enable_input_handling"
+			],
+			[
+				"push",
+				"pushSlice(self: *Arena, comptime T: type, count: usize)"
+			],
+			[
+				"print",
+				"bufPrint(buf: []u8, comptime fmt: []const u8, args: anytype)"
+			],
+			[
+				"m",
+				"maybe_drag_data"
+			],
+			[
+				"calcI",
+				"calcInternalId(parent_id: u64, internal_text: []const u8)"
+			],
+			[
+				"native",
+				"nativeToLittle(comptime T: type, x: T)"
+			],
+			[
+				"ext",
+				"extractKey(text: []const u8)"
+			],
+			[
+				"beginCol",
+				"beginColumnImpl(maybe_key: ?[]const u8)"
+			],
+			[
+				"get",
+				"getPtr(self: Self, key: K)"
+			],
+			[
+				"maybe_d",
+				"maybe_first_child"
+			],
+			[
+				"scroll",
+				"maybe_scroll_data"
+			],
+			[
+				"mou",
+				"mouse_y_px"
+			],
+			[
+				"com",
+				"computed_rel_position"
+			],
+			[
+				"ma",
+				"maybe_container_layout"
+			],
+			[
+				"sc",
+				"scrollbar_translucent_color"
+			],
+			[
+				"inf",
+				"inf_f32"
+			],
+			[
+				"SAPP_SCROL",
+				"SAPP_SCROLL_TOUCHPAD"
+			],
+			[
+				"abs",
+				"fabs(value: anytype) @TypeOf(value)"
+			],
+			[
+				"mouse",
+				"mouse_scroll_dy"
+			],
+			[
+				"is_",
+				"is_scrollable"
+			],
+			[
+				"con",
+				"maybe_container_desc"
+			],
+			[
+				"may",
+				"maybe_current_parent"
+			],
+			[
+				"curr",
+				"current_container_type"
+			],
+			[
+				"exp",
+				"expected_children_count"
+			],
+			[
+				"def",
+				"default_z_thickness"
+			],
+			[
+				"dst",
+				"dst_half_size_v3"
+			],
+			[
+				"ell",
+				"ellipsis_width_px"
+			],
+			[
+				"ellip",
+				"ellipsis_kern_advance"
+			],
+			[
+				"tr",
+				"truncated_width_px"
+			],
+			[
+				"elli",
+				"ellipsis_width_px"
+			],
+			[
+				"text",
+				"text_last_index"
+			],
+			[
+				"Tex",
+				"TextWidthWithEllipsis"
+			],
+			[
+				"moc",
+				"mockGetCodepointHMetrics"
+			],
+			[
+				"mockGe",
+				"mockGetKernAdvancePx"
+			],
+			[
+				"meas",
+				"measureTextWidthWithEllipsisImpl"
+			],
+			[
+				"maybe_te",
+				"maybe_text_ellipsis_index"
+			],
+			[
+				"maybe",
+				"maybe_text_ellipsis_index"
+			],
+			[
+				"begin",
+				"beginPaddedBox"
+			],
+			[
+				"em",
+				"em_height"
+			],
+			[
+				"stbtt_GetK",
+				"stbtt_GetKerningTableLength"
+			],
+			[
+				"stbtt_GetC",
+				"stbtt_GetCodepointKernAdvance"
+			],
+			[
+				"stbtt_G",
+				"stbtt_GetCodepointHMetrics"
+			],
+			[
+				"stbtt_GetFo",
+				"stbtt_GetFontBoundingBox"
+			],
+			[
+				"Fo",
+				"FontBoundingBox"
+			],
+			[
+				"stbtt_Get",
+				"stbtt_GetNumberOfFonts"
+			],
+			[
+				"stbtt_PackFont",
+				"stbtt_PackFontRangesRenderIntoRects"
+			],
+			[
+				"stbtt_Pa",
+				"stbtt_PackFontRangesPackRects"
+			],
+			[
+				"stbtt_P",
+				"stbtt_PackSetSkipMissingCodepoints"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "postprocess_feeds.txt",
+			"settings":
+			{
+				"buffer_size": 1097,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			},
+			"undo_stack":
+			[
+				[
+					3,
+					1,
+					"paste",
+					null,
+					"AQAAAAAAAAAAAAAAGgAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					6,
+					1,
+					"paste",
+					null,
+					"AQAAABoAAAAAAAAAWAAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAGgAAAAAAAAAaAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					9,
+					1,
+					"paste",
+					null,
+					"AQAAAFgAAAAAAAAAfQAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAWAAAAAAAAABYAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					12,
+					1,
+					"paste",
+					null,
+					"AQAAAH0AAAAAAAAAngAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAfQAAAAAAAAB9AAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					15,
+					1,
+					"paste",
+					null,
+					"AQAAAJ4AAAAAAAAAxAAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAngAAAAAAAACeAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					18,
+					1,
+					"paste",
+					null,
+					"AQAAAMQAAAAAAAAA6QAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAxAAAAAAAAADEAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					21,
+					1,
+					"paste",
+					null,
+					"AQAAAOkAAAAAAAAAGAEAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAA6QAAAAAAAADpAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					26,
+					1,
+					"paste",
+					null,
+					"AQAAABgBAAAAAAAAagEAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAGAEAAAAAAAAYAQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					29,
+					1,
+					"paste",
+					null,
+					"AQAAAGoBAAAAAAAAiwEAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAagEAAAAAAABqAQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					32,
+					1,
+					"paste",
+					null,
+					"AQAAAIsBAAAAAAAAwAEAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAiwEAAAAAAACLAQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					35,
+					1,
+					"paste",
+					null,
+					"AQAAAMABAAAAAAAACQIAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAwAEAAAAAAADAAQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					38,
+					1,
+					"paste",
+					null,
+					"AQAAAAkCAAAAAAAAKQIAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAACQIAAAAAAAAJAgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					41,
+					1,
+					"paste",
+					null,
+					"AQAAACkCAAAAAAAAUAIAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAKQIAAAAAAAApAgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					44,
+					1,
+					"paste",
+					null,
+					"AQAAAFACAAAAAAAAcgIAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAUAIAAAAAAABQAgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					51,
+					1,
+					"insert",
+					{
+						"characters": "*"
+					},
+					"AgAAAKgBAAAAAAAAqQEAAAAAAAAAAAAAqQEAAAAAAACpAQAAAAAAABcAAAB0YXhvbm9teS90ZXJtLzEzNjgvZmVlZA",
+					"AQAAAAAAAAABAAAAqAEAAAAAAAC/AQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					54,
+					1,
+					"paste",
+					null,
+					"AQAAAFwCAAAAAAAAiwIAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAXAIAAAAAAABcAgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					57,
+					1,
+					"paste",
+					null,
+					"AQAAAIsCAAAAAAAA8AIAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAiwIAAAAAAACLAgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					58,
+					1,
+					"left_delete",
+					null,
+					"AQAAAO8CAAAAAAAA7wIAAAAAAAABAAAACg",
+					"AQAAAAAAAAABAAAA8AIAAAAAAADwAgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					59,
+					1,
+					"insert",
+					{
+						"characters": " ->"
+					},
+					"AwAAAO8CAAAAAAAA8AIAAAAAAAAAAAAA8AIAAAAAAADxAgAAAAAAAAAAAADxAgAAAAAAAPICAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAA7wIAAAAAAADvAgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					60,
+					1,
+					"insert",
+					{
+						"characters": " "
+					},
+					"AQAAAPICAAAAAAAA8wIAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAA8gIAAAAAAADyAgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					63,
+					1,
+					"paste",
+					null,
+					"AQAAAPMCAAAAAAAARgMAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAA8wIAAAAAAADzAgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					64,
+					1,
+					"insert",
+					{
+						"characters": "\n"
+					},
+					"AQAAAEYDAAAAAAAARwMAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAARgMAAAAAAABGAwAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					67,
+					1,
+					"paste",
+					null,
+					"AQAAAEcDAAAAAAAAeQMAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAARwMAAAAAAABHAwAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					70,
+					1,
+					"paste",
+					null,
+					"AQAAAHkDAAAAAAAAnAMAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAeQMAAAAAAAB5AwAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					73,
+					1,
+					"paste",
+					null,
+					"AQAAAJwDAAAAAAAAvgMAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAnAMAAAAAAACcAwAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					76,
+					1,
+					"paste",
+					null,
+					"AQAAAL4DAAAAAAAA6AMAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAvgMAAAAAAAC+AwAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					79,
+					1,
+					"paste",
+					null,
+					"AQAAAOgDAAAAAAAAMwQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAA6AMAAAAAAADoAwAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					82,
+					1,
+					"insert",
+					{
+						"characters": "*"
+					},
+					"AgAAAAEEAAAAAAAAAgQAAAAAAAAAAAAAAgQAAAAAAAACBAAAAAAAADEAAAB3L2luZGV4LnBocD90aXRsZT1TcGVjaWFsOlJlY2VudENoYW5nZXMmZmVlZD1hdG9t",
+					"AQAAAAAAAAABAAAAAQQAAAAAAAAyBAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					85,
+					1,
+					"insert",
+					{
+						"characters": "*"
+					},
+					"AgAAADQBAAAAAAAANQEAAAAAAAAAAAAANQEAAAAAAAA1AQAAAAAAADUAAABtd2lraS9pbmRleC5waHA/dGl0bGU9U3BlY2lhbDpSZWNlbnRDaGFuZ2VzJmZlZWQ9YXRvbQ",
+					"AQAAAAAAAAABAAAANAEAAAAAAABpAQAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					88,
+					1,
+					"insert",
+					{
+						"characters": "*"
+					},
+					"AgAAADYAAAAAAAAANwAAAAAAAAAAAAAANwAAAAAAAAA3AAAAAAAAACEAAABXZWJTZXJ2aWNlcy9BcnRpY2xlUlNTLmFzcHg/Y2F0PTE",
+					"AQAAAAAAAAABAAAANgAAAAAAAABXAAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					93,
+					1,
+					"insert",
+					{
+						"characters": "->"
+					},
+					"AgAAAK8DAAAAAAAAsAMAAAAAAAAAAAAAsAMAAAAAAACxAwAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAArwMAAAAAAACvAwAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					94,
+					1,
+					"insert",
+					{
+						"characters": " "
+					},
+					"AQAAALEDAAAAAAAAsgMAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAsQMAAAAAAACxAwAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					95,
+					1,
+					"paste",
+					null,
+					"AQAAALIDAAAAAAAA1wMAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAsgMAAAAAAACyAwAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					97,
+					1,
+					"insert",
+					{
+						"characters": " "
+					},
+					"AQAAAK8DAAAAAAAAsAMAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAArwMAAAAAAACvAwAAAAAAAAAAAAAAAAAA"
+				],
+				[
+					101,
+					1,
+					"paste",
+					null,
+					"AQAAAK8DAAAAAAAAAAQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAArwMAAAAAAACvAwAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					102,
+					1,
+					"left_delete",
+					null,
+					"AQAAAP8DAAAAAAAA/wMAAAAAAAABAAAACg",
+					"AQAAAAAAAAABAAAAAAQAAAAAAAAABAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					105,
+					1,
+					"insert",
+					{
+						"characters": "\n"
+					},
+					"AQAAACgEAAAAAAAAKQQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAKAQAAAAAAAAoBAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					110,
+					1,
+					"left_delete",
+					null,
+					"AQAAACgEAAAAAAAAKAQAAAAAAAABAAAACg",
+					"AQAAAAAAAAABAAAAKQQAAAAAAAApBAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					111,
+					1,
+					"insert",
+					{
+						"characters": "\n"
+					},
+					"AQAAACgEAAAAAAAAKQQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAKAQAAAAAAAAoBAAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					113,
+					1,
+					"paste",
+					null,
+					"AQAAACkEAAAAAAAASQQAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAKQQAAAAAAAApBAAAAAAAAAAAAAAAAPC/"
+				]
+			]
+		},
+		{
+			"file": "main.go",
+			"settings":
+			{
+				"buffer_size": 10554,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			},
+			"undo_stack":
+			[
+				[
+					3,
+					1,
+					"insert",
+					{
+						"characters": "\ntype"
+					},
+					"BQAAAB8eAAAAAAAAIB4AAAAAAAAAAAAAIB4AAAAAAAAhHgAAAAAAAAAAAAAhHgAAAAAAACIeAAAAAAAAAAAAACIeAAAAAAAAIx4AAAAAAAAAAAAAIx4AAAAAAAAkHgAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAHx4AAAAAAAAfHgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					4,
+					1,
+					"insert",
+					{
+						"characters": " "
+					},
+					"AQAAACQeAAAAAAAAJR4AAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAJB4AAAAAAAAkHgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					12,
+					1,
+					"paste",
+					null,
+					"AQAAACUeAAAAAAAALR4AAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAJR4AAAAAAAAlHgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					13,
+					1,
+					"insert",
+					{
+						"characters": " stryct"
+					},
+					"BwAAAC0eAAAAAAAALh4AAAAAAAAAAAAALh4AAAAAAAAvHgAAAAAAAAAAAAAvHgAAAAAAADAeAAAAAAAAAAAAADAeAAAAAAAAMR4AAAAAAAAAAAAAMR4AAAAAAAAyHgAAAAAAAAAAAAAyHgAAAAAAADMeAAAAAAAAAAAAADMeAAAAAAAANB4AAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAALR4AAAAAAAAtHgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					14,
+					1,
+					"insert",
+					{
+						"characters": " "
+					},
+					"AQAAADQeAAAAAAAANR4AAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAANB4AAAAAAAA0HgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					15,
+					4,
+					"left_delete",
+					null,
+					"BAAAADQeAAAAAAAANB4AAAAAAAABAAAAIDMeAAAAAAAAMx4AAAAAAAABAAAAdDIeAAAAAAAAMh4AAAAAAAABAAAAYzEeAAAAAAAAMR4AAAAAAAABAAAAeQ",
+					"AQAAAAAAAAABAAAANR4AAAAAAAA1HgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					16,
+					1,
+					"insert",
+					{
+						"characters": "uct"
+					},
+					"AwAAADEeAAAAAAAAMh4AAAAAAAAAAAAAMh4AAAAAAAAzHgAAAAAAAAAAAAAzHgAAAAAAADQeAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAMR4AAAAAAAAxHgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					17,
+					1,
+					"insert",
+					{
+						"characters": " "
+					},
+					"AQAAADQeAAAAAAAANR4AAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAANB4AAAAAAAA0HgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					18,
+					1,
+					"insert_snippet",
+					{
+						"contents": "{$0}"
+					},
+					"AQAAADUeAAAAAAAANx4AAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAANR4AAAAAAAA1HgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					19,
+					1,
+					"right_delete",
+					null,
+					"AQAAADYeAAAAAAAANh4AAAAAAAABAAAAfQ",
+					"AQAAAAAAAAABAAAANh4AAAAAAAA2HgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					22,
+					14,
+					"left_delete",
+					null,
+					"DgAAAI4eAAAAAAAAjh4AAAAAAAABAAAAco0eAAAAAAAAjR4AAAAAAAABAAAAZYweAAAAAAAAjB4AAAAAAAABAAAAdIseAAAAAAAAix4AAAAAAAABAAAAdYoeAAAAAAAAih4AAAAAAAABAAAAb4keAAAAAAAAiR4AAAAAAAABAAAAIIgeAAAAAAAAiB4AAAAAAAABAAAAZYceAAAAAAAAhx4AAAAAAAABAAAAdYYeAAAAAAAAhh4AAAAAAAABAAAAboUeAAAAAAAAhR4AAAAAAAABAAAAaYQeAAAAAAAAhB4AAAAAAAABAAAAdIMeAAAAAAAAgx4AAAAAAAABAAAAboIeAAAAAAAAgh4AAAAAAAABAAAAb4EeAAAAAAAAgR4AAAAAAAABAAAAYw",
+					"AQAAAAAAAAABAAAAjx4AAAAAAACPHgAAAAAAAP///////+9/"
+				],
+				[
+					23,
+					1,
+					"insert",
+					{
+						"characters": "\n"
+					},
+					"AgAAAIEeAAAAAAAAgh4AAAAAAAAAAAAAgh4AAAAAAACDHgAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAgR4AAAAAAACBHgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					24,
+					1,
+					"insert_snippet",
+					{
+						"contents": "{$0}"
+					},
+					"AQAAAIMeAAAAAAAAhR4AAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAgx4AAAAAAACDHgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					25,
+					1,
+					"run_macro_file",
+					{
+						"file": "res://Packages/Default/Delete Left Right.sublime-macro"
+					},
+					"BQAAAIMeAAAAAAAAgx4AAAAAAAABAAAAe4IeAAAAAAAAgh4AAAAAAAABAAAACYIeAAAAAAAAgh4AAAAAAAAAAAAAgh4AAAAAAACCHgAAAAAAAAEAAAB9gh4AAAAAAACDHgAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAhB4AAAAAAACEHgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					26,
+					1,
+					"insert",
+					{
+						"characters": "}"
+					},
+					"AwAAAIMeAAAAAAAAhB4AAAAAAAAAAAAAgh4AAAAAAACCHgAAAAAAAAEAAAAJgh4AAAAAAACCHgAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAgx4AAAAAAACDHgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					31,
+					1,
+					"insert",
+					{
+						"characters": ".Close"
+					},
+					"BgAAAP4eAAAAAAAA/x4AAAAAAAAAAAAA/x4AAAAAAAAAHwAAAAAAAAAAAAAAHwAAAAAAAAEfAAAAAAAAAAAAAAEfAAAAAAAAAh8AAAAAAAAAAAAAAh8AAAAAAAADHwAAAAAAAAAAAAADHwAAAAAAAAQfAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAA/h4AAAAAAAD+HgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					32,
+					1,
+					"insert_snippet",
+					{
+						"contents": "($0)"
+					},
+					"AQAAAAQfAAAAAAAABh8AAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAABB8AAAAAAAAEHwAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					40,
+					1,
+					"insert",
+					{
+						"characters": "postprocess_fee"
+					},
+					"EAAAALseAAAAAAAAvB4AAAAAAAAAAAAAvB4AAAAAAAC8HgAAAAAAAA4AAABub25fYmxvZ19mZWVkc7weAAAAAAAAvR4AAAAAAAAAAAAAvR4AAAAAAAC+HgAAAAAAAAAAAAC+HgAAAAAAAL8eAAAAAAAAAAAAAL8eAAAAAAAAwB4AAAAAAAAAAAAAwB4AAAAAAADBHgAAAAAAAAAAAADBHgAAAAAAAMIeAAAAAAAAAAAAAMIeAAAAAAAAwx4AAAAAAAAAAAAAwx4AAAAAAADEHgAAAAAAAAAAAADEHgAAAAAAAMUeAAAAAAAAAAAAAMUeAAAAAAAAxh4AAAAAAAAAAAAAxh4AAAAAAADHHgAAAAAAAAAAAADHHgAAAAAAAMgeAAAAAAAAAAAAAMgeAAAAAAAAyR4AAAAAAAAAAAAAyR4AAAAAAADKHgAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAux4AAAAAAADJHgAAAAAAAAAAAAAAAPC/"
+				],
+				[
+					41,
+					1,
+					"insert",
+					{
+						"characters": "ds"
+					},
+					"AgAAAMoeAAAAAAAAyx4AAAAAAAAAAAAAyx4AAAAAAADMHgAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAyh4AAAAAAADKHgAAAAAAAAAAAAAAAPC/"
+				]
+			]
+		},
+		{
+			"file": "go.mod",
+			"settings":
+			{
+				"buffer_size": 630,
+				"line_ending": "Unix"
+			},
+			"undo_stack":
+			[
+				[
+					1,
+					1,
+					"revert",
+					null,
+					"AgAAAAAAAAAAAAAAAAAAAAAAAAANAQAAbW9kdWxlIG1haW4KCmdvIDEuMTgKCnJlcXVpcmUgKAoJZ2l0aHViLmNvbS9hbnRjaGZ4L2h0bWxxdWVyeSB2MS4zLjAKCWdvbGFuZy5vcmcveC9uZXQgdjAuOC4wCikKCnJlcXVpcmUgKAoJZ2l0aHViLmNvbS9hbnRjaGZ4L3hwYXRoIHYxLjIuMyAvLyBpbmRpcmVjdAoJZ2l0aHViLmNvbS9nb2xhbmcvZ3JvdXBjYWNoZSB2MC4wLjAtMjAyMTAzMzEyMjQ3NTUtNDFiYjE4YmZlOWRhIC8vIGluZGlyZWN0Cglnb2xhbmcub3JnL3gvdGV4dCB2MC44LjAgLy8gaW5kaXJlY3QKKQoAAAAAAAAAAHYCAAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/"
+				]
+			]
+		},
+		{
+			"contents": "\"<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?>\\n<?xml-stylesheet type=\\\"text/xsl\\\" href=\\\"/wp-content/plugins/squirrly-seo/view/assets/css/sitemapindex.xsl\\\"?>\\n<!-- generated-on=\\\"2023-03-20T04:11:56+00:00\\\" -->\\n<!-- generator=\\\"Squirrly SEO Sitemap\\\" -->\\n<!-- generator-url=\\\"https://wordpress.org/plugins/squirrly-seo/\\\" -->\\n<!-- generator-version=\\\"12.1.04\\\" -->\\n\\n<sitemapindex xmlns:xsi=\\\"http://www.w3.org/2001/XMLSchema-instance\\\" xsi:schemaLocation=\\\"http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/siteindex.xsd\\\" xmlns=\\\"http://www.sitemaps.org/schemas/sitemap/0.9\\\">\\n\\t<sitemap>\\n\\t<loc>https://sonniss.com/sitemap-home.xml</loc>\\n\\t<lastmod>2023-03-19T19:20:38+00:00</lastmod>\\n\\t</sitemap>\\n\\t<sitemap>\\n\\t<loc>https://sonniss.com/sitemap-posts.xml</loc>\\n\\t<lastmod>2023-03-19T19:20:38+00:00</lastmod>\\n\\t</sitemap>\\n\\t<sitemap>\\n\\t<loc>https://sonniss.com/sitemap-pages.xml</loc>\\n\\t<lastmod>2023-03-19T19:20:38+00:00</lastmod>\\n\\t</sitemap>\\n\\t<sitemap>\\n\\t<loc>https://sonniss.com/sitemap-categories.xml</loc>\\n\\t<lastmod>2023-03-19T19:20:38+00:00</lastmod>\\n\\t</sitemap>\\n\\t<sitemap>\\n\\t<loc>https://sonniss.com/sitemap-custom-taxonomies.xml?taxonomy=download_category</loc>\\n\\t<lastmod>2023-03-19T19:20:38+00:00</lastmod>\\n\\t</sitemap>\\n\\t<sitemap>\\n\\t<loc>https://sonniss.com/sitemap-custom-posts.xml?type=download</loc>\\n\\t<lastmod>2023-03-19T19:20:38+00:00</lastmod>\\n\\t</sitemap>\\n\\t<sitemap>\\n\\t<loc>https://sonniss.com/sitemap-custom-posts.xml?page=1&#038;type=download</loc>\\n\\t<lastmod>2023-03-19T19:20:38+00:00</lastmod>\\n\\t</sitemap>\\n\\t<sitemap>\\n\\t<loc>https://sonniss.com/sitemap-custom-posts.xml?page=2&#038;type=download</loc>\\n\\t<lastmod>2023-03-19T19:20:38+00:00</lastmod>\\n\\t</sitemap>\\n\\t<sitemap>\\n\\t<loc>https://sonniss.com/sitemap-custom-posts.xml?page=3&#038;type=download</loc>\\n\\t<lastmod>2023-03-19T19:20:38+00:00</lastmod>\\n\\t</sitemap>\\n\\t<sitemap>\\n\\t<loc>https://sonniss.com/sitemap-custom-posts.xml?page=4&#038;type=download</loc>\\n\\t<lastmod>2023-03-19T19:20:38+00:00</lastmod>\\n\\t</sitemap>\\n\\t<sitemap>\\n\\t<loc>https://sonniss.com/sitemap-custom-posts.xml?page=5&#038;type=download</loc>\\n\\t<lastmod>2023-03-19T19:20:38+00:00</lastmod>\\n\\t</sitemap>\\n\\t<sitemap>\\n\\t<loc>https://sonniss.com/sitemap-custom-posts.xml?page=6&#038;type=download</loc>\\n\\t<lastmod>2023-03-19T19:20:38+00:00</lastmod>\\n\\t</sitemap>\\n\\t<sitemap>\\n\\t<loc>https://sonniss.com/sitemap-custom-posts.xml?type=ifso_triggers</loc>\\n\\t<lastmod>2023-03-19T19:20:38+00:00</lastmod>\\n\\t</sitemap>\\n</sitemapindex>\\n\"",
+			"settings":
+			{
+				"buffer_size": 2578,
+				"line_ending": "Windows",
+				"name": "\"<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?>\\n<?xml"
+			},
+			"undo_stack":
+			[
+				[
+					1,
+					1,
+					"paste",
+					null,
+					"AQAAAAAAAAAAAAAAEgoAAAAAAAAAAAAA",
+					"AQAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPC/"
+				]
+			]
+		},
+		{
+			"file": "snippet.json",
+			"settings":
+			{
+				"buffer_size": 2561,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			},
+			"undo_stack":
+			[
+			]
+		},
+		{
+			"file": "out.txt",
+			"settings":
+			{
+				"buffer_size": 126869,
+				"line_ending": "Unix"
+			},
+			"undo_stack":
+			[
+			]
+		},
+		{
+			"file": "/C/Users/ilia/Projects/rss-catchup-rails/analysis/import/hackernews-substack/main.go",
+			"settings":
+			{
+				"buffer_size": 2277,
+				"line_ending": "Windows"
+			},
+			"undo_stack":
+			[
+			]
+		}
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"Packages/Golang Build/Go.sublime-build",
+					""
+				],
+				[
+					"Packages/Golang Build/Go.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Golang Build/Go.sublime-build",
+					"Test"
+				],
+				[
+					"Packages/Golang Build/Go.sublime-build",
+					"Install"
+				],
+				[
+					"Packages/Golang Build/Go.sublime-build",
+					"Cross-Compile (Interactive)"
+				],
+				[
+					"Packages/Golang Build/Go.sublime-build",
+					"Clean"
+				]
+			],
+			[
+				"Packages/Golang Build/Go.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/Zig Language/Build Systems/Zig.sublime-build",
+					""
+				],
+				[
+					"Packages/Zig Language/Build Systems/Zig.sublime-build",
+					"Run File"
+				],
+				[
+					"Packages/Zig Language/Build Systems/Zig.sublime-build",
+					"Run Project"
+				],
+				[
+					"Packages/Zig Language/Build Systems/Zig.sublime-build",
+					"Test File"
+				],
+				[
+					"Packages/Zig Language/Build Systems/Zig.sublime-build",
+					"Test Project"
+				],
+				[
+					"Packages/Zig Language/Build Systems/Zig.sublime-build",
+					"Format File"
+				],
+				[
+					"Packages/Zig Language/Build Systems/Zig.sublime-build",
+					"Format Project"
+				],
+				[
+					"Packages/Zig Language/Build Systems/Zig.sublime-build",
+					"Build Project"
+				]
+			],
+			[
+				"Packages/Zig Language/Build Systems/Zig.sublime-build",
+				"Run Project"
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"de",
+				"Debugger: Open"
+			],
+			[
+				"deb",
+				"Debugger: Open"
+			],
+			[
+				"lsp rest",
+				"LSP: Restart Server"
+			],
+			[
+				"restart",
+				"LSP: Restart Server"
+			],
+			[
+				"lsp: res",
+				"LSP: Restart Server"
+			],
+			[
+				"reload",
+				"SublimeLinter: Reload SublimeLinter and its Plugins"
+			],
+			[
+				"debugger",
+				"Debugger: Quit"
+			],
+			[
+				"debu",
+				"Debugger: Open"
+			],
+			[
+				"degu",
+				"Debugger: Quit"
+			],
+			[
+				"deg",
+				"Debugger: Quit"
+			],
+			[
+				"debugger:",
+				"Debugger: Add Configuration"
+			],
+			[
+				"debugger:install",
+				"Debugger: Install Adapters"
+			],
+			[
+				"debugg",
+				"Debugger: Open"
+			],
+			[
+				"install pa",
+				"Package Control: Install Package"
+			],
+			[
+				"go:",
+				"Go: Reopen Build Output"
+			],
+			[
+				"package install",
+				"Package Control: Install Package"
+			],
+			[
+				"remo",
+				"Package Control: Remove Package"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"instal",
+				"Package Control: Install Package"
+			],
+			[
+				"build ",
+				"Build With: Go"
+			],
+			[
+				"remove pa",
+				"Package Control: Remove Package"
+			],
+			[
+				"Package Control: ",
+				"Package Control: Remove Package"
+			],
+			[
+				"package",
+				"Package Control: Remove Package"
+			],
+			[
+				"Package Control: inst",
+				"Package Control: Install Package"
+			],
+			[
+				"termta",
+				"Terminus: Open Default Shell in Tab (View)"
+			],
+			[
+				"termtab",
+				"Terminus: Open Default Shell in Tab (View)"
+			],
+			[
+				"term",
+				"Terminal (panel)"
+			],
+			[
+				"tertab",
+				"Terminus: Open Default Shell in Tab (View)"
+			],
+			[
+				"reinde",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"termire",
+				"Terminus: Rename Title"
+			],
+			[
+				"remove",
+				"Package Control: Remove Package"
+			],
+			[
+				"instlal pa",
+				"Package Control: Install Package"
+			],
+			[
+				"instak",
+				"Package Control: Install Package"
+			],
+			[
+				"lsp",
+				"LSP: Rename"
+			],
+			[
+				"select",
+				"LSP: Expand Selection"
+			],
+			[
+				"toggle top",
+				"LSP: Toggle Log Panel"
+			],
+			[
+				"toggle top ",
+				"LSP: Toggle Log Panel"
+			],
+			[
+				"preference",
+				"Preferences: LSP Settings"
+			],
+			[
+				"Package Control: ins",
+				"Package Control: Install Package"
+			],
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
+				"install p",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 433.0,
+		"history":
+		[
+			"dir",
+			"ls",
+			"host.bat",
+			"./host-bat",
+			"exit()",
+			"exit",
+			"pwsh"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/C/Users/ilia/Projects/the-library-rss"
+	],
+	"file_history":
+	[
+		"/C/Users/ilia/Projects/the-library-rss/main.go",
+		"/C/Users/ilia/Downloads/go-test/test.go",
+		"/C/Users/ilia/Downloads/test.go",
+		"/C/Users/ilia/Projects/the-library-rss/test.go",
+		"/C/Program Files/Go/src/io/io.go",
+		"/C/Users/ilia/Projects/the-library-rss/main.sublime-project",
+		"/C/Users/ilia/Projects/7guis-gogio/00-split/split.sublime-project",
+		"/C/Users/ilia/go/pkg/mod/golang.org/x/net@v0.8.0/html/node.go",
+		"/C/Users/ilia/go/pkg/mod/gioui.org@v0.0.0-20230224004350-5f818bc5e7f9/widget/editor.go",
+		"/C/Program Files/Go/src/time/time.go",
+		"/C/Users/ilia/Projects/7guis-gogio/01-egg/egg.sublime-project",
+		"/C/Users/ilia/Projects/7guis-gogio/01-egg/main.go",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1-generic/part1-generic.sublime-project",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1-generic/instruction_table_gen/instruction_table.go",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1-generic/instruction_table_gen/instruction_table.txt",
+		"/C/Users/ilia/Downloads/byte_seg_move.binary.txt",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1-generic/a.sublime-project",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1-generic/main.go",
+		"/C/Users/ilia/AppData/Roaming/Sublime Merge/Packages/User/Preferences.sublime-settings",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1-generic/instruction_table_generated.go",
+		"/C/Users/ilia/Projects/rss-catchup-rails/analysis/import/hackernews-substack/main.go",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1-generic/fda.sublime-project",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1-generic/fda.sublime-workspace",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1-generic/go.mod",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1-generic/instruction_table_gen/main.go",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1-generic/.gitignore",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1-generic/go.sum",
+		"/C/Users/ilia/Projects/rss-catchup-rails/analysis/import/hackernews-substack/bigquery.sql",
+		"/C/Users/ilia/Downloads/bquxjob_3f4dbce4_186f268502a.csv",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1-generic/instruction.go",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1-generic",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1/listing_0041_add_sub_cmp_jnz",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1/listing_0040_challenge_movs.asm",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1/sim0040.asm",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1/listing_0041_add_sub_cmp_jnz.asm",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1/listing_0039_more_movs",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1/listing_0039_more_movs.asm",
+		"/C/Users/ilia/AppData/Roaming/Sublime Text/Packages/User/golang.sublime-settings",
+		"/C/Users/ilia/AppData/Roaming/Sublime Text/Packages/Gofmt/Gofmt.sublime-settings",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1/go.mod",
+		"/C/Users/ilia/Desktop/Tue.txt",
+		"/C/Users/ilia/Projects/perf-aware-programming/part1/play.go",
+		"/C/Users/ilia/Projects/perf-aware-programming/play/go.mod",
+		"/C/Users/ilia/Projects/perf-aware-programming/play/play.go",
+		"/C/Users/ilia/Projects/perf-aware-programming/1-sim8086/listing_0038_many_register_mov.asm",
+		"/C/Users/ilia/Projects/perf-aware-programming/1-sim8086/sim0038.asm",
+		"/C/Users/ilia/Projects/perf-aware-programming/1-sim8086/go.mod",
+		"/C/Users/ilia/Projects/rss-catchup-rails/public/feedrewind aaa.svg",
+		"/C/Users/ilia/Projects/rss-catchup-rails/public/feedrewind.svg",
+		"/C/Users/ilia/Projects/rss-catchup-rails/public/feedrewind logo ai.svg",
+		"/C/Users/ilia/Downloads/feedrewind logo (1).pdf",
+		"/C/Users/ilia/Downloads/feedrewind logo.ai",
+		"/C/Users/ilia/Projects/hutel-native/src/ui.zig",
+		"/C/Users/ilia/AppData/Roaming/Sublime Merge/Packages/User/Default (Windows).sublime-keymap",
+		"/C/Users/ilia/Projects/scapples/I am alone in this world.scap",
+		"/C/Portable/zig/lib/std/math.zig",
+		"/C/Users/ilia/Projects/hutel-native/src/sokol/c/sokol_app.h",
+		"/C/Users/ilia/Projects/hutel-native/src/sokol/app.zig",
+		"/C/Users/ilia/Projects/hutel-native/status.txt",
+		"/C/Users/ilia/Downloads/ya/yandex-team.txt",
+		"/C/Users/ilia/Downloads/ya/extract/yandex360/frontend/services/quinn/README.md",
+		"/C/Users/ilia/Downloads/ya/extract/yandex360/frontend/services/quinn/client/stores/RoutingStore.js",
+		"/C/Users/ilia/Downloads/ya/extract/market/report/data/formulas/meta_models/fml_formula_804763.info",
+		"/C/Users/ilia/Downloads/ya/extract/tools/tokenize/tests/queries.txt",
+		"/C/Users/ilia/Downloads/ya/extract/wmconsole/backend/java/webmaster3-worker/src/test/resources/vk.com.ru",
+		"/C/Users/ilia/Downloads/ya/extract/yandex360/frontend/services/quinn/loc/promo.ru.loc",
+		"/C/Users/ilia/Downloads/ya/yandex-team-partial.txt",
+		"/C/Portable/RemedyBG/README.txt",
+		"/C/Users/ilia/Projects/hutel-native/src/sokol/c/sokol_app.c",
+		"/C/Users/ilia/Projects/hutel-native/src/sokol/c/sokol_gfx.h",
+		"/C/Users/ilia/Projects/hutel-native/src/main.zig",
+		"/C/Users/ilia/Projects/hutel-native/src/sokol/gfx.zig",
+		"/C/Users/ilia/Projects/hutel-native/src/hutel.zig",
+		"/C/Users/ilia/Projects/hutel-native/src/shaders/quad.glsl",
+		"/C/Users/ilia/Projects/hutel-native/src/sokol/app_gfx_glue.zig",
+		"/C/Users/ilia/Downloads/calendar.ics",
+		"/C/Users/ilia/Videos/Movies/7tRaNa.0zz.2015.O.WEB-DL.1080p.en.srt",
+		"/C/Users/ilia/Projects/oz-sub/sub_en.srt",
+		"/C/Users/ilia/Projects/oz-sub/sub_en.ass",
+		"/C/Users/ilia/Projects/oz-sub/sub.ass",
+		"/C/Users/ilia/Projects/oz-sub/whisper-to-srt.py",
+		"/C/Users/ilia/Downloads/twitter_graph_explorer.srt",
+		"/C/Users/ilia/Projects/oz-sub/whisper.srt",
+		"/C/Users/ilia/Projects/oz-sub/gt-trimmed.txt",
+		"/C/Users/ilia/Projects/oz-sub/whisper-trimmed.txt",
+		"/C/Users/ilia/Projects/oz-sub/Сценарий",
+		"/C/Users/ilia/Projects/hutel-native/src/datetime/datetime.zig",
+		"/C/Users/ilia/Projects/hutel-native/src/datetime/timezones.zig",
+		"/C/Users/ilia/Projects/hutel-native/src/datetime/LICENSE",
+		"/C/Users/ilia/Projects/hutel-native/build.zig",
+		"/C/Users/ilia/Projects/hutel-native/src/stb/stb_truetype.zig",
+		"/C/Users/ilia/Projects/hutel-native/src/stb/stb_truetype.h",
+		"/C/Users/ilia/Projects/hutel-native/src/ui_text.zig",
+		"/C/Users/ilia/Projects/hutel-native/src/stb/stb_truetype.c",
+		"/C/Users/ilia/Projects/hutel-native/src/stb/stb_truetype_mini.c",
+		"/C/Users/ilia/Projects/hutel-native/src/stb/stb_truetype_mini.h",
+		"/C/Users/ilia/Projects/hutel-native/src/stb/stb_truetype_mini.zig",
+		"/C/Users/ilia/Downloads/Coping Ahead.svg",
+		"/C/Users/ilia/Projects/hutel-native/src/util.zig",
+		"/C/Users/ilia/Projects/hutel-native/src/sokol/sokol.zig",
+		"/C/Users/ilia/Projects/hutel-native/src/sokol/c/sokol_defines.h",
+		"/C/Users/ilia/Projects/hutel-native/src/sokol/c/sokol_hooks.c",
+		"/C/Users/ilia/Projects/hutel-native/src/sokol/hooks.zig",
+		"/C/Users/ilia/AppData/Local/Temp/7zOC73CC823/sokol_defines.h",
+		"/C/Users/ilia/Projects/hutel-native/src/generated/material_icons.zig",
+		"/C/Users/ilia/Projects/hutel-native/res/MaterialIcons-Regular.codepoints",
+		"/C/Portable/zig/lib/std/build.zig",
+		"/C/Users/ilia/Projects/hutel-native/src/base_memory.zig",
+		"/C/Users/ilia/Projects/hutel-native/res/MaterialIcons-Readme.txt",
+		"/C/Users/ilia/Projects/hutel-native/build/generate_icon_codepoints.zig",
+		"/C/Portable/zig/lib/std/io/writer.zig",
+		"/C/Portable/zig/lib/std/mem.zig",
+		"/C/Portable/zig/lib/std/fs.zig",
+		"/C/Portable/zig/lib/std/fs/path.zig",
+		"/C/Users/ilia/Downloads/default.mp3",
+		"/C/Users/ilia/Downloads/software-unscripted",
+		"/C/Users/ilia/Downloads/hmn_podcast_017_hms2021.mp3",
+		"/C/Users/ilia/Videos/Clips for Lindsey/3yo 6 New Year's Eve.txt",
+		"/C/Users/ilia/Videos/Clips for Lindsey/3yo 5 Dad's BDay.txt",
+		"/C/Users/ilia/Videos/Clips for Lindsey/3yo 4 Falling asleep.txt",
+		"/C/Users/ilia/Videos/Clips for Lindsey/3yo 3 Darts.txt",
+		"/C/Users/ilia/Videos/Clips for Lindsey/3yo 2 Climbing up a slide, dressing up.txt",
+		"/C/Users/ilia/Videos/Clips for Lindsey/2.9yo 2 Pond.txt",
+		"/C/Users/ilia/Videos/Clips for Lindsey/2.9yo 1 With other kids.txt",
+		"/C/Users/ilia/Videos/Clips for Lindsey/1.5yo Eating with adults.txt",
+		"/C/Users/ilia/Projects/hutel-native/src/generated/box.glsl.zig",
+		"/C/Users/ilia/Projects/ui-experiments/08-arenas/src/base_memory.cpp",
+		"/C/Portable/zig/lib/std/array_list.zig"
+	],
+	"find":
+	{
+		"height": 40.0
+	},
+	"find_in_files":
+	{
+		"height": 118.285714286,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"false",
+			"filterScanner",
+			"filterFile",
+			"statsByFeedLink",
+			"cohost.org",
+			"FindFeeds",
+			"findFeeds",
+			"batchSize",
+			"k",
+			"keys",
+			"ch",
+			"struct{}{}",
+			"struct{}",
+			"rss",
+			"var",
+			"linkUrl",
+			"allLinks",
+			"Status 3",
+			"Status 4",
+			"Status 3",
+			"linkProper",
+			"countsByUrl",
+			" ",
+			"keys",
+			")",
+			"jsonBytes"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"scrollbar_highlights": true,
+		"show_context": true,
+		"use_buffer2": true,
+		"use_gitignore": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "postprocess_feeds.txt",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1097,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1097,
+								1097
+							]
+						],
+						"settings":
+						{
+							"lsp_uri": "file:///C:/Users/ilia/Projects/the-library-rss/postprocess_feeds.txt",
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"stack_multiselect": false,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "main.go",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 10554,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								7884,
+								7884
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": "",
+									"selector": "source.go"
+								},
+								{
+									"characters": ".",
+									"selector": "meta.tag, source - comment - string.quoted.double.block - string.quoted.single.block - string.unquoted.heredoc",
+									"server": "gopls"
+								}
+							],
+							"lsp_active": true,
+							"lsp_hover_provider_count": 1,
+							"lsp_uri": "file:///C:/Users/ilia/Projects/the-library-rss/main.go",
+							"show_definitions": false,
+							"syntax": "Packages/Go/Go.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 5651.42857143,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"stack_multiselect": false,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "go.mod",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 630,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"lsp_uri": "file:///C:/Users/ilia/Projects/the-library-rss/go.mod",
+							"syntax": "Packages/XML/DTD.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"stack_multiselect": false,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2578,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2578,
+								0
+							]
+						],
+						"settings":
+						{
+							"auto_name": "\"<?xml version=\\\"1.0\\\" encoding=\\\"UTF-8\\\"?>\\n<?xml",
+							"lsp_uri": "buffer://sublime/336",
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"stack_multiselect": false,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "snippet.json",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2561,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2531,
+								2531
+							]
+						],
+						"settings":
+						{
+							"lsp_uri": "file:///C:/Users/ilia/Projects/the-library-rss/snippet.json",
+							"syntax": "Packages/JSON/JSON.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 477.714285714,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"stack_multiselect": false,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "out.txt",
+					"selected": true,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 126869,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								124339,
+								124339
+							]
+						],
+						"settings":
+						{
+							"lsp_uri": "file:///C:/Users/ilia/Projects/the-library-rss/out.txt",
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 46085.5714286,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"stack_multiselect": false,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "/C/Users/ilia/Projects/rss-catchup-rails/analysis/import/hackernews-substack/main.go",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2277,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1826,
+								1841
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": "",
+									"selector": "source.go"
+								},
+								{
+									"characters": ".",
+									"selector": "meta.tag, source - comment - string.quoted.double.block - string.quoted.single.block - string.unquoted.heredoc",
+									"server": "gopls"
+								}
+							],
+							"lsp_active": true,
+							"lsp_hover_provider_count": 1,
+							"lsp_uri": "file:///C:/Users/ilia/Projects/rss-catchup-rails/analysis/import/hackernews-substack/main.go",
+							"show_definitions": false,
+							"syntax": "Packages/Go/Go.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 532.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"stack_multiselect": false,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 26.2857142857
+	},
+	"input":
+	{
+		"height": 53.1428571429
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.Debugger":
+	{
+		"height": 490.0
+	},
+	"output.Debugger Console":
+	{
+		"height": 366.285705566
+	},
+	"output.LSP Log Panel":
+	{
+		"height": 120.0
+	},
+	"output.SublimeLinter":
+	{
+		"height": 0.0
+	},
+	"output.Terminus":
+	{
+		"height": 302.0
+	},
+	"output.astyle_error_message":
+	{
+		"height": 0.0
+	},
+	"output.diagnostics":
+	{
+		"height": 120.0
+	},
+	"output.exec":
+	{
+		"height": 126.285713196
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"output.gofmt":
+	{
+		"height": 0.0
+	},
+	"output.golang_build":
+	{
+		"height": 120.0
+	},
+	"output.language servers":
+	{
+		"height": 289.0
+	},
+	"output.mdpopups":
+	{
+		"height": 0.0
+	},
+	"output.references":
+	{
+		"height": 108.0
+	},
+	"pinned_build_system": "Packages/Golang Build/Go.sublime-build",
+	"project": "main.sublime-project",
+	"replace":
+	{
+		"height": 49.1428571429
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"ui",
+				"src\\ui.zig"
+			],
+			[
+				"hutel",
+				"src\\hutel.zig"
+			],
+			[
+				"ui.z",
+				"src\\ui.zig"
+			],
+			[
+				"app.zig",
+				"src\\sokol\\app.zig"
+			],
+			[
+				"sokol_app",
+				"src\\sokol\\c\\sokol_app.h"
+			],
+			[
+				"sokol_a",
+				"src\\sokol\\c\\sokol_app.h"
+			],
+			[
+				"sokol_g",
+				"src\\sokol\\c\\sokol_gfx.h"
+			],
+			[
+				"ui.",
+				"src\\ui.zig"
+			],
+			[
+				"quad.",
+				"src\\shaders\\quad.glsl"
+			],
+			[
+				"stb_tr",
+				"src\\stb\\stb_truetype.h"
+			],
+			[
+				"ui_te",
+				"src\\ui_text.zig"
+			],
+			[
+				"base_mem",
+				"src\\base_memory.zig"
+			],
+			[
+				"dateti",
+				"src\\datetime\\datetime.zig"
+			],
+			[
+				"datet",
+				"src\\datetime\\datetime.zig"
+			],
+			[
+				"text",
+				"src\\ui_text.zig"
+			],
+			[
+				"app.z",
+				"src\\sokol\\app.zig"
+			],
+			[
+				"main",
+				"src\\main.zig"
+			],
+			[
+				"stb",
+				"src\\stb\\stb_truetype.zig"
+			],
+			[
+				"ui.t",
+				"src\\ui_text.zig"
+			],
+			[
+				"build",
+				"build.zig"
+			],
+			[
+				"sokol_gfx",
+				"src\\sokol\\c\\sokol_gfx.h"
+			],
+			[
+				"quad",
+				"src\\shaders\\quad.glsl"
+			],
+			[
+				"stb_t",
+				"src\\stb\\stb_truetype.zig"
+			],
+			[
+				"app.",
+				"src\\sokol\\app.zig"
+			],
+			[
+				"hook",
+				"src\\sokol\\hooks.zig"
+			],
+			[
+				"gfx.",
+				"src\\sokol\\gfx.zig"
+			],
+			[
+				"gener",
+				"build\\generate_icon_codepoints.zig"
+			],
+			[
+				"gfx",
+				"src\\sokol\\c\\sokol_gfx.h"
+			],
+			[
+				"sg",
+				"src\\sokol\\c\\sokol_gfx.h"
+			],
+			[
+				"g",
+				"src\\sokol\\gfx.zig"
+			],
+			[
+				"raylib.h",
+				"raylib\\src\\raylib.h"
+			],
+			[
+				"base_ty",
+				"src\\base_types.cpp"
+			],
+			[
+				"stb_ds",
+				"stb\\stb_ds.h"
+			],
+			[
+				"sapp",
+				"src\\sokol\\c\\sokol_app.h"
+			],
+			[
+				"sapp.",
+				"src\\sokol\\app.zig"
+			],
+			[
+				"st",
+				"src\\stb\\stb_truetype.h"
+			],
+			[
+				"stb_image_wr",
+				"src\\stb\\stb_image_write.zig"
+			],
+			[
+				"sokol.zig",
+				"src\\sokol\\gfx.zig"
+			],
+			[
+				"sokol_gf",
+				"src\\sokol\\c\\sokol_gfx.h"
+			],
+			[
+				"stb_im",
+				"src\\stb\\stb_image.h"
+			],
+			[
+				"gfx.z",
+				"src\\sokol\\gfx.zig"
+			],
+			[
+				"imui",
+				"src\\imui.zig"
+			],
+			[
+				"sdk.",
+				"Sdk.zig"
+			],
+			[
+				"log2",
+				"log2.txt"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 352.0,
+		"last_filter": "Box",
+		"selected_items":
+		[
+			[
+				"Box",
+				"Box"
+			],
+			[
+				"proces",
+				"processMouseInput"
+			],
+			[
+				"box",
+				"Box"
+			]
+		],
+		"width": 652.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": false,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 239.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

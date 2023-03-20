@@ -1,0 +1,19 @@
+{
+	"folders":
+	[
+		{
+			"path": ".",
+		}
+	],
+	"debugger_configurations":
+	[
+		{
+			"name": "Launch Package",
+			"type": "go",
+			"request": "launch",
+			"program": ".",
+			"args": [],
+			"cwd": "${project_path}"
+		},
+	],
+}
