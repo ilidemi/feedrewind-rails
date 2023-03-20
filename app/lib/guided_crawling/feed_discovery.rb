@@ -92,7 +92,7 @@ def discover_feeds_at_url(start_url, enforce_timeout, crawl_ctx, http_client, lo
       canonical_link = to_canonical_link(url, logger, start_link.uri)
       next nil unless canonical_link
       next nil if canonical_link.url.end_with?("?alt=rss")
-      next nil if canonical_link.uri.path.match?("/comments/feed/?$")
+      next nil if canonical_link.uri.path.match?("/comments/(feed|default)/?$")
 
       DiscoveredFeed.new(title, canonical_link.url)
     end

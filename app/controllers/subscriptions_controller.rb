@@ -130,7 +130,7 @@ class SubscriptionsController < ApplicationController
         ProductEventHelper::log_create_subscription(
           request, @product_user_id, @current_user.nil?, subscription
         )
-        redirect_to SubscriptionsHelper.setup_path(subscription)
+        render plain: SubscriptionsHelper.setup_path(subscription)
       end
     elsif feed_result == :discovered_bad_feed
       ProductEventHelper::log_discover_feeds(
