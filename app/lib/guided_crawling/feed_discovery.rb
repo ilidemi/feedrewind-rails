@@ -33,6 +33,12 @@ def discover_feeds_at_url(start_url, enforce_timeout, crawl_ctx, http_client, lo
     end
   end
 
+  if start_link.uri.host.end_with?("substack.com") && ["", "/"].include?(start_link.uri.path)
+    logger.info("Substack link detected, going to feed right away to avoid CloudFlare: #{full_start_url}")
+    feed_url = full_start_url.gsub("/\\Z", "") + "/feed"
+    start_link = to_canonical_link(feed_url, logger)
+  end
+
   mock_progress_logger = ProgressLogger.new(MockProgressSaver.new(logger))
 
   begin
