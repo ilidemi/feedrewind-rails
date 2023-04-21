@@ -210,7 +210,7 @@ func findFeedLinks(link string) ([]string, error) {
 			panic(fmt.Sprintf("Redirects not handled: %s", link))
 		}
 
-		return nil, errors.New(fmt.Sprintf("Status %s", resp.Status))
+		return nil, fmt.Errorf("Status %s", resp.Status)
 	}
 
 	contentType := resp.Header.Get("content-type")
