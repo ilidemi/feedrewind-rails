@@ -5,7 +5,7 @@
         <div>
           <a href="<%= blog_post.url %>" class="link text-black" target="_blank"><%= blog_post.title %></a>
           <% if index == 0 %>
-            <span class="text-gray-500">(oldest)</span>
+            <span class="text-gray-500">(earliest)</span>
           <% elsif index == ordered_blog_posts.length - 1 %>
             <span class="text-gray-500">(newest)</span>
           <% end %>
@@ -18,7 +18,7 @@
         <div>
           <a href="<%= blog_post.url %>" class="link text-black" target="_blank"><%= blog_post.title %></a>
           <% if index == 0 %>
-            <span class="text-gray-500">(oldest)</span>
+            <span class="text-gray-500">(earliest)</span>
           <% end %>
         </div>
       <% end %>
