@@ -1,8 +1,8 @@
-<div class="flex flex-col gap-y-3">
+<div class="flex flex-col gap-y-8 md:gap-y-3">
   <% suggested_categories.each_with_index do |category, index| %>
     <div class="flex flex-row <%= width_class %>">
       <% if index == 1 %>
-        <div class="flex-1"></div>
+        <div class="flex-1 hidden md:block"></div>
       <% end %>
       <div class="w-fit">
         <div class="text-lg font-semibold py-1"><%= category.name %></div>
@@ -24,8 +24,8 @@
     </div>
   <% end %>
 
-  <div class="pt-8 flex flex-row <%= width_class %>">
-    <div class="flex-1"></div>
+  <div class="md:pt-8 flex flex-row <%= width_class %>">
+    <div class="flex-1 hidden md:block"></div>
     <div class="w-fit">
       <div class="text-lg font-semibold py-1">Miscellaneous</div>
       <% miscellaneous_blogs.each do |blog| %>
