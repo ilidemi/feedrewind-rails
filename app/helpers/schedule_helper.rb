@@ -1,4 +1,6 @@
 module ScheduleHelper
+  DAYS_OF_WEEK = %w[sun mon tue wed thu fri sat]
+
   def ScheduleHelper::day_of_week(date)
     date
       .strftime('%a')

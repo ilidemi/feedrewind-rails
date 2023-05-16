@@ -17,6 +17,7 @@ Rails.application.routes.draw do
   get "/subscriptions/add/*start_url", to: "onboarding#add", format: false, defaults: { format: "html" }
   post "/subscriptions/add", to: "onboarding#add_landing"
   post "/subscriptions/discover_feeds", to: "onboarding#discover_feeds"
+  get "/preview/:slug", to: "onboarding#preview"
 
   get "/subscriptions/:id", to: "subscriptions#show", constraints: { id: /\d+/ } # Should come after /add so that it doesn't get treated as id
   get "/subscriptions/:id/setup", to: "subscriptions#setup", constraints: { id: /\d+/ }

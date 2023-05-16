@@ -12,7 +12,6 @@ class SubscriptionsController < ApplicationController
     :create, :setup, :submit_progress_times, :select_posts, :mark_wrong, :delete
   ]
 
-  DAYS_OF_WEEK = %w[sun mon tue wed thu fri sat]
   DAY_COUNT_NAMES = [:sun_count, :mon_count, :tue_count, :wed_count, :thu_count, :fri_count, :sat_count]
 
   IndexSubscription = Struct.new(:id, :name, :status, :is_paused, :published_count, :total_count)
@@ -93,7 +92,7 @@ class SubscriptionsController < ApplicationController
 
     @current_counts_by_day = query_result.rows[1..].to_h { |row| [row[10], row[11]] }
     @other_sub_names_by_day = get_other_sub_names_by_day(@subscription.id)
-    @days_of_week = DAYS_OF_WEEK
+    @days_of_week = ScheduleHelper::DAYS_OF_WEEK
     @schedule_preview = get_schedule_preview(@subscription, @current_user)
     @delivery_channel = @current_user.user_settings.delivery_channel
   end
@@ -240,7 +239,7 @@ class SubscriptionsController < ApplicationController
 
     if @subscription.status == "setup" && @current_user
       @other_sub_names_by_day = get_other_sub_names_by_day(@subscription.id)
-      @days_of_week = DAYS_OF_WEEK
+      @days_of_week = ScheduleHelper::DAYS_OF_WEEK
       @schedule_preview = get_schedule_preview(@subscription, @current_user)
       @delivery_channel_set = @current_user.user_settings.delivery_channel != nil
     end
@@ -521,7 +520,7 @@ class SubscriptionsController < ApplicationController
         return redirect_from_not_found unless @subscription
         return if @subscription.status != "setup"
 
-        counts_by_day = DAYS_OF_WEEK.zip(DAY_COUNT_NAMES).to_h do |day_of_week, day_count_name|
+        counts_by_day = ScheduleHelper::DAYS_OF_WEEK.zip(DAY_COUNT_NAMES).to_h do |day_of_week, day_count_name|
           [day_of_week, schedule_params[day_count_name].to_i]
         end
 
@@ -768,7 +767,7 @@ class SubscriptionsController < ApplicationController
     SQL
     query_result = ActiveRecord::Base.connection.exec_query(query, "SQL", [@current_user.id, current_sub_id])
 
-    other_sub_names_by_day = DAYS_OF_WEEK.to_h { |day| [day, []] }
+    other_sub_names_by_day = ScheduleHelper::DAYS_OF_WEEK.to_h { |day| [day, []] }
     query_result.rows.each do |row|
       name, day_of_week, day_count = *row
       day_count.times do

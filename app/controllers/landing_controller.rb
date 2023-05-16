@@ -8,12 +8,17 @@ class LandingController < ApplicationController
 
     ProductEventHelper::log_visit_add_page(request, @product_user_id, "/", true)
 
-    if cookies[:anonymous_subscription]
-      @subscription = Subscription.find_by(id: cookies[:anonymous_subscription], user_id: nil)
-    else
-      @subscription = nil
-    end
-
+    @screenshot_links = OnboardingHelper::SCREENSHOT_LINKS
+    @screenshot_days_of_week = ScheduleHelper::DAYS_OF_WEEK
+    @screenshot_schedule_columns = [
+      [:add],
+      [:add, :selected],
+      [:add],
+      [:add, :selected],
+      [:add],
+      [:add, :selected],
+      [:add]
+    ]
     @suggested_categories = OnboardingHelper::SUGGESTED_CATEGORIES
     @miscellaneous_blogs = OnboardingHelper::MISCELLANEOUS_BLOGS
   end

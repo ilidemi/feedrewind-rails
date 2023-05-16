@@ -102,6 +102,15 @@ class OnboardingController < ApplicationController
     end
   end
 
+  def preview
+    @link = OnboardingHelper::SCREENSHOT_LINKS_BY_SLUG[params[:slug]]
+    if @link.nil?
+      redirect_to "/"
+    end
+
+    render layout: "preview"
+  end
+
   private
 
   FeedsData = Struct.new(:start_url, :feeds, :not_a_url, :are_no_feeds, :could_not_reach, :bad_feed)
