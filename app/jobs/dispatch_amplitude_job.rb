@@ -16,7 +16,11 @@ class DispatchAmplitudeJob < ApplicationJob
     bot_skipped_count = 0
     bot_counts = {}
     failed_count = 0
-    events_to_dispatch.each do |product_event|
+    events_to_dispatch.each_with_index do |product_event, i|
+      if i != 0 && i % 100 == 0
+        Rails.logger.info("Event #{i}")
+      end
+
       if product_event.bot_name &&
         product_event.user_properties &&
         !product_event.user_properties["allow_bots"]

@@ -118,7 +118,6 @@ module OnboardingHelper
       "Rationality",
       [
         SuggestedBlog.new("https://slatestarcodex.com/", "https://slatestarcodex.com/feed/", "Slate Star Codex"),
-        SuggestedBlog.new("https://applieddivinitystudies.com/", "https://applieddivinitystudies.com/atom.xml", "Applied Divinity Studies"),
         SuggestedBlog.new("https://dynomight.net/", "https://dynomight.net/feed.xml", "DYNOMIGHT"),
         SuggestedBlog.new("https://sideways-view.com/", "https://sideways-view.com/feed/", "The sideways view"),
         SuggestedBlog.new("https://meltingasphalt.com/", "https://feeds.feedburner.com/MeltingAsphalt", "Melting Asphalt"),
