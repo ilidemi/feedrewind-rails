@@ -15,7 +15,7 @@ class HttpClient
   def request(uri, should_throttle, logger)
     throttle if @enable_throttling && should_throttle
 
-    req = Net::HTTP::Get.new(uri, initheader = { 'User-Agent' => 'FeedRewind/0.1' })
+    req = Net::HTTP::Get.new(uri, initheader = { 'User-Agent' => 'FeedRewind.com/0.1 (bot)' })
     begin
       Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
         http.request(req) do |resp|
