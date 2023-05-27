@@ -80,7 +80,7 @@ class ApplicationController < ActionController::Base
   end
 
   def authorize_admin
-    raise ActionController::RoutingError.new('Not Found') unless is_admin(current_user.id)
+    raise ActionController::RoutingError.new('Not Found') if current_user.nil? || !is_admin(current_user.id)
   end
 
   def fill_current_user
