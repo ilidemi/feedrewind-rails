@@ -167,8 +167,8 @@ def process_redirect(
   crawl_ctx.redirects[request_link.url] = redirection_link
   redirection_link = follow_cached_redirects(redirection_link, crawl_ctx.redirects, seen_urls)
 
-  # Not marking intermediate canonical urls as fetched because Medium redirect key is a query param trimmed
-  # from canonical url
+  # Not marking intermediate canonical urls as fetched because Medium redirect key is a query param
+  # not included in canonical url
 
   logger.info("#{code} #{request_ms}ms #{request_link.url}#{duplicate_fetch_log} -> #{redirection_link.url}")
   redirection_link

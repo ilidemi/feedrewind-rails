@@ -91,8 +91,6 @@ def are_titles_roughly_equal(title1, title2)
   end
 end
 
-TAGS_WITHOUT_SURROUNDING_SPACES = %w[span code i b em]
-
 def get_element_title(element)
   # Nokogiri's .inner_text removes <br> without inserting any whitespace. Insert newlines manually instead.
   def get_element_inner_text(element)
