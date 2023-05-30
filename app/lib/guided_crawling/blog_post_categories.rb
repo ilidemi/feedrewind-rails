@@ -177,6 +177,9 @@ end
 def extract_kalzumeus_categories(logger)
   #noinspection RubyLiteralArrayInspection
   top_posts_urls = [
+    "https://www.kalzumeus.com/2019/3/18/two-years-at-stripe/",
+    "https://www.kalzumeus.com/2018/10/19/japanese-hometown-tax/",
+    "https://www.kalzumeus.com/2017/09/09/identity-theft-credit-reports/",
     "https://www.kalzumeus.com/2012/01/23/salary-negotiation/",
     "https://www.kalzumeus.com/2011/10/28/dont-call-yourself-a-programmer/",
     "https://www.kalzumeus.com/2011/03/13/some-perspective-on-the-japan-earthquake/",
