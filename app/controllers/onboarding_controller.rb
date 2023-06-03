@@ -106,9 +106,9 @@ class OnboardingController < ApplicationController
     @link = OnboardingHelper::SCREENSHOT_LINKS_BY_SLUG[params[:slug]]
     if @link.nil?
       redirect_to "/"
+    else
+      render layout: "preview"
     end
-
-    render layout: "preview"
   end
 
   private
