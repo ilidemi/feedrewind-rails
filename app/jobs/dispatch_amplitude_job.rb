@@ -29,6 +29,8 @@ class DispatchAmplitudeJob < ApplicationJob
         bot_name = product_event.bot_name
         bot_counts[bot_name] = 0 unless bot_counts.include?(bot_name)
         bot_counts[bot_name] += 1
+        product_event.dispatched_at = DateTime.now.utc
+        product_event.save!
 
         next
       end
