@@ -1,4 +1,5 @@
 require 'rspec/expectations'
+require 'uri'
 require_relative '../analysis/crawling/logger'
 require_relative '../app/lib/guided_crawling/feed_parsing'
 
