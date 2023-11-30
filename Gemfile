@@ -35,9 +35,9 @@ end
 group :test do
   # Adds support for Capybara system testing and selenium driver
   gem 'capybara', '>= 3.37'
-  gem 'selenium-webdriver'
+  gem 'selenium-webdriver', '~> 4.4', '= 4.4.0'
   # Easy installation and use of web drivers to run system tests with browsers
-  gem 'webdrivers'
+  gem 'webdrivers', '~> 5.3', '= 5.3.0'
   gem 'minitest', '~> 5.14'
 end
 
@@ -54,7 +54,7 @@ gem 'bcrypt', '~> 3.1', '>= 3.1.12'
 gem 'rspec', '~> 3.10', '>= 3.10.0'
 gem 'rspec-rails', '~> 5.0', '>= 5.0.1'
 gem 'gnuplot', '~> 2.6', '>= 2.6.2'
-gem 'puppeteer-ruby', '~> 0.35', '>= 0.35.0'
+gem 'puppeteer-ruby', '~> 0.45', '>= 0.45.0'
 gem 'htmlentities', '~> 4.3', '>= 4.3.4'
 gem 'barnes', '~> 0.0.9', '>= 0.0.9'
 gem "tailwindcss-rails", "~> 2.0"
