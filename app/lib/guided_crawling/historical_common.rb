@@ -209,20 +209,21 @@ def group_links_by_masked_xpath(page_links, feed_entry_curis_titles_map, curi_eq
   end
 
   # Prioritize xpaths with maximum number of original link titles matching feed, then discovered link titles
-  # matching feed
-  ordered_masked_xpath_link_groupings = masked_xpath_link_groupings.sort_by do |_, link_grouping|
+  # matching feed, then index (to make stable)
+  ordered_masked_xpath_link_groupings = masked_xpath_link_groupings.sort_by.with_index do |elem, index|
     [
-      -link_grouping.links.count do |masked_xpath_link|
+      -elem[1].links.count do |masked_xpath_link|
         feed_entry_curis_titles_map[masked_xpath_link.curi] &&
           equalize_title(get_element_title(masked_xpath_link.element)) ==
             feed_entry_curis_titles_map[masked_xpath_link.curi].equalized_value
       end,
-      -link_grouping.links.count do |masked_xpath_link|
+      -elem[1].links.count do |masked_xpath_link|
         feed_entry_curis_titles_map[masked_xpath_link.curi] &&
           masked_xpath_link.title &&
           masked_xpath_link.title.equalized_value ==
             feed_entry_curis_titles_map[masked_xpath_link.curi].equalized_value
-      end
+      end,
+      index
     ]
   end
 
