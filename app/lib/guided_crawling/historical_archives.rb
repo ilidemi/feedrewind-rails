@@ -48,6 +48,26 @@ def try_extract_archives(
   main_result = nil
   min_links_count = 1
 
+  if HardcodedBlogs::is_match(page_link, HardcodedBlogs::JULIA_EVANS, curi_eq_cfg)
+    logger.info("Extracting archives for Julia Evans")
+    jvns_star_count = 2
+    jvns_extractions_by_masked_xpath = extractions_by_masked_xpath_by_star_count[jvns_star_count]
+    shuffled_result = try_extract_shuffled(
+      page, jvns_extractions_by_masked_xpath, feed_entry_links, curi_eq_cfg, nil, jvns_star_count,
+      min_links_count, page_link, logger
+    )
+    if shuffled_result
+      return [ArchivesShuffledResults.new(
+        main_link: page_link,
+        results: [shuffled_result],
+        speculative_count: shuffled_result.speculative_count,
+        count: nil
+      )]
+    else
+      logger.error("Couldn't extract archives for Julia Evans")
+    end
+  end
+
   sorted_fewer_stars_curis = nil
   sorted_fewer_stars_have_dates = nil
   extractions_by_masked_xpath_by_star_count.each do |star_count, extractions_by_masked_xpath|
@@ -444,7 +464,7 @@ def try_extract_sorted_highlight_first_link(
       end
     if is_matching_feed &&
       page_curis_set.include?(first_link.curi) &&
-      !curis_set.include?(first_link.curi)
+      !curis_set.include?(first_link.curi) &&
       (is_matching_fewer_stars_links || !fewer_stars_curis)
 
       best_xpath = masked_xpath
