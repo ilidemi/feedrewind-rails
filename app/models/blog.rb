@@ -163,7 +163,7 @@ class Blog < ApplicationRecord
   end
 
   def Blog::get_downgrade_version(feed_url)
-    Blog.where(feed_url: feed_url).length
+    (Blog.where(feed_url: feed_url).where.not(version: LATEST_VERSION).pluck(:version).max || 0) + 1
   end
 
   def Blog::reset_failed_blogs(date_cutoff)
