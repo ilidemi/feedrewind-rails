@@ -78,13 +78,6 @@ class DispatchAmplitudeJob < ApplicationJob
       DispatchAmplitudeJob.set(wait_until: next_run).perform_later
     end
   end
-
-  def NotifySlackJob::escape(text)
-    text
-      .gsub("&", "&amp;")
-      .gsub("<", "&lt;")
-      .gsub(">", "&gt;")
-  end
 end
 
 
